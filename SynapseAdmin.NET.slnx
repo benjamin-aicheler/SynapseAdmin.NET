@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/LibMatrix/">
+    <Project Path="LibMatrix/LibMatrix.EventTypes/LibMatrix.EventTypes.csproj" />
+    <Project Path="LibMatrix/LibMatrix/LibMatrix.csproj" />
+  </Folder>
+  <Folder Name="/LibMatrix/ArcaneLibs/">
+    <Project Path="LibMatrix/ArcaneLibs/ArcaneLibs/ArcaneLibs.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/SynapseAdmin/SynapseAdmin.csproj" />
+  </Folder>
+</Solution>
