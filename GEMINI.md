@@ -1,26 +1,32 @@
 # SynapseAdmin.NET - Project Context
 
 ## Project Overview
-SynapseAdmin.NET is a .NET 10 Blazor Server Web App, intended for the administration of Synapse (a Matrix homeserver). The app relies on `libmatrix` to interact with Matrix homeservers and is designed to run in Docker. The project is currently in its initial setup phase, with the user scaffolding the structure manually in VS Code.
+SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (Matrix homeservers). The application uses `LibMatrix` (and its dependency `ArcaneLibs`) as git submodules to interact with the Matrix protocol and is designed to be containerized with Docker.
 
-- **Primary Language/Framework:** .NET 10, Blazor Server
-- **Dependencies:** `libmatrix` (Matrix SDK), Docker
+- **Framework:** .NET 10 Blazor Server (Interactive Server mode)
+- **SDKs:** `LibMatrix` and `ArcaneLibs` (included as git submodules)
+- **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Initial setup; no source code or project files are present yet.
+- **Status:** Scaffolded; project structure, submodules, and containerization are in place.
 
 ## Building and Running
-As the project is in its infancy, specific build and run commands have not yet been established. However, standard .NET CLI tools are expected to be used:
+The project uses the standard .NET 10 CLI and Docker:
 
-- **Build:** `dotnet build` (TODO: Confirm once project files are added)
-- **Run:** `dotnet run` (TODO: Confirm once project files are added)
-- **Test:** `dotnet test` (TODO: Confirm once project files are added)
+- **Build:** `dotnet build`
+- **Run (Local):** `dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj`
+- **Run (Docker):** `docker compose up --build`
+- **Test:** `dotnet test` (Infrastructure in place via submodules)
 
 ## Development Conventions
-- **Coding Style:** Adhere to standard .NET coding conventions and idiomatic C# practices.
+- **Dependency Injection:** `LibMatrix` services are registered in `Program.cs` via `builder.Services.AddRoryLibMatrixServices()`.
+- **Coding Style:** Standard .NET 10 idiomatic C#.
+- **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
 - **Licensing:** All contributions must comply with the AGPLv3 license.
-- **Testing:** Future development should include unit and integration tests using standard .NET testing frameworks (e.g., xUnit, NUnit).
 
 ## Key Files
-- `README.md`: Basic project introduction (currently minimal).
-- `LICENSE`: Full text of the AGPLv3 license.
-- `.gitignore`: Standard .NET ignore patterns.
+- `SynapseAdmin.NET.slnx`: New .NET 10 solution file.
+- `src/SynapseAdmin/`: Main web application source code.
+- `LibMatrix/`: Matrix SDK submodule.
+- `docker-compose.yml`: Root-level Docker Compose configuration.
+- `src/SynapseAdmin/Dockerfile`: Multi-stage .NET 10 Dockerfile.
+- `README.md`: Project documentation and attribution.
