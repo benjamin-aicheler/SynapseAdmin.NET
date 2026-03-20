@@ -7,7 +7,7 @@ SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (M
 - **SDKs:** `LibMatrix` and `ArcaneLibs` (included as git submodules)
 - **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Scaffolded; project structure, submodules, and containerization are in place.
+- **Status:** Active Development; basic auth, dashboard, and MudBlazor UI are implemented.
 
 ## Building and Running
 The project uses the standard .NET 10 CLI and Docker:
@@ -25,14 +25,9 @@ The project uses the standard .NET 10 CLI and Docker:
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
 
 ## Task List
-- [x] **Infrastructure:** Verify Docker deployment (`docker compose up --build`).
-- [x] **Auth:** Implement a basic login page that uses `LibMatrix` to authenticate with a homeserver.
-- [x] **UI:** Create a dashboard view to display basic homeserver statistics.
-- [x] **UI:** Build a "Rooms" management view.
-- [x] **Compliance:** Add an "About" or "Legal" page in the UI for AGPL-3.0 attribution.
-- [x] **UI Infrastructure:** Install and configure MudBlazor, replacing the default Bootstrap layout with a professional admin layout.
-- [x] **UI Refactor:** Convert existing pages (Login, Home, Rooms, About) to use MudBlazor components instead of raw HTML/Bootstrap.
-- [x] **Auth Persistence:** Implement a custom `AuthenticationStateProvider` and client-side storage (localStorage/cookies) to ensure login sessions survive browser refreshes.
+- [ ] **User Management:** Build a view to list and manage users (using `SearchUsersAsync`).
+- [ ] **Room Details:** Create a detailed view for a specific room (members, state events, settings).
+- [ ] **Admin Actions:** Implement actions like deleting/quarantining rooms or media.
 
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.
