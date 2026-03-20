@@ -2,20 +2,17 @@
 @using SynapseAdmin.Services
 @using LibMatrix.Homeservers
 @using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses
+@using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
 @inject MatrixSessionService MatrixSession
 @inject NavigationManager Navigation
+@attribute [Authorize]
 
 <PageTitle>Rooms - SynapseAdmin.NET</PageTitle>
 
 <MudText Typo="Typo.h3" Class="mb-6">Room Management</MudText>
 
-@if (!MatrixSession.IsLoggedIn)
-{
-    <MudAlert Severity="Severity.Warning" Elevation="2" Class="mb-4">
-        You are not logged in. Please go to the <MudLink Href="login">Login page</MudLink>.
-    </MudAlert>
-}
-else if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
         Room management requires Synapse Admin API access.
@@ -24,14 +21,17 @@ else if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSyn
 else
 {
     <MudToolBar Class="mb-4">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadRooms" Disabled="@isLoading" StartIcon="@Icons.Material.Filled.Refresh">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
             Refresh
         </MudButton>
         <MudSpacer />
-        <MudText Typo="Typo.body2" Color="Color.Surface">Showing @rooms.Count rooms</MudText>
+        @if (totalRooms.HasValue)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalRooms rooms on server</MudText>
+        }
     </MudToolBar>
 
-    <MudTable Items="@rooms" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@isLoading" LoadingProgressColor="Color.Info" Elevation="3">
+    <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
             <MudTh>Name</MudTh>
             <MudTh>Room ID</MudTh>
@@ -60,7 +60,7 @@ else
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
-            <MudText>No rooms found or you haven't refreshed yet.</MudText>
+            <MudText>No rooms found.</MudText>
         </NoRecordsContent>
         <PagerContent>
             <MudTablePager />
@@ -69,39 +69,44 @@ else
 }
 
 @code {
-    private List<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom> rooms = new();
-    private bool isLoading;
+    private MudTable<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>? table;
+    private int? totalRooms;
 
-    protected override async Task OnInitializedAsync()
+    private async Task ReloadTable()
     {
-        if (MatrixSession.IsLoggedIn && MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse)
+        if (table != null)
         {
-            await LoadRooms();
+            await table.ReloadServerData();
         }
     }
 
-    private async Task LoadRooms()
+    private async Task<TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>> ServerReload(TableState state, CancellationToken token)
     {
         if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
         {
-            isLoading = true;
-            rooms.Clear();
             try
             {
-                await foreach (var room in synapseAdmin.Admin.SearchRoomsAsync(limit: 100))
+                var offset = state.Page * state.PageSize;
+                // Simple ordering support
+                var orderBy = state.SortLabel ?? "name";
+                var dir = state.SortDirection == SortDirection.Descending ? "b" : "f";
+
+                var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={state.PageSize}&dir={dir}&order_by={orderBy}";
+
+                var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
+                
+                if (result != null)
                 {
-                    rooms.Add(room);
-                    StateHasChanged(); // Update UI as rooms stream in
+                    totalRooms = result.TotalRooms;
+                    return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = result.TotalRooms, Items = result.Rooms };
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading rooms: {ex.Message}");
-            }
-            finally
-            {
-                isLoading = false;
+                Console.WriteLine($"Error fetching rooms: {ex.Message}");
             }
         }
+
+        return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = 0, Items = new List<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() };
     }
 }

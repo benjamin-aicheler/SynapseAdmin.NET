@@ -1,141 +1,52 @@
 @page "/"
 @using SynapseAdmin.Services
 @using LibMatrix.Homeservers
-@using LibMatrix.Responses.Federation
+@using Microsoft.AspNetCore.Authorization
 @inject MatrixSessionService MatrixSession
+@attribute [Authorize]
 
 <PageTitle>Dashboard - SynapseAdmin.NET</PageTitle>
 
 <MudText Typo="Typo.h3" Class="mb-6">Dashboard</MudText>
 
-@if (!MatrixSession.IsLoggedIn)
-{
-    <MudAlert Severity="Severity.Warning" Elevation="2">
-        You are not logged in. Please go to the <MudLink Href="login">Login page</MudLink> to access the dashboard.
-    </MudAlert>
-}
-else
-{
-    <MudGrid>
-        <MudItem xs="12" md="4">
-            <MudCard Elevation="3" Class="bg-primary text-white h-100">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Homeserver</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudText Typo="Typo.h5">@MatrixSession.AuthenticatedHomeserver!.ServerName</MudText>
-                    <MudText Typo="Typo.body2">@MatrixSession.AuthenticatedHomeserver!.BaseUrl</MudText>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudCard Elevation="3" Class="bg-success text-white h-100">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Users</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    @if (isLoadingStats)
-                    {
-                        <MudProgressCircular Color="Color.Inherit" Indeterminate="true" />
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.h4">@userCount</MudText>
-                        <MudText Typo="Typo.body2">Total registered users</MudText>
-                    }
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudCard Elevation="3" Class="bg-info text-white h-100">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Rooms</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    @if (isLoadingStats)
-                    {
-                        <MudProgressCircular Color="Color.Inherit" Indeterminate="true" />
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.h4">@roomCount</MudText>
-                        <MudText Typo="Typo.body2">Total rooms on server</MudText>
-                    }
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
-
-    @if (isSynapse)
-    {
-        <MudCard Elevation="3" Class="mt-6">
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="3" Class="bg-primary text-white h-100">
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText Typo="Typo.h6">Synapse Admin Info</MudText>
+                    <MudText Typo="Typo.h6">Homeserver</MudText>
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudText Typo="Typo.body1" Class="mb-4">You are connected to a Synapse homeserver with admin privileges.</MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshStats" Disabled="@isLoadingStats" StartIcon="@Icons.Material.Filled.Refresh">
-                    Refresh Statistics
-                </MudButton>
+                <MudText Typo="Typo.h5">@MatrixSession.AuthenticatedHomeserver?.ServerName</MudText>
+                <MudText Typo="Typo.body2">@MatrixSession.AuthenticatedHomeserver?.BaseUrl</MudText>
             </MudCardContent>
         </MudCard>
-    }
+    </MudItem>
+</MudGrid>
+
+@if (isSynapse)
+{
+    <MudCard Elevation="3" Class="mt-6">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Synapse Admin Info</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText Typo="Typo.body1" Class="mb-4">You are connected to a Synapse homeserver with admin privileges.</MudText>
+        </MudCardContent>
+    </MudCard>
 }
 
 @code {
     private bool isSynapse;
-    private int userCount;
-    private int roomCount;
-    private bool isLoadingStats;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         if (MatrixSession.IsLoggedIn)
         {
             isSynapse = MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse;
-            await RefreshStats();
-        }
-    }
-
-    private async Task RefreshStats()
-    {
-        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
-        {
-            isLoadingStats = true;
-            try
-            {
-                // LibMatrix SearchUsersAsync and SearchRoomsAsync are IAsyncEnumerable.
-                // For a quick dashboard we just want to count them or get the total from the first response.
-                
-                // Fetching user count
-                await foreach (var user in synapseAdmin.Admin.SearchUsersAsync(limit: 1))
-                {
-                    // We just need to trigger the first request to get the total in some APIs, 
-                    // but SynapseAdminApiClient doesn't seem to expose the 'total' field directly in the enumerable.
-                    // We'll just do a small count for now as a placeholder or implement a proper 'GetCount' if LibMatrix supports it.
-                }
-                
-                // For now, let's just show that we can call the APIs.
-                // In a real app, we might want to extend SynapseAdminApiClient to return the 'total' field from the underlying JSON.
-                userCount = -1; // Placeholder: LibMatrix SearchUsersAsync doesn't expose 'total' easily via IAsyncEnumerable
-                roomCount = -1; // Placeholder
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching stats: {ex.Message}");
-            }
-            finally
-            {
-                isLoadingStats = false;
-            }
         }
     }
 }
