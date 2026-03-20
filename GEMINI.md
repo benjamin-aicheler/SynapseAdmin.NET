@@ -27,7 +27,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - [x] **Infrastructure:** Verify Docker deployment (`docker compose up --build`).
 - [x] **Auth:** Implement a basic login page that uses `LibMatrix` to authenticate with a homeserver.
 - [x] **UI:** Create a dashboard view to display basic homeserver statistics.
-- [ ] **UI:** Build a "Rooms" management view.
+- [x] **UI:** Build a "Rooms" management view.
 - [ ] **Compliance:** Add an "About" or "Legal" page in the UI for AGPL-3.0 attribution.
 
 ## Key Files
