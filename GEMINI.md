@@ -23,6 +23,13 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 
+## Task List
+- [ ] **Infrastructure:** Verify Docker deployment (`docker compose up --build`).
+- [ ] **Auth:** Implement a basic login page that uses `LibMatrix` to authenticate with a homeserver.
+- [ ] **UI:** Create a dashboard view to display basic homeserver statistics.
+- [ ] **UI:** Build a "Rooms" management view.
+- [ ] **Compliance:** Add an "About" or "Legal" page in the UI for AGPL-3.0 attribution.
+
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.
 - `src/SynapseAdmin/`: Main web application source code.
