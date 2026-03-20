@@ -7,7 +7,7 @@ SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (M
 - **SDKs:** `LibMatrix` and `ArcaneLibs` (included as git submodules)
 - **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Active Development; basic auth, dashboard, and MudBlazor UI are implemented.
+- **Status:** Active Development; basic auth, dashboard, room/user management, and MudBlazor UI are implemented.
 
 ## Building and Running
 The project uses the standard .NET 10 CLI and Docker:
@@ -24,10 +24,11 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
 
-## Task List
-- [ ] **User Management:** Build a view to list and manage users (using `SearchUsersAsync`).
-- [ ] **Room Details:** Create a detailed view for a specific room (members, state events, settings).
-- [ ] **Admin Actions:** Implement actions like deleting/quarantining rooms or media.
+## Upcoming Task List
+- [ ] **Registration Tokens:** Build a view to manage and generate registration tokens.
+- [x] **Event Reports:** Implement a dashboard to review and act on reported events/messages.
+- [x] **Federation Destinations:** Create a view to check federation status and destination queues.
+- [x] **Server Notices:** Add functionality to broadcast server notices to users.
 
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.

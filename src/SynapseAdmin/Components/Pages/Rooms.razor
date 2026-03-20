@@ -56,7 +56,7 @@ else
                 }
             </MudTd>
             <MudTd DataLabel="Actions">
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">Details</MudButton>
+                <MudButton Href="@($"/rooms/{Uri.EscapeDataString(context.RoomId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">Details</MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>

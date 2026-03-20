@@ -1,0 +1,143 @@
+@page "/federation"
+@using SynapseAdmin.Services
+@using LibMatrix.Homeservers
+@using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses
+@using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
+@inject MatrixSessionService MatrixSession
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@attribute [Authorize]
+
+<PageTitle>Federation Destinations - SynapseAdmin.NET</PageTitle>
+
+<MudText Typo="Typo.h3" Class="mb-6">Federation Destinations</MudText>
+
+@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        Federation management requires Synapse Admin API access.
+    </MudAlert>
+}
+else
+{
+    <MudToolBar Class="mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
+            Refresh
+        </MudButton>
+        <MudSpacer />
+        @if (totalDestinations.HasValue)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalDestinations destinations</MudText>
+        }
+    </MudToolBar>
+
+    <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
+        <HeaderContent>
+            <MudTh>Destination</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Last Retry</MudTh>
+            <MudTh>Retry Interval</MudTh>
+            <MudTh>Failure Time</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Destination"><MudText Typo="Typo.body2">@context.Destination</MudText></MudTd>
+            <MudTd DataLabel="Status">
+                @if (context.FailureTsDateTime.HasValue)
+                {
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Failing</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">OK</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Last Retry">
+                @(context.RetryLastTs > 0 ? context.RetryLastTsDateTime?.ToString("g") : "-")
+            </MudTd>
+            <MudTd DataLabel="Retry Interval">
+                @(context.RetryInterval > 0 ? context.RetryIntervalTimeSpan.ToString("c") : "-")
+            </MudTd>
+            <MudTd DataLabel="Failure Time">
+                @(context.FailureTsDateTime?.ToString("g") ?? "-")
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => ResetConnection(context.Destination))" Disabled="!context.FailureTsDateTime.HasValue">Reset Connection</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No federation destinations found.</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private MudTable<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>? table;
+    private int? totalDestinations;
+
+    private async Task ReloadTable()
+    {
+        if (table != null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+    private async Task<TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>> ServerReload(TableState state, CancellationToken token)
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            try
+            {
+                var offset = state.Page * state.PageSize;
+                var dir = state.SortDirection == SortDirection.Ascending ? "f" : "b";
+
+                var url = $"/_synapse/admin/v1/federation/destinations?from={offset}&limit={state.PageSize}&dir={dir}";
+
+                var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminDestinationListResult>(url, cancellationToken: token);
+                
+                if (result != null)
+                {
+                    totalDestinations = result.Total;
+                    return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = result.Total, Items = result.Destinations };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching federation destinations: {ex.Message}");
+                Snackbar.Add($"Error fetching federation destinations: {ex.Message}", Severity.Error);
+            }
+        }
+
+        return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = 0, Items = new List<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() };
+    }
+
+    private async Task ResetConnection(string destination)
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Reset Connection", 
+                $"Are you sure you want to reset the federation connection backoff for {destination}?", 
+                yesText: "Reset", cancelText: "Cancel");
+                
+            if (result == true)
+            {
+                try {
+                    await synapseAdmin.Admin.ResetFederationConnectionTimeoutAsync(destination);
+                    Snackbar.Add($"Connection backoff reset for {destination}.", Severity.Success);
+                    await ReloadTable();
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Error resetting connection for {destination}: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+    }
+}

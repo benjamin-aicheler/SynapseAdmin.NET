@@ -1,0 +1,119 @@
+@page "/notices"
+@using SynapseAdmin.Extensions
+@using SynapseAdmin.Services
+@using LibMatrix.Homeservers
+@using LibMatrix.EventTypes.Spec
+@using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
+@inject MatrixSessionService MatrixSession
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+
+<PageTitle>Server Notices - SynapseAdmin.NET</PageTitle>
+
+<MudText Typo="Typo.h3" Class="mb-6">Send Server Notice</MudText>
+
+@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        Server notice functionality requires Synapse Admin API access.
+    </MudAlert>
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Broadcast Notice to User</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Class="mb-4">
+                        Send a message directly from the server to a specific local user. Synapse will automatically create a dedicated "Server Notices" room between the server and the user if one does not exist.
+                    </MudText>
+                    
+                    <MudForm @ref="form" @bind-IsValid="@success">
+                        <MudTextField @bind-Value="targetUserId" 
+                                      Label="Target User ID" 
+                                      Required="true" 
+                                      RequiredError="User ID is required!"
+                                      HelperText='@("Format: @user:example.com")'
+                                      Variant="Variant.Outlined" 
+                                      Class="mb-4" />
+                                      
+                        <MudTextField @bind-Value="noticeMessage" 
+                                      Label="Notice Message" 
+                                      Lines="5" 
+                                      Required="true" 
+                                      RequiredError="A message is required!"
+                                      Variant="Variant.Outlined" />
+                    </MudForm>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               Disabled="@(!success || isSending)" 
+                               OnClick="SendNotice"
+                               Class="ml-auto">
+                        @if (isSending)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                            <MudText Class="ms-2">Sending...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Send Notice</MudText>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private MudForm? form;
+    private bool success;
+    private bool isSending = false;
+    
+    private string targetUserId = string.Empty;
+    private string noticeMessage = string.Empty;
+
+    private async Task SendNotice()
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            isSending = true;
+            StateHasChanged();
+            
+            try
+            {
+                var content = new RoomMessageEventContent(body: noticeMessage);
+                
+                await synapseAdmin.SendServerNoticeAsync(targetUserId, content);
+                
+                Snackbar.Add("Server notice sent successfully!", Severity.Success);
+                
+                // Reset form
+                noticeMessage = string.Empty;
+                targetUserId = string.Empty;
+                if (form != null)
+                {
+                    await form.ResetAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to send notice: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                isSending = false;
+                StateHasChanged();
+            }
+        }
+    }
+}
