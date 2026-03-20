@@ -7,80 +7,65 @@
 
 <PageTitle>Rooms - SynapseAdmin.NET</PageTitle>
 
-<h1>Room Management</h1>
+<MudText Typo="Typo.h3" Class="mb-6">Room Management</MudText>
 
 @if (!MatrixSession.IsLoggedIn)
 {
-    <div class="alert alert-warning">
-        You are not logged in. Please go to the <a href="login">Login page</a>.
-    </div>
+    <MudAlert Severity="Severity.Warning" Elevation="2" Class="mb-4">
+        You are not logged in. Please go to the <MudLink Href="login">Login page</MudLink>.
+    </MudAlert>
 }
 else if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
-    <div class="alert alert-danger">
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
         Room management requires Synapse Admin API access.
-    </div>
+    </MudAlert>
 }
 else
 {
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <div>
-            <button class="btn btn-primary" @onclick="LoadRooms" disabled="@isLoading">
-                @if (isLoading)
-                {
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                }
-                Refresh
-            </button>
-        </div>
-        <div class="text-muted">
-            Showing @rooms.Count rooms
-        </div>
-    </div>
+    <MudToolBar Class="mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadRooms" Disabled="@isLoading" StartIcon="@Icons.Material.Filled.Refresh">
+            Refresh
+        </MudButton>
+        <MudSpacer />
+        <MudText Typo="Typo.body2" Color="Color.Surface">Showing @rooms.Count rooms</MudText>
+    </MudToolBar>
 
-    @if (rooms.Count == 0 && !isLoading)
-    {
-        <div class="alert alert-info">No rooms found or you haven't refreshed yet.</div>
-    }
-
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Room ID</th>
-                    <th>Creator</th>
-                    <th>Members</th>
-                    <th>Public</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var room in rooms)
+    <MudTable Items="@rooms" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@isLoading" LoadingProgressColor="Color.Info" Elevation="3">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Room ID</MudTh>
+            <MudTh>Creator</MudTh>
+            <MudTh>Members</MudTh>
+            <MudTh>Public</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@(string.IsNullOrEmpty(context.Name) ? "No Name" : context.Name)</MudTd>
+            <MudTd DataLabel="Room ID"><MudText Typo="Typo.caption">@context.RoomId</MudText></MudTd>
+            <MudTd DataLabel="Creator">@context.Creator</MudTd>
+            <MudTd DataLabel="Members">@context.JoinedMembers</MudTd>
+            <MudTd DataLabel="Public">
+                @if (context.Public)
                 {
-                    <tr>
-                        <td>@(string.IsNullOrEmpty(room.Name) ? "No Name" : room.Name)</td>
-                        <td><small>@room.RoomId</small></td>
-                        <td>@room.Creator</td>
-                        <td>@room.JoinedMembers</td>
-                        <td>
-                            @if (room.Public)
-                            {
-                                <span class="badge bg-success">Public</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">Private</span>
-                            }
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-info">Details</button>
-                        </td>
-                    </tr>
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Public</MudChip>
                 }
-            </tbody>
-        </table>
-    </div>
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">Private</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">Details</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No rooms found or you haven't refreshed yet.</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
 }
 
 @code {

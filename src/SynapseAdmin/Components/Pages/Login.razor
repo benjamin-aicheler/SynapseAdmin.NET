@@ -3,57 +3,45 @@
 @inject MatrixSessionService MatrixSession
 @inject NavigationManager Navigation
 
-<PageTitle>Login</PageTitle>
+<PageTitle>Login - SynapseAdmin.NET</PageTitle>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3>Login to Matrix Homeserver</h3>
-                </div>
-                <div class="card-body">
-                    @if (!string.IsNullOrEmpty(errorMessage))
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudCard Elevation="3">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Color="Color.Primary">Login to Matrix Homeserver</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+            }
+            
+            <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+                
+                <MudTextField @bind-Value="loginModel.Homeserver" Label="Homeserver URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Required="true" Placeholder="https://matrix.org" />
+                
+                <MudTextField @bind-Value="loginModel.Username" Label="Username" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Required="true" Placeholder="@usernamePlaceholder" />
+                
+                <MudTextField @bind-Value="loginModel.Password" Label="Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-6" InputType="InputType.Password" Required="true" />
+                
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="@isSubmitting">
+                    @if (isSubmitting)
                     {
-                        <div class="alert alert-danger">@errorMessage</div>
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        <MudText Class="ms-2">Logging in...</MudText>
                     }
-                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
-
-                        <div class="mb-3">
-                            <label for="homeserver" class="form-label">Homeserver URL</label>
-                            <InputText id="homeserver" class="form-control" @bind-Value="loginModel.Homeserver" placeholder="https://matrix.org" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <InputText id="username" class="form-control" @bind-Value="loginModel.Username" placeholder="@usernamePlaceholder" />
-                        </div>
-
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
-                            @if (isSubmitting)
-                            {
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                <span> Logging in...</span>
-                            }
-                            else
-                            {
-                                <span>Login</span>
-                            }
-                        </button>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                    else
+                    {
+                        <MudText>Login</MudText>
+                    }
+                </MudButton>
+            </EditForm>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
 
 @code {
     private LoginRequest loginModel = new();

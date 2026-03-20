@@ -6,73 +6,87 @@
 
 <PageTitle>Dashboard - SynapseAdmin.NET</PageTitle>
 
-<h1>Dashboard</h1>
+<MudText Typo="Typo.h3" Class="mb-6">Dashboard</MudText>
 
 @if (!MatrixSession.IsLoggedIn)
 {
-    <div class="alert alert-warning">
-        You are not logged in. Please go to the <a href="login">Login page</a> to access the dashboard.
-    </div>
+    <MudAlert Severity="Severity.Warning" Elevation="2">
+        You are not logged in. Please go to the <MudLink Href="login">Login page</MudLink> to access the dashboard.
+    </MudAlert>
 }
 else
 {
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card text-white bg-primary mb-3">
-                <div class="card-header">Homeserver</div>
-                <div class="card-body">
-                    <h5 class="card-title">@MatrixSession.AuthenticatedHomeserver!.ServerName</h5>
-                    <p class="card-text">@MatrixSession.AuthenticatedHomeserver!.BaseUrl</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-success mb-3">
-                <div class="card-header">Users</div>
-                <div class="card-body">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="3" Class="bg-primary text-white h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Homeserver</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">@MatrixSession.AuthenticatedHomeserver!.ServerName</MudText>
+                    <MudText Typo="Typo.body2">@MatrixSession.AuthenticatedHomeserver!.BaseUrl</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="3" Class="bg-success text-white h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Users</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
                     @if (isLoadingStats)
                     {
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <MudProgressCircular Color="Color.Inherit" Indeterminate="true" />
                     }
                     else
                     {
-                        <h5 class="card-title">@userCount</h5>
-                        <p class="card-text">Total registered users</p>
+                        <MudText Typo="Typo.h4">@userCount</MudText>
+                        <MudText Typo="Typo.body2">Total registered users</MudText>
                     }
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-info mb-3">
-                <div class="card-header">Rooms</div>
-                <div class="card-body">
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="3" Class="bg-info text-white h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Rooms</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
                     @if (isLoadingStats)
                     {
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <MudProgressCircular Color="Color.Inherit" Indeterminate="true" />
                     }
                     else
                     {
-                        <h5 class="card-title">@roomCount</h5>
-                        <p class="card-text">Total rooms on server</p>
+                        <MudText Typo="Typo.h4">@roomCount</MudText>
+                        <MudText Typo="Typo.body2">Total rooms on server</MudText>
                     }
-                </div>
-            </div>
-        </div>
-    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
 
     @if (isSynapse)
     {
-        <div class="card mt-4">
-            <div class="card-header">
-                Synapse Admin Info
-            </div>
-            <div class="card-body">
-                <p>You are connected to a Synapse homeserver with admin privileges.</p>
-                <button class="btn btn-outline-secondary" @onclick="RefreshStats" disabled="@isLoadingStats">
+        <MudCard Elevation="3" Class="mt-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Synapse Admin Info</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.body1" Class="mb-4">You are connected to a Synapse homeserver with admin privileges.</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshStats" Disabled="@isLoadingStats" StartIcon="@Icons.Material.Filled.Refresh">
                     Refresh Statistics
-                </button>
-            </div>
-        </div>
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
     }
 }
 
