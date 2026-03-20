@@ -22,6 +22,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Coding Style:** Standard .NET 10 idiomatic C#.
 - **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
 - **Licensing:** All contributions must comply with the AGPLv3 license.
+- **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
 
 ## Task List
 - [x] **Infrastructure:** Verify Docker deployment (`docker compose up --build`).
@@ -29,6 +30,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - [x] **UI:** Create a dashboard view to display basic homeserver statistics.
 - [x] **UI:** Build a "Rooms" management view.
 - [x] **Compliance:** Add an "About" or "Legal" page in the UI for AGPL-3.0 attribution.
+- [x] **UI Infrastructure:** Install and configure MudBlazor, replacing the default Bootstrap layout with a professional admin layout.
 
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.

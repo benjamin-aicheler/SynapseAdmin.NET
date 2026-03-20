@@ -1,6 +1,7 @@
 using SynapseAdmin.Components;
 using LibMatrix.Services;
 using SynapseAdmin.Services;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
 });
 
 builder.Services.AddScoped<MatrixSessionService>();
+builder.Services.AddMudServices();
 
 var app = builder.Build();
 
