@@ -1,5 +1,6 @@
 using SynapseAdmin.Components;
 using LibMatrix.Services;
+using SynapseAdmin.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
     AppName = "SynapseAdmin.NET"
 });
+
+builder.Services.AddScoped<MatrixSessionService>();
 
 var app = builder.Build();
 

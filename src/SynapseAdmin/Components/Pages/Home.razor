@@ -1,7 +1,24 @@
-﻿@page "/"
+@page "/"
+@using SynapseAdmin.Services
+@inject MatrixSessionService MatrixSession
 
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
+
+<div class="mt-4">
+    @if (MatrixSession.IsLoggedIn)
+    {
+        <div class="alert alert-success">
+            Logged in as: <strong>@MatrixSession.AuthenticatedHomeserver!.UserId</strong> on <strong>@MatrixSession.AuthenticatedHomeserver!.BaseUrl</strong>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            You are not logged in. Please go to the <a href="login">Login page</a>.
+        </div>
+    }
+</div>

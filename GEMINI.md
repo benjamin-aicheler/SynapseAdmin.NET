@@ -24,8 +24,8 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 
 ## Task List
-- [ ] **Infrastructure:** Verify Docker deployment (`docker compose up --build`).
-- [ ] **Auth:** Implement a basic login page that uses `LibMatrix` to authenticate with a homeserver.
+- [x] **Infrastructure:** Verify Docker deployment (`docker compose up --build`).
+- [x] **Auth:** Implement a basic login page that uses `LibMatrix` to authenticate with a homeserver.
 - [ ] **UI:** Create a dashboard view to display basic homeserver statistics.
 - [ ] **UI:** Build a "Rooms" management view.
 - [ ] **Compliance:** Add an "About" or "Legal" page in the UI for AGPL-3.0 attribution.

@@ -1,0 +1,90 @@
+@page "/login"
+@using SynapseAdmin.Services
+@inject MatrixSessionService MatrixSession
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>Login to Matrix Homeserver</h3>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label for="homeserver" class="form-label">Homeserver URL</label>
+                            <InputText id="homeserver" class="form-control" @bind-Value="loginModel.Homeserver" placeholder="https://matrix.org" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <InputText id="username" class="form-control" @bind-Value="loginModel.Username" placeholder="@usernamePlaceholder" />
+                        </div>
+
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span> Logging in...</span>
+                            }
+                            else
+                            {
+                                <span>Login</span>
+                            }
+                        </button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginModel = new();
+    private string? errorMessage;
+    private bool isSubmitting;
+    private string usernamePlaceholder = "@user:matrix.org";
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            await MatrixSession.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Login failed: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class LoginRequest
+    {
+        public string Homeserver { get; set; } = "https://matrix.org";
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}
