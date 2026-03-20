@@ -15,8 +15,14 @@ public class MatrixSessionService(HomeserverProviderService hsProvider)
         AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
     }
 
+    public async Task RestoreSessionAsync(string homeserver, string accessToken)
+    {
+        AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
+    }
+
     public void Logout()
     {
         AuthenticatedHomeserver = null;
     }
 }
+

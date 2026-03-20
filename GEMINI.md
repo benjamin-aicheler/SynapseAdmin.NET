@@ -32,7 +32,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - [x] **Compliance:** Add an "About" or "Legal" page in the UI for AGPL-3.0 attribution.
 - [x] **UI Infrastructure:** Install and configure MudBlazor, replacing the default Bootstrap layout with a professional admin layout.
 - [x] **UI Refactor:** Convert existing pages (Login, Home, Rooms, About) to use MudBlazor components instead of raw HTML/Bootstrap.
-- [ ] **Auth Persistence:** Implement a custom `AuthenticationStateProvider` and client-side storage (localStorage/cookies) to ensure login sessions survive browser refreshes.
+- [x] **Auth Persistence:** Implement a custom `AuthenticationStateProvider` and client-side storage (localStorage/cookies) to ensure login sessions survive browser refreshes.
 
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.

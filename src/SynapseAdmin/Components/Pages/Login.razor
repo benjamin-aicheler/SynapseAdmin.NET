@@ -1,6 +1,6 @@
 @page "/login"
 @using SynapseAdmin.Services
-@inject MatrixSessionService MatrixSession
+@inject MatrixAuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
 
 <PageTitle>Login - SynapseAdmin.NET</PageTitle>
@@ -56,7 +56,7 @@
 
         try
         {
-            await MatrixSession.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
+            await AuthProvider.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
             Navigation.NavigateTo("/");
         }
         catch (Exception ex)

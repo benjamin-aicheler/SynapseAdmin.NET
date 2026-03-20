@@ -1,7 +1,15 @@
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Dashboard</MudNavLink>
     <MudNavLink Href="rooms" Icon="@Icons.Material.Filled.ChatBubbleOutline">Rooms</MudNavLink>
-    <MudNavLink Href="login" Icon="@Icons.Material.Filled.Person">Login</MudNavLink>
+    
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink OnClick="Logout" Icon="@Icons.Material.Filled.Logout">Logout</MudNavLink>
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="login" Icon="@Icons.Material.Filled.Person">Login</MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
     
     <MudNavGroup Title="Utilities" Expanded="false" Icon="@Icons.Material.Filled.Build">
         <MudNavLink Href="counter" Icon="@Icons.Material.Filled.AddBox">Counter</MudNavLink>
@@ -10,3 +18,14 @@
 
     <MudNavLink Href="about" Icon="@Icons.Material.Filled.Info">About</MudNavLink>
 </MudNavMenu>
+
+@code {
+    [Inject] private SynapseAdmin.Services.MatrixAuthenticationStateProvider AuthProvider { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private async Task Logout()
+    {
+        await AuthProvider.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+}
