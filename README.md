@@ -2,13 +2,64 @@
 
 A modern .NET 10 Blazor Server web application for administering Synapse (Matrix homeservers).
 
+## Features
+
+SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix homeserver right from your browser. Current capabilities include:
+
+- **Dashboard:** At-a-glance overview of your server's status and metrics.
+- **User Management:** Search, view, deactivate, and manage properties of server users.
+- **Room Management:** Search and inspect server rooms and their details.
+- **Event Reports:** Review and manage reported events/messages from users.
+- **Registration Tokens:** Generate and manage tokens to restrict server registration.
+- **Federation Destinations:** Check federation status and manage destination queues.
+- **Server Notices:** Broadcast important notices directly to users from the server.
+
 ## Technologies
 
-- **Framework:** .NET 10 Blazor Server
+- **Framework:** .NET 10 Blazor Server (Interactive Server Mode)
 - **UI Component Library:** [MudBlazor](https://mudblazor.com/)
-- **Matrix SDK:** [LibMatrix](https://github.com/benjamin-aicheler/LibMatrix)
-- **Utilities:** [ArcaneLibs](https://github.com/benjamin-aicheler/ArcaneLibs)
-- **Deployment:** Docker
+- **Matrix SDK:** [LibMatrix](https://github.com/benjamin-aicheler/LibMatrix) (Git Submodule)
+- **Utilities:** [ArcaneLibs](https://github.com/benjamin-aicheler/ArcaneLibs) (Git Submodule)
+- **Deployment:** Docker & Docker Compose
+
+## Getting Started
+
+### Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (for local development)
+- Docker and Docker Compose (for containerized deployment)
+- Git (to clone the repository and submodules)
+
+### Cloning the Repository
+
+Because this project relies on Git submodules, make sure to clone it recursively:
+
+```bash
+git clone --recursive https://github.com/benjamin-aicheler/SynapseAdmin.NET.git
+cd SynapseAdmin.NET
+```
+
+If you have already cloned the repository without the `--recursive` flag, you can initialize the submodules manually:
+
+```bash
+git submodule update --init --recursive
+```
+
+### Running Locally
+
+To run the application directly on your host machine:
+
+```bash
+dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj
+```
+
+### Running with Docker
+
+To run the application using Docker Compose:
+
+```bash
+docker compose up --build
+```
 
 ## License
 
