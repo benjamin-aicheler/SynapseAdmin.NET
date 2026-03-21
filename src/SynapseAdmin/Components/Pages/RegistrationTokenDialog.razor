@@ -1,0 +1,107 @@
+@using SynapseAdmin.Services
+@using LibMatrix.Homeservers
+@using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests
+@using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses
+@using MudBlazor
+@inject MudBlazor.IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Key" Class="mr-3 mb-n1"/>
+            @if(IsEdit) {
+                <text>Edit Registration Token</text>
+            } else {
+                <text>Create Registration Token</text>
+            }
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@success">
+            @if(!IsEdit) {
+                <MudTextField @bind-Value="token" 
+                              Label="Token String (optional, leave empty to generate)" 
+                              Variant="Variant.Outlined" 
+                              Class="mb-4" />
+            }
+            <MudNumericField @bind-Value="usesAllowed" 
+                             Label="Uses Allowed (optional, empty for unlimited)" 
+                             Min="1" 
+                             Variant="Variant.Outlined" 
+                             Class="mb-4" />
+                             
+            <MudDatePicker @bind-Date="expiryDate" 
+                           Label="Expiry Date (optional)" 
+                           Variant="Variant.Outlined" 
+                           Class="mb-4" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!success)">
+            @(IsEdit ? "Save" : "Create")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    [Parameter]
+    public string? ExistingToken { get; set; }
+
+    [Parameter]
+    public int? ExistingUsesAllowed { get; set; }
+
+    [Parameter]
+    public DateTime? ExistingExpiryDate { get; set; }
+
+    private MudForm? form;
+    private bool success = true;
+    
+    private string? token;
+    private int? usesAllowed;
+    private DateTime? expiryDate;
+
+    protected override void OnInitialized()
+    {
+        if (IsEdit)
+        {
+            token = ExistingToken;
+            usesAllowed = ExistingUsesAllowed;
+            expiryDate = ExistingExpiryDate;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Submit()
+    {
+        if (IsEdit)
+        {
+            var request = new SynapseAdminRegistrationTokenUpdateRequest
+            {
+                UsesAllowed = usesAllowed,
+                ExpiryTime = expiryDate.HasValue ? ((DateTimeOffset)expiryDate.Value).ToUnixTimeMilliseconds() : null
+            };
+            MudDialog.Close(DialogResult.Ok(request));
+        }
+        else
+        {
+            var request = new SynapseAdminRegistrationTokenCreateRequest
+            {
+                Token = string.IsNullOrWhiteSpace(token) ? null : token,
+                UsesAllowed = usesAllowed,
+                ExpiryTime = expiryDate.HasValue ? ((DateTimeOffset)expiryDate.Value).ToUnixTimeMilliseconds() : null
+            };
+            MudDialog.Close(DialogResult.Ok(request));
+        }
+    }
+}
