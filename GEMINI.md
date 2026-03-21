@@ -30,6 +30,32 @@ The project uses the standard .NET 10 CLI and Docker:
 - [x] **Federation Destinations:** Create a view to check federation status and destination queues.
 - [x] **Server Notices:** Add functionality to broadcast server notices to users.
 
+## Git & GitHub Workflow
+We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are prohibited.
+
+### 1. Branching
+- **Always update:** Before starting, sync your local `main`: `git checkout main && git pull origin main`.
+- **Task Isolation:** Create a new branch for every task (Issue, Feature, Bugfix).
+- **Naming Convention:**
+    - Features: `ai/feature/issue-<number>-<description>`
+    - Bugfixes: `ai/bugfix/issue-<number>-<description>`
+    - *Example:* `git checkout -b ai/feature/issue-42-add-login`
+
+### 2. Commits
+- **Conventional Commits:** Use the [Conventional Commits](https://www.conventionalcommits.org/) specification (e.g., `feat:`, `fix:`, `docs:`, `refactor:`).
+- **Atomic & Focused:** Keep commits small and focused on a single change.
+- **Issue Linking:** Link GitHub issues in the commit message (e.g., `Closes #42` or `Fixes #42`) to trigger automatic closing on merge.
+
+### 3. Pull Requests
+- **Pushing:** Push your branch to the remote: `git push -u origin <branch-name>`.
+- **Creation:** Generate a Pull Request against `main` (e.g., `gh pr create`).
+- **Description:** Provide a clear title and reference the issue in the PR description (e.g., "Resolves #42").
+
+### 4. Constraints & Cleanup
+- **No Force Push:** Never `git push --force` on shared branches.
+- **Conflict Resolution:** Resolve merge conflicts locally in your feature branch before updating the PR.
+- **Cleanup:** Delete the local feature branch after the PR is merged.
+
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.
 - `src/SynapseAdmin/`: Main web application source code.
