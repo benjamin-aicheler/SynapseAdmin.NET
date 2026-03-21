@@ -1,11 +1,13 @@
 # SynapseAdmin.NET
 
-![AI Assisted](https://img.shields.io/badge/AI-Assisted-blue)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](./LICENSE)
-[![GitHub build status](https://img.shields.io/github/actions/workflow/status/benjamin-aicheler/SynapseAdmin.NET/dotnet.yml?branch=main)](https://github.com/benjamin-aicheler/SynapseAdmin.NET/actions)
-![.NET 10](https://img.shields.io/badge/.NET_10-512BD4?style=flat&logo=dotnet&logoColor=white)
-![Blazor](https://img.shields.io/badge/Blazor-512BD4?style=flat&logo=blazor&logoColor=white)
-![C#](https://img.shields.io/badge/C%23-239120?style=flat&logo=c-sharp&logoColor=white)
+<p>
+  <img src="https://img.shields.io/badge/AI-Assisted-blue" alt="AI Assisted" />
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License: AGPL v3" /></a>
+  <a href="https://github.com/benjamin-aicheler/SynapseAdmin.NET/actions"><img src="https://img.shields.io/github/actions/workflow/status/benjamin-aicheler/SynapseAdmin.NET/dotnet.yml?branch=main" alt="GitHub build status" /></a>
+  <img src="https://img.shields.io/badge/.NET_10-512BD4?style=flat&logo=dotnet&logoColor=white" alt=".NET 10" />
+  <img src="https://img.shields.io/badge/Blazor-512BD4?style=flat&logo=blazor&logoColor=white" alt="Blazor" />
+  <img src="https://img.shields.io/badge/C%23-239120?style=flat&logo=c-sharp&logoColor=white" alt="C#" />
+</p>
 
 A modern .NET 10 Blazor Server web application for administering Synapse (Matrix homeservers).
 
