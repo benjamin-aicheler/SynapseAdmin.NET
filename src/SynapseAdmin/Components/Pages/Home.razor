@@ -1,7 +1,52 @@
-﻿@page "/"
+@page "/"
+@using SynapseAdmin.Services
+@using LibMatrix.Homeservers
+@using Microsoft.AspNetCore.Authorization
+@inject MatrixSessionService MatrixSession
+@attribute [Authorize]
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard - SynapseAdmin.NET</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudText Typo="Typo.h3" Class="mb-6">Dashboard</MudText>
 
-Welcome to your new app.
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="3" Class="bg-primary text-white h-100">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Homeserver</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.h5">@MatrixSession.AuthenticatedHomeserver?.ServerName</MudText>
+                <MudText Typo="Typo.body2">@MatrixSession.AuthenticatedHomeserver?.BaseUrl</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@if (isSynapse)
+{
+    <MudCard Elevation="3" Class="mt-6">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Synapse Admin Info</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText Typo="Typo.body1" Class="mb-4">You are connected to a Synapse homeserver with admin privileges.</MudText>
+        </MudCardContent>
+    </MudCard>
+}
+
+@code {
+    private bool isSynapse;
+
+    protected override void OnInitialized()
+    {
+        if (MatrixSession.IsLoggedIn)
+        {
+            isSynapse = MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse;
+        }
+    }
+}

@@ -1,0 +1,124 @@
+@page "/users"
+@using SynapseAdmin.Services
+@using LibMatrix.Homeservers
+@using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses
+@using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
+@inject MatrixSessionService MatrixSession
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Users - SynapseAdmin.NET</PageTitle>
+
+<MudText Typo="Typo.h3" Class="mb-6">User Management</MudText>
+
+@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        User management requires Synapse Admin API access.
+    </MudAlert>
+}
+else
+{
+    <MudToolBar Class="mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
+            Refresh
+        </MudButton>
+        <MudSpacer />
+        @if (totalUsers.HasValue)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalUsers users on server</MudText>
+        }
+    </MudToolBar>
+
+    <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
+        <HeaderContent>
+            <MudTh>User ID</MudTh>
+            <MudTh>Display Name</MudTh>
+            <MudTh>Admin</MudTh>
+            <MudTh>Guest</MudTh>
+            <MudTh>Deactivated</MudTh>
+            <MudTh>Created</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="User ID"><MudText Typo="Typo.body2">@context.Name</MudText></MudTd>
+            <MudTd DataLabel="Display Name">@(string.IsNullOrEmpty(context.DisplayName) ? "-" : context.DisplayName)</MudTd>
+            <MudTd DataLabel="Admin">
+                @if (context.Admin == true)
+                {
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">Admin</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">User</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Guest">
+                @if (context.IsGuest == true)
+                {
+                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small">Guest</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Deactivated">
+                @if (context.Deactivated)
+                {
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Deactivated</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Created">@context.CreationTsDateTime.ToString("g")</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudButton Href="@($"/users/{Uri.EscapeDataString(context.Name)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">Details</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No users found.</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private MudTable<SynapseAdminUserListResult.SynapseAdminUserListResultUser>? table;
+    private int? totalUsers;
+
+    private async Task ReloadTable()
+    {
+        if (table != null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+    private async Task<TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>> ServerReload(TableState state, CancellationToken token)
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            try
+            {
+                var offset = state.Page * state.PageSize;
+                var orderBy = state.SortLabel ?? "name";
+                var dir = state.SortDirection == SortDirection.Descending ? "b" : "f";
+
+                // Depending on the Synapse version, /_synapse/admin/v2/users supports offset/from.
+                var url = $"/_synapse/admin/v2/users?from={offset}&limit={state.PageSize}"; // we can also use search params
+
+                var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult>(url, cancellationToken: token);
+                
+                if (result != null)
+                {
+                    totalUsers = result.Total;
+                    return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = result.Total, Items = result.Users };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching users: {ex.Message}");
+            }
+        }
+
+        return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = 0, Items = new List<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() };
+    }
+}

@@ -1,0 +1,13 @@
+**/.git
+**/.gitignore
+**/bin
+**/obj
+**/.vs
+**/.vscode
+**/.idea
+**/node_modules
+**/npm-debug.log
+**/Dockerfile
+**/.dockerignore
+docker-compose.yml
+GEMINI.md

@@ -5,6 +5,7 @@ A modern .NET 10 Blazor Server web application for administering Synapse (Matrix
 ## Technologies
 
 - **Framework:** .NET 10 Blazor Server
+- **UI Component Library:** [MudBlazor](https://mudblazor.com/)
 - **Matrix SDK:** [LibMatrix](https://github.com/benjamin-aicheler/LibMatrix)
 - **Utilities:** [ArcaneLibs](https://github.com/benjamin-aicheler/ArcaneLibs)
 - **Deployment:** Docker
@@ -16,6 +17,7 @@ This program is free software: you can redistribute it and/or modify it under th
 This project incorporates:
 - **LibMatrix**: Licensed under AGPL-3.0.
 - **ArcaneLibs**: Licensed under AGPL-3.0.
+- **MudBlazor**: Licensed under MIT.
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [LICENSE](./LICENSE) file for more details.
 

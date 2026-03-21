@@ -1,0 +1,112 @@
+@page "/rooms"
+@using SynapseAdmin.Services
+@using LibMatrix.Homeservers
+@using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses
+@using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
+@inject MatrixSessionService MatrixSession
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Rooms - SynapseAdmin.NET</PageTitle>
+
+<MudText Typo="Typo.h3" Class="mb-6">Room Management</MudText>
+
+@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        Room management requires Synapse Admin API access.
+    </MudAlert>
+}
+else
+{
+    <MudToolBar Class="mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
+            Refresh
+        </MudButton>
+        <MudSpacer />
+        @if (totalRooms.HasValue)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalRooms rooms on server</MudText>
+        }
+    </MudToolBar>
+
+    <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Room ID</MudTh>
+            <MudTh>Creator</MudTh>
+            <MudTh>Members</MudTh>
+            <MudTh>Public</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@(string.IsNullOrEmpty(context.Name) ? "No Name" : context.Name)</MudTd>
+            <MudTd DataLabel="Room ID"><MudText Typo="Typo.caption">@context.RoomId</MudText></MudTd>
+            <MudTd DataLabel="Creator">@context.Creator</MudTd>
+            <MudTd DataLabel="Members">@context.JoinedMembers</MudTd>
+            <MudTd DataLabel="Public">
+                @if (context.Public)
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Public</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">Private</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                <MudButton Href="@($"/rooms/{Uri.EscapeDataString(context.RoomId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">Details</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No rooms found.</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private MudTable<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>? table;
+    private int? totalRooms;
+
+    private async Task ReloadTable()
+    {
+        if (table != null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+    private async Task<TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>> ServerReload(TableState state, CancellationToken token)
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            try
+            {
+                var offset = state.Page * state.PageSize;
+                // Simple ordering support
+                var orderBy = state.SortLabel ?? "name";
+                var dir = state.SortDirection == SortDirection.Descending ? "b" : "f";
+
+                var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={state.PageSize}&dir={dir}&order_by={orderBy}";
+
+                var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
+                
+                if (result != null)
+                {
+                    totalRooms = result.TotalRooms;
+                    return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = result.TotalRooms, Items = result.Rooms };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching rooms: {ex.Message}");
+            }
+        }
+
+        return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = 0, Items = new List<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() };
+    }
+}

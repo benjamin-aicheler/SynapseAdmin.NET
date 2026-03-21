@@ -1,0 +1,230 @@
+@page "/rooms/{RoomId}"
+@using SynapseAdmin.Services
+@using LibMatrix.Homeservers
+@using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses
+@using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests
+@using LibMatrix.Responses
+@using LibMatrix
+@using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
+@inject MatrixSessionService MatrixSession
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@attribute [Authorize]
+
+<PageTitle>Room Details - SynapseAdmin.NET</PageTitle>
+
+<MudText Typo="Typo.h3" Class="mb-6">Room Details</MudText>
+
+@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        Room management requires Synapse Admin API access.
+    </MudAlert>
+}
+else if (roomDetails == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Overview</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudList T="string" Dense="true">
+                        <MudListItem T="string"><b>ID:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@roomDetails.RoomId</MudText></MudListItem>
+                        <MudListItem T="string"><b>Name:</b> @(string.IsNullOrEmpty(roomDetails.Name) ? "No Name" : roomDetails.Name)</MudListItem>
+                        <MudListItem T="string"><b>Alias:</b> @roomDetails.CanonicalAlias</MudListItem>
+                        <MudListItem T="string"><b>Creator:</b> @roomDetails.Creator</MudListItem>
+                        <MudListItem T="string"><b>Version:</b> @roomDetails.Version</MudListItem>
+                        <MudListItem T="string"><b>Members:</b> @roomDetails.JoinedMembers (Local: @roomDetails.JoinedLocalMembers)</MudListItem>
+                        <MudListItem T="string"><b>Public:</b> @roomDetails.Public</MudListItem>
+                        <MudListItem T="string"><b>Join Rules:</b> @roomDetails.JoinRules</MudListItem>
+                        <MudListItem T="string"><b>Guest Access:</b> @roomDetails.GuestAccess</MudListItem>
+                        <MudListItem T="string"><b>History Visibility:</b> @roomDetails.HistoryVisibility</MudListItem>
+                        <MudListItem T="string"><b>Encryption:</b> @roomDetails.Encryption</MudListItem>
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Actions</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Class="mb-2 mr-2">Delete Room</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Class="mb-2 mr-2">Block Room</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Class="mb-2">Quarantine Media</MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
+        <MudTabPanel Text="Members" Icon="@Icons.Material.Filled.People">
+            @if (members == null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
+            }
+            else
+            {
+                <MudTable Items="members.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>User ID</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="User ID">@context</MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            }
+        </MudTabPanel>
+        
+        <MudTabPanel Text="State Events" Icon="@Icons.Material.Filled.List">
+            @if (stateEvents == null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
+            }
+            else
+            {
+                <MudTable Items="stateEvents.Events" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Type</MudTh>
+                        <MudTh>State Key</MudTh>
+                        <MudTh>Sender</MudTh>
+                        <MudTh>Content</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Type">@context.Type</MudTd>
+                        <MudTd DataLabel="State Key">@context.StateKey</MudTd>
+                        <MudTd DataLabel="Sender">@context.Sender</MudTd>
+                        <MudTd DataLabel="Content"><pre style="max-height: 200px; max-width: 500px; overflow: auto; font-size: 0.8em; white-space: pre-wrap;">@context.RawContent?.ToJsonString()</pre></MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            }
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    [Parameter]
+    public string RoomId { get; set; } = string.Empty;
+
+    private SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom? roomDetails;
+    private SynapseAdminRoomMemberListResult? members;
+    private SynapseAdminRoomStateResult? stateEvents;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoomDetails();
+    }
+
+    private async Task LoadRoomDetails()
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            try
+            {
+                // Note: Blazor unescapes parameters by default, so we may need to escape it again for the API call
+                var encodedRoomId = Uri.EscapeDataString(RoomId);
+                
+                roomDetails = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{encodedRoomId}");
+                
+                var membersTask = synapseAdmin.Admin.GetRoomMembersAsync(RoomId);
+                var stateTask = synapseAdmin.Admin.GetRoomStateAsync(RoomId);
+                
+                await Task.WhenAll(membersTask, stateTask);
+                
+                members = membersTask.Result;
+                stateEvents = stateTask.Result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching room details: {ex.Message}");
+                Snackbar.Add($"Error fetching room details: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteRoom()
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Delete Room", 
+                "Are you sure you want to delete this room? This action cannot be undone.", 
+                yesText: "Delete!", cancelText: "Cancel");
+            
+            if (result == true)
+            {
+                try {
+                    var req = new SynapseAdminRoomDeleteRequest
+                    {
+                        Block = true,
+                        Purge = true
+                    };
+                    await synapseAdmin.Admin.DeleteRoom(RoomId, req);
+                    Snackbar.Add("Room deletion initiated successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Error deleting room: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+    }
+
+    private async Task QuarantineMedia()
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Quarantine Media", 
+                "Are you sure you want to quarantine all media in this room?", 
+                yesText: "Quarantine", cancelText: "Cancel");
+            
+            if (result == true)
+            {
+                try {
+                    await synapseAdmin.Admin.QuarantineMediaByRoomId(RoomId);
+                    Snackbar.Add("Room media quarantined successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Error quarantining media: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+    }
+
+    private async Task BlockRoom()
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            try {
+                await synapseAdmin.Admin.BlockRoom(RoomId, true);
+                Snackbar.Add("Room blocked successfully.", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error blocking room: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}
