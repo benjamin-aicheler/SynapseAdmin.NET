@@ -7,7 +7,7 @@ SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (M
 - **SDKs:** `LibMatrix` and `ArcaneLibs` (included as git submodules)
 - **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Active Development; basic auth, dashboard, room/user management, and MudBlazor UI are implemented.
+- **Status:** Active Development; basic auth, dashboard, room/user management, event reports, registration tokens, federation destinations, server notices, and MudBlazor UI are implemented.
 
 ## Building and Running
 The project uses the standard .NET 10 CLI and Docker:
@@ -23,12 +23,6 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
-
-## Upcoming Task List
-- [x] **Registration Tokens:** Build a view to manage and generate registration tokens.
-- [x] **Event Reports:** Implement a dashboard to review and act on reported events/messages.
-- [x] **Federation Destinations:** Create a view to check federation status and destination queues.
-- [x] **Server Notices:** Add functionality to broadcast server notices to users.
 
 ## Git & GitHub Workflow
 We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are prohibited.
@@ -46,7 +40,8 @@ We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are 
 - **Atomic & Focused:** Keep commits small and focused on a single change.
 - **Issue Linking:** Link GitHub issues in the commit message (e.g., `Closes #42` or `Fixes #42`) to trigger automatic closing on merge.
 
-### 3. Pull Requests
+### 3. Pull Requests & Verification
+- **Local Build Verification:** ALWAYS run `dotnet build` locally and ensure it passes before pushing your commits to the remote branch.
 - **Pushing:** Push your branch to the remote: `git push -u origin <branch-name>`.
 - **Creation:** Generate a Pull Request against `main` (e.g., `gh pr create`).
 - **Description:** Provide a clear title and reference the issue in the PR description (e.g., "Resolves #42").
