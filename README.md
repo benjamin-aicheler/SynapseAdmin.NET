@@ -1,5 +1,7 @@
 # SynapseAdmin.NET
 
+![AI Assisted](https://img.shields.io/badge/AI-Assisted-blue)
+
 A modern .NET 10 Blazor Server web application for administering Synapse (Matrix homeservers).
 
 ## Features
@@ -75,3 +77,6 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 ### Remote Network Interaction
 
 If you modify this Program, your modified version must prominently offer all users interacting with it remotely through a computer network an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge.
+
+### AI Assistance Disclosure
+Parts of the code and documentation in this project have been generated or refactored with the assistance of AI tools.
