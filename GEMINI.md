@@ -25,7 +25,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
 
 ## Upcoming Task List
-- [ ] **Registration Tokens:** Build a view to manage and generate registration tokens.
+- [x] **Registration Tokens:** Build a view to manage and generate registration tokens.
 - [x] **Event Reports:** Implement a dashboard to review and act on reported events/messages.
 - [x] **Federation Destinations:** Create a view to check federation status and destination queues.
 - [x] **Server Notices:** Add functionality to broadcast server notices to users.
