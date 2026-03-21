@@ -39,7 +39,9 @@ else
                     <div class="d-flex align-center mb-4">
                         @if (!string.IsNullOrEmpty(userDetails.AvatarUrl))
                         {
-                            <MudAvatar Image="@(userDetails.AvatarUrl.StartsWith("mxc://") ? $"{MatrixSession.AuthenticatedHomeserver.WellKnownUris.Client}/_matrix/media/v3/download/{userDetails.AvatarUrl.Substring(6)}" : userDetails.AvatarUrl)" Size="Size.Large" Class="mr-4" />
+                            <MudAvatar Size="Size.Large" Class="mr-4">
+                                <MudImage Src="@(userDetails.AvatarUrl.StartsWith("mxc://") ? $"{MatrixSession.AuthenticatedHomeserver.WellKnownUris.Client}/_matrix/media/v3/download/{userDetails.AvatarUrl.Substring(6)}" : userDetails.AvatarUrl)" />
+                            </MudAvatar>
                         }
                         else
                         {
