@@ -64,6 +64,7 @@ else
                 </MudCardHeader>
                 <MudCardContent>
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Class="mb-2 mr-2">Delete Room</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Class="mb-2 mr-2">Delete & Block Room</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Class="mb-2 mr-2">Block Room</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Class="mb-2">Quarantine Media</MudButton>
                 </MudCardContent>
@@ -168,8 +169,36 @@ else
         {
             bool? result = await DialogService.ShowMessageBoxAsync(
                 "Delete Room", 
-                "Are you sure you want to delete this room? This action cannot be undone.", 
-                yesText: "Delete!", cancelText: "Cancel");
+                "Are you sure you want to delete this room? This will NOT block it. This action cannot be undone.", 
+                yesText: "Delete", cancelText: "Cancel");
+            
+            if (result == true)
+            {
+                try {
+                    var req = new SynapseAdminRoomDeleteRequest
+                    {
+                        Block = false,
+                        Purge = true
+                    };
+                    await synapseAdmin.Admin.DeleteRoom(RoomId, req);
+                    Snackbar.Add("Room deletion initiated successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Error deleting room: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+    }
+
+    private async Task DeleteAndBlockRoom()
+    {
+        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        {
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Delete & Block Room", 
+                "Are you sure you want to delete AND block this room? This action cannot be undone.", 
+                yesText: "Delete & Block", cancelText: "Cancel");
             
             if (result == true)
             {
@@ -180,11 +209,11 @@ else
                         Purge = true
                     };
                     await synapseAdmin.Admin.DeleteRoom(RoomId, req);
-                    Snackbar.Add("Room deletion initiated successfully.", Severity.Success);
+                    Snackbar.Add("Room deletion and blocking initiated successfully.", Severity.Success);
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add($"Error deleting room: {ex.Message}", Severity.Error);
+                    Snackbar.Add($"Error deleting and blocking room: {ex.Message}", Severity.Error);
                 }
             }
         }
