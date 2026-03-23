@@ -27,8 +27,8 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 
 - **Framework:** .NET 10 Blazor Server (Interactive Server Mode)
 - **UI Component Library:** [MudBlazor](https://mudblazor.com/)
-- **Matrix SDK:** [LibMatrix](https://github.com/benjamin-aicheler/LibMatrix) (Git Submodule)
-- **Utilities:** [ArcaneLibs](https://github.com/benjamin-aicheler/ArcaneLibs) (Git Submodule)
+- **Matrix SDK:** [LibMatrix](https://github.com/Rory-LibMatrix/LibMatrix) (Git Submodule)
+- **Utilities:** [ArcaneLibs](https://github.com/TheArcaneBrony/ArcaneLibs) (Git Submodule)
 - **Deployment:** Docker & Docker Compose
 
 ## Getting Started
