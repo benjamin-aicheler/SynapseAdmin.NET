@@ -1,8 +1,6 @@
 @page "/"
-@using SynapseAdmin.Services
-@using LibMatrix.Homeservers
 @using Microsoft.AspNetCore.Authorization
-@inject MatrixSessionService MatrixSession
+
 @attribute [Authorize]
 
 <PageTitle>Dashboard - SynapseAdmin.NET</PageTitle>
@@ -37,16 +35,4 @@
             <MudText Typo="Typo.body1" Class="mb-4">You are connected to a Synapse homeserver with admin privileges.</MudText>
         </MudCardContent>
     </MudCard>
-}
-
-@code {
-    private bool isSynapse;
-
-    protected override void OnInitialized()
-    {
-        if (MatrixSession.IsLoggedIn)
-        {
-            isSynapse = MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse;
-        }
-    }
 }

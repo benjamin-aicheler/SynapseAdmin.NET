@@ -20,6 +20,7 @@ The project uses the standard .NET 10 CLI and Docker:
 ## Development Conventions
 - **Dependency Injection:** `LibMatrix` services are registered in `Program.cs` via `builder.Services.AddRoryLibMatrixServices()`.
 - **Coding Style:** Standard .NET 10 idiomatic C#.
+- **Blazor Components:** Always use the code-behind pattern (e.g., `Page.razor` and `Page.razor.cs`) for all Blazor pages and complex components. Do not use inline `@code` blocks.
 - **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
