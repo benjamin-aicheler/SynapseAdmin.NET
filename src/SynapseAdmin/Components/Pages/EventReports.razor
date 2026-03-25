@@ -4,54 +4,54 @@
 
 @attribute [Authorize]
 
-<PageTitle>Event Reports - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["EventReports"] - SynapseAdmin.NET</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">Event Reports</MudText>
+<MudText Typo="Typo.h3" Class="mb-6">@L["EventReports"]</MudText>
 
 @if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
-        Event report management requires Synapse Admin API access.
+        @L["EventReportApiRequired"]
     </MudAlert>
 }
 else
 {
     <MudToolBar Class="mb-4">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
-            Refresh
+            @L["Refresh"]
         </MudButton>
         <MudSpacer />
         @if (totalReports.HasValue)
         {
-            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalReports reports</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Surface">@string.Format(L["TotalReports"], totalReports)</MudText>
         }
     </MudToolBar>
 
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>Report ID</MudTh>
-            <MudTh>Reporter</MudTh>
-            <MudTh>Sender</MudTh>
-            <MudTh>Room</MudTh>
-            <MudTh>Reason</MudTh>
-            <MudTh>Score</MudTh>
-            <MudTh>Reported At</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@L["ReportId"]</MudTh>
+            <MudTh>@L["Reporter"]</MudTh>
+            <MudTh>@L["Sender"]</MudTh>
+            <MudTh>@L["Room"]</MudTh>
+            <MudTh>@L["Reason"]</MudTh>
+            <MudTh>@L["Score"]</MudTh>
+            <MudTh>@L["ReportedAt"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Report ID"><MudText Typo="Typo.caption">@context.Id</MudText></MudTd>
-            <MudTd DataLabel="Reporter">@context.UserId</MudTd>
-            <MudTd DataLabel="Sender">@context.Sender</MudTd>
-            <MudTd DataLabel="Room">@(string.IsNullOrEmpty(context.CanonicalAlias) ? context.RoomId : context.CanonicalAlias)</MudTd>
-            <MudTd DataLabel="Reason">@(string.IsNullOrEmpty(context.Reason) ? "-" : context.Reason)</MudTd>
-            <MudTd DataLabel="Score">@context.Score</MudTd>
-            <MudTd DataLabel="Reported At">@context.ReceivedTsDateTime.ToString("g")</MudTd>
-            <MudTd DataLabel="Actions">
-                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteReport(context.Id))">Dismiss</MudButton>
+            <MudTd DataLabel="@L["ReportId"]"><MudText Typo="Typo.caption">@context.Id</MudText></MudTd>
+            <MudTd DataLabel="@L["Reporter"]">@context.UserId</MudTd>
+            <MudTd DataLabel="@L["Sender"]">@context.Sender</MudTd>
+            <MudTd DataLabel="@L["Room"]">@(string.IsNullOrEmpty(context.CanonicalAlias) ? context.RoomId : context.CanonicalAlias)</MudTd>
+            <MudTd DataLabel="@L["Reason"]">@(string.IsNullOrEmpty(context.Reason) ? "-" : context.Reason)</MudTd>
+            <MudTd DataLabel="@L["Score"]">@context.Score</MudTd>
+            <MudTd DataLabel="@L["ReportedAt"]">@context.ReceivedTsDateTime.ToString("g")</MudTd>
+            <MudTd DataLabel="@L["Actions"]">
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteReport(context.Id))">@L["Dismiss"]</MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
-            <MudText>No reports found.</MudText>
+            <MudText>@L["NoReportsFound"]</MudText>
         </NoRecordsContent>
         <PagerContent>
             <MudTablePager />

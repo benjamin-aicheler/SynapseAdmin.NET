@@ -4,59 +4,59 @@
 
 @attribute [Authorize]
 
-<PageTitle>Rooms - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["Rooms"] - SynapseAdmin.NET</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">Room Management</MudText>
+<MudText Typo="Typo.h3" Class="mb-6">@L["RoomManagement"]</MudText>
 
 @if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
-        Room management requires Synapse Admin API access.
+        @L["SynapseAdminApiRequired"]
     </MudAlert>
 }
 else
 {
     <MudToolBar Class="mb-4">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
-            Refresh
+            @L["Refresh"]
         </MudButton>
         <MudSpacer />
         @if (totalRooms.HasValue)
         {
-            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalRooms rooms on server</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Surface">@string.Format(L["TotalRoomsOnServer"], totalRooms)</MudText>
         }
     </MudToolBar>
 
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Room ID</MudTh>
-            <MudTh>Creator</MudTh>
-            <MudTh>Members</MudTh>
-            <MudTh>Public</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@L["Name"]</MudTh>
+            <MudTh>@L["RoomId"]</MudTh>
+            <MudTh>@L["Creator"]</MudTh>
+            <MudTh>@L["Members"]</MudTh>
+            <MudTh>@L["Public"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Name">@(string.IsNullOrEmpty(context.Name) ? "No Name" : context.Name)</MudTd>
-            <MudTd DataLabel="Room ID"><MudText Typo="Typo.caption">@context.RoomId</MudText></MudTd>
-            <MudTd DataLabel="Creator">@context.Creator</MudTd>
-            <MudTd DataLabel="Members">@context.JoinedMembers</MudTd>
-            <MudTd DataLabel="Public">
+            <MudTd DataLabel="@L["Name"]">@(string.IsNullOrEmpty(context.Name) ? L["NoName"] : context.Name)</MudTd>
+            <MudTd DataLabel="@L["RoomId"]"><MudText Typo="Typo.caption">@context.RoomId</MudText></MudTd>
+            <MudTd DataLabel="@L["Creator"]">@context.Creator</MudTd>
+            <MudTd DataLabel="@L["Members"]">@context.JoinedMembers</MudTd>
+            <MudTd DataLabel="@L["Public"]">
                 @if (context.Public)
                 {
-                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Public</MudChip>
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">@L["Public"]</MudChip>
                 }
                 else
                 {
-                    <MudChip T="string" Color="Color.Default" Size="Size.Small">Private</MudChip>
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">@L["Private"]</MudChip>
                 }
             </MudTd>
-            <MudTd DataLabel="Actions">
-                <MudButton Href="@($"/rooms/{Uri.EscapeDataString(context.RoomId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">Details</MudButton>
+            <MudTd DataLabel="@L["Actions"]">
+                <MudButton Href="@($"/rooms/{Uri.EscapeDataString(context.RoomId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
-            <MudText>No rooms found.</MudText>
+            <MudText>@L["NoRoomsFound"]</MudText>
         </NoRecordsContent>
         <PagerContent>
             <MudTablePager />

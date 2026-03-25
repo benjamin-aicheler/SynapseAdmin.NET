@@ -1,30 +1,30 @@
 @page "/about"
 
-<PageTitle>About - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["About"] - SynapseAdmin.NET</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
-    <MudText Typo="Typo.h3" Class="mb-2">About SynapseAdmin.NET</MudText>
-    <MudText Typo="Typo.subtitle1" Class="mb-6">A modern administration tool for Matrix homeservers.</MudText>
+    <MudText Typo="Typo.h3" Class="mb-2">@L["AboutSynapseAdmin"]</MudText>
+    <MudText Typo="Typo.subtitle1" Class="mb-6">@L["ModernAdminToolDescription"]</MudText>
 
     <MudCard Elevation="3" Class="mb-6">
         <MudCardHeader>
             <CardHeaderContent>
-                <MudText Typo="Typo.h6">Project Information</MudText>
+                <MudText Typo="Typo.h6">@L["ProjectInformation"]</MudText>
             </CardHeaderContent>
         </MudCardHeader>
         <MudCardContent>
             <MudList T="string">
                 <MudListItem Icon="@Icons.Material.Filled.Build">
-                    <strong>Framework:</strong> .NET 10 Blazor Server
+                    <strong>@L["Framework"]:</strong> .NET 10 Blazor Server
                 </MudListItem>
                 <MudListItem Icon="@Icons.Material.Filled.Code">
-                    <strong>SDK:</strong> <MudLink Href="https://github.com/Rory-LibMatrix/LibMatrix" Target="_blank">LibMatrix</MudLink>
+                    <strong>@L["SDK"]:</strong> <MudLink Href="https://github.com/Rory-LibMatrix/LibMatrix" Target="_blank">LibMatrix</MudLink>
                 </MudListItem>
                 <MudListItem Icon="@Icons.Material.Filled.Extension">
-                    <strong>Utilities:</strong> <MudLink Href="https://github.com/TheArcaneBrony/ArcaneLibs" Target="_blank">ArcaneLibs</MudLink>
+                    <strong>@L["Utilities"]:</strong> <MudLink Href="https://github.com/TheArcaneBrony/ArcaneLibs" Target="_blank">ArcaneLibs</MudLink>
                 </MudListItem>
                 <MudListItem Icon="@Icons.Custom.Brands.GitHub">
-                    <strong>Source Code:</strong> <MudLink Href="https://github.com/benjamin-aicheler/SynapseAdmin.NET" Target="_blank">GitHub Repository</MudLink>
+                    <strong>@L["SourceCode"]:</strong> <MudLink Href="https://github.com/benjamin-aicheler/SynapseAdmin.NET" Target="_blank">GitHub Repository</MudLink>
                 </MudListItem>
             </MudList>
         </MudCardContent>
@@ -33,15 +33,15 @@
     <MudCard Elevation="3" Class="border-solid border-l-4 border-l-primary">
         <MudCardHeader>
             <CardHeaderContent>
-                <MudText Typo="Typo.h6" Color="Color.Primary">License & Compliance</MudText>
+                <MudText Typo="Typo.h6" Color="Color.Primary">@L["LicenseCompliance"]</MudText>
             </CardHeaderContent>
         </MudCardHeader>
         <MudCardContent>
             <MudText Typo="Typo.body2" Class="mb-4">
-                This program is free software: you can redistribute it and/or modify it under the terms of the <strong>GNU Affero General Public License</strong> as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+                @L["AgplNotice"]
             </MudText>
             
-            <MudText Typo="Typo.subtitle2" Class="mb-2">This project incorporates:</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@L["ProjectIncorporates"]</MudText>
             <MudList T="string" Dense="true" Class="mb-4">
                 <MudListItem><strong>LibMatrix</strong>: Licensed under AGPL-3.0</MudListItem>
                 <MudListItem><strong>ArcaneLibs</strong>: Licensed under AGPL-3.0</MudListItem>
@@ -50,9 +50,9 @@
 
             <MudDivider Class="my-4" />
             
-            <MudText Typo="Typo.subtitle1" Color="Color.Warning" Class="mb-2">Remote Network Interaction</MudText>
+            <MudText Typo="Typo.subtitle1" Color="Color.Warning" Class="mb-2">@L["RemoteNetworkInteraction"]</MudText>
             <MudText Typo="Typo.caption">
-                If you modify this Program, your modified version must prominently offer all users interacting with it remotely through a computer network an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge.
+                @L["RemoteNetworkNotice"]
             </MudText>
         </MudCardContent>
     </MudCard>

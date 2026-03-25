@@ -4,14 +4,14 @@
 
 @attribute [Authorize]
 
-<PageTitle>Room Details - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["RoomDetails"] - SynapseAdmin.NET</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">Room Details</MudText>
+<MudText Typo="Typo.h3" Class="mb-6">@L["RoomDetails"]</MudText>
 
 @if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
-        Room management requires Synapse Admin API access.
+        @L["SynapseAdminApiRequired"]
     </MudAlert>
 }
 else if (roomDetails == null)
@@ -25,22 +25,22 @@ else
             <MudCard Elevation="3">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Overview</MudText>
+                        <MudText Typo="Typo.h6">@L["Overview"]</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
                     <MudList T="string" Dense="true">
-                        <MudListItem T="string"><b>ID:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@roomDetails.RoomId</MudText></MudListItem>
-                        <MudListItem T="string"><b>Name:</b> @(string.IsNullOrEmpty(roomDetails.Name) ? "No Name" : roomDetails.Name)</MudListItem>
-                        <MudListItem T="string"><b>Alias:</b> @roomDetails.CanonicalAlias</MudListItem>
-                        <MudListItem T="string"><b>Creator:</b> @roomDetails.Creator</MudListItem>
-                        <MudListItem T="string"><b>Version:</b> @roomDetails.Version</MudListItem>
-                        <MudListItem T="string"><b>Members:</b> @roomDetails.JoinedMembers (Local: @roomDetails.JoinedLocalMembers)</MudListItem>
-                        <MudListItem T="string"><b>Public:</b> @roomDetails.Public</MudListItem>
-                        <MudListItem T="string"><b>Join Rules:</b> @roomDetails.JoinRules</MudListItem>
-                        <MudListItem T="string"><b>Guest Access:</b> @roomDetails.GuestAccess</MudListItem>
-                        <MudListItem T="string"><b>History Visibility:</b> @roomDetails.HistoryVisibility</MudListItem>
-                        <MudListItem T="string"><b>Encryption:</b> @roomDetails.Encryption</MudListItem>
+                        <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@roomDetails.RoomId</MudText></MudListItem>
+                        <MudListItem T="string"><b>@L["Name"]:</b> @(string.IsNullOrEmpty(roomDetails.Name) ? L["NoName"] : roomDetails.Name)</MudListItem>
+                        <MudListItem T="string"><b>@L["Alias"]:</b> @roomDetails.CanonicalAlias</MudListItem>
+                        <MudListItem T="string"><b>@L["Creator"]:</b> @roomDetails.Creator</MudListItem>
+                        <MudListItem T="string"><b>@L["Version"]:</b> @roomDetails.Version</MudListItem>
+                        <MudListItem T="string"><b>@L["Members"]:</b> @roomDetails.JoinedMembers (@L["Local"]: @roomDetails.JoinedLocalMembers)</MudListItem>
+                        <MudListItem T="string"><b>@L["Public"]:</b> @roomDetails.Public</MudListItem>
+                        <MudListItem T="string"><b>@L["JoinRules"]:</b> @roomDetails.JoinRules</MudListItem>
+                        <MudListItem T="string"><b>@L["GuestAccess"]:</b> @roomDetails.GuestAccess</MudListItem>
+                        <MudListItem T="string"><b>@L["HistoryVisibility"]:</b> @roomDetails.HistoryVisibility</MudListItem>
+                        <MudListItem T="string"><b>@L["Encryption"]:</b> @roomDetails.Encryption</MudListItem>
                     </MudList>
                 </MudCardContent>
             </MudCard>
@@ -49,21 +49,21 @@ else
             <MudCard Elevation="3">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Actions</MudText>
+                        <MudText Typo="Typo.h6">@L["Actions"]</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Class="mb-2 mr-2">Delete Room</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Class="mb-2 mr-2">Delete & Block Room</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Class="mb-2 mr-2">Block Room</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Class="mb-2">Quarantine Media</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Class="mb-2 mr-2">@L["DeleteRoom"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Class="mb-2 mr-2">@L["DeleteAndBlockRoom"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Class="mb-2 mr-2">@L["BlockRoom"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Class="mb-2">@L["QuarantineMedia"]</MudButton>
                 </MudCardContent>
             </MudCard>
         </MudItem>
     </MudGrid>
 
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
-        <MudTabPanel Text="Members" Icon="@Icons.Material.Filled.People">
+        <MudTabPanel Text="@L["Members"]" Icon="@Icons.Material.Filled.People">
             @if (members == null)
             {
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
@@ -72,10 +72,10 @@ else
             {
                 <MudTable Items="members.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                     <HeaderContent>
-                        <MudTh>User ID</MudTh>
+                        <MudTh>@L["UserId"]</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="User ID">@context</MudTd>
+                        <MudTd DataLabel="@L["UserId"]">@context</MudTd>
                     </RowTemplate>
                     <PagerContent>
                         <MudTablePager />
@@ -83,8 +83,8 @@ else
                 </MudTable>
             }
         </MudTabPanel>
-        
-        <MudTabPanel Text="State Events" Icon="@Icons.Material.Filled.List">
+
+        <MudTabPanel Text="@L["StateEvents"]" Icon="@Icons.Material.Filled.List">
             @if (stateEvents == null)
             {
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
@@ -93,16 +93,16 @@ else
             {
                 <MudTable Items="stateEvents.Events" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                     <HeaderContent>
-                        <MudTh>Type</MudTh>
-                        <MudTh>State Key</MudTh>
-                        <MudTh>Sender</MudTh>
-                        <MudTh>Content</MudTh>
+                        <MudTh>@L["Type"]</MudTh>
+                        <MudTh>@L["StateKey"]</MudTh>
+                        <MudTh>@L["Sender"]</MudTh>
+                        <MudTh>@L["Content"]</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="Type">@context.Type</MudTd>
-                        <MudTd DataLabel="State Key">@context.StateKey</MudTd>
-                        <MudTd DataLabel="Sender">@context.Sender</MudTd>
-                        <MudTd DataLabel="Content"><pre style="max-height: 200px; max-width: 500px; overflow: auto; font-size: 0.8em; white-space: pre-wrap;">@context.RawContent?.ToJsonString()</pre></MudTd>
+                        <MudTd DataLabel="@L["Type"]">@context.Type</MudTd>
+                        <MudTd DataLabel="@L["StateKey"]">@context.StateKey</MudTd>
+                        <MudTd DataLabel="@L["Sender"]">@context.Sender</MudTd>
+                        <MudTd DataLabel="@L["Content"]"><pre style="max-height: 200px; max-width: 500px; overflow: auto; font-size: 0.8em; white-space: pre-wrap;">@context.RawContent?.ToJsonString()</pre></MudTd>
                     </RowTemplate>
                     <PagerContent>
                         <MudTablePager />

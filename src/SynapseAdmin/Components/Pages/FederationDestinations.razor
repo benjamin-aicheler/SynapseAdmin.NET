@@ -4,65 +4,65 @@
 
 @attribute [Authorize]
 
-<PageTitle>Federation Destinations - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["FederationDestinations"] - SynapseAdmin.NET</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">Federation Destinations</MudText>
+<MudText Typo="Typo.h3" Class="mb-6">@L["FederationDestinations"]</MudText>
 
 @if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
-        Federation management requires Synapse Admin API access.
+        @L["FederationApiRequired"]
     </MudAlert>
 }
 else
 {
     <MudToolBar Class="mb-4">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
-            Refresh
+            @L["Refresh"]
         </MudButton>
         <MudSpacer />
         @if (totalDestinations.HasValue)
         {
-            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalDestinations destinations</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Surface">@string.Format(L["TotalDestinations"], totalDestinations)</MudText>
         }
     </MudToolBar>
 
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>Destination</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Last Retry</MudTh>
-            <MudTh>Retry Interval</MudTh>
-            <MudTh>Failure Time</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@L["Destination"]</MudTh>
+            <MudTh>@L["Status"]</MudTh>
+            <MudTh>@L["LastRetry"]</MudTh>
+            <MudTh>@L["RetryInterval"]</MudTh>
+            <MudTh>@L["FailureTime"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Destination"><MudText Typo="Typo.body2">@context.Destination</MudText></MudTd>
-            <MudTd DataLabel="Status">
+            <MudTd DataLabel="@L["Destination"]"><MudText Typo="Typo.body2">@context.Destination</MudText></MudTd>
+            <MudTd DataLabel="@L["Status"]">
                 @if (context.FailureTsDateTime.HasValue)
                 {
-                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Failing</MudChip>
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["Failing"]</MudChip>
                 }
                 else
                 {
-                    <MudChip T="string" Color="Color.Success" Size="Size.Small">OK</MudChip>
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">@L["OK"]</MudChip>
                 }
             </MudTd>
-            <MudTd DataLabel="Last Retry">
+            <MudTd DataLabel="@L["LastRetry"]">
                 @(context.RetryLastTs > 0 ? context.RetryLastTsDateTime?.ToString("g") : "-")
             </MudTd>
-            <MudTd DataLabel="Retry Interval">
+            <MudTd DataLabel="@L["RetryInterval"]">
                 @(context.RetryInterval > 0 ? context.RetryIntervalTimeSpan.ToString("c") : "-")
             </MudTd>
-            <MudTd DataLabel="Failure Time">
+            <MudTd DataLabel="@L["FailureTime"]">
                 @(context.FailureTsDateTime?.ToString("g") ?? "-")
             </MudTd>
-            <MudTd DataLabel="Actions">
-                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => ResetConnection(context.Destination))" Disabled="!context.FailureTsDateTime.HasValue">Reset Connection</MudButton>
+            <MudTd DataLabel="@L["Actions"]">
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => ResetConnection(context.Destination))" Disabled="!context.FailureTsDateTime.HasValue">@L["ResetConnection"]</MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
-            <MudText>No federation destinations found.</MudText>
+            <MudText>@L["NoDestinationsFound"]</MudText>
         </NoRecordsContent>
         <PagerContent>
             <MudTablePager />
