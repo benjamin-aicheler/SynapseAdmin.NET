@@ -1,22 +1,22 @@
 <MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Dashboard</MudNavLink>
-    <MudNavLink Href="rooms" Icon="@Icons.Material.Filled.ChatBubbleOutline">Rooms</MudNavLink>
-    <MudNavLink Href="users" Icon="@Icons.Material.Filled.People">Users</MudNavLink>
-    <MudNavLink Href="reports" Icon="@Icons.Material.Filled.Report">Event Reports</MudNavLink>
-    <MudNavLink Href="federation" Icon="@Icons.Material.Filled.CloudSync">Federation</MudNavLink>
-    <MudNavLink Href="notices" Icon="@Icons.Material.Filled.Announcement">Server Notices</MudNavLink>
-    <MudNavLink Href="tokens" Icon="@Icons.Material.Filled.Key">Registration Tokens</MudNavLink>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">@L["Dashboard"]</MudNavLink>
+    <MudNavLink Href="rooms" Icon="@Icons.Material.Filled.ChatBubbleOutline">@L["Rooms"]</MudNavLink>
+    <MudNavLink Href="users" Icon="@Icons.Material.Filled.People">@L["Users"]</MudNavLink>
+    <MudNavLink Href="reports" Icon="@Icons.Material.Filled.Report">@L["EventReports"]</MudNavLink>
+    <MudNavLink Href="federation" Icon="@Icons.Material.Filled.CloudSync">@L["Federation"]</MudNavLink>
+    <MudNavLink Href="notices" Icon="@Icons.Material.Filled.Announcement">@L["ServerNotices"]</MudNavLink>
+    <MudNavLink Href="tokens" Icon="@Icons.Material.Filled.Key">@L["RegistrationTokens"]</MudNavLink>
     
     <AuthorizeView>
         <Authorized>
-            <MudNavLink OnClick="Logout" Icon="@Icons.Material.Filled.Logout">Logout</MudNavLink>
+            <MudNavLink OnClick="Logout" Icon="@Icons.Material.Filled.Logout">@L["Logout"]</MudNavLink>
         </Authorized>
         <NotAuthorized>
-            <MudNavLink Href="login" Icon="@Icons.Material.Filled.Person">Login</MudNavLink>
+            <MudNavLink Href="login" Icon="@Icons.Material.Filled.Person">@L["Login"]</MudNavLink>
         </NotAuthorized>
     </AuthorizeView>
 
-    <MudNavLink Href="about" Icon="@Icons.Material.Filled.Info">About</MudNavLink>
+    <MudNavLink Href="about" Icon="@Icons.Material.Filled.Info">@L["About"]</MudNavLink>
 </MudNavMenu>
 
 @code {
