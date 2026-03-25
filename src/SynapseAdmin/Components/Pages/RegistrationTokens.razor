@@ -4,52 +4,52 @@
 
 @attribute [Authorize]
 
-<PageTitle>Registration Tokens - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["RegistrationTokens"] - SynapseAdmin.NET</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">Registration Tokens</MudText>
+<MudText Typo="Typo.h3" Class="mb-6">@L["RegistrationTokens"]</MudText>
 
 @if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
-        Registration token management requires Synapse Admin API access.
+        @L["RegistrationTokenApiRequired"]
     </MudAlert>
 }
 else
 {
     <MudToolBar Class="mb-4 px-0">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateDialog" StartIcon="@Icons.Material.Filled.Add">
-            Create Token
+            @L["CreateToken"]
         </MudButton>
         <MudSpacer />
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="LoadTokens" StartIcon="@Icons.Material.Filled.Refresh">
-            Refresh
+            @L["Refresh"]
         </MudButton>
     </MudToolBar>
 
     <MudTable Items="@tokens" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@isLoading" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>Token</MudTh>
-            <MudTh>Uses (Used / Allowed)</MudTh>
-            <MudTh>Pending</MudTh>
-            <MudTh>Expiry Date</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@L["Token"]</MudTh>
+            <MudTh>@L["Uses"] (@L["Used"] / @L["Allowed"])</MudTh>
+            <MudTh>@L["Pending"]</MudTh>
+            <MudTh>@L["ExpiryDate"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Token"><MudText Typo="Typo.body2">@context.Token</MudText></MudTd>
-            <MudTd DataLabel="Uses">
-                @context.Completed / @(context.UsesAllowed.HasValue ? context.UsesAllowed.Value.ToString() : "Unlimited")
+            <MudTd DataLabel="@L["Token"]"><MudText Typo="Typo.body2">@context.Token</MudText></MudTd>
+            <MudTd DataLabel="@L["Uses"]">
+                @context.Completed / @(context.UsesAllowed.HasValue ? context.UsesAllowed.Value.ToString() : L["Unlimited"])
             </MudTd>
-            <MudTd DataLabel="Pending">@context.Pending</MudTd>
-            <MudTd DataLabel="Expiry Date">
-                @(context.ExpiryTimeDateTime.HasValue ? context.ExpiryTimeDateTime.Value.ToString("g") : "Never")
+            <MudTd DataLabel="@L["Pending"]">@context.Pending</MudTd>
+            <MudTd DataLabel="@L["ExpiryDate"]">
+                @(context.ExpiryTimeDateTime.HasValue ? context.ExpiryTimeDateTime.Value.ToString("g") : L["Never"])
             </MudTd>
-            <MudTd DataLabel="Actions">
+            <MudTd DataLabel="@L["Actions"]">
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="@(() => OpenEditDialog(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteToken(context.Token))" />
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
-            <MudText>No registration tokens found.</MudText>
+            <MudText>@L["NoTokensFound"]</MudText>
         </NoRecordsContent>
         <PagerContent>
             <MudTablePager />

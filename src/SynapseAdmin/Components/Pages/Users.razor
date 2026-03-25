@@ -4,71 +4,71 @@
 
 @attribute [Authorize]
 
-<PageTitle>Users - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["Users"] - SynapseAdmin.NET</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">User Management</MudText>
+<MudText Typo="Typo.h3" Class="mb-6">@L["UserManagement"]</MudText>
 
 @if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
-        User management requires Synapse Admin API access.
+        @L["SynapseAdminApiRequired"]
     </MudAlert>
 }
 else
 {
     <MudToolBar Class="mb-4">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
-            Refresh
+            @L["Refresh"]
         </MudButton>
         <MudSpacer />
         @if (totalUsers.HasValue)
         {
-            <MudText Typo="Typo.body2" Color="Color.Surface">Total @totalUsers users on server</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Surface">@string.Format(L["TotalUsersOnServer"], totalUsers)</MudText>
         }
     </MudToolBar>
 
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>User ID</MudTh>
-            <MudTh>Display Name</MudTh>
-            <MudTh>Admin</MudTh>
-            <MudTh>Guest</MudTh>
-            <MudTh>Deactivated</MudTh>
-            <MudTh>Created</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@L["UserId"]</MudTh>
+            <MudTh>@L["DisplayName"]</MudTh>
+            <MudTh>@L["Admin"]</MudTh>
+            <MudTh>@L["Guest"]</MudTh>
+            <MudTh>@L["Deactivated"]</MudTh>
+            <MudTh>@L["Created"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="User ID"><MudText Typo="Typo.body2">@context.Name</MudText></MudTd>
-            <MudTd DataLabel="Display Name">@(string.IsNullOrEmpty(context.DisplayName) ? "-" : context.DisplayName)</MudTd>
-            <MudTd DataLabel="Admin">
+            <MudTd DataLabel="@L["UserId"]"><MudText Typo="Typo.body2">@context.Name</MudText></MudTd>
+            <MudTd DataLabel="@L["DisplayName"]">@(string.IsNullOrEmpty(context.DisplayName) ? "-" : context.DisplayName)</MudTd>
+            <MudTd DataLabel="@L["Admin"]">
                 @if (context.Admin == true)
                 {
-                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">Admin</MudChip>
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">@L["Admin"]</MudChip>
                 }
                 else
                 {
-                    <MudChip T="string" Color="Color.Default" Size="Size.Small">User</MudChip>
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">@L["User"]</MudChip>
                 }
             </MudTd>
-            <MudTd DataLabel="Guest">
+            <MudTd DataLabel="@L["Guest"]">
                 @if (context.IsGuest == true)
                 {
-                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small">Guest</MudChip>
+                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small">@L["Guest"]</MudChip>
                 }
             </MudTd>
-            <MudTd DataLabel="Deactivated">
+            <MudTd DataLabel="@L["Deactivated"]">
                 @if (context.Deactivated)
                 {
-                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Deactivated</MudChip>
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["Deactivated"]</MudChip>
                 }
             </MudTd>
-            <MudTd DataLabel="Created">@context.CreationTsDateTime.ToString("g")</MudTd>
-            <MudTd DataLabel="Actions">
-                <MudButton Href="@($"/users/{Uri.EscapeDataString(context.Name)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">Details</MudButton>
+            <MudTd DataLabel="@L["Created"]">@context.CreationTsDateTime.ToString("g")</MudTd>
+            <MudTd DataLabel="@L["Actions"]">
+                <MudButton Href="@($"/users/{Uri.EscapeDataString(context.Name)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
-            <MudText>No users found.</MudText>
+            <MudText>@L["NoUsersFound"]</MudText>
         </NoRecordsContent>
         <PagerContent>
             <MudTablePager />

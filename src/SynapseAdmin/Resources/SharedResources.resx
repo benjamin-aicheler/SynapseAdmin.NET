@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Navigation" xml:space="preserve">
+    <value>Navigation</value>
+  </data>
+  <data name="AppName" xml:space="preserve">
+    <value>SynapseAdmin.NET</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Rooms" xml:space="preserve">
+    <value>Rooms</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="EventReports" xml:space="preserve">
+    <value>Event Reports</value>
+  </data>
+  <data name="Federation" xml:space="preserve">
+    <value>Federation</value>
+  </data>
+  <data name="ServerNotices" xml:space="preserve">
+    <value>Server Notices</value>
+  </data>
+  <data name="RegistrationTokens" xml:space="preserve">
+    <value>Registration Tokens</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Login to Matrix Homeserver</value>
+  </data>
+  <data name="HomeserverUrl" xml:space="preserve">
+    <value>Homeserver URL</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="LoggingIn" xml:space="preserve">
+    <value>Logging in...</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="ID" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="SynapseAdminApiRequired" xml:space="preserve">
+    <value>This feature requires Synapse Admin API access.</value>
+  </data>
+  <data name="UserManagement" xml:space="preserve">
+    <value>User Management</value>
+  </data>
+  <data name="TotalUsersOnServer" xml:space="preserve">
+    <value>Total {0} users on server</value>
+  </data>
+  <data name="UserId" xml:space="preserve">
+    <value>User ID</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Display Name</value>
+  </data>
+  <data name="Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Guest" xml:space="preserve">
+    <value>Guest</value>
+  </data>
+  <data name="Deactivated" xml:space="preserve">
+    <value>Deactivated</value>
+  </data>
+  <data name="User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="NoUsersFound" xml:space="preserve">
+    <value>No users found.</value>
+  </data>
+  <data name="UserDetails" xml:space="preserve">
+    <value>User Details</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Role" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="StandardUser" xml:space="preserve">
+    <value>Standard User</value>
+  </data>
+  <data name="DeactivateUser" xml:space="preserve">
+    <value>Deactivate User</value>
+  </data>
+  <data name="LoginAsUserShadow" xml:space="preserve">
+    <value>Login as User (Shadow)</value>
+  </data>
+  <data name="QuarantineMedia" xml:space="preserve">
+    <value>Quarantine Media</value>
+  </data>
+  <data name="Media" xml:space="preserve">
+    <value>Media</value>
+  </data>
+  <data name="MediaId" xml:space="preserve">
+    <value>Media ID</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="RoomManagement" xml:space="preserve">
+    <value>Room Management</value>
+  </data>
+  <data name="TotalRoomsOnServer" xml:space="preserve">
+    <value>Total {0} rooms on server</value>
+  </data>
+  <data name="RoomId" xml:space="preserve">
+    <value>Room ID</value>
+  </data>
+  <data name="Creator" xml:space="preserve">
+    <value>Creator</value>
+  </data>
+  <data name="Members" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="Public" xml:space="preserve">
+    <value>Public</value>
+  </data>
+  <data name="Private" xml:space="preserve">
+    <value>Private</value>
+  </data>
+  <data name="NoName" xml:space="preserve">
+    <value>No Name</value>
+  </data>
+  <data name="NoRoomsFound" xml:space="preserve">
+    <value>No rooms found.</value>
+  </data>
+  <data name="RoomDetails" xml:space="preserve">
+    <value>Room Details</value>
+  </data>
+  <data name="Alias" xml:space="preserve">
+    <value>Alias</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="Local" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="JoinRules" xml:space="preserve">
+    <value>Join Rules</value>
+  </data>
+  <data name="GuestAccess" xml:space="preserve">
+    <value>Guest Access</value>
+  </data>
+  <data name="HistoryVisibility" xml:space="preserve">
+    <value>History Visibility</value>
+  </data>
+  <data name="Encryption" xml:space="preserve">
+    <value>Encryption</value>
+  </data>
+  <data name="DeleteRoom" xml:space="preserve">
+    <value>Delete Room</value>
+  </data>
+  <data name="DeleteAndBlockRoom" xml:space="preserve">
+    <value>Delete &amp; Block Room</value>
+  </data>
+  <data name="BlockRoom" xml:space="preserve">
+    <value>Block Room</value>
+  </data>
+  <data name="StateEvents" xml:space="preserve">
+    <value>State Events</value>
+  </data>
+  <data name="StateKey" xml:space="preserve">
+    <value>State Key</value>
+  </data>
+  <data name="Sender" xml:space="preserve">
+    <value>Sender</value>
+  </data>
+  <data name="Content" xml:space="preserve">
+    <value>Content</value>
+  </data>
+  <data name="Homeserver" xml:space="preserve">
+    <value>Homeserver</value>
+  </data>
+  <data name="SynapseAdminInfo" xml:space="preserve">
+    <value>Synapse Admin Info</value>
+  </data>
+  <data name="ConnectedToSynapseWithAdmin" xml:space="preserve">
+    <value>You are connected to a Synapse homeserver with admin privileges.</value>
+  </data>
+  <data name="CreateToken" xml:space="preserve">
+    <value>Create Token</value>
+  </data>
+  <data name="Uses" xml:space="preserve">
+    <value>Uses</value>
+  </data>
+  <data name="Pending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="ExpiryDate" xml:space="preserve">
+    <value>Expiry Date</value>
+  </data>
+  <data name="Unlimited" xml:space="preserve">
+    <value>Unlimited</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="NoTokensFound" xml:space="preserve">
+    <value>No registration tokens found.</value>
+  </data>
+  <data name="RegistrationTokenApiRequired" xml:space="preserve">
+    <value>Registration token management requires Synapse Admin API access.</value>
+  </data>
+  <data name="Token" xml:space="preserve">
+    <value>Token</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>Used</value>
+  </data>
+  <data name="Allowed" xml:space="preserve">
+    <value>Allowed</value>
+  </data>
+  <data name="FederationDestinations" xml:space="preserve">
+    <value>Federation Destinations</value>
+  </data>
+  <data name="TotalDestinations" xml:space="preserve">
+    <value>Total {0} destinations</value>
+  </data>
+  <data name="Destination" xml:space="preserve">
+    <value>Destination</value>
+  </data>
+  <data name="LastRetry" xml:space="preserve">
+    <value>Last Retry</value>
+  </data>
+  <data name="RetryInterval" xml:space="preserve">
+    <value>Retry Interval</value>
+  </data>
+  <data name="FailureTime" xml:space="preserve">
+    <value>Failure Time</value>
+  </data>
+  <data name="Failing" xml:space="preserve">
+    <value>Failing</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="ResetConnection" xml:space="preserve">
+    <value>Reset Connection</value>
+  </data>
+  <data name="NoDestinationsFound" xml:space="preserve">
+    <value>No federation destinations found.</value>
+  </data>
+  <data name="FederationApiRequired" xml:space="preserve">
+    <value>Federation management requires Synapse Admin API access.</value>
+  </data>
+  <data name="TotalReports" xml:space="preserve">
+    <value>Total {0} reports</value>
+  </data>
+  <data name="ReportId" xml:space="preserve">
+    <value>Report ID</value>
+  </data>
+  <data name="Reporter" xml:space="preserve">
+    <value>Reporter</value>
+  </data>
+  <data name="Room" xml:space="preserve">
+    <value>Room</value>
+  </data>
+  <data name="Reason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="Score" xml:space="preserve">
+    <value>Score</value>
+  </data>
+  <data name="ReportedAt" xml:space="preserve">
+    <value>Reported At</value>
+  </data>
+  <data name="Dismiss" xml:space="preserve">
+    <value>Dismiss</value>
+  </data>
+  <data name="NoReportsFound" xml:space="preserve">
+    <value>No reports found.</value>
+  </data>
+  <data name="EventReportApiRequired" xml:space="preserve">
+    <value>Event report management requires Synapse Admin API access.</value>
+  </data>
+  <data name="SendServerNotice" xml:space="preserve">
+    <value>Send Server Notice</value>
+  </data>
+  <data name="BroadcastNoticeToUser" xml:space="preserve">
+    <value>Broadcast Notice to User</value>
+  </data>
+  <data name="ServerNoticeDescription" xml:space="preserve">
+    <value>Send a message directly from the server to a specific local user. Synapse will automatically create a dedicated "Server Notices" room between the server and the user if one does not exist.</value>
+  </data>
+  <data name="TargetUserId" xml:space="preserve">
+    <value>Target User ID</value>
+  </data>
+  <data name="NoticeMessage" xml:space="preserve">
+    <value>Notice Message</value>
+  </data>
+  <data name="UserIdRequired" xml:space="preserve">
+    <value>User ID is required!</value>
+  </data>
+  <data name="MessageRequired" xml:space="preserve">
+    <value>A message is required!</value>
+  </data>
+  <data name="UserIdFormatHelper" xml:space="preserve">
+    <value>Format: @user:example.com</value>
+  </data>
+  <data name="Sending" xml:space="preserve">
+    <value>Sending...</value>
+  </data>
+  <data name="SendNotice" xml:space="preserve">
+    <value>Send Notice</value>
+  </data>
+  <data name="ServerNoticeApiRequired" xml:space="preserve">
+    <value>Server notice functionality requires Synapse Admin API access.</value>
+  </data>
+  <data name="AboutSynapseAdmin" xml:space="preserve">
+    <value>About SynapseAdmin.NET</value>
+  </data>
+  <data name="ModernAdminToolDescription" xml:space="preserve">
+    <value>A modern administration tool for Matrix homeservers.</value>
+  </data>
+  <data name="ProjectInformation" xml:space="preserve">
+    <value>Project Information</value>
+  </data>
+  <data name="Framework" xml:space="preserve">
+    <value>Framework</value>
+  </data>
+  <data name="SDK" xml:space="preserve">
+    <value>SDK</value>
+  </data>
+  <data name="Utilities" xml:space="preserve">
+    <value>Utilities</value>
+  </data>
+  <data name="SourceCode" xml:space="preserve">
+    <value>Source Code</value>
+  </data>
+  <data name="LicenseCompliance" xml:space="preserve">
+    <value>License &amp; Compliance</value>
+  </data>
+  <data name="AgplNotice" xml:space="preserve">
+    <value>This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</value>
+  </data>
+  <data name="ProjectIncorporates" xml:space="preserve">
+    <value>This project incorporates:</value>
+  </data>
+  <data name="RemoteNetworkInteraction" xml:space="preserve">
+    <value>Remote Network Interaction</value>
+  </data>
+  <data name="RemoteNetworkNotice" xml:space="preserve">
+    <value>If you modify this Program, your modified version must prominently offer all users interacting with it remotely through a computer network an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge.</value>
+  </data>
+</root>

@@ -4,14 +4,14 @@
 
 @attribute [Authorize]
 
-<PageTitle>Server Notices - SynapseAdmin.NET</PageTitle>
+<PageTitle>@L["ServerNotices"] - SynapseAdmin.NET</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">Send Server Notice</MudText>
+<MudText Typo="Typo.h3" Class="mb-6">@L["SendServerNotice"]</MudText>
 
 @if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
-        Server notice functionality requires Synapse Admin API access.
+        @L["ServerNoticeApiRequired"]
     </MudAlert>
 }
 else
@@ -21,28 +21,28 @@ else
             <MudCard Elevation="3">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Broadcast Notice to User</MudText>
+                        <MudText Typo="Typo.h6">@L["BroadcastNoticeToUser"]</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
                     <MudText Typo="Typo.body2" Class="mb-4">
-                        Send a message directly from the server to a specific local user. Synapse will automatically create a dedicated "Server Notices" room between the server and the user if one does not exist.
+                        @L["ServerNoticeDescription"]
                     </MudText>
-                    
+
                     <MudForm @ref="form" @bind-IsValid="@success">
                         <MudTextField @bind-Value="targetUserId" 
-                                      Label="Target User ID" 
+                                      Label="@L["TargetUserId"]" 
                                       Required="true" 
-                                      RequiredError="User ID is required!"
-                                      HelperText='@("Format: @user:example.com")'
+                                      RequiredError="@L["UserIdRequired"]"
+                                      HelperText="@L["UserIdFormatHelper"]"
                                       Variant="Variant.Outlined" 
                                       Class="mb-4" />
-                                      
+
                         <MudTextField @bind-Value="noticeMessage" 
-                                      Label="Notice Message" 
+                                      Label="@L["NoticeMessage"]" 
                                       Lines="5" 
                                       Required="true" 
-                                      RequiredError="A message is required!"
+                                      RequiredError="@L["MessageRequired"]"
                                       Variant="Variant.Outlined" />
                     </MudForm>
                 </MudCardContent>
@@ -55,11 +55,11 @@ else
                         @if (isSending)
                         {
                             <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
-                            <MudText Class="ms-2">Sending...</MudText>
+                            <MudText Class="ms-2">@L["Sending"]</MudText>
                         }
                         else
                         {
-                            <MudText>Send Notice</MudText>
+                            <MudText>@L["SendNotice"]</MudText>
                         }
                     </MudButton>
                 </MudCardActions>
