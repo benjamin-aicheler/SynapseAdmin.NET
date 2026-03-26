@@ -7,7 +7,7 @@ SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (M
 - **SDKs:** `LibMatrix` and `ArcaneLibs` (included as git submodules)
 - **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Active Development; basic auth, dashboard, room/user management, event reports, registration tokens, federation destinations, server notices, and MudBlazor UI are implemented.
+- **Status:** Active Development; basic auth, dashboard, room/user management, event reports, registration tokens, federation destinations, server notices, multi-language support (EN, DE, FR), and MudBlazor UI are implemented.
 
 ## Building and Running
 The project uses the standard .NET 10 CLI and Docker:
