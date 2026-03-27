@@ -12,6 +12,8 @@ namespace SynapseAdmin.Components.Pages
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
+        [Inject]
+        public ISnackbar Snackbar { get; set; } = null!;
 
         private MudTable<SynapseAdminUserListResult.SynapseAdminUserListResultUser>? table;
         private int? totalUsers;
@@ -35,7 +37,7 @@ namespace SynapseAdmin.Components.Pages
                     var dir = state.SortDirection == SortDirection.Descending ? "b" : "f";
 
                     // Depending on the Synapse version, /_synapse/admin/v2/users supports offset/from.
-                    var url = $"/_synapse/admin/v2/users?from={offset}&limit={state.PageSize}"; // we can also use search params
+                    var url = $"/_synapse/admin/v2/users?from={offset}&limit={state.PageSize}&dir={dir}&order_by={orderBy}"; // we can also use search params
 
                     var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult>(url, cancellationToken: token);
                     
@@ -47,7 +49,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error fetching users: {ex.Message}");
+                    Snackbar.Add($"Error fetching users: {ex.Message}", Severity.Error);
                 }
             }
 
