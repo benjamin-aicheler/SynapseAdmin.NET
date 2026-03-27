@@ -1,20 +1,5 @@
-@using System.Globalization
-@inject NavigationManager Navigation
-
 <MudMenu Icon="@Icons.Material.Filled.Language" Color="Color.Inherit">
     <MudMenuItem OnClick="@(() => ChangeLanguage("en-US"))">English</MudMenuItem>
     <MudMenuItem OnClick="@(() => ChangeLanguage("de-DE"))">Deutsch</MudMenuItem>
     <MudMenuItem OnClick="@(() => ChangeLanguage("fr-FR"))">Français</MudMenuItem>
 </MudMenu>
-
-@code {
-    private void ChangeLanguage(string culture)
-    {
-        var uri = new Uri(Navigation.Uri)
-            .GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
-        
-        var query = $"?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(uri)}";
-        
-        Navigation.NavigateTo("/Culture/Set" + query, forceLoad: true);
-    }
-}

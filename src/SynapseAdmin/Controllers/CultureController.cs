@@ -15,6 +15,11 @@ public class CultureController : Controller
                 CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)));
         }
 
+        if (string.IsNullOrEmpty(redirectUri) || !Url.IsLocalUrl(redirectUri))
+        {
+            return LocalRedirect("~/");
+        }
+
         return LocalRedirect(redirectUri);
     }
 }

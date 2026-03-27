@@ -18,14 +18,3 @@
 
     <MudNavLink Href="about" Icon="@Icons.Material.Filled.Info">@L["About"]</MudNavLink>
 </MudNavMenu>
-
-@code {
-    [Inject] private SynapseAdmin.Services.MatrixAuthenticationStateProvider AuthProvider { get; set; } = default!;
-    [Inject] private NavigationManager Navigation { get; set; } = default!;
-
-    private async Task Logout()
-    {
-        await AuthProvider.LogoutAsync();
-        Navigation.NavigateTo("/login");
-    }
-}

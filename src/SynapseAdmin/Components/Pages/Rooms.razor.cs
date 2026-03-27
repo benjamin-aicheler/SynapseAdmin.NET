@@ -12,6 +12,8 @@ namespace SynapseAdmin.Components.Pages
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
+        [Inject]
+        public ISnackbar Snackbar { get; set; } = null!;
 
         private MudTable<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>? table;
         private int? totalRooms;
@@ -47,7 +49,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error fetching rooms: {ex.Message}");
+                    Snackbar.Add($"Error fetching rooms: {ex.Message}", Severity.Error);
                 }
             }
 
