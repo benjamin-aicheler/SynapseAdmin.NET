@@ -59,3 +59,13 @@ We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are 
 - `docker-compose.yml`: Root-level Docker Compose configuration.
 - `src/SynapseAdmin/Dockerfile`: Multi-stage .NET 10 Dockerfile.
 - `README.md`: Project documentation and attribution.
+
+## Automated Code Review Workflow
+You can ask the AI agent to perform a code review on a specific branch, commit, or set of files.
+
+### Process:
+1. **Template:** Use `CODEREVIEWTEMPLATE.md` as the baseline for all reviews.
+2. **Analysis:** The agent will inspect the requested files against the template criteria (Security, Bugs, Performance, Architecture, Error Handling) specifically keeping Blazor Server, .NET 10, and MudBlazor conventions in mind.
+3. **Report Generation:** The agent will fill out the template with its findings.
+4. **Saving:** The completed report MUST be saved in the `reviews/` directory with a timestamped filename (e.g., `reviews/YYYY-MM-DD_HH-MM-SS_review.md`).
+5. **Action:** The agent will summarize the Action Items in the chat and ask if you would like it to implement the High/Medium priority fixes.
