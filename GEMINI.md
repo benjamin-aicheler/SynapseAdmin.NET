@@ -31,9 +31,10 @@ We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are 
 ### 1. Branching
 - **Always update:** Before starting, sync your local `main`: `git checkout main && git pull origin main`.
 - **Task Isolation:** Create a new branch for every task (Issue, Feature, Bugfix).
+- **Issue Association:** If a task is started and the user has not provided an existing GitHub issue number, ask the user if they want to provide a number or if an issue should be created. An issue is not mandatory if the user declines.
 - **Naming Convention:**
-    - Features: `ai/feature/issue-<number>-<description>`
-    - Bugfixes: `ai/bugfix/issue-<number>-<description>`
+    - Features: `ai/feature/issue-<number>-<description>` (or omit `issue-<number>-` if no issue is associated)
+    - Bugfixes: `ai/bugfix/issue-<number>-<description>` (or omit `issue-<number>-` if no issue is associated)
     - *Example:* `git checkout -b ai/feature/issue-42-add-login`
 
 ### 2. Commits
