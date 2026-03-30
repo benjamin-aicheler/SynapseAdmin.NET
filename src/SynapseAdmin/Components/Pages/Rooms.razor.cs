@@ -11,6 +11,8 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
+        public RoomService RoomService { get; set; } = null!;
+        [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
@@ -28,30 +30,20 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task<TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>> ServerReload(TableState state, CancellationToken token)
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            try
             {
-                try
-                {
-                    var offset = state.Page * state.PageSize;
-                    // Simple ordering support
-                    var orderBy = state.SortLabel ?? "name";
-                    var dir = state.SortDirection == SortDirection.Descending ? "b" : "f";
+                var offset = state.Page * state.PageSize;
+                var orderBy = state.SortLabel ?? "name";
 
-                    var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={state.PageSize}&dir={dir}&order_by={orderBy}";
-
-                    var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
-                    
-                    if (result != null)
-                    {
-                        totalRooms = result.TotalRooms;
-                        StateHasChanged();
-                        return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = result.TotalRooms, Items = result.Rooms };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Error fetching rooms: {ex.Message}", Severity.Error);
-                }
+                var (total, rooms) = await RoomService.GetRoomListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
+                
+                totalRooms = total;
+                StateHasChanged();
+                return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = total, Items = rooms };
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error fetching rooms: {ex.Message}", Severity.Error);
             }
 
             return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = 0, Items = new List<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() };
