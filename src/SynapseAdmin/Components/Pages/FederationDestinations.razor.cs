@@ -11,6 +11,8 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
+        public FederationService FederationService { get; set; } = null!;
+        [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
@@ -30,29 +32,20 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task<TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>> ServerReload(TableState state, CancellationToken token)
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            try
             {
-                try
-                {
-                    var offset = state.Page * state.PageSize;
-                    var dir = state.SortDirection == SortDirection.Ascending ? "f" : "b";
+                var offset = state.Page * state.PageSize;
 
-                    var url = $"/_synapse/admin/v1/federation/destinations?from={offset}&limit={state.PageSize}&dir={dir}";
-
-                    var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminDestinationListResult>(url, cancellationToken: token);
-                    
-                    if (result != null)
-                    {
-                        totalDestinations = result.Total;
-                        StateHasChanged();
-                        return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = result.Total, Items = result.Destinations };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error fetching federation destinations: {ex.Message}");
-                    Snackbar.Add($"Error fetching federation destinations: {ex.Message}", Severity.Error);
-                }
+                var (total, destinations) = await FederationService.GetDestinationsAsync(offset, state.PageSize, state.SortDirection, token: token);
+                
+                totalDestinations = total;
+                StateHasChanged();
+                return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = total, Items = destinations };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching federation destinations: {ex.Message}");
+                Snackbar.Add($"Error fetching federation destinations: {ex.Message}", Severity.Error);
             }
 
             return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = 0, Items = new List<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() };
@@ -60,24 +53,21 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task ResetConnection(string destination)
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Reset Connection", 
+                $"Are you sure you want to reset the federation connection backoff for {destination}?", 
+                yesText: "Reset", cancelText: "Cancel");
+                
+            if (result == true)
             {
-                bool? result = await DialogService.ShowMessageBoxAsync(
-                    "Reset Connection", 
-                    $"Are you sure you want to reset the federation connection backoff for {destination}?", 
-                    yesText: "Reset", cancelText: "Cancel");
-                    
-                if (result == true)
+                try {
+                    await FederationService.ResetConnectionTimeoutAsync(destination);
+                    Snackbar.Add($"Connection backoff reset for {destination}.", Severity.Success);
+                    await ReloadTable();
+                }
+                catch (Exception ex)
                 {
-                    try {
-                        await synapseAdmin.Admin.ResetFederationConnectionTimeoutAsync(destination);
-                        Snackbar.Add($"Connection backoff reset for {destination}.", Severity.Success);
-                        await ReloadTable();
-                    }
-                    catch (Exception ex)
-                    {
-                        Snackbar.Add($"Error resetting connection for {destination}: {ex.Message}", Severity.Error);
-                    }
+                    Snackbar.Add($"Error resetting connection for {destination}: {ex.Message}", Severity.Error);
                 }
             }
         }
