@@ -2,7 +2,6 @@ using LibMatrix.EventTypes.Spec;
 using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using SynapseAdmin.Extensions;
 using SynapseAdmin.Services;
 
 namespace SynapseAdmin.Components.Pages
@@ -11,6 +10,8 @@ namespace SynapseAdmin.Components.Pages
     {
         [Inject]
         public MatrixSessionService MatrixSession { get; set; } = null!;
+        [Inject]
+        public UserService UserService { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
@@ -25,36 +26,31 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task SendNotice()
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            isSending = true;
+            StateHasChanged();
+            
+            try
             {
-                isSending = true;
-                StateHasChanged();
+                await UserService.SendServerNoticeAsync(targetUserId, noticeMessage);
                 
-                try
+                Snackbar.Add("Server notice sent successfully!", Severity.Success);
+                
+                // Reset form
+                noticeMessage = string.Empty;
+                targetUserId = string.Empty;
+                if (form != null)
                 {
-                    var content = new RoomMessageEventContent(body: noticeMessage);
-                    
-                    await synapseAdmin.SendServerNoticeAsync(targetUserId, content);
-                    
-                    Snackbar.Add("Server notice sent successfully!", Severity.Success);
-                    
-                    // Reset form
-                    noticeMessage = string.Empty;
-                    targetUserId = string.Empty;
-                    if (form != null)
-                    {
-                        await form.ResetAsync();
-                    }
+                    await form.ResetAsync();
                 }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Failed to send notice: {ex.Message}", Severity.Error);
-                }
-                finally
-                {
-                    isSending = false;
-                    StateHasChanged();
-                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to send notice: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                isSending = false;
+                StateHasChanged();
             }
         }
     }

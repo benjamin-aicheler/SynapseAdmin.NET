@@ -11,6 +11,8 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
+        public UserService UserService { get; set; } = null!;
+        [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
@@ -28,30 +30,20 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task<TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>> ServerReload(TableState state, CancellationToken token)
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            try
             {
-                try
-                {
-                    var offset = state.Page * state.PageSize;
-                    var orderBy = state.SortLabel ?? "name";
-                    var dir = state.SortDirection == SortDirection.Descending ? "b" : "f";
+                var offset = state.Page * state.PageSize;
+                var orderBy = state.SortLabel ?? "name";
 
-                    // Depending on the Synapse version, /_synapse/admin/v2/users supports offset/from.
-                    var url = $"/_synapse/admin/v2/users?from={offset}&limit={state.PageSize}&dir={dir}&order_by={orderBy}"; // we can also use search params
-
-                    var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult>(url, cancellationToken: token);
-                    
-                    if (result != null)
-                    {
-                        totalUsers = result.Total;
-                        StateHasChanged();
-                        return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = result.Total, Items = result.Users };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Error fetching users: {ex.Message}", Severity.Error);
-                }
+                var (total, users) = await UserService.GetUserListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
+                
+                totalUsers = total;
+                StateHasChanged();
+                return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = total, Items = users };
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error fetching users: {ex.Message}", Severity.Error);
             }
 
             return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = 0, Items = new List<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() };

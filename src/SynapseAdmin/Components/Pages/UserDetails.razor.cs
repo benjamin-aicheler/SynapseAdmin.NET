@@ -11,6 +11,8 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
+        public UserService UserService { get; set; } = null!;
+        [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
@@ -30,88 +32,75 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task LoadUserDetails()
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            try
             {
-                try
+                var vm = await UserService.GetUserDetailsAsync(UserId);
+                if (vm != null)
                 {
-                    var encodedUserId = Uri.EscapeDataString(UserId);
-                    
-                    // Fetch user directly using HTTP Client since LibMatrix doesn't expose a GetUser yet
-                    userDetails = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>($"/_synapse/admin/v2/users/{encodedUserId}");
-                    
-                    media = await synapseAdmin.Admin.GetUserMediaAsync(UserId);
+                    userDetails = vm.Details;
+                    media = vm.Media;
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error fetching user details: {ex.Message}");
-                    Snackbar.Add($"Error fetching user details: {ex.Message}", Severity.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching user details: {ex.Message}");
+                Snackbar.Add($"Error fetching user details: {ex.Message}", Severity.Error);
             }
         }
 
         private async Task DeactivateUser()
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Deactivate User", 
+                "Are you sure you want to deactivate this user?", 
+                yesText: "Deactivate", cancelText: "Cancel");
+                
+            if (result == true)
             {
-                bool? result = await DialogService.ShowMessageBoxAsync(
-                    "Deactivate User", 
-                    "Are you sure you want to deactivate this user?", 
-                    yesText: "Deactivate", cancelText: "Cancel");
-                    
-                if (result == true)
+                try {
+                    await UserService.DeactivateUserAsync(UserId);
+                    Snackbar.Add("User deactivated.", Severity.Success);
+                    await LoadUserDetails();
+                }
+                catch (Exception ex)
                 {
-                    try {
-                        // Not fully mapped out in the LibMatrix SDK, simulating success
-                        var encodedUserId = Uri.EscapeDataString(UserId);
-                        var payload = new { erase = false };
-                        await synapseAdmin.ClientHttpClient.PostAsJsonAsync($"/_synapse/admin/v1/deactivate/{encodedUserId}", payload);
-                        Snackbar.Add("User deactivated.", Severity.Success);
-                        await LoadUserDetails();
-                    }
-                    catch (Exception ex)
-                    {
-                        Snackbar.Add($"Error deactivating user: {ex.Message}", Severity.Error);
-                    }
+                    Snackbar.Add($"Error deactivating user: {ex.Message}", Severity.Error);
                 }
             }
         }
 
         private async Task QuarantineAllMedia()
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            bool? result = await DialogService.ShowMessageBoxAsync(
+                "Quarantine Media", 
+                "Are you sure you want to quarantine all media uploaded by this user?", 
+                yesText: "Quarantine", cancelText: "Cancel");
+            
+            if (result == true)
             {
-                bool? result = await DialogService.ShowMessageBoxAsync(
-                    "Quarantine Media", 
-                    "Are you sure you want to quarantine all media uploaded by this user?", 
-                    yesText: "Quarantine", cancelText: "Cancel");
-                
-                if (result == true)
+                try {
+                    await UserService.QuarantineMediaAsync(UserId);
+                    Snackbar.Add("User media quarantined successfully.", Severity.Success);
+                }
+                catch (Exception ex)
                 {
-                    try {
-                        await synapseAdmin.Admin.QuarantineMediaByUserId(UserId);
-                        Snackbar.Add("User media quarantined successfully.", Severity.Success);
-                    }
-                    catch (Exception ex)
-                    {
-                        Snackbar.Add($"Error quarantining media: {ex.Message}", Severity.Error);
-                    }
+                    Snackbar.Add($"Error quarantining media: {ex.Message}", Severity.Error);
                 }
             }
         }
 
         private async Task LoginAsUser()
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
-            {
-                try {
-                    // Note: The login resp contains just an access token usually, need to pipe this securely
-                    var resp = await synapseAdmin.Admin.LoginUserAsync(UserId, TimeSpan.FromHours(1));
+            try {
+                var accessToken = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1));
+                if (!string.IsNullOrEmpty(accessToken))
+                {
                     Snackbar.Add($"Login successful for 1 hour. Access Token retrieved. (Simulation)", Severity.Info);
                 }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Error logging in as user: {ex.Message}", Severity.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error logging in as user: {ex.Message}", Severity.Error);
             }
         }
     }
