@@ -12,6 +12,9 @@ namespace SynapseAdmin.Components.Pages
          public MatrixSessionService MatrixSession { get; set; } = null!;
 
          [Inject]
+         public EventReportService EventReportService { get; set; } = null!;
+
+         [Inject]
          public NavigationManager Navigation { get; set; } = null!;
 
          [Inject]
@@ -33,31 +36,20 @@ namespace SynapseAdmin.Components.Pages
 
     private async Task<TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>> ServerReload(TableState state, CancellationToken token)
     {
-        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        try
         {
-            try
-            {
-                var offset = state.Page * state.PageSize;
-                
-                // Using dir for sorting because API allows it
-                var dir = state.SortDirection == SortDirection.Ascending ? "f" : "b";
+            var offset = state.Page * state.PageSize;
 
-                var url = $"/_synapse/admin/v1/event_reports?from={offset}&limit={state.PageSize}&dir={dir}";
-
-                var result = await synapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminEventReportListResult>(url, cancellationToken: token);
-                
-                if (result != null)
-                {
-                    totalReports = result.Total;
-                    StateHasChanged();
-                    return new TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() { TotalItems = result.Total, Items = result.Reports };
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching event reports: {ex.Message}");
-                Snackbar.Add($"Error fetching event reports: {ex.Message}", Severity.Error);
-            }
+            var (total, reports) = await EventReportService.GetEventReportsAsync(offset, state.PageSize, state.SortDirection, token: token);
+            
+            totalReports = total;
+            StateHasChanged();
+            return new TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() { TotalItems = total, Items = reports };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching event reports: {ex.Message}");
+            Snackbar.Add($"Error fetching event reports: {ex.Message}", Severity.Error);
         }
 
         return new TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() { TotalItems = 0, Items = new List<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() };
@@ -65,25 +57,21 @@ namespace SynapseAdmin.Components.Pages
 
     private async Task DeleteReport(string reportId)
     {
-        if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Dismiss Report", 
+            "Are you sure you want to dismiss (delete) this report? The reported event will not be deleted from the room.", 
+            yesText: "Dismiss", cancelText: "Cancel");
+            
+        if (result == true)
         {
-            bool? result = await DialogService.ShowMessageBoxAsync(
-                "Dismiss Report", 
-                "Are you sure you want to dismiss (delete) this report? The reported event will not be deleted from the room.", 
-                yesText: "Dismiss", cancelText: "Cancel");
-                
-            if (result == true)
+            try {
+                await EventReportService.DeleteEventReportAsync(reportId);
+                Snackbar.Add("Report dismissed successfully.", Severity.Success);
+                await ReloadTable();
+            }
+            catch (Exception ex)
             {
-                try {
-                    // LibMatrix provides DeleteEventReportAsync
-                    await synapseAdmin.Admin.DeleteEventReportAsync(reportId);
-                    Snackbar.Add("Report dismissed successfully.", Severity.Success);
-                    await ReloadTable();
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Error dismissing report: {ex.Message}", Severity.Error);
-                }
+                Snackbar.Add($"Error dismissing report: {ex.Message}", Severity.Error);
             }
         }
     }
