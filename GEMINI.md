@@ -18,7 +18,12 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Test:** `dotnet test` (Infrastructure in place via submodules)
 
 ## Development Conventions
-- **Dependency Injection:** `LibMatrix` services are registered in `Program.cs` via `builder.Services.AddRoryLibMatrixServices()`.
+- **N-Tier Architecture:** The application follows an N-Tier architecture pattern.
+    - **Presentation Layer:** Blazor Components (`.razor` and `.razor.cs`). These should exclusively handle UI state, user interaction, and data display.
+    - **Application Layer (Services):** Classes in `src/SynapseAdmin/Services/`. These handle business logic, Matrix protocol orchestration, and mapping data.
+    - **Infrastructure Layer:** `LibMatrix` SDK and underlying storage services.
+- **ViewModels:** Always use dedicated ViewModels (`src/SynapseAdmin/Models/ViewModels/`) to pass data from services to components. Avoid passing raw SDK models to the UI.
+- **Dependency Injection:** Services are registered in `Program.cs` and injected into components using the `[Inject]` attribute.
 - **Coding Style:** Standard .NET 10 idiomatic C#.
 - **Blazor Components:** Always use the code-behind pattern (e.g., `Page.razor` and `Page.razor.cs`) for all Blazor pages and complex components. Do not use inline `@code` blocks.
 - **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
