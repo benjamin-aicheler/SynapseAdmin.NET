@@ -26,6 +26,7 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 
 ## Technologies
 
+- **Architecture:** N-Tier Service Pattern (Separation of UI and Logic)
 - **Framework:** .NET 10 Blazor Server (Interactive Server Mode)
 - **UI Component Library:** [MudBlazor](https://mudblazor.com/)
 - **Matrix SDK:** [LibMatrix](https://github.com/Rory-LibMatrix/LibMatrix) (Git Submodule)
