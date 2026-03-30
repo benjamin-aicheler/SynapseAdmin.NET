@@ -20,6 +20,19 @@ else if (roomDetails == null)
 }
 else
 {
+    @if (tombstone != null)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4">
+            @L["RoomUpgradedAlert"]
+            <MudButton Href="@($"/rooms/{Uri.EscapeDataString(tombstone.ReplacementRoom)}")"
+                       Variant="Variant.Text"
+                       Color="Color.Inherit"
+                       Class="ml-2">
+                @L["GoToReplacementRoom"]
+            </MudButton>
+        </MudAlert>
+    }
+
     <MudGrid>
         <MudItem xs="12" md="6">
             <MudCard Elevation="3">
@@ -35,6 +48,10 @@ else
                         <MudListItem T="string"><b>@L["Alias"]:</b> @roomDetails.CanonicalAlias</MudListItem>
                         <MudListItem T="string"><b>@L["Creator"]:</b> @roomDetails.Creator</MudListItem>
                         <MudListItem T="string"><b>@L["Version"]:</b> @roomDetails.Version</MudListItem>
+                        @if (tombstone != null)
+                        {
+                            <MudListItem T="string"><b>@L["ReplacementRoom"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@tombstone.ReplacementRoom</MudText></MudListItem>
+                        }
                         <MudListItem T="string"><b>@L["Members"]:</b> @roomDetails.JoinedMembers (@L["Local"]: @roomDetails.JoinedLocalMembers)</MudListItem>
                         <MudListItem T="string"><b>@L["Public"]:</b> @roomDetails.Public</MudListItem>
                         <MudListItem T="string"><b>@L["JoinRules"]:</b> @roomDetails.JoinRules</MudListItem>

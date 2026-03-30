@@ -1,6 +1,7 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
+using LibMatrix.EventTypes.Spec.State.RoomInfo;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
@@ -24,8 +25,9 @@ namespace SynapseAdmin.Components.Pages
         private SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom? roomDetails;
         private SynapseAdminRoomMemberListResult? members;
         private SynapseAdminRoomStateResult? stateEvents;
+        private RoomTombstoneEventContent? tombstone;
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnParametersSetAsync()
         {
             await LoadRoomDetails();
         }
@@ -48,6 +50,10 @@ namespace SynapseAdmin.Components.Pages
                     
                     members = membersTask.Result;
                     stateEvents = stateTask.Result;
+
+                    tombstone = stateEvents?.Events
+                        .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
+                        .ContentAs<RoomTombstoneEventContent>();
                 }
                 catch (Exception ex)
                 {

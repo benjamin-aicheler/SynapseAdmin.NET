@@ -445,4 +445,16 @@
   <data name="RemoteNetworkNotice" xml:space="preserve">
     <value>Wenn Sie dieses Programm modifizieren, muss Ihre modifizierte Version allen Benutzern, die über ein Computernetzwerk aus der Ferne mit ihm interagieren, in prominenter Form die Gelegenheit bieten, den Quellcode Ihrer Version zu erhalten, indem Sie den Zugriff auf den Quellcode von einem Netzwerkserver aus kostenlos ermöglichen.</value>
   </data>
+  <data name="RoomUpgradedAlert" xml:space="preserve">
+    <value>Dieser Raum wurde aktualisiert.</value>
+  </data>
+  <data name="ReplacementRoom" xml:space="preserve">
+    <value>Ersatzraum</value>
+  </data>
+  <data name="GoToReplacementRoom" xml:space="preserve">
+    <value>Gehe zum Ersatzraum</value>
+  </data>
+  <data name="Tombstone" xml:space="preserve">
+    <value>Grabstein</value>
+  </data>
 </root>

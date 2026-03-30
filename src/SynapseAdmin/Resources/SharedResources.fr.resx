@@ -445,4 +445,16 @@
   <data name="RemoteNetworkNotice" xml:space="preserve">
     <value>Si vous modifiez ce programme, votre version modifiée doit offrir de manière proéminente à tous les utilisateurs interagissant avec elle à distance via un réseau informatique une opportunité de recevoir le code source correspondant de votre version en fournissant l'accès au code source depuis un serveur réseau sans frais.</value>
   </data>
+  <data name="RoomUpgradedAlert" xml:space="preserve">
+    <value>Ce salon a été mis à niveau.</value>
+  </data>
+  <data name="ReplacementRoom" xml:space="preserve">
+    <value>Salon de remplacement</value>
+  </data>
+  <data name="GoToReplacementRoom" xml:space="preserve">
+    <value>Aller au salon de remplacement</value>
+  </data>
+  <data name="Tombstone" xml:space="preserve">
+    <value>Tombe</value>
+  </data>
 </root>
