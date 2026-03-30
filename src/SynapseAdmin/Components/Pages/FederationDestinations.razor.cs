@@ -44,6 +44,7 @@ namespace SynapseAdmin.Components.Pages
                     if (result != null)
                     {
                         totalDestinations = result.Total;
+                        StateHasChanged();
                         return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = result.Total, Items = result.Destinations };
                     }
                 }

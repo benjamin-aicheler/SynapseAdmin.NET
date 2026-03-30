@@ -44,6 +44,7 @@ namespace SynapseAdmin.Components.Pages
                     if (result != null)
                     {
                         totalRooms = result.TotalRooms;
+                        StateHasChanged();
                         return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = result.TotalRooms, Items = result.Rooms };
                     }
                 }

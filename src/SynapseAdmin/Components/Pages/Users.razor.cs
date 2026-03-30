@@ -44,6 +44,7 @@ namespace SynapseAdmin.Components.Pages
                     if (result != null)
                     {
                         totalUsers = result.Total;
+                        StateHasChanged();
                         return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = result.Total, Items = result.Users };
                     }
                 }
