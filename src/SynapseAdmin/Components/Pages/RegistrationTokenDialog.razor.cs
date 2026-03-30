@@ -1,6 +1,6 @@
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -50,25 +50,13 @@ namespace SynapseAdmin.Components.Pages
 
         private void Submit()
         {
-            if (IsEdit)
+            var viewModel = new RegistrationTokenViewModel
             {
-                var request = new SynapseAdminRegistrationTokenUpdateRequest
-                {
-                    UsesAllowed = usesAllowed,
-                    ExpiryTime = expiryDate.HasValue ? ((DateTimeOffset)expiryDate.Value).ToUnixTimeMilliseconds() : null
-                };
-                MudDialog.Close(DialogResult.Ok(request));
-            }
-            else
-            {
-                var request = new SynapseAdminRegistrationTokenCreateRequest
-                {
-                    Token = string.IsNullOrWhiteSpace(token) ? null : token,
-                    UsesAllowed = usesAllowed,
-                    ExpiryTime = expiryDate.HasValue ? ((DateTimeOffset)expiryDate.Value).ToUnixTimeMilliseconds() : null
-                };
-                MudDialog.Close(DialogResult.Ok(request));
-            }
+                Token = string.IsNullOrWhiteSpace(token) ? string.Empty : token,
+                UsesAllowed = usesAllowed,
+                ExpiryTime = expiryDate.HasValue ? ((DateTimeOffset)expiryDate.Value).ToUnixTimeMilliseconds() : null
+            };
+            MudDialog.Close(DialogResult.Ok(viewModel));
         }
     }
 }

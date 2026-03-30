@@ -1,9 +1,8 @@
 using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -20,7 +19,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject] 
         public IDialogService DialogService { get; set; } = null!;
 
-        private List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken> tokens = new();
+        private List<RegistrationTokenViewModel> tokens = new();
         private bool isLoading = true;
 
         protected override async Task OnInitializedAsync()
@@ -51,11 +50,11 @@ namespace SynapseAdmin.Components.Pages
             var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>("Create Token", options);
             var result = await dialog.Result;
 
-            if (result != null && !result.Canceled && result.Data is SynapseAdminRegistrationTokenCreateRequest request)
+            if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
                 try
                 {
-                    await RegistrationTokenService.CreateRegistrationTokenAsync(request);
+                    await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel);
                     Snackbar.Add("Token created successfully.", Severity.Success);
                     await LoadTokens();
                 }
@@ -66,7 +65,7 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
-        private async Task OpenEditDialog(SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken tokenObj)
+        private async Task OpenEditDialog(RegistrationTokenViewModel tokenObj)
         {
             var parameters = new DialogParameters
             {
@@ -80,11 +79,12 @@ namespace SynapseAdmin.Components.Pages
             var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>("Edit Token", parameters, options);
             var result = await dialog.Result;
 
-            if (result != null && !result.Canceled && result.Data is SynapseAdminRegistrationTokenUpdateRequest request)
+            if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
                 try
                 {
-                    await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, request);
+                    // Copy expiry from viewmodel to avoid logic leak in UI
+                    await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel);
                     Snackbar.Add("Token updated successfully.", Severity.Success);
                     await LoadTokens();
                 }

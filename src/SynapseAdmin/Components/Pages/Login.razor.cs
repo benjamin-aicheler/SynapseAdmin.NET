@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -11,7 +12,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject] 
         public NavigationManager Navigation { get; set; } = null!;
 
-        private LoginRequest loginModel = new();
+        private LoginViewModel loginModel = new();
         private string? errorMessage;
         private bool isSubmitting;
         private string usernamePlaceholder = "@user:matrix.org";
@@ -34,13 +35,6 @@ namespace SynapseAdmin.Components.Pages
             {
                 isSubmitting = false;
             }
-        }
-
-        public class LoginRequest
-        {
-            public string Homeserver { get; set; } = "https://matrix.org";
-            public string Username { get; set; } = "";
-            public string Password { get; set; } = "";
         }
     }
 }
