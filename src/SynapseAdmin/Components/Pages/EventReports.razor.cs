@@ -49,6 +49,7 @@ namespace SynapseAdmin.Components.Pages
                 if (result != null)
                 {
                     totalReports = result.Total;
+                    StateHasChanged();
                     return new TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() { TotalItems = result.Total, Items = result.Reports };
                 }
             }
