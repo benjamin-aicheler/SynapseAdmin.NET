@@ -1,5 +1,6 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
+using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
@@ -10,6 +11,8 @@ namespace SynapseAdmin.Components.Pages
     {
         [Inject] 
         public MatrixSessionService MatrixSession { get; set; } = null!;
+        [Inject] 
+        public RegistrationTokenService RegistrationTokenService { get; set; } = null!;
         [Inject] 
         public NavigationManager Navigation { get; set; } = null!;
         [Inject] 
@@ -27,21 +30,18 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task LoadTokens()
         {
-            if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            isLoading = true;
+            try
             {
-                isLoading = true;
-                try
-                {
-                    tokens = await synapseAdmin.Admin.GetRegistrationTokensAsync();
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add($"Error loading tokens: {ex.Message}", Severity.Error);
-                }
-                finally
-                {
-                    isLoading = false;
-                }
+                tokens = await RegistrationTokenService.GetRegistrationTokensAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error loading tokens: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                isLoading = false;
             }
         }
 
@@ -53,18 +53,15 @@ namespace SynapseAdmin.Components.Pages
 
             if (result != null && !result.Canceled && result.Data is SynapseAdminRegistrationTokenCreateRequest request)
             {
-                if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+                try
                 {
-                    try
-                    {
-                        await synapseAdmin.Admin.CreateRegistrationTokenAsync(request);
-                        Snackbar.Add("Token created successfully.", Severity.Success);
-                        await LoadTokens();
-                    }
-                    catch (Exception ex)
-                    {
-                        Snackbar.Add($"Error creating token: {ex.Message}", Severity.Error);
-                    }
+                    await RegistrationTokenService.CreateRegistrationTokenAsync(request);
+                    Snackbar.Add("Token created successfully.", Severity.Success);
+                    await LoadTokens();
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Error creating token: {ex.Message}", Severity.Error);
                 }
             }
         }
@@ -85,18 +82,15 @@ namespace SynapseAdmin.Components.Pages
 
             if (result != null && !result.Canceled && result.Data is SynapseAdminRegistrationTokenUpdateRequest request)
             {
-                if (MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+                try
                 {
-                    try
-                    {
-                        await synapseAdmin.Admin.UpdateRegistrationTokenAsync(tokenObj.Token, request);
-                        Snackbar.Add("Token updated successfully.", Severity.Success);
-                        await LoadTokens();
-                    }
-                    catch (Exception ex)
-                    {
-                        Snackbar.Add($"Error updating token: {ex.Message}", Severity.Error);
-                    }
+                    await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, request);
+                    Snackbar.Add("Token updated successfully.", Severity.Success);
+                    await LoadTokens();
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Error updating token: {ex.Message}", Severity.Error);
                 }
             }
         }
@@ -108,11 +102,11 @@ namespace SynapseAdmin.Components.Pages
                 $"Are you sure you want to delete the token '{token}'?",
                 yesText: "Delete", cancelText: "Cancel");
 
-            if (confirmed == true && MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapseAdmin)
+            if (confirmed == true)
             {
                 try
                 {
-                    await synapseAdmin.Admin.DeleteRegistrationTokenAsync(token);
+                    await RegistrationTokenService.DeleteRegistrationTokenAsync(token);
                     Snackbar.Add("Token deleted successfully.", Severity.Success);
                     await LoadTokens();
                 }
