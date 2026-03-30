@@ -24,6 +24,7 @@ builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
 builder.Services.AddScoped<MatrixSessionService>();
+builder.Services.AddScoped<RoomService>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, MatrixAuthenticationStateProvider>();
 builder.Services.AddScoped<MatrixAuthenticationStateProvider>(sp => (MatrixAuthenticationStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());
