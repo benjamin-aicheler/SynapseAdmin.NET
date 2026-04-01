@@ -457,4 +457,61 @@
   <data name="Tombstone" xml:space="preserve">
     <value>Grabstein</value>
   </data>
+  <data name="EditRegistrationToken" xml:space="preserve">
+    <value>Registrierungstoken bearbeiten</value>
+  </data>
+  <data name="CreateRegistrationToken" xml:space="preserve">
+    <value>Registrierungstoken erstellen</value>
+  </data>
+  <data name="TokenStringLabel" xml:space="preserve">
+    <value>Token-String (optional, leer lassen zum Generieren)</value>
+  </data>
+  <data name="UsesAllowedLabel" xml:space="preserve">
+    <value>Erlaubte Nutzungen (optional, leer für unbegrenzt)</value>
+  </data>
+  <data name="ExpiryDateLabel" xml:space="preserve">
+    <value>Ablaufdatum (optional)</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Erstellen</value>
+  </data>
+  <data name="EditToken" xml:space="preserve">
+    <value>Token bearbeiten</value>
+  </data>
+  <data name="DeleteToken" xml:space="preserve">
+    <value>Token löschen</value>
+  </data>
+  <data name="DeleteTokenConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Token '{0}' löschen möchten?</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="TokenCreatedSuccessfully" xml:space="preserve">
+    <value>Token erfolgreich erstellt.</value>
+  </data>
+  <data name="TokenUpdatedSuccessfully" xml:space="preserve">
+    <value>Token erfolgreich aktualisiert.</value>
+  </data>
+  <data name="TokenDeletedSuccessfully" xml:space="preserve">
+    <value>Token erfolgreich gelöscht.</value>
+  </data>
+  <data name="ErrorLoadingTokens" xml:space="preserve">
+    <value>Fehler beim Laden der Tokens: {0}</value>
+  </data>
+  <data name="ErrorCreatingToken" xml:space="preserve">
+    <value>Fehler beim Erstellen des Tokens: {0}</value>
+  </data>
+  <data name="ErrorUpdatingToken" xml:space="preserve">
+    <value>Fehler beim Aktualisieren des Tokens: {0}</value>
+  </data>
+  <data name="ErrorDeletingToken" xml:space="preserve">
+    <value>Fehler beim Löschen des Tokens: {0}</value>
+  </data>
 </root>

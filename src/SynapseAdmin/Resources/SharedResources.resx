@@ -457,4 +457,61 @@
   <data name="Tombstone" xml:space="preserve">
     <value>Tombstone</value>
   </data>
+  <data name="EditRegistrationToken" xml:space="preserve">
+    <value>Edit Registration Token</value>
+  </data>
+  <data name="CreateRegistrationToken" xml:space="preserve">
+    <value>Create Registration Token</value>
+  </data>
+  <data name="TokenStringLabel" xml:space="preserve">
+    <value>Token String (optional, leave empty to generate)</value>
+  </data>
+  <data name="UsesAllowedLabel" xml:space="preserve">
+    <value>Uses Allowed (optional, empty for unlimited)</value>
+  </data>
+  <data name="ExpiryDateLabel" xml:space="preserve">
+    <value>Expiry Date (optional)</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="EditToken" xml:space="preserve">
+    <value>Edit Token</value>
+  </data>
+  <data name="DeleteToken" xml:space="preserve">
+    <value>Delete Token</value>
+  </data>
+  <data name="DeleteTokenConfirmation" xml:space="preserve">
+    <value>Are you sure you want to delete the token '{0}'?</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="TokenCreatedSuccessfully" xml:space="preserve">
+    <value>Token created successfully.</value>
+  </data>
+  <data name="TokenUpdatedSuccessfully" xml:space="preserve">
+    <value>Token updated successfully.</value>
+  </data>
+  <data name="TokenDeletedSuccessfully" xml:space="preserve">
+    <value>Token deleted successfully.</value>
+  </data>
+  <data name="ErrorLoadingTokens" xml:space="preserve">
+    <value>Error loading tokens: {0}</value>
+  </data>
+  <data name="ErrorCreatingToken" xml:space="preserve">
+    <value>Error creating token: {0}</value>
+  </data>
+  <data name="ErrorUpdatingToken" xml:space="preserve">
+    <value>Error updating token: {0}</value>
+  </data>
+  <data name="ErrorDeletingToken" xml:space="preserve">
+    <value>Error deleting token: {0}</value>
+  </data>
 </root>
