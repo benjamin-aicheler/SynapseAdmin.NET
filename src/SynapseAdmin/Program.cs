@@ -8,8 +8,16 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using MudBlazor.Translations;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddControllers();

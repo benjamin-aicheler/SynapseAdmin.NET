@@ -5,6 +5,7 @@ SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (M
 
 - **Framework:** .NET 10 Blazor Server (Interactive Server mode)
 - **SDKs:** `LibMatrix` and `ArcaneLibs` (included as git submodules)
+- **Logging:** Serilog (Console and rolling File logging to `logs/` directory)
 - **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
 - **Status:** Active Development; basic auth, dashboard, room/user management, event reports, registration tokens, federation destinations, server notices, multi-language support (EN, DE, FR), and MudBlazor UI are implemented.
@@ -15,6 +16,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Build:** `dotnet build`
 - **Run (Local):** `dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj`
 - **Run (Docker):** `docker compose up --build`
+- **Logs:** Application logs are written to stdout (viewable via `docker logs`) and persisted to the `logs/` directory within the container.
 - **Test:** `dotnet test` (Infrastructure in place via submodules)
 
 ## Development Conventions
@@ -22,6 +24,7 @@ The project uses the standard .NET 10 CLI and Docker:
     - **Presentation Layer:** Blazor Components (`.razor` and `.razor.cs`). These should exclusively handle UI state, user interaction, and data display.
     - **Application Layer (Services):** Classes in `src/SynapseAdmin/Services/`. These handle business logic, Matrix protocol orchestration, and mapping data.
     - **Infrastructure Layer:** `LibMatrix` SDK and underlying storage services.
+- **Logging:** ALWAYS inject `ILogger<T>` into services and log exceptions/errors to provide server-side traceability for Matrix API failures.
 - **ViewModels:** Always use dedicated ViewModels (`src/SynapseAdmin/Models/ViewModels/`) to pass data from services to components. Avoid passing raw SDK models to the UI.
 - **Dependency Injection:** Services are registered in `Program.cs` and injected into components using the `[Inject]` attribute.
 - **Coding Style:** Standard .NET 10 idiomatic C#.

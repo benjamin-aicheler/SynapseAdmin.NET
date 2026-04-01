@@ -16,6 +16,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         {
             var loginResponse = await hsProvider.Login(homeserver, username, password);
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
+            logger.LogInformation("User {Username} successfully logged into {Homeserver}", username, homeserver);
             return OperationResult.Ok();
         }
         catch (Exception ex)
@@ -30,8 +31,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         try
         {
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
-            // Verify if the token is actually valid by doing a simple call if needed, 
-            // but GetAuthenticatedWithToken usually throws or returns a client that will fail later.
+            logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId, homeserver);
             return OperationResult.Ok();
         }
         catch (Exception ex)
@@ -44,6 +44,10 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
 
     public void Logout()
     {
+        if (AuthenticatedHomeserver != null)
+        {
+            logger.LogInformation("User {UserId} logged out from {Homeserver}", AuthenticatedHomeserver.UserId, AuthenticatedHomeserver.ServerName);
+        }
         AuthenticatedHomeserver = null;
     }
 }

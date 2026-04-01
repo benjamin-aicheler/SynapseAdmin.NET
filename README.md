@@ -29,6 +29,7 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 - **Architecture:** N-Tier Service Pattern (Separation of UI and Logic)
 - **Framework:** .NET 10 Blazor Server (Interactive Server Mode)
 - **UI Component Library:** [MudBlazor](https://mudblazor.com/)
+- **Logging:** [Serilog](https://serilog.net/) (File & Console)
 - **Matrix SDK:** [LibMatrix](https://github.com/Rory-LibMatrix/LibMatrix) (Git Submodule)
 - **Utilities:** [ArcaneLibs](https://github.com/TheArcaneBrony/ArcaneLibs) (Git Submodule)
 - **Deployment:** Docker & Docker Compose
@@ -72,6 +73,15 @@ To run the application using Docker Compose:
 docker compose up --build
 ```
 
+The application logs are stored in the `/app/logs` directory within the container. You can mount a volume to this directory to persist logs on the host:
+
+```yaml
+services:
+  synapseadmin:
+    volumes:
+      - ./logs:/app/logs
+```
+
 ## License
 
 This program is free software: you can redistribute it and/or modify it under the terms of the **GNU Affero General Public License** as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -80,6 +90,7 @@ This project incorporates:
 - **LibMatrix**: Licensed under AGPL-3.0.
 - **ArcaneLibs**: Licensed under AGPL-3.0.
 - **MudBlazor**: Licensed under MIT.
+- **Serilog**: Licensed under Apache-2.0.
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [LICENSE](./LICENSE) file for more details.
 
