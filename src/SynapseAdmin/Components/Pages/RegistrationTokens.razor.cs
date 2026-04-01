@@ -1,8 +1,10 @@
 using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -36,7 +38,7 @@ namespace SynapseAdmin.Components.Pages
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error loading tokens: {ex.Message}", Severity.Error);
+                Snackbar.Add(string.Format(L["ErrorLoadingTokens"], ex.Message), Severity.Error);
             }
             finally
             {
@@ -47,7 +49,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task OpenCreateDialog()
         {
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-            var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>("Create Token", options);
+            var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>(L["CreateToken"], options);
             var result = await dialog.Result;
 
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
@@ -55,12 +57,12 @@ namespace SynapseAdmin.Components.Pages
                 try
                 {
                     await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel);
-                    Snackbar.Add("Token created successfully.", Severity.Success);
+                    Snackbar.Add(L["TokenCreatedSuccessfully"], Severity.Success);
                     await LoadTokens();
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add($"Error creating token: {ex.Message}", Severity.Error);
+                    Snackbar.Add(string.Format(L["ErrorCreatingToken"], ex.Message), Severity.Error);
                 }
             }
         }
@@ -76,7 +78,7 @@ namespace SynapseAdmin.Components.Pages
             };
 
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-            var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>("Edit Token", parameters, options);
+            var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>(L["EditToken"], parameters, options);
             var result = await dialog.Result;
 
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
@@ -85,12 +87,12 @@ namespace SynapseAdmin.Components.Pages
                 {
                     // Copy expiry from viewmodel to avoid logic leak in UI
                     await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel);
-                    Snackbar.Add("Token updated successfully.", Severity.Success);
+                    Snackbar.Add(L["TokenUpdatedSuccessfully"], Severity.Success);
                     await LoadTokens();
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add($"Error updating token: {ex.Message}", Severity.Error);
+                    Snackbar.Add(string.Format(L["ErrorUpdatingToken"], ex.Message), Severity.Error);
                 }
             }
         }
@@ -98,21 +100,21 @@ namespace SynapseAdmin.Components.Pages
         private async Task DeleteToken(string token)
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Delete Token",
-                $"Are you sure you want to delete the token '{token}'?",
-                yesText: "Delete", cancelText: "Cancel");
+                L["DeleteToken"],
+                string.Format(L["DeleteTokenConfirmation"], token),
+                yesText: L["Delete"], cancelText: L["Cancel"]);
 
             if (confirmed == true)
             {
                 try
                 {
                     await RegistrationTokenService.DeleteRegistrationTokenAsync(token);
-                    Snackbar.Add("Token deleted successfully.", Severity.Success);
+                    Snackbar.Add(L["TokenDeletedSuccessfully"], Severity.Success);
                     await LoadTokens();
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add($"Error deleting token: {ex.Message}", Severity.Error);
+                    Snackbar.Add(string.Format(L["ErrorDeletingToken"], ex.Message), Severity.Error);
                 }
             }
         }

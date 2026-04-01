@@ -3,9 +3,9 @@
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Key" Class="mr-3 mb-n1"/>
             @if(IsEdit) {
-                <text>Edit Registration Token</text>
+                <text>@L["EditRegistrationToken"]</text>
             } else {
-                <text>Create Registration Token</text>
+                <text>@L["CreateRegistrationToken"]</text>
             }
         </MudText>
     </TitleContent>
@@ -13,26 +13,26 @@
         <MudForm @ref="form" @bind-IsValid="@success">
             @if(!IsEdit) {
                 <MudTextField @bind-Value="token" 
-                              Label="Token String (optional, leave empty to generate)" 
+                              Label="@L["TokenStringLabel"]" 
                               Variant="Variant.Outlined" 
                               Class="mb-4" />
             }
             <MudNumericField @bind-Value="usesAllowed" 
-                             Label="Uses Allowed (optional, empty for unlimited)" 
+                             Label="@L["UsesAllowedLabel"]" 
                              Min="1" 
                              Variant="Variant.Outlined" 
                              Class="mb-4" />
                              
             <MudDatePicker @bind-Date="expiryDate" 
-                           Label="Expiry Date (optional)" 
+                           Label="@L["ExpiryDateLabel"]" 
                            Variant="Variant.Outlined" 
                            Class="mb-4" />
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!success)">
-            @(IsEdit ? "Save" : "Create")
+            @(IsEdit ? L["Save"] : L["Create"])
         </MudButton>
     </DialogActions>
 </MudDialog>
