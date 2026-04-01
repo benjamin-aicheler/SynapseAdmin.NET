@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using MudBlazor;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Services;
 
@@ -9,7 +10,7 @@ public class EventReportService(MatrixSessionService sessionService)
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<(int Total, List<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport> Reports)> GetEventReportsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
+    public async Task<(int Total, List<EventReportListViewModel> Reports)> GetEventReportsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
     {
         if (SynapseAdmin == null) return (0, []);
 
@@ -19,7 +20,20 @@ public class EventReportService(MatrixSessionService sessionService)
         var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminEventReportListResult>(url, cancellationToken: token);
         if (result == null) return (0, []);
         
-        return (result.Total, result.Reports);
+        var vms = result.Reports.Select(r => new EventReportListViewModel
+        {
+            Id = r.Id,
+            ReceivedTs = r.ReceivedTs,
+            UserId = r.UserId,
+            RoomId = r.RoomId,
+            EventId = r.EventId,
+            Reason = r.Reason ?? string.Empty,
+            Score = r.Score,
+            Sender = r.Sender,
+            CanonicalAlias = r.CanonicalAlias
+        }).ToList();
+
+        return (result.Total, vms);
     }
 
     public async Task DeleteEventReportAsync(string reportId)

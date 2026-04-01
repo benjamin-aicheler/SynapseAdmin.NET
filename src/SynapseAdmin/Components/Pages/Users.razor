@@ -38,10 +38,10 @@ else
             <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="@L["UserId"]"><MudText Typo="Typo.body2">@context.Name</MudText></MudTd>
+            <MudTd DataLabel="@L["UserId"]"><MudText Typo="Typo.body2">@context.UserId</MudText></MudTd>
             <MudTd DataLabel="@L["DisplayName"]">@(string.IsNullOrEmpty(context.DisplayName) ? "-" : context.DisplayName)</MudTd>
             <MudTd DataLabel="@L["Admin"]">
-                @if (context.Admin == true)
+                @if (context.Admin)
                 {
                     <MudChip T="string" Color="Color.Primary" Size="Size.Small">@L["Admin"]</MudChip>
                 }
@@ -51,7 +51,7 @@ else
                 }
             </MudTd>
             <MudTd DataLabel="@L["Guest"]">
-                @if (context.IsGuest == true)
+                @if (context.IsGuest)
                 {
                     <MudChip T="string" Color="Color.Secondary" Size="Size.Small">@L["Guest"]</MudChip>
                 }
@@ -64,7 +64,7 @@ else
             </MudTd>
             <MudTd DataLabel="@L["Created"]">@context.CreationTsDateTime.ToString("g")</MudTd>
             <MudTd DataLabel="@L["Actions"]">
-                <MudButton Href="@($"/users/{Uri.EscapeDataString(context.Name)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
+                <MudButton Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>

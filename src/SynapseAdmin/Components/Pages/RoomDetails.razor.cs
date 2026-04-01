@@ -5,6 +5,7 @@ using LibMatrix.EventTypes.Spec.State.RoomInfo;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -24,10 +25,7 @@ namespace SynapseAdmin.Components.Pages
         [Parameter]
         public string RoomId { get; set; } = string.Empty;
 
-        private SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom? roomDetails;
-        private SynapseAdminRoomMemberListResult? members;
-        private SynapseAdminRoomStateResult? stateEvents;
-        private RoomTombstoneEventContent? tombstone;
+        private RoomDetailViewModel? room;
 
         protected override async Task OnParametersSetAsync()
         {
@@ -38,14 +36,7 @@ namespace SynapseAdmin.Components.Pages
         {
             try
             {
-                var vm = await RoomService.GetRoomDetailsAsync(RoomId);
-                if (vm != null)
-                {
-                    roomDetails = vm.Details;
-                    members = vm.Members;
-                    stateEvents = vm.StateEvents;
-                    tombstone = vm.Tombstone;
-                }
+                room = await RoomService.GetRoomDetailsAsync(RoomId);
             }
             catch (Exception ex)
             {
