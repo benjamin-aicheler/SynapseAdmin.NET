@@ -3,6 +3,7 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -23,7 +24,7 @@ namespace SynapseAdmin.Components.Pages
          [Inject]
          public IDialogService DialogService { get; set; } = null!;
 
-         private MudTable<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>? table;
+         private MudTable<EventReportListViewModel>? table;
     private int? totalReports;
 
     private async Task ReloadTable()
@@ -34,7 +35,7 @@ namespace SynapseAdmin.Components.Pages
         }
     }
 
-    private async Task<TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>> ServerReload(TableState state, CancellationToken token)
+    private async Task<TableData<EventReportListViewModel>> ServerReload(TableState state, CancellationToken token)
     {
         try
         {
@@ -44,7 +45,7 @@ namespace SynapseAdmin.Components.Pages
             
             totalReports = total;
             StateHasChanged();
-            return new TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() { TotalItems = total, Items = reports };
+            return new TableData<EventReportListViewModel>() { TotalItems = total, Items = reports };
         }
         catch (Exception ex)
         {
@@ -52,7 +53,7 @@ namespace SynapseAdmin.Components.Pages
             Snackbar.Add($"Error fetching event reports: {ex.Message}", Severity.Error);
         }
 
-        return new TableData<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() { TotalItems = 0, Items = new List<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport>() };
+        return new TableData<EventReportListViewModel>() { TotalItems = 0, Items = new List<EventReportListViewModel>() };
     }
 
     private async Task DeleteReport(string reportId)

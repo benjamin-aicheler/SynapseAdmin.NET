@@ -3,6 +3,7 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -17,7 +18,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
 
-        private MudTable<SynapseAdminUserListResult.SynapseAdminUserListResultUser>? table;
+        private MudTable<UserListViewModel>? table;
         private int? totalUsers;
 
         private async Task ReloadTable()
@@ -28,7 +29,7 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
-        private async Task<TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>> ServerReload(TableState state, CancellationToken token)
+        private async Task<TableData<UserListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
             try
             {
@@ -39,14 +40,14 @@ namespace SynapseAdmin.Components.Pages
                 
                 totalUsers = total;
                 StateHasChanged();
-                return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = total, Items = users };
+                return new TableData<UserListViewModel>() { TotalItems = total, Items = users };
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Error fetching users: {ex.Message}", Severity.Error);
             }
 
-            return new TableData<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() { TotalItems = 0, Items = new List<SynapseAdminUserListResult.SynapseAdminUserListResultUser>() };
+            return new TableData<UserListViewModel>() { TotalItems = 0, Items = new List<UserListViewModel>() };
         }
     }
 }

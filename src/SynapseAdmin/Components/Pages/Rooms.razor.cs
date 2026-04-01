@@ -3,6 +3,7 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -17,7 +18,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
 
-        private MudTable<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>? table;
+        private MudTable<RoomListViewModel>? table;
         private int? totalRooms;
 
         private async Task ReloadTable()
@@ -28,7 +29,7 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
-        private async Task<TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>> ServerReload(TableState state, CancellationToken token)
+        private async Task<TableData<RoomListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
             try
             {
@@ -39,14 +40,14 @@ namespace SynapseAdmin.Components.Pages
                 
                 totalRooms = total;
                 StateHasChanged();
-                return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = total, Items = rooms };
+                return new TableData<RoomListViewModel>() { TotalItems = total, Items = rooms };
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Error fetching rooms: {ex.Message}", Severity.Error);
             }
 
-            return new TableData<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() { TotalItems = 0, Items = new List<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>() };
+            return new TableData<RoomListViewModel>() { TotalItems = 0, Items = new List<RoomListViewModel>() };
         }
     }
 }

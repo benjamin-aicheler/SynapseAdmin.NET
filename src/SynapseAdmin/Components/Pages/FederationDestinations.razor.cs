@@ -3,6 +3,7 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -19,7 +20,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
 
-        private MudTable<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>? table;
+        private MudTable<FederationDestinationListViewModel>? table;
         private int? totalDestinations;
 
         private async Task ReloadTable()
@@ -30,25 +31,24 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
-        private async Task<TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>> ServerReload(TableState state, CancellationToken token)
+        private async Task<TableData<FederationDestinationListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
             try
             {
                 var offset = state.Page * state.PageSize;
 
                 var (total, destinations) = await FederationService.GetDestinationsAsync(offset, state.PageSize, state.SortDirection, token: token);
-                
+
                 totalDestinations = total;
                 StateHasChanged();
-                return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = total, Items = destinations };
+                return new TableData<FederationDestinationListViewModel>() { TotalItems = total, Items = destinations };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching federation destinations: {ex.Message}");
-                Snackbar.Add($"Error fetching federation destinations: {ex.Message}", Severity.Error);
+                Snackbar.Add($"Error fetching destinations: {ex.Message}", Severity.Error);
             }
 
-            return new TableData<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() { TotalItems = 0, Items = new List<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination>() };
+            return new TableData<FederationDestinationListViewModel>() { TotalItems = 0, Items = new List<FederationDestinationListViewModel>() };
         }
 
         private async Task ResetConnection(string destination)

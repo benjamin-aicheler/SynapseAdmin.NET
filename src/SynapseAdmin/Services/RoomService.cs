@@ -12,7 +12,7 @@ public class RoomService(MatrixSessionService sessionService)
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<(int Total, List<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom> Rooms)> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
+    public async Task<(int Total, List<RoomListViewModel> Rooms)> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
     {
         if (SynapseAdmin == null) return (0, []);
 
@@ -26,7 +26,24 @@ public class RoomService(MatrixSessionService sessionService)
         var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
         if (result == null) return (0, []);
         
-        return (result.TotalRooms, result.Rooms);
+        var vms = result.Rooms.Select(r => new RoomListViewModel
+        {
+            RoomId = r.RoomId,
+            Name = r.Name,
+            CanonicalAlias = r.CanonicalAlias,
+            JoinedMembers = r.JoinedMembers,
+            JoinedLocalMembers = r.JoinedLocalMembers,
+            Version = r.Version ?? "1",
+            Creator = r.Creator ?? "",
+            Encryption = r.Encryption,
+            Federated = r.Federatable,
+            Public = r.Public,
+            AvatarUrl = "", // Not in SDK
+            JoinRules = r.JoinRules,
+            RoomType = "" // Not in SDK
+        }).ToList();
+
+        return (result.TotalRooms, vms);
     }
 
     public async Task<RoomDetailViewModel?> GetRoomDetailsAsync(string roomId)
@@ -34,26 +51,48 @@ public class RoomService(MatrixSessionService sessionService)
         if (SynapseAdmin == null) return null;
 
         var encodedRoomId = Uri.EscapeDataString(roomId);
-        var roomDetails = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{encodedRoomId}");
+        var r = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{encodedRoomId}");
         
-        if (roomDetails == null) return null;
+        if (r == null) return null;
 
         var membersTask = SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
         var stateTask = SynapseAdmin.Admin.GetRoomStateAsync(roomId);
-        
         await Task.WhenAll(membersTask, stateTask);
 
-        var stateEvents = stateTask.Result;
+        var members = await membersTask;
+        var stateEvents = await stateTask;
         var tombstone = stateEvents?.Events
             .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
             .ContentAs<RoomTombstoneEventContent>();
 
         return new RoomDetailViewModel
         {
-            Details = roomDetails,
-            Members = membersTask.Result,
-            StateEvents = stateEvents,
-            Tombstone = tombstone
+            RoomId = r.RoomId,
+            Name = r.Name,
+            CanonicalAlias = r.CanonicalAlias,
+            JoinedMembers = r.JoinedMembers,
+            JoinedLocalMembers = r.JoinedLocalMembers,
+            Version = r.Version ?? "1",
+            Creator = r.Creator ?? "",
+            Encryption = r.Encryption,
+            Federated = r.Federatable,
+            Public = r.Public,
+            AvatarUrl = "",
+            JoinRules = r.JoinRules,
+            GuestAccess = r.GuestAccess,
+            HistoryVisibility = r.HistoryVisibility,
+            RoomType = "",
+            Forgotten = false, // Not in SDK
+            IsTombstoned = tombstone != null,
+            ReplacementRoom = tombstone?.ReplacementRoom,
+            Members = members?.Members ?? [],
+            StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
+            {
+                Type = e.Type,
+                StateKey = e.StateKey,
+                Sender = e.Sender,
+                RawContent = e.RawContent?.ToJsonString()
+            }).ToList() ?? []
         };
     }
 

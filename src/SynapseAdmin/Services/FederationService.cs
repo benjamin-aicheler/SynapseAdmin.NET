@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using MudBlazor;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Services;
 
@@ -9,7 +10,7 @@ public class FederationService(MatrixSessionService sessionService)
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<(int Total, List<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination> Destinations)> GetDestinationsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
+    public async Task<(int Total, List<FederationDestinationListViewModel> Destinations)> GetDestinationsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
     {
         if (SynapseAdmin == null) return (0, []);
 
@@ -19,7 +20,16 @@ public class FederationService(MatrixSessionService sessionService)
         var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminDestinationListResult>(url, cancellationToken: token);
         if (result == null) return (0, []);
         
-        return (result.Total, result.Destinations);
+        var vms = result.Destinations.Select(d => new FederationDestinationListViewModel
+        {
+            Destination = d.Destination,
+            RetryLastTs = d.RetryLastTs,
+            RetryInterval = d.RetryInterval,
+            FailureTs = d.FailureTs,
+            LastSuccessfulStreamOrdering = d.LastSuccessfulStreamOrdering
+        }).ToList();
+
+        return (result.Total, vms);
     }
 
     public async Task ResetConnectionTimeoutAsync(string destination)

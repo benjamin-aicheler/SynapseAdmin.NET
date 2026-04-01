@@ -49,7 +49,7 @@ else
                 }
             </MudTd>
             <MudTd DataLabel="@L["LastRetry"]">
-                @(context.RetryLastTs > 0 ? context.RetryLastTsDateTime?.ToString("g") : "-")
+                @(context.RetryLastTsDateTime.HasValue ? context.RetryLastTsDateTime.Value.ToString("g") : "-")
             </MudTd>
             <MudTd DataLabel="@L["RetryInterval"]">
                 @(context.RetryInterval > 0 ? context.RetryIntervalTimeSpan.ToString("c") : "-")

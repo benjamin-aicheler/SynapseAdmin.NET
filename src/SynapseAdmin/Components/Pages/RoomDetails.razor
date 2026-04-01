@@ -14,22 +14,25 @@
         @L["SynapseAdminApiRequired"]
     </MudAlert>
 }
-else if (roomDetails == null)
+else if (room == null)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
 }
 else
 {
-    @if (tombstone != null)
+    @if (room.IsTombstoned)
     {
         <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4">
             @L["RoomUpgradedAlert"]
-            <MudButton Href="@($"/rooms/{Uri.EscapeDataString(tombstone.ReplacementRoom)}")"
-                       Variant="Variant.Text"
-                       Color="Color.Inherit"
-                       Class="ml-2">
-                @L["GoToReplacementRoom"]
-            </MudButton>
+            @if (!string.IsNullOrEmpty(room.ReplacementRoom))
+            {
+                <MudButton Href="@($"/rooms/{Uri.EscapeDataString(room.ReplacementRoom)}")"
+                           Variant="Variant.Text"
+                           Color="Color.Inherit"
+                           Class="ml-2">
+                    @L["GoToReplacementRoom"]
+                </MudButton>
+            }
         </MudAlert>
     }
 
@@ -43,21 +46,21 @@ else
                 </MudCardHeader>
                 <MudCardContent>
                     <MudList T="string" Dense="true">
-                        <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@roomDetails.RoomId</MudText></MudListItem>
-                        <MudListItem T="string"><b>@L["Name"]:</b> @(string.IsNullOrEmpty(roomDetails.Name) ? L["NoName"] : roomDetails.Name)</MudListItem>
-                        <MudListItem T="string"><b>@L["Alias"]:</b> @roomDetails.CanonicalAlias</MudListItem>
-                        <MudListItem T="string"><b>@L["Creator"]:</b> @roomDetails.Creator</MudListItem>
-                        <MudListItem T="string"><b>@L["Version"]:</b> @roomDetails.Version</MudListItem>
-                        @if (tombstone != null)
+                        <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@room.RoomId</MudText></MudListItem>
+                        <MudListItem T="string"><b>@L["Name"]:</b> @(string.IsNullOrEmpty(room.Name) ? L["NoName"] : room.Name)</MudListItem>
+                        <MudListItem T="string"><b>@L["Alias"]:</b> @room.CanonicalAlias</MudListItem>
+                        <MudListItem T="string"><b>@L["Creator"]:</b> @room.Creator</MudListItem>
+                        <MudListItem T="string"><b>@L["Version"]:</b> @room.Version</MudListItem>
+                        @if (room.IsTombstoned)
                         {
-                            <MudListItem T="string"><b>@L["ReplacementRoom"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@tombstone.ReplacementRoom</MudText></MudListItem>
+                            <MudListItem T="string"><b>@L["ReplacementRoom"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@room.ReplacementRoom</MudText></MudListItem>
                         }
-                        <MudListItem T="string"><b>@L["Members"]:</b> @roomDetails.JoinedMembers (@L["Local"]: @roomDetails.JoinedLocalMembers)</MudListItem>
-                        <MudListItem T="string"><b>@L["Public"]:</b> @roomDetails.Public</MudListItem>
-                        <MudListItem T="string"><b>@L["JoinRules"]:</b> @roomDetails.JoinRules</MudListItem>
-                        <MudListItem T="string"><b>@L["GuestAccess"]:</b> @roomDetails.GuestAccess</MudListItem>
-                        <MudListItem T="string"><b>@L["HistoryVisibility"]:</b> @roomDetails.HistoryVisibility</MudListItem>
-                        <MudListItem T="string"><b>@L["Encryption"]:</b> @roomDetails.Encryption</MudListItem>
+                        <MudListItem T="string"><b>@L["Members"]:</b> @room.JoinedMembers (@L["Local"]: @room.JoinedLocalMembers)</MudListItem>
+                        <MudListItem T="string"><b>@L["Public"]:</b> @room.Public</MudListItem>
+                        <MudListItem T="string"><b>@L["JoinRules"]:</b> @room.JoinRules</MudListItem>
+                        <MudListItem T="string"><b>@L["GuestAccess"]:</b> @room.GuestAccess</MudListItem>
+                        <MudListItem T="string"><b>@L["HistoryVisibility"]:</b> @room.HistoryVisibility</MudListItem>
+                        <MudListItem T="string"><b>@L["Encryption"]:</b> @room.Encryption</MudListItem>
                     </MudList>
                 </MudCardContent>
             </MudCard>
@@ -81,51 +84,37 @@ else
 
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
         <MudTabPanel Text="@L["Members"]" Icon="@Icons.Material.Filled.People">
-            @if (members == null)
-            {
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
-            }
-            else
-            {
-                <MudTable Items="members.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
-                    <HeaderContent>
-                        <MudTh>@L["UserId"]</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="@L["UserId"]">@context</MudTd>
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager />
-                    </PagerContent>
-                </MudTable>
-            }
+            <MudTable Items="room.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                <HeaderContent>
+                    <MudTh>@L["UserId"]</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@L["UserId"]">@context</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
         </MudTabPanel>
 
         <MudTabPanel Text="@L["StateEvents"]" Icon="@Icons.Material.Filled.List">
-            @if (stateEvents == null)
-            {
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
-            }
-            else
-            {
-                <MudTable Items="stateEvents.Events" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
-                    <HeaderContent>
-                        <MudTh>@L["Type"]</MudTh>
-                        <MudTh>@L["StateKey"]</MudTh>
-                        <MudTh>@L["Sender"]</MudTh>
-                        <MudTh>@L["Content"]</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="@L["Type"]">@context.Type</MudTd>
-                        <MudTd DataLabel="@L["StateKey"]">@context.StateKey</MudTd>
-                        <MudTd DataLabel="@L["Sender"]">@context.Sender</MudTd>
-                        <MudTd DataLabel="@L["Content"]"><pre style="max-height: 200px; max-width: 500px; overflow: auto; font-size: 0.8em; white-space: pre-wrap;">@context.RawContent?.ToJsonString()</pre></MudTd>
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager />
-                    </PagerContent>
-                </MudTable>
-            }
+            <MudTable Items="room.StateEvents" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                <HeaderContent>
+                    <MudTh>@L["Type"]</MudTh>
+                    <MudTh>@L["StateKey"]</MudTh>
+                    <MudTh>@L["Sender"]</MudTh>
+                    <MudTh>@L["Content"]</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@L["Type"]">@context.Type</MudTd>
+                    <MudTd DataLabel="@L["StateKey"]">@context.StateKey</MudTd>
+                    <MudTd DataLabel="@L["Sender"]">@context.Sender</MudTd>
+                    <MudTd DataLabel="@L["Content"]"><pre style="max-height: 200px; max-width: 500px; overflow: auto; font-size: 0.8em; white-space: pre-wrap;">@context.RawContent</pre></MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
         </MudTabPanel>
     </MudTabs>
 }

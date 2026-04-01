@@ -14,7 +14,7 @@
         @L["SynapseAdminApiRequired"]
     </MudAlert>
 }
-else if (userDetails == null)
+else if (user == null)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
 }
@@ -30,27 +30,27 @@ else
                 </MudCardHeader>
                 <MudCardContent>
                     <div class="d-flex align-center mb-4">
-                        @if (!string.IsNullOrEmpty(userDetails.AvatarUrl))
+                        @if (!string.IsNullOrEmpty(user.AvatarUrl))
                         {
                             <MudAvatar Size="Size.Large" Class="mr-4">
-                                <MudImage Src="@(userDetails.AvatarUrl.StartsWith("mxc://") ? $"{MatrixSession.AuthenticatedHomeserver.WellKnownUris.Client}/_matrix/media/v3/download/{userDetails.AvatarUrl.Substring(6)}" : userDetails.AvatarUrl)" />
+                                <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"{MatrixSession.AuthenticatedHomeserver.WellKnownUris.Client}/_matrix/media/v3/download/{user.AvatarUrl.Substring(6)}" : user.AvatarUrl)" />
                             </MudAvatar>
                         }
                         else
                         {
-                            <MudAvatar Color="Color.Primary" Size="Size.Large" Class="mr-4">@(userDetails.DisplayName?.FirstOrDefault() ?? userDetails.Name.FirstOrDefault())</MudAvatar>
+                            <MudAvatar Color="Color.Primary" Size="Size.Large" Class="mr-4">@(user.DisplayName?.FirstOrDefault() ?? user.UserId.FirstOrDefault())</MudAvatar>
                         }
                         <div>
-                            <MudText Typo="Typo.h6">@(string.IsNullOrEmpty(userDetails.DisplayName) ? userDetails.Name : userDetails.DisplayName)</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">@userDetails.Name</MudText>
+                            <MudText Typo="Typo.h6">@(string.IsNullOrEmpty(user.DisplayName) ? user.UserId : user.DisplayName)</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@user.UserId</MudText>
                         </div>
                     </div>
 
                     <MudList T="string" Dense="true">
-                        <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@userDetails.Name</MudText></MudListItem>
-                        <MudListItem T="string"><b>@L["Created"]:</b> @userDetails.CreationTsDateTime.ToString("f")</MudListItem>
+                        <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@user.UserId</MudText></MudListItem>
+                        <MudListItem T="string"><b>@L["Created"]:</b> @user.CreationTsDateTime.ToString("f")</MudListItem>
                         <MudListItem T="string"><b>@L["Status"]:</b> 
-                            @if (userDetails.Deactivated)
+                            @if (user.Deactivated)
                             {
                                 <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["Deactivated"]</MudChip>
                             }
@@ -60,13 +60,9 @@ else
                             }
                         </MudListItem>
                         <MudListItem T="string"><b>@L["Role"]:</b> 
-                            @if (userDetails.Admin == true)
+                            @if (user.Admin)
                             {
                                 <MudChip T="string" Color="Color.Primary" Size="Size.Small">@L["Admin"]</MudChip>
-                            }
-                            else if (userDetails.IsGuest == true)
-                            {
-                                <MudChip T="string" Color="Color.Secondary" Size="Size.Small">@L["Guest"]</MudChip>
                             }
                             else
                             {
@@ -85,7 +81,7 @@ else
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeactivateUser" Class="mb-2 mr-2" Disabled="@userDetails.Deactivated">@L["DeactivateUser"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeactivateUser" Class="mb-2 mr-2" Disabled="@user.Deactivated">@L["DeactivateUser"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="LoginAsUser" Class="mb-2 mr-2">@L["LoginAsUserShadow"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineAllMedia" Class="mb-2">@L["QuarantineMedia"]</MudButton>
                 </MudCardContent>
@@ -95,13 +91,13 @@ else
 
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
         <MudTabPanel Text="@L["Media"]" Icon="@Icons.Material.Filled.PermMedia">
-             @if (media == null)
+             @if (user.Media == null)
             {
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
             }
             else
             {
-                <MudTable Items="media.Media" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                <MudTable Items="user.Media.Media" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                     <HeaderContent>
                         <MudTh>@L["MediaId"]</MudTh>
                         <MudTh>@L["Type"]</MudTh>

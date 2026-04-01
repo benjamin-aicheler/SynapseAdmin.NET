@@ -12,7 +12,7 @@ public class UserService(MatrixSessionService sessionService)
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<(int Total, List<SynapseAdminUserListResult.SynapseAdminUserListResultUser> Users)> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, CancellationToken token = default)
+    public async Task<(int Total, List<UserListViewModel> Users)> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, CancellationToken token = default)
     {
         if (SynapseAdmin == null) return (0, []);
 
@@ -22,7 +22,20 @@ public class UserService(MatrixSessionService sessionService)
         var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult>(url, cancellationToken: token);
         if (result == null) return (0, []);
         
-        return (result.Total, result.Users);
+        var vms = result.Users.Select(u => new UserListViewModel
+        {
+            UserId = u.Name,
+            DisplayName = u.DisplayName,
+            AvatarUrl = u.AvatarUrl,
+            Deactivated = u.Deactivated,
+            Admin = u.Admin == true,
+            CreationTs = u.CreationTs / 1000, // SDK is in ms, VM uses seconds for DateTime helper
+            UserType = u.UserType ?? "user",
+            Locked = u.Locked,
+            IsGuest = u.IsGuest == true
+        }).ToList();
+
+        return (result.Total, vms);
     }
 
     public async Task<UserDetailViewModel?> GetUserDetailsAsync(string userId)
@@ -30,16 +43,39 @@ public class UserService(MatrixSessionService sessionService)
         if (SynapseAdmin == null) return null;
 
         var encodedUserId = Uri.EscapeDataString(userId);
-        var userDetails = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>($"/_synapse/admin/v2/users/{encodedUserId}");
+        var u = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>($"/_synapse/admin/v2/users/{encodedUserId}");
         
-        if (userDetails == null) return null;
+        if (u == null) return null;
 
-        var media = await SynapseAdmin.Admin.GetUserMediaAsync(userId);
+        var mediaResult = await SynapseAdmin.Admin.GetUserMediaAsync(userId);
 
         return new UserDetailViewModel
         {
-            Details = userDetails,
-            Media = media
+            UserId = u.Name,
+            DisplayName = u.DisplayName,
+            AvatarUrl = u.AvatarUrl,
+            Deactivated = u.Deactivated,
+            Admin = u.Admin == true,
+            CreationTs = u.CreationTs / 1000,
+            UserType = u.UserType ?? "user",
+            Locked = u.Locked,
+            ShadowBanned = u.ShadowBanned,
+            // These don't exist in the SDK model directly, setting to empty/default if needed or removing from VM
+            ConsentVersion = "", 
+            ConsentServerNoticeSent = "",
+            AppserviceId = "",
+            Media = mediaResult == null ? null : new UserMediaViewModel
+            {
+                TotalCount = mediaResult.Total,
+                TotalSize = 0, // Not available in this SDK model
+                Media = mediaResult.Media.Select(m => new UserMediaItemViewModel
+                {
+                    MediaId = m.MediaId,
+                    UploadName = m.UploadName,
+                    MediaLength = m.MediaLength,
+                    CreatedTimestamp = m.CreatedTimestamp
+                }).ToList()
+            }
         };
     }
 

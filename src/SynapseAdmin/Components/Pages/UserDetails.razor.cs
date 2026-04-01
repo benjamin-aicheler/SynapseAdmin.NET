@@ -3,6 +3,7 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -22,8 +23,7 @@ namespace SynapseAdmin.Components.Pages
         [Parameter]
         public string UserId { get; set; } = string.Empty;
 
-        private SynapseAdminUserListResult.SynapseAdminUserListResultUser? userDetails;
-        private SynapseAdminUserMediaResult? media;
+        private UserDetailViewModel? user;
 
         protected override async Task OnInitializedAsync()
         {
@@ -34,12 +34,7 @@ namespace SynapseAdmin.Components.Pages
         {
             try
             {
-                var vm = await UserService.GetUserDetailsAsync(UserId);
-                if (vm != null)
-                {
-                    userDetails = vm.Details;
-                    media = vm.Media;
-                }
+                user = await UserService.GetUserDetailsAsync(UserId);
             }
             catch (Exception ex)
             {
