@@ -6,7 +6,7 @@ using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Services;
 
-public class EventReportService(MatrixSessionService sessionService)
+public class EventReportService(MatrixSessionService sessionService, ILogger<EventReportService> logger)
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
@@ -14,31 +14,48 @@ public class EventReportService(MatrixSessionService sessionService)
     {
         if (SynapseAdmin == null) return (0, []);
 
-        var dir = direction == SortDirection.Ascending ? "f" : "b";
-        var url = $"/_synapse/admin/v1/event_reports?from={offset}&limit={limit}&dir={dir}";
-
-        var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminEventReportListResult>(url, cancellationToken: token);
-        if (result == null) return (0, []);
-        
-        var vms = result.Reports.Select(r => new EventReportListViewModel
+        try
         {
-            Id = r.Id,
-            ReceivedTs = r.ReceivedTs,
-            UserId = r.UserId,
-            RoomId = r.RoomId,
-            EventId = r.EventId,
-            Reason = r.Reason ?? string.Empty,
-            Score = r.Score,
-            Sender = r.Sender,
-            CanonicalAlias = r.CanonicalAlias
-        }).ToList();
+            var dir = direction == SortDirection.Ascending ? "f" : "b";
+            var url = $"/_synapse/admin/v1/event_reports?from={offset}&limit={limit}&dir={dir}";
 
-        return (result.Total, vms);
+            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminEventReportListResult>(url, cancellationToken: token);
+            if (result == null) return (0, []);
+            
+            var vms = result.Reports.Select(r => new EventReportListViewModel
+            {
+                Id = r.Id,
+                ReceivedTs = r.ReceivedTs,
+                UserId = r.UserId,
+                RoomId = r.RoomId,
+                EventId = r.EventId,
+                Reason = r.Reason ?? string.Empty,
+                Score = r.Score,
+                Sender = r.Sender,
+                CanonicalAlias = r.CanonicalAlias
+            }).ToList();
+
+            return (result.Total, vms);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching event reports (offset: {Offset}, limit: {Limit})", offset, limit);
+            throw;
+        }
     }
 
     public async Task DeleteEventReportAsync(string reportId)
     {
         if (SynapseAdmin == null) return;
-        await SynapseAdmin.Admin.DeleteEventReportAsync(reportId);
+        try
+        {
+            await SynapseAdmin.Admin.DeleteEventReportAsync(reportId);
+            logger.LogInformation("Successfully deleted event report {ReportId}", reportId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting event report {ReportId}", reportId);
+            throw;
+        }
     }
 }

@@ -8,7 +8,7 @@ using MudBlazor;
 
 namespace SynapseAdmin.Services;
 
-public class RoomService(MatrixSessionService sessionService)
+public class RoomService(MatrixSessionService sessionService, ILogger<RoomService> logger)
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
@@ -16,107 +16,150 @@ public class RoomService(MatrixSessionService sessionService)
     {
         if (SynapseAdmin == null) return (0, []);
 
-        var dir = direction == SortDirection.Descending ? "b" : "f";
-        var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={limit}&dir={dir}&order_by={orderBy}";
-        if (!string.IsNullOrEmpty(searchTerm))
+        try
         {
-            url += $"&search_term={Uri.EscapeDataString(searchTerm)}";
+            var dir = direction == SortDirection.Descending ? "b" : "f";
+            var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={limit}&dir={dir}&order_by={orderBy}";
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                url += $"&search_term={Uri.EscapeDataString(searchTerm)}";
+            }
+
+            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
+            if (result == null) return (0, []);
+            
+            var vms = result.Rooms.Select(r => new RoomListViewModel
+            {
+                RoomId = r.RoomId,
+                Name = r.Name,
+                CanonicalAlias = r.CanonicalAlias,
+                JoinedMembers = r.JoinedMembers,
+                JoinedLocalMembers = r.JoinedLocalMembers,
+                Version = r.Version ?? "1",
+                Creator = r.Creator ?? "",
+                Encryption = r.Encryption,
+                Federated = r.Federatable,
+                Public = r.Public,
+                AvatarUrl = "", 
+                JoinRules = r.JoinRules,
+                RoomType = "" 
+            }).ToList();
+
+            return (result.TotalRooms, vms);
         }
-
-        var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
-        if (result == null) return (0, []);
-        
-        var vms = result.Rooms.Select(r => new RoomListViewModel
+        catch (Exception ex)
         {
-            RoomId = r.RoomId,
-            Name = r.Name,
-            CanonicalAlias = r.CanonicalAlias,
-            JoinedMembers = r.JoinedMembers,
-            JoinedLocalMembers = r.JoinedLocalMembers,
-            Version = r.Version ?? "1",
-            Creator = r.Creator ?? "",
-            Encryption = r.Encryption,
-            Federated = r.Federatable,
-            Public = r.Public,
-            AvatarUrl = "", // Not in SDK
-            JoinRules = r.JoinRules,
-            RoomType = "" // Not in SDK
-        }).ToList();
-
-        return (result.TotalRooms, vms);
+            logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit})", offset, limit);
+            throw;
+        }
     }
 
     public async Task<RoomDetailViewModel?> GetRoomDetailsAsync(string roomId)
     {
         if (SynapseAdmin == null) return null;
 
-        var encodedRoomId = Uri.EscapeDataString(roomId);
-        var r = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{encodedRoomId}");
-        
-        if (r == null) return null;
-
-        var membersTask = SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
-        var stateTask = SynapseAdmin.Admin.GetRoomStateAsync(roomId);
-        await Task.WhenAll(membersTask, stateTask);
-
-        var members = await membersTask;
-        var stateEvents = await stateTask;
-        var tombstone = stateEvents?.Events
-            .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
-            .ContentAs<RoomTombstoneEventContent>();
-
-        return new RoomDetailViewModel
+        try
         {
-            RoomId = r.RoomId,
-            Name = r.Name,
-            CanonicalAlias = r.CanonicalAlias,
-            JoinedMembers = r.JoinedMembers,
-            JoinedLocalMembers = r.JoinedLocalMembers,
-            Version = r.Version ?? "1",
-            Creator = r.Creator ?? "",
-            Encryption = r.Encryption,
-            Federated = r.Federatable,
-            Public = r.Public,
-            AvatarUrl = "",
-            JoinRules = r.JoinRules,
-            GuestAccess = r.GuestAccess,
-            HistoryVisibility = r.HistoryVisibility,
-            RoomType = "",
-            Forgotten = false, // Not in SDK
-            IsTombstoned = tombstone != null,
-            ReplacementRoom = tombstone?.ReplacementRoom,
-            Members = members?.Members ?? [],
-            StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
+            var encodedRoomId = Uri.EscapeDataString(roomId);
+            var r = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{encodedRoomId}");
+            
+            if (r == null) return null;
+
+            var membersTask = SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
+            var stateTask = SynapseAdmin.Admin.GetRoomStateAsync(roomId);
+            await Task.WhenAll(membersTask, stateTask);
+
+            var members = await membersTask;
+            var stateEvents = await stateTask;
+            var tombstone = stateEvents?.Events
+                .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
+                .ContentAs<RoomTombstoneEventContent>();
+
+            return new RoomDetailViewModel
             {
-                Type = e.Type,
-                StateKey = e.StateKey,
-                Sender = e.Sender,
-                RawContent = e.RawContent?.ToJsonString()
-            }).ToList() ?? []
-        };
+                RoomId = r.RoomId,
+                Name = r.Name,
+                CanonicalAlias = r.CanonicalAlias,
+                JoinedMembers = r.JoinedMembers,
+                JoinedLocalMembers = r.JoinedLocalMembers,
+                Version = r.Version ?? "1",
+                Creator = r.Creator ?? "",
+                Encryption = r.Encryption,
+                Federated = r.Federatable,
+                Public = r.Public,
+                AvatarUrl = "",
+                JoinRules = r.JoinRules,
+                GuestAccess = r.GuestAccess,
+                HistoryVisibility = r.HistoryVisibility,
+                RoomType = "",
+                Forgotten = false, 
+                IsTombstoned = tombstone != null,
+                ReplacementRoom = tombstone?.ReplacementRoom,
+                Members = members?.Members ?? [],
+                StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
+                {
+                    Type = e.Type,
+                    StateKey = e.StateKey,
+                    Sender = e.Sender,
+                    RawContent = e.RawContent?.ToJsonString()
+                }).ToList() ?? []
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching room details for {RoomId}", roomId);
+            throw;
+        }
     }
 
     public async Task DeleteRoomAsync(string roomId, bool block = false, bool purge = true)
     {
         if (SynapseAdmin == null) return;
 
-        var req = new SynapseAdminRoomDeleteRequest
+        try
         {
-            Block = block,
-            Purge = purge
-        };
-        await SynapseAdmin.Admin.DeleteRoom(roomId, req);
+            var req = new SynapseAdminRoomDeleteRequest
+            {
+                Block = block,
+                Purge = purge
+            };
+            await SynapseAdmin.Admin.DeleteRoom(roomId, req);
+            logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId, block, purge);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting room {RoomId}", roomId);
+            throw;
+        }
     }
 
     public async Task QuarantineMediaAsync(string roomId)
     {
         if (SynapseAdmin == null) return;
-        await SynapseAdmin.Admin.QuarantineMediaByRoomId(roomId);
+        try
+        {
+            await SynapseAdmin.Admin.QuarantineMediaByRoomId(roomId);
+            logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId);
+            throw;
+        }
     }
 
     public async Task BlockRoomAsync(string roomId, bool block)
     {
         if (SynapseAdmin == null) return;
-        await SynapseAdmin.Admin.BlockRoom(roomId, block);
+        try
+        {
+            await SynapseAdmin.Admin.BlockRoom(roomId, block);
+            logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId);
+            throw;
+        }
     }
 }

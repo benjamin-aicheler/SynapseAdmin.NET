@@ -8,6 +8,8 @@
   <ItemGroup>
     <PackageReference Include="MudBlazor" Version="9.2.0" />
     <PackageReference Include="MudBlazor.Translations" Version="3.1.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
   <PropertyGroup>
