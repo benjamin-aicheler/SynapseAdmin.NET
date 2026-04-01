@@ -38,7 +38,6 @@ namespace SynapseAdmin.Components.Pages
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching user details: {ex.Message}");
                 Snackbar.Add($"Error fetching user details: {ex.Message}", Severity.Error);
             }
         }
