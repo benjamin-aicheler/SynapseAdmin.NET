@@ -25,9 +25,9 @@ public class MatrixAuthenticationStateProvider(
                 tokenResult.Success && !string.IsNullOrEmpty(tokenResult.Value))
             {
                 // We have a stored session, restore it
-                await sessionService.RestoreSessionAsync(homeserverResult.Value, tokenResult.Value);
+                var restoreResult = await sessionService.RestoreSessionAsync(homeserverResult.Value, tokenResult.Value);
                 
-                if (sessionService.IsLoggedIn)
+                if (restoreResult.Success && sessionService.IsLoggedIn)
                 {
                     var claims = new[]
                     {
@@ -39,6 +39,12 @@ public class MatrixAuthenticationStateProvider(
                     var identity = new ClaimsIdentity(claims, "MatrixAuth");
                     var principal = new ClaimsPrincipal(identity);
                     return new AuthenticationState(principal);
+                }
+                else
+                {
+                    // If session restoration failed, clean up storage
+                    await localStorage.DeleteAsync(StorageKey_Homeserver);
+                    await localStorage.DeleteAsync(StorageKey_AccessToken);
                 }
             }
         }
@@ -53,9 +59,9 @@ public class MatrixAuthenticationStateProvider(
 
     public async Task LoginAsync(string homeserver, string username, string password)
     {
-        await sessionService.LoginAsync(homeserver, username, password);
+        var result = await sessionService.LoginAsync(homeserver, username, password);
         
-        if (sessionService.IsLoggedIn)
+        if (result.Success && sessionService.IsLoggedIn)
         {
             await localStorage.SetAsync(StorageKey_Homeserver, homeserver);
             await localStorage.SetAsync(StorageKey_AccessToken, sessionService.AuthenticatedHomeserver!.AccessToken);
@@ -71,6 +77,14 @@ public class MatrixAuthenticationStateProvider(
             var principal = new ClaimsPrincipal(identity);
             
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(principal)));
+        }
+        else
+        {
+            // If we want to pass the error back through this provider, 
+            // we'd need to change LoginAsync's return type too.
+            // For now, the caller might still expect an exception or check the session state.
+            // To maintain compatibility with Login.razor.cs's catch block, we can throw if it fails.
+            throw new Exception(result.ErrorMessage ?? "Login failed");
         }
     }
 
