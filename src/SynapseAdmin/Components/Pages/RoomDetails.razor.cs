@@ -40,7 +40,6 @@ namespace SynapseAdmin.Components.Pages
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching room details: {ex.Message}");
                 Snackbar.Add($"Error fetching room details: {ex.Message}", Severity.Error);
             }
         }

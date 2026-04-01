@@ -1,5 +1,3 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
@@ -49,7 +47,6 @@ namespace SynapseAdmin.Components.Pages
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error fetching event reports: {ex.Message}");
             Snackbar.Add($"Error fetching event reports: {ex.Message}", Severity.Error);
         }
 
