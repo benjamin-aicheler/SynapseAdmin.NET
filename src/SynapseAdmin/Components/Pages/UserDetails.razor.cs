@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -12,7 +13,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
-        public UserService UserService { get; set; } = null!;
+        public IUserService UserService { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
@@ -32,69 +33,70 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task LoadUserDetails()
         {
-            try
+            var result = await UserService.GetUserDetailsAsync(UserId);
+            if (result.Success)
             {
-                user = await UserService.GetUserDetailsAsync(UserId);
+                user = result.Data;
             }
-            catch (Exception ex)
+            else
             {
-                Snackbar.Add($"Error fetching user details: {ex.Message}", Severity.Error);
+                Snackbar.Add(result.ErrorMessage ?? "Error fetching user details", Severity.Error);
             }
         }
 
         private async Task DeactivateUser()
         {
-            bool? result = await DialogService.ShowMessageBoxAsync(
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 "Deactivate User", 
                 "Are you sure you want to deactivate this user?", 
                 yesText: "Deactivate", cancelText: "Cancel");
                 
-            if (result == true)
+            if (confirmed == true)
             {
-                try {
-                    await UserService.DeactivateUserAsync(UserId);
+                var result = await UserService.DeactivateUserAsync(UserId);
+                if (result.Success)
+                {
                     Snackbar.Add("User deactivated.", Severity.Success);
                     await LoadUserDetails();
                 }
-                catch (Exception ex)
+                else
                 {
-                    Snackbar.Add($"Error deactivating user: {ex.Message}", Severity.Error);
+                    Snackbar.Add(result.ErrorMessage ?? "Error deactivating user", Severity.Error);
                 }
             }
         }
 
         private async Task QuarantineAllMedia()
         {
-            bool? result = await DialogService.ShowMessageBoxAsync(
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 "Quarantine Media", 
                 "Are you sure you want to quarantine all media uploaded by this user?", 
                 yesText: "Quarantine", cancelText: "Cancel");
             
-            if (result == true)
+            if (confirmed == true)
             {
-                try {
-                    await UserService.QuarantineMediaAsync(UserId);
+                var result = await UserService.QuarantineMediaAsync(UserId);
+                if (result.Success)
+                {
                     Snackbar.Add("User media quarantined successfully.", Severity.Success);
                 }
-                catch (Exception ex)
+                else
                 {
-                    Snackbar.Add($"Error quarantining media: {ex.Message}", Severity.Error);
+                    Snackbar.Add(result.ErrorMessage ?? "Error quarantining media", Severity.Error);
                 }
             }
         }
 
         private async Task LoginAsUser()
         {
-            try {
-                var accessToken = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1));
-                if (!string.IsNullOrEmpty(accessToken))
-                {
-                    Snackbar.Add($"Login successful for 1 hour. Access Token retrieved. (Simulation)", Severity.Info);
-                }
-            }
-            catch (Exception ex)
+            var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1));
+            if (result.Success && !string.IsNullOrEmpty(result.Data))
             {
-                Snackbar.Add($"Error logging in as user: {ex.Message}", Severity.Error);
+                Snackbar.Add($"Login successful for 1 hour. Access Token retrieved. (Simulation)", Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add(result.ErrorMessage ?? "Error logging in as user", Severity.Error);
             }
         }
     }

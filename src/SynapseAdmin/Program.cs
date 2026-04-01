@@ -1,6 +1,7 @@
 using SynapseAdmin.Components;
 using LibMatrix.Services;
 using SynapseAdmin.Services;
+using SynapseAdmin.Interfaces;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -33,7 +34,7 @@ builder.Services.AddMudTranslations();
 
 builder.Services.AddScoped<MatrixSessionService>();
 builder.Services.AddScoped<RoomService>();
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<FederationService>();
 builder.Services.AddScoped<EventReportService>();
 builder.Services.AddScoped<RegistrationTokenService>();

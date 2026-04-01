@@ -4,17 +4,19 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.EventTypes.Spec;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models;
 using MudBlazor;
 
 namespace SynapseAdmin.Services;
 
-public class UserService(MatrixSessionService sessionService, ILogger<UserService> logger)
+public class UserService(MatrixSessionService sessionService, ILogger<UserService> logger) : IUserService
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<(int Total, List<UserListViewModel> Users)> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, CancellationToken token = default)
+    public async Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, CancellationToken token = default)
     {
-        if (SynapseAdmin == null) return (0, []);
+        if (SynapseAdmin == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure("Not authenticated");
 
         try
         {
@@ -22,7 +24,7 @@ public class UserService(MatrixSessionService sessionService, ILogger<UserServic
             var url = $"/_synapse/admin/v2/users?from={offset}&limit={limit}&dir={dir}&order_by={orderBy}";
 
             var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult>(url, cancellationToken: token);
-            if (result == null) return (0, []);
+            if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
             
             var vms = result.Users.Select(u => new UserListViewModel
             {
@@ -37,29 +39,29 @@ public class UserService(MatrixSessionService sessionService, ILogger<UserServic
                 IsGuest = u.IsGuest == true
             }).ToList();
 
-            return (result.Total, vms);
+            return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((result.Total, vms));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit})", offset, limit);
-            throw;
+            return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(ex.Message);
         }
     }
 
-    public async Task<UserDetailViewModel?> GetUserDetailsAsync(string userId)
+    public async Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId)
     {
-        if (SynapseAdmin == null) return null;
+        if (SynapseAdmin == null) return OperationResult<UserDetailViewModel>.Failure("Not authenticated");
 
         try
         {
             var encodedUserId = Uri.EscapeDataString(userId);
             var u = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>($"/_synapse/admin/v2/users/{encodedUserId}");
             
-            if (u == null) return null;
+            if (u == null) return OperationResult<UserDetailViewModel>.Failure("User not found");
 
             var mediaResult = await SynapseAdmin.Admin.GetUserMediaAsync(userId);
 
-            return new UserDetailViewModel
+            var vm = new UserDetailViewModel
             {
                 UserId = u.Name,
                 DisplayName = u.DisplayName,
@@ -86,74 +88,78 @@ public class UserService(MatrixSessionService sessionService, ILogger<UserServic
                     }).ToList()
                 }
             };
+            return OperationResult<UserDetailViewModel>.Ok(vm);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching user details for {UserId}", userId);
-            throw;
+            return OperationResult<UserDetailViewModel>.Failure(ex.Message);
         }
     }
 
-    public async Task DeactivateUserAsync(string userId, bool erase = false)
+    public async Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure("Not authenticated");
 
         try
         {
             await SynapseAdmin.Admin.DeactivateUserAsync(userId, erase);
             logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId, erase);
+            return OperationResult.Ok();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deactivating user {UserId}", userId);
-            throw;
+            return OperationResult.Failure(ex.Message);
         }
     }
 
-    public async Task QuarantineMediaAsync(string userId)
+    public async Task<OperationResult> QuarantineMediaAsync(string userId)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure("Not authenticated");
         try
         {
             await SynapseAdmin.Admin.QuarantineMediaByUserId(userId);
             logger.LogInformation("Successfully quarantined media for user {UserId}", userId);
+            return OperationResult.Ok();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error quarantining media for user {UserId}", userId);
-            throw;
+            return OperationResult.Failure(ex.Message);
         }
     }
 
-    public async Task<string?> LoginAsUserAsync(string userId, TimeSpan expireIn)
+    public async Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn)
     {
-        if (SynapseAdmin == null) return null;
+        if (SynapseAdmin == null) return OperationResult<string>.Failure("Not authenticated");
         try
         {
             var resp = await SynapseAdmin.Admin.LoginUserAsync(userId, expireIn);
             logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId);
-            return resp.AccessToken;
+            return OperationResult<string>.Ok(resp.AccessToken);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error performing shadow login for user {UserId}", userId);
-            throw;
+            return OperationResult<string>.Failure(ex.Message);
         }
     }
 
-    public async Task SendServerNoticeAsync(string userId, string message)
+    public async Task<OperationResult> SendServerNoticeAsync(string userId, string message)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure("Not authenticated");
         try
         {
             var content = new RoomMessageEventContent(body: message);
             await SynapseAdmin.SendServerNoticeAsync(userId, content);
             logger.LogInformation("Successfully sent server notice to user {UserId}", userId);
+            return OperationResult.Ok();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error sending server notice to user {UserId}", userId);
-            throw;
+            return OperationResult.Failure(ex.Message);
         }
     }
 }
