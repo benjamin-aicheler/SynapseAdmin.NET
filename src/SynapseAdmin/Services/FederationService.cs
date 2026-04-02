@@ -1,18 +1,22 @@
 using System.Net.Http.Json;
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
-using MudBlazor;
+using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
+using Microsoft.Extensions.Localization;
+using MudBlazor;
 
 namespace SynapseAdmin.Services;
 
-public class FederationService(MatrixSessionService sessionService, ILogger<FederationService> logger)
+public class FederationService(MatrixSessionService sessionService, ILogger<FederationService> logger, IStringLocalizer<SharedResources> L) : IFederationService
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<(int Total, List<FederationDestinationListViewModel> Destinations)> GetDestinationsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
+    public async Task<OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>> GetDestinationsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
     {
-        if (SynapseAdmin == null) return (0, []);
+        if (SynapseAdmin == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -20,7 +24,7 @@ public class FederationService(MatrixSessionService sessionService, ILogger<Fede
             var url = $"/_synapse/admin/v1/federation/destinations?from={offset}&limit={limit}&dir={dir}";
 
             var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminDestinationListResult>(url, cancellationToken: token);
-            if (result == null) return (0, []);
+            if (result == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((0, []));
             
             var vms = result.Destinations.Select(d => new FederationDestinationListViewModel
             {
@@ -31,27 +35,28 @@ public class FederationService(MatrixSessionService sessionService, ILogger<Fede
                 LastSuccessfulStreamOrdering = d.LastSuccessfulStreamOrdering
             }).ToList();
 
-            return (result.Total, vms);
+            return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((result.Total, vms));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching federation destinations (offset: {Offset}, limit: {Limit})", offset, limit);
-            throw;
+            return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Failure(string.Format(L["ErrorFetchingFederationDestinations"], ex.Message));
         }
     }
 
-    public async Task ResetConnectionTimeoutAsync(string destination)
+    public async Task<OperationResult> ResetConnectionTimeoutAsync(string destination)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
             await SynapseAdmin.Admin.ResetFederationConnectionTimeoutAsync(destination);
             logger.LogInformation("Successfully reset federation connection timeout for {Destination}", destination);
+            return OperationResult.Ok(string.Format(L["ResetFederationConnectionSuccessful"], destination));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error resetting federation connection timeout for {Destination}", destination);
-            throw;
+            return OperationResult.Failure(string.Format(L["ErrorResettingFederationConnection"], destination, ex.Message));
         }
     }
 }

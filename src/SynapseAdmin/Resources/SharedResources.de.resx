@@ -586,4 +586,13 @@
   <data name="ErrorUnblockingRoom" xml:space="preserve">
     <value>Fehler beim Entsperren des Raums: {0}</value>
   </data>
+  <data name="ErrorFetchingFederationDestinations" xml:space="preserve">
+    <value>Fehler beim Laden der Föderationsziele: {0}</value>
+  </data>
+  <data name="ResetFederationConnectionSuccessful" xml:space="preserve">
+    <value>Föderationsverbindungs-Timeout für {0} erfolgreich zurückgesetzt.</value>
+  </data>
+  <data name="ErrorResettingFederationConnection" xml:space="preserve">
+    <value>Fehler beim Zurücksetzen des Föderationsverbindungs-Timeouts für {0}: {1}</value>
+  </data>
 </root>

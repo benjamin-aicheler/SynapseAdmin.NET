@@ -586,4 +586,13 @@
   <data name="ErrorUnblockingRoom" xml:space="preserve">
     <value>Erreur lors du déblocage du salon : {0}</value>
   </data>
+  <data name="ErrorFetchingFederationDestinations" xml:space="preserve">
+    <value>Erreur lors de la récupération des destinations de fédération : {0}</value>
+  </data>
+  <data name="ResetFederationConnectionSuccessful" xml:space="preserve">
+    <value>Délai de connexion de fédération pour {0} réinitialisé avec succès.</value>
+  </data>
+  <data name="ErrorResettingFederationConnection" xml:space="preserve">
+    <value>Erreur lors de la réinitialisation du délai de connexion de fédération pour {0} : {1}</value>
+  </data>
 </root>

@@ -35,7 +35,7 @@ builder.Services.AddMudTranslations();
 builder.Services.AddScoped<MatrixSessionService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<FederationService>();
+builder.Services.AddScoped<IFederationService, FederationService>();
 builder.Services.AddScoped<EventReportService>();
 builder.Services.AddScoped<RegistrationTokenService>();
 builder.Services.AddCascadingAuthenticationState();

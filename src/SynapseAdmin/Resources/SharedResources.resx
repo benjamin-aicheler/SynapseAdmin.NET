@@ -586,4 +586,13 @@
   <data name="ErrorUnblockingRoom" xml:space="preserve">
     <value>Error unblocking room: {0}</value>
   </data>
+  <data name="ErrorFetchingFederationDestinations" xml:space="preserve">
+    <value>Error fetching federation destinations: {0}</value>
+  </data>
+  <data name="ResetFederationConnectionSuccessful" xml:space="preserve">
+    <value>Successfully reset federation connection timeout for {0}</value>
+  </data>
+  <data name="ErrorResettingFederationConnection" xml:space="preserve">
+    <value>Error resetting federation connection timeout for {0}: {1}</value>
+  </data>
 </root>
