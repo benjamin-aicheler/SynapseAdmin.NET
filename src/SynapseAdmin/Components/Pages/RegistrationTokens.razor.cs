@@ -5,6 +5,7 @@ using MudBlazor;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -13,7 +14,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject] 
         public MatrixSessionService MatrixSession { get; set; } = null!;
         [Inject] 
-        public RegistrationTokenService RegistrationTokenService { get; set; } = null!;
+        public IRegistrationTokenService RegistrationTokenService { get; set; } = null!;
         [Inject] 
         public NavigationManager Navigation { get; set; } = null!;
         [Inject] 
@@ -32,18 +33,16 @@ namespace SynapseAdmin.Components.Pages
         private async Task LoadTokens()
         {
             isLoading = true;
-            try
+            var result = await RegistrationTokenService.GetRegistrationTokensAsync();
+            if (result.Success && result.Data != default)
             {
-                tokens = await RegistrationTokenService.GetRegistrationTokensAsync();
+                tokens = result.Data;
             }
-            catch (Exception ex)
+            else
             {
-                Snackbar.Add(string.Format(L["ErrorLoadingTokens"], ex.Message), Severity.Error);
+                Snackbar.Add(result.Message, result.Severity);
             }
-            finally
-            {
-                isLoading = false;
-            }
+            isLoading = false;
         }
 
         private async Task OpenCreateDialog()
@@ -54,15 +53,11 @@ namespace SynapseAdmin.Components.Pages
 
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
-                try
+                var createResult = await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel);
+                Snackbar.Add(createResult.Message, createResult.Severity);
+                if (createResult.Success)
                 {
-                    await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel);
-                    Snackbar.Add(L["TokenCreatedSuccessfully"], Severity.Success);
                     await LoadTokens();
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add(string.Format(L["ErrorCreatingToken"], ex.Message), Severity.Error);
                 }
             }
         }
@@ -83,16 +78,11 @@ namespace SynapseAdmin.Components.Pages
 
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
-                try
+                var updateResult = await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel);
+                Snackbar.Add(updateResult.Message, updateResult.Severity);
+                if (updateResult.Success)
                 {
-                    // Copy expiry from viewmodel to avoid logic leak in UI
-                    await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel);
-                    Snackbar.Add(L["TokenUpdatedSuccessfully"], Severity.Success);
                     await LoadTokens();
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add(string.Format(L["ErrorUpdatingToken"], ex.Message), Severity.Error);
                 }
             }
         }
@@ -106,15 +96,11 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                try
+                var deleteResult = await RegistrationTokenService.DeleteRegistrationTokenAsync(token);
+                Snackbar.Add(deleteResult.Message, deleteResult.Severity);
+                if (deleteResult.Success)
                 {
-                    await RegistrationTokenService.DeleteRegistrationTokenAsync(token);
-                    Snackbar.Add(L["TokenDeletedSuccessfully"], Severity.Success);
                     await LoadTokens();
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add(string.Format(L["ErrorDeletingToken"], ex.Message), Severity.Error);
                 }
             }
         }
