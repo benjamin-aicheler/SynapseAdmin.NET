@@ -58,9 +58,9 @@ namespace SynapseAdmin.Components.Pages
         private async Task DeleteReport(string reportId)
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Dismiss Report", 
-                "Are you sure you want to dismiss (delete) this report? The reported event will not be deleted from the room.", 
-                yesText: "Dismiss", cancelText: "Cancel");
+                L["DismissReportTitle"], 
+                L["DismissReportConfirmation"], 
+                yesText: L["Dismiss"], cancelText: L["Cancel"]);
                 
             if (confirmed == true)
             {

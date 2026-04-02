@@ -27,9 +27,9 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Interfaces:** ALWAYS extract an Interface (in `src/SynapseAdmin/Interfaces/`) for every service to enable unit testing, mocking, and decoupling.
 - **Error Handling:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. This forces the UI to handle success/failure explicitly.
 - **Localization Rule:** 
-    - **Services:** Responsible for generating localized, user-friendly messages for their operations using `IStringLocalizer`.
-    - **Code-Behind (.razor.cs):** Should NEVER perform translations for service actions. They simply consume and display the `Message` and `Severity` provided by the `OperationResult`.
-    - **Razor (.razor):** May use `IStringLocalizer` for static layout strings (labels, headers, button text).
+    - **Services:** Responsible for generating localized, user-friendly messages for **Business Outcomes** (the result of a protocol or data operation) using `IStringLocalizer`.
+    - **Code-Behind (.razor.cs):** Allowed to inject `IStringLocalizer` ONLY for **Interaction Logic** (e.g., Dialog titles/messages, complex UI-only alerts, or dynamic Page Titles). They should NEVER perform translations for service-level business logic.
+    - **Razor (.razor):** Uses `IStringLocalizer` for **Static Layout** strings (labels, headers, constant button text).
 - **Logging:** ALWAYS inject `ILogger<T>` into services and log exceptions/errors to provide server-side traceability for Matrix API failures.
 - **ViewModels:** Always use dedicated ViewModels (`src/SynapseAdmin/Models/ViewModels/`) to pass data from services to components. Avoid passing raw SDK models to the UI.
 - **Dependency Injection:** Services are registered in `Program.cs` and injected into components using the `[Inject]` attribute.

@@ -604,4 +604,55 @@
   <data name="ErrorDeletingEventReport" xml:space="preserve">
     <value>Error deleting event report {0}: {1}</value>
   </data>
+  <data name="ResetConnectionTitle" xml:space="preserve">
+    <value>Reset Connection</value>
+  </data>
+  <data name="ResetConnectionConfirmation" xml:space="preserve">
+    <value>Are you sure you want to reset the federation connection backoff for {0}?</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="DismissReportTitle" xml:space="preserve">
+    <value>Dismiss Report</value>
+  </data>
+  <data name="DismissReportConfirmation" xml:space="preserve">
+    <value>Are you sure you want to dismiss (delete) this report? The reported event will not be deleted from the room.</value>
+  </data>
+  <data name="DeleteRoomTitle" xml:space="preserve">
+    <value>Delete Room</value>
+  </data>
+  <data name="DeleteRoomConfirmation" xml:space="preserve">
+    <value>Are you sure you want to delete this room? This will NOT block it. This action cannot be undone.</value>
+  </data>
+  <data name="DeleteAndBlockRoomTitle" xml:space="preserve">
+    <value>Delete &amp; Block Room</value>
+  </data>
+  <data name="DeleteAndBlockRoomConfirmation" xml:space="preserve">
+    <value>Are you sure you want to delete AND block this room? This action cannot be undone.</value>
+  </data>
+  <data name="DeleteAndBlock" xml:space="preserve">
+    <value>Delete &amp; Block</value>
+  </data>
+  <data name="QuarantineMediaTitle" xml:space="preserve">
+    <value>Quarantine Media</value>
+  </data>
+  <data name="QuarantineRoomMediaConfirmation" xml:space="preserve">
+    <value>Are you sure you want to quarantine all media in this room?</value>
+  </data>
+  <data name="Quarantine" xml:space="preserve">
+    <value>Quarantine</value>
+  </data>
+  <data name="DeactivateUserTitle" xml:space="preserve">
+    <value>Deactivate User</value>
+  </data>
+  <data name="DeactivateUserConfirmation" xml:space="preserve">
+    <value>Are you sure you want to deactivate this user?</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>Deactivate</value>
+  </data>
+  <data name="QuarantineUserMediaConfirmation" xml:space="preserve">
+    <value>Are you sure you want to quarantine all media uploaded by this user?</value>
+  </data>
 </root>
