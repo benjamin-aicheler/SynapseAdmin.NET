@@ -1,13 +1,14 @@
 using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
 using SynapseAdmin.Services;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
     public partial class Home
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
 
         private bool isSynapse;
 

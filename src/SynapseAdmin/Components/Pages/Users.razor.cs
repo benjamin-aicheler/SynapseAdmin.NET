@@ -11,7 +11,7 @@ namespace SynapseAdmin.Components.Pages
     public partial class Users
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
         public IUserService UserService { get; set; } = null!;
         [Inject]

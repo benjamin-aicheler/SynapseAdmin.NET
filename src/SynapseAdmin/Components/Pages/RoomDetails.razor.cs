@@ -13,7 +13,7 @@ namespace SynapseAdmin.Components.Pages
     public partial class RoomDetails
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
         public IRoomService RoomService { get; set; } = null!;
         [Inject]

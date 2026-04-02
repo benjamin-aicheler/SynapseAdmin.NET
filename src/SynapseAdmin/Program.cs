@@ -32,7 +32,7 @@ builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
 builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
-builder.Services.AddScoped<MatrixSessionService>();
+builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFederationService, FederationService>();

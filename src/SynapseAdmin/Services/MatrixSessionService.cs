@@ -1,12 +1,13 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
+using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 
 namespace SynapseAdmin.Services;
 
-public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<MatrixSessionService> logger, IStringLocalizer<SharedResources> L)
+public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<MatrixSessionService> logger, IStringLocalizer<SharedResources> L) : IMatrixSessionService
 {
     public AuthenticatedHomeserverGeneric? AuthenticatedHomeserver { get; private set; }
 

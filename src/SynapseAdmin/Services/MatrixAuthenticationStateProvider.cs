@@ -4,12 +4,13 @@ using LibMatrix.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using SynapseAdmin.Models;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Services;
 
 public class MatrixAuthenticationStateProvider(
     ProtectedLocalStorage localStorage,
-    MatrixSessionService sessionService) : AuthenticationStateProvider
+    IMatrixSessionService sessionService) : AuthenticationStateProvider
 {
     private const string StorageKey_Homeserver = "matrix_homeserver";
     private const string StorageKey_AccessToken = "matrix_access_token";

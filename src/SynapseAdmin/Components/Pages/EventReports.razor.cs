@@ -9,7 +9,7 @@ namespace SynapseAdmin.Components.Pages
     public partial class EventReports
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
 
         [Inject]
         public IEventReportService EventReportService { get; set; } = null!;

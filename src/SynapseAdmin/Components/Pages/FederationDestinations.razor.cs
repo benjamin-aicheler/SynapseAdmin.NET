@@ -11,7 +11,7 @@ namespace SynapseAdmin.Components.Pages
     public partial class FederationDestinations
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
         public IFederationService FederationService { get; set; } = null!;
         [Inject]
