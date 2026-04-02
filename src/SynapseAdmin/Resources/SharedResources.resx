@@ -595,4 +595,13 @@
   <data name="ErrorResettingFederationConnection" xml:space="preserve">
     <value>Error resetting federation connection timeout for {0}: {1}</value>
   </data>
+  <data name="ErrorFetchingEventReports" xml:space="preserve">
+    <value>Error fetching event reports: {0}</value>
+  </data>
+  <data name="EventReportDeletedSuccessfully" xml:space="preserve">
+    <value>Event report deleted successfully.</value>
+  </data>
+  <data name="ErrorDeletingEventReport" xml:space="preserve">
+    <value>Error deleting event report {0}: {1}</value>
+  </data>
 </root>

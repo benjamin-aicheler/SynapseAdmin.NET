@@ -595,4 +595,13 @@
   <data name="ErrorResettingFederationConnection" xml:space="preserve">
     <value>Erreur lors de la réinitialisation du délai de connexion de fédération pour {0} : {1}</value>
   </data>
+  <data name="ErrorFetchingEventReports" xml:space="preserve">
+    <value>Erreur lors de la récupération des rapports d'événements : {0}</value>
+  </data>
+  <data name="EventReportDeletedSuccessfully" xml:space="preserve">
+    <value>Rapport d'événement supprimé avec succès.</value>
+  </data>
+  <data name="ErrorDeletingEventReport" xml:space="preserve">
+    <value>Erreur lors de la suppression du rapport d'événement {0} : {1}</value>
+  </data>
 </root>

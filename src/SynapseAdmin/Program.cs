@@ -36,7 +36,7 @@ builder.Services.AddScoped<MatrixSessionService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFederationService, FederationService>();
-builder.Services.AddScoped<EventReportService>();
+builder.Services.AddScoped<IEventReportService, EventReportService>();
 builder.Services.AddScoped<RegistrationTokenService>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, MatrixAuthenticationStateProvider>();
