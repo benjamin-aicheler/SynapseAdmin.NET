@@ -4,17 +4,21 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using LibMatrix.EventTypes.Spec.State.RoomInfo;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models;
+using SynapseAdmin.Resources;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 
 namespace SynapseAdmin.Services;
 
-public class RoomService(MatrixSessionService sessionService, ILogger<RoomService> logger)
+public class RoomService(IMatrixSessionService sessionService, ILogger<RoomService> logger, IStringLocalizer<SharedResources> L) : IRoomService
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<(int Total, List<RoomListViewModel> Rooms)> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
+    public async Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
     {
-        if (SynapseAdmin == null) return (0, []);
+        if (SynapseAdmin == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -26,7 +30,7 @@ public class RoomService(MatrixSessionService sessionService, ILogger<RoomServic
             }
 
             var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
-            if (result == null) return (0, []);
+            if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
             
             var vms = result.Rooms.Select(r => new RoomListViewModel
             {
@@ -45,25 +49,25 @@ public class RoomService(MatrixSessionService sessionService, ILogger<RoomServic
                 RoomType = "" 
             }).ToList();
 
-            return (result.TotalRooms, vms);
+            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((result.TotalRooms, vms));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit})", offset, limit);
-            throw;
+            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(string.Format(L["ErrorFetchingRoomList"], ex.Message));
         }
     }
 
-    public async Task<RoomDetailViewModel?> GetRoomDetailsAsync(string roomId)
+    public async Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId)
     {
-        if (SynapseAdmin == null) return null;
+        if (SynapseAdmin == null) return OperationResult<RoomDetailViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var encodedRoomId = Uri.EscapeDataString(roomId);
             var r = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{encodedRoomId}");
             
-            if (r == null) return null;
+            if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
 
             var membersTask = SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
             var stateTask = SynapseAdmin.Admin.GetRoomStateAsync(roomId);
@@ -75,7 +79,7 @@ public class RoomService(MatrixSessionService sessionService, ILogger<RoomServic
                 .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
                 .ContentAs<RoomTombstoneEventContent>();
 
-            return new RoomDetailViewModel
+            var vm = new RoomDetailViewModel
             {
                 RoomId = r.RoomId,
                 Name = r.Name,
@@ -104,17 +108,18 @@ public class RoomService(MatrixSessionService sessionService, ILogger<RoomServic
                     RawContent = e.RawContent?.ToJsonString()
                 }).ToList() ?? []
             };
+            return OperationResult<RoomDetailViewModel>.Ok(vm);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching room details for {RoomId}", roomId);
-            throw;
+            return OperationResult<RoomDetailViewModel>.Failure(string.Format(L["ErrorFetchingRoomDetails"], ex.Message));
         }
     }
 
-    public async Task DeleteRoomAsync(string roomId, bool block = false, bool purge = true)
+    public async Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -125,41 +130,44 @@ public class RoomService(MatrixSessionService sessionService, ILogger<RoomServic
             };
             await SynapseAdmin.Admin.DeleteRoom(roomId, req);
             logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId, block, purge);
+            return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deleting room {RoomId}", roomId);
-            throw;
+            return OperationResult.Failure(string.Format(L["ErrorDeletingRoom"], ex.Message));
         }
     }
 
-    public async Task QuarantineMediaAsync(string roomId)
+    public async Task<OperationResult> QuarantineMediaAsync(string roomId)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
             await SynapseAdmin.Admin.QuarantineMediaByRoomId(roomId);
             logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId);
+            return OperationResult.Ok(L["RoomMediaQuarantinedSuccessfully"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId);
-            throw;
+            return OperationResult.Failure(string.Format(L["ErrorQuarantiningRoomMedia"], ex.Message));
         }
     }
 
-    public async Task BlockRoomAsync(string roomId, bool block)
+    public async Task<OperationResult> BlockRoomAsync(string roomId, bool block)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
             await SynapseAdmin.Admin.BlockRoom(roomId, block);
             logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId);
+            return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId);
-            throw;
+            return OperationResult.Failure(string.Format(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"], ex.Message));
         }
     }
 }

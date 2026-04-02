@@ -4,15 +4,16 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
     public partial class Rooms
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
-        public RoomService RoomService { get; set; } = null!;
+        public IRoomService RoomService { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
@@ -31,22 +32,23 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task<TableData<RoomListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
-            try
-            {
-                var offset = state.Page * state.PageSize;
-                var orderBy = state.SortLabel ?? "name";
+            var offset = state.Page * state.PageSize;
+            var orderBy = state.SortLabel ?? "name";
 
-                var (total, rooms) = await RoomService.GetRoomListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
-                
-                totalRooms = total;
+            var result = await RoomService.GetRoomListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
+            
+            if (result.Success && result.Data != default)
+            {
+                totalRooms = result.Data.Total;
                 StateHasChanged();
-                return new TableData<RoomListViewModel>() { TotalItems = total, Items = rooms };
+                return new TableData<RoomListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Rooms };
             }
-            catch (Exception ex)
+            
+            if (!result.Success)
             {
-                Snackbar.Add($"Error fetching rooms: {ex.Message}", Severity.Error);
+                Snackbar.Add(result.Message, result.Severity);
             }
-
+            
             return new TableData<RoomListViewModel>() { TotalItems = 0, Items = new List<RoomListViewModel>() };
         }
     }

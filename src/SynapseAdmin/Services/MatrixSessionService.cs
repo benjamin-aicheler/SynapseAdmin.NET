@@ -1,10 +1,13 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
+using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
+using SynapseAdmin.Resources;
+using Microsoft.Extensions.Localization;
 
 namespace SynapseAdmin.Services;
 
-public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<MatrixSessionService> logger)
+public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<MatrixSessionService> logger, IStringLocalizer<SharedResources> L) : IMatrixSessionService
 {
     public AuthenticatedHomeserverGeneric? AuthenticatedHomeserver { get; private set; }
 
@@ -17,7 +20,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
             var loginResponse = await hsProvider.Login(homeserver, username, password);
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
             logger.LogInformation("User {Username} successfully logged into {Homeserver}", username, homeserver);
-            return OperationResult.Ok();
+            return OperationResult.Ok(L["LoginSuccessful"] ?? "Login successful.");
         }
         catch (Exception ex)
         {
@@ -38,7 +41,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         {
             logger.LogWarning(ex, "Failed to restore session for {Homeserver}", homeserver);
             AuthenticatedHomeserver = null;
-            return OperationResult.Failure(ex.Message);
+            return OperationResult.Failure(string.Format(L["ErrorLoadingTokens"], ex.Message));
         }
     }
 

@@ -1,6 +1,7 @@
 using SynapseAdmin.Components;
 using LibMatrix.Services;
 using SynapseAdmin.Services;
+using SynapseAdmin.Interfaces;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -31,12 +32,12 @@ builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
 builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
-builder.Services.AddScoped<MatrixSessionService>();
-builder.Services.AddScoped<RoomService>();
-builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<FederationService>();
-builder.Services.AddScoped<EventReportService>();
-builder.Services.AddScoped<RegistrationTokenService>();
+builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IFederationService, FederationService>();
+builder.Services.AddScoped<IEventReportService, EventReportService>();
+builder.Services.AddScoped<IRegistrationTokenService, RegistrationTokenService>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, MatrixAuthenticationStateProvider>();
 builder.Services.AddScoped<MatrixAuthenticationStateProvider>(sp => (MatrixAuthenticationStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());

@@ -1,23 +1,27 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
+using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
+using Microsoft.Extensions.Localization;
 
 namespace SynapseAdmin.Services;
 
-public class RegistrationTokenService(MatrixSessionService sessionService, ILogger<RegistrationTokenService> logger)
+public class RegistrationTokenService(IMatrixSessionService sessionService, ILogger<RegistrationTokenService> logger, IStringLocalizer<SharedResources> L) : IRegistrationTokenService
 {
     private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
 
-    public async Task<List<RegistrationTokenViewModel>> GetRegistrationTokensAsync()
+    public async Task<OperationResult<List<RegistrationTokenViewModel>>> GetRegistrationTokensAsync()
     {
-        if (SynapseAdmin == null) return [];
+        if (SynapseAdmin == null) return OperationResult<List<RegistrationTokenViewModel>>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var sdkTokens = await SynapseAdmin.Admin.GetRegistrationTokensAsync();
             
-            return sdkTokens.Select(t => new RegistrationTokenViewModel
+            var vms = sdkTokens.Select(t => new RegistrationTokenViewModel
             {
                 Token = t.Token,
                 UsesAllowed = t.UsesAllowed,
@@ -25,17 +29,19 @@ public class RegistrationTokenService(MatrixSessionService sessionService, ILogg
                 Completed = t.Completed,
                 ExpiryTime = t.ExpiryTime
             }).ToList();
+
+            return OperationResult<List<RegistrationTokenViewModel>>.Ok(vms);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching registration tokens");
-            throw;
+            return OperationResult<List<RegistrationTokenViewModel>>.Failure(string.Format(L["ErrorLoadingTokens"], ex.Message));
         }
     }
 
-    public async Task CreateRegistrationTokenAsync(RegistrationTokenViewModel viewModel)
+    public async Task<OperationResult> CreateRegistrationTokenAsync(RegistrationTokenViewModel viewModel)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -47,17 +53,18 @@ public class RegistrationTokenService(MatrixSessionService sessionService, ILogg
             };
             var result = await SynapseAdmin.Admin.CreateRegistrationTokenAsync(req);
             logger.LogInformation("Successfully created registration token: {Token}", result.Token);
+            return OperationResult.Ok(L["TokenCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating registration token");
-            throw;
+            return OperationResult.Failure(string.Format(L["ErrorCreatingToken"], ex.Message));
         }
     }
 
-    public async Task UpdateRegistrationTokenAsync(string token, RegistrationTokenViewModel viewModel)
+    public async Task<OperationResult> UpdateRegistrationTokenAsync(string token, RegistrationTokenViewModel viewModel)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -68,26 +75,28 @@ public class RegistrationTokenService(MatrixSessionService sessionService, ILogg
             };
             await SynapseAdmin.Admin.UpdateRegistrationTokenAsync(token, req);
             logger.LogInformation("Successfully updated registration token: {Token}", token);
+            return OperationResult.Ok(L["TokenUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error updating registration token {Token}", token);
-            throw;
+            return OperationResult.Failure(string.Format(L["ErrorUpdatingToken"], ex.Message));
         }
     }
 
-    public async Task DeleteRegistrationTokenAsync(string token)
+    public async Task<OperationResult> DeleteRegistrationTokenAsync(string token)
     {
-        if (SynapseAdmin == null) return;
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
             await SynapseAdmin.Admin.DeleteRegistrationTokenAsync(token);
             logger.LogInformation("Successfully deleted registration token: {Token}", token);
+            return OperationResult.Ok(L["TokenDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deleting registration token {Token}", token);
-            throw;
+            return OperationResult.Failure(string.Format(L["ErrorDeletingToken"], ex.Message));
         }
     }
 }

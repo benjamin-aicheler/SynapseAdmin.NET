@@ -3,12 +3,14 @@ using LibMatrix.Homeservers;
 using LibMatrix.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using SynapseAdmin.Models;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Services;
 
 public class MatrixAuthenticationStateProvider(
     ProtectedLocalStorage localStorage,
-    MatrixSessionService sessionService) : AuthenticationStateProvider
+    IMatrixSessionService sessionService) : AuthenticationStateProvider
 {
     private const string StorageKey_Homeserver = "matrix_homeserver";
     private const string StorageKey_AccessToken = "matrix_access_token";
@@ -57,7 +59,7 @@ public class MatrixAuthenticationStateProvider(
         return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
     }
 
-    public async Task LoginAsync(string homeserver, string username, string password)
+    public async Task<OperationResult> LoginAsync(string homeserver, string username, string password)
     {
         var result = await sessionService.LoginAsync(homeserver, username, password);
         
@@ -77,15 +79,10 @@ public class MatrixAuthenticationStateProvider(
             var principal = new ClaimsPrincipal(identity);
             
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(principal)));
+            return result;
         }
-        else
-        {
-            // If we want to pass the error back through this provider, 
-            // we'd need to change LoginAsync's return type too.
-            // For now, the caller might still expect an exception or check the session state.
-            // To maintain compatibility with Login.razor.cs's catch block, we can throw if it fails.
-            throw new Exception(result.ErrorMessage ?? "Login failed");
-        }
+        
+        return result;
     }
 
     public async Task LogoutAsync()

@@ -4,15 +4,16 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
     public partial class FederationDestinations
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
-        public FederationService FederationService { get; set; } = null!;
+        public IFederationService FederationService { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
@@ -33,19 +34,20 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task<TableData<FederationDestinationListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
-            try
+            var offset = state.Page * state.PageSize;
+
+            var result = await FederationService.GetDestinationsAsync(offset, state.PageSize, state.SortDirection, token: token);
+
+            if (result.Success && result.Data != default)
             {
-                var offset = state.Page * state.PageSize;
-
-                var (total, destinations) = await FederationService.GetDestinationsAsync(offset, state.PageSize, state.SortDirection, token: token);
-
-                totalDestinations = total;
+                totalDestinations = result.Data.Total;
                 StateHasChanged();
-                return new TableData<FederationDestinationListViewModel>() { TotalItems = total, Items = destinations };
+                return new TableData<FederationDestinationListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Destinations };
             }
-            catch (Exception ex)
+            
+            if (!result.Success)
             {
-                Snackbar.Add($"Error fetching destinations: {ex.Message}", Severity.Error);
+                Snackbar.Add(result.Message, result.Severity);
             }
 
             return new TableData<FederationDestinationListViewModel>() { TotalItems = 0, Items = new List<FederationDestinationListViewModel>() };
@@ -53,21 +55,18 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task ResetConnection(string destination)
         {
-            bool? result = await DialogService.ShowMessageBoxAsync(
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 "Reset Connection", 
                 $"Are you sure you want to reset the federation connection backoff for {destination}?", 
                 yesText: "Reset", cancelText: "Cancel");
                 
-            if (result == true)
+            if (confirmed == true)
             {
-                try {
-                    await FederationService.ResetConnectionTimeoutAsync(destination);
-                    Snackbar.Add($"Connection backoff reset for {destination}.", Severity.Success);
-                    await ReloadTable();
-                }
-                catch (Exception ex)
+                var result = await FederationService.ResetConnectionTimeoutAsync(destination);
+                Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
                 {
-                    Snackbar.Add($"Error resetting connection for {destination}: {ex.Message}", Severity.Error);
+                    await ReloadTable();
                 }
             }
         }

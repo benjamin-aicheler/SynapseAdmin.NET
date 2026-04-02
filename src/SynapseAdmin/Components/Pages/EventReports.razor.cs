@@ -2,76 +2,75 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
     public partial class EventReports
     {
         [Inject]
-         public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
 
-         [Inject]
-         public EventReportService EventReportService { get; set; } = null!;
+        [Inject]
+        public IEventReportService EventReportService { get; set; } = null!;
 
-         [Inject]
-         public NavigationManager Navigation { get; set; } = null!;
+        [Inject]
+        public NavigationManager Navigation { get; set; } = null!;
 
-         [Inject]
-         public ISnackbar Snackbar { get; set; } = null!;
+        [Inject]
+        public ISnackbar Snackbar { get; set; } = null!;
 
-         [Inject]
-         public IDialogService DialogService { get; set; } = null!;
+        [Inject]
+        public IDialogService DialogService { get; set; } = null!;
 
-         private MudTable<EventReportListViewModel>? table;
-    private int? totalReports;
+        private MudTable<EventReportListViewModel>? table;
+        private int? totalReports;
 
-    private async Task ReloadTable()
-    {
-        if (table != null)
+        private async Task ReloadTable()
         {
-            await table.ReloadServerData();
+            if (table != null)
+            {
+                await table.ReloadServerData();
+            }
         }
-    }
 
-    private async Task<TableData<EventReportListViewModel>> ServerReload(TableState state, CancellationToken token)
-    {
-        try
+        private async Task<TableData<EventReportListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
             var offset = state.Page * state.PageSize;
 
-            var (total, reports) = await EventReportService.GetEventReportsAsync(offset, state.PageSize, state.SortDirection, token: token);
+            var result = await EventReportService.GetEventReportsAsync(offset, state.PageSize, state.SortDirection, token: token);
             
-            totalReports = total;
-            StateHasChanged();
-            return new TableData<EventReportListViewModel>() { TotalItems = total, Items = reports };
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error fetching event reports: {ex.Message}", Severity.Error);
-        }
-
-        return new TableData<EventReportListViewModel>() { TotalItems = 0, Items = new List<EventReportListViewModel>() };
-    }
-
-    private async Task DeleteReport(string reportId)
-    {
-        bool? result = await DialogService.ShowMessageBoxAsync(
-            "Dismiss Report", 
-            "Are you sure you want to dismiss (delete) this report? The reported event will not be deleted from the room.", 
-            yesText: "Dismiss", cancelText: "Cancel");
-            
-        if (result == true)
-        {
-            try {
-                await EventReportService.DeleteEventReportAsync(reportId);
-                Snackbar.Add("Report dismissed successfully.", Severity.Success);
-                await ReloadTable();
-            }
-            catch (Exception ex)
+            if (result.Success && result.Data != default)
             {
-                Snackbar.Add($"Error dismissing report: {ex.Message}", Severity.Error);
+                totalReports = result.Data.Total;
+                StateHasChanged();
+                return new TableData<EventReportListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Reports };
+            }
+            
+            if (!result.Success)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
+
+            return new TableData<EventReportListViewModel>() { TotalItems = 0, Items = new List<EventReportListViewModel>() };
+        }
+
+        private async Task DeleteReport(string reportId)
+        {
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                "Dismiss Report", 
+                "Are you sure you want to dismiss (delete) this report? The reported event will not be deleted from the room.", 
+                yesText: "Dismiss", cancelText: "Cancel");
+                
+            if (confirmed == true)
+            {
+                var result = await EventReportService.DeleteEventReportAsync(reportId);
+                Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    await ReloadTable();
+                }
             }
         }
-    }
     }
 }

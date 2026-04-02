@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using MudBlazor;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -14,6 +15,7 @@ namespace SynapseAdmin.Components.Pages
 
         private LoginViewModel loginModel = new();
         private string? errorMessage;
+        private Severity errorSeverity = Severity.Error;
         private bool isSubmitting;
         private string usernamePlaceholder = "@user:matrix.org";
 
@@ -22,19 +24,19 @@ namespace SynapseAdmin.Components.Pages
             errorMessage = null;
             isSubmitting = true;
 
-            try
+            var result = await AuthProvider.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
+            
+            if (result.Success)
             {
-                await AuthProvider.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
                 Navigation.NavigateTo("/");
             }
-            catch (Exception ex)
+            else
             {
-                errorMessage = $"Login failed: {ex.Message}";
+                errorMessage = result.Message;
+                errorSeverity = result.Severity;
             }
-            finally
-            {
-                isSubmitting = false;
-            }
+
+            isSubmitting = false;
         }
     }
 }

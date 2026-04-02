@@ -4,15 +4,16 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
     public partial class Users
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
-        public UserService UserService { get; set; } = null!;
+        public IUserService UserService { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
@@ -31,22 +32,23 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task<TableData<UserListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
-            try
-            {
-                var offset = state.Page * state.PageSize;
-                var orderBy = state.SortLabel ?? "name";
+            var offset = state.Page * state.PageSize;
+            var orderBy = state.SortLabel ?? "name";
 
-                var (total, users) = await UserService.GetUserListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
-                
-                totalUsers = total;
+            var result = await UserService.GetUserListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
+            
+            if (result.Success && result.Data != default)
+            {
+                totalUsers = result.Data.Total;
                 StateHasChanged();
-                return new TableData<UserListViewModel>() { TotalItems = total, Items = users };
+                return new TableData<UserListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Users };
             }
-            catch (Exception ex)
+            
+            if (!result.Success)
             {
-                Snackbar.Add($"Error fetching users: {ex.Message}", Severity.Error);
+                Snackbar.Add(result.Message, result.Severity);
             }
-
+            
             return new TableData<UserListViewModel>() { TotalItems = 0, Items = new List<UserListViewModel>() };
         }
     }

@@ -3,15 +3,16 @@ using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Services;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
     public partial class ServerNotices
     {
         [Inject]
-        public MatrixSessionService MatrixSession { get; set; } = null!;
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject]
-        public UserService UserService { get; set; } = null!;
+        public IUserService UserService { get; set; } = null!;
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
@@ -29,12 +30,12 @@ namespace SynapseAdmin.Components.Pages
             isSending = true;
             StateHasChanged();
             
-            try
+            var result = await UserService.SendServerNoticeAsync(targetUserId, noticeMessage);
+            
+            Snackbar.Add(result.Message, result.Severity);
+            
+            if (result.Success)
             {
-                await UserService.SendServerNoticeAsync(targetUserId, noticeMessage);
-                
-                Snackbar.Add("Server notice sent successfully!", Severity.Success);
-                
                 // Reset form
                 noticeMessage = string.Empty;
                 targetUserId = string.Empty;
@@ -43,15 +44,9 @@ namespace SynapseAdmin.Components.Pages
                     await form.ResetAsync();
                 }
             }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Failed to send notice: {ex.Message}", Severity.Error);
-            }
-            finally
-            {
-                isSending = false;
-                StateHasChanged();
-            }
+
+            isSending = false;
+            StateHasChanged();
         }
     }
 }
