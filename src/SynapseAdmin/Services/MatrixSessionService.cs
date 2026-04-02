@@ -40,7 +40,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         {
             logger.LogWarning(ex, "Failed to restore session for {Homeserver}", homeserver);
             AuthenticatedHomeserver = null;
-            return OperationResult.Failure(ex.Message);
+            return OperationResult.Failure(string.Format(L["ErrorLoadingTokens"], ex.Message));
         }
     }
 

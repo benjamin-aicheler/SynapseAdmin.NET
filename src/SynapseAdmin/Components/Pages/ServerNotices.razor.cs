@@ -32,10 +32,10 @@ namespace SynapseAdmin.Components.Pages
             
             var result = await UserService.SendServerNoticeAsync(targetUserId, noticeMessage);
             
+            Snackbar.Add(result.Message, result.Severity);
+            
             if (result.Success)
             {
-                Snackbar.Add(result.Message, Severity.Success);
-                
                 // Reset form
                 noticeMessage = string.Empty;
                 targetUserId = string.Empty;
@@ -43,10 +43,6 @@ namespace SynapseAdmin.Components.Pages
                 {
                     await form.ResetAsync();
                 }
-            }
-            else
-            {
-                Snackbar.Add(result.Message, Severity.Error);
             }
 
             isSending = false;

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
+using MudBlazor;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -14,6 +15,7 @@ namespace SynapseAdmin.Components.Pages
 
         private LoginViewModel loginModel = new();
         private string? errorMessage;
+        private Severity errorSeverity = Severity.Error;
         private bool isSubmitting;
         private string usernamePlaceholder = "@user:matrix.org";
 
@@ -31,6 +33,7 @@ namespace SynapseAdmin.Components.Pages
             else
             {
                 errorMessage = result.Message;
+                errorSeverity = result.Severity;
             }
 
             isSubmitting = false;

@@ -40,7 +40,7 @@ namespace SynapseAdmin.Components.Pages
             }
             else
             {
-                Snackbar.Add(result.Message, Severity.Error);
+                Snackbar.Add(result.Message, result.Severity);
             }
         }
 
@@ -54,14 +54,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await UserService.DeactivateUserAsync(UserId);
+                Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
-                    Snackbar.Add(result.Message, Severity.Success);
                     await LoadUserDetails();
-                }
-                else
-                {
-                    Snackbar.Add(result.Message, Severity.Error);
                 }
             }
         }
@@ -76,28 +72,14 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await UserService.QuarantineMediaAsync(UserId);
-                if (result.Success)
-                {
-                    Snackbar.Add(result.Message, Severity.Success);
-                }
-                else
-                {
-                    Snackbar.Add(result.Message, Severity.Error);
-                }
+                Snackbar.Add(result.Message, result.Severity);
             }
         }
 
         private async Task LoginAsUser()
         {
             var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1));
-            if (result.Success && !string.IsNullOrEmpty(result.Data))
-            {
-                Snackbar.Add(result.Message, Severity.Info);
-            }
-            else
-            {
-                Snackbar.Add(result.Message, Severity.Error);
-            }
+            Snackbar.Add(result.Message, result.Severity);
         }
     }
 }

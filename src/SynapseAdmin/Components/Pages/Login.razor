@@ -1,41 +1,52 @@
 @page "/login"
+@using SynapseAdmin.Models.ViewModels
+@using SynapseAdmin.Services
+@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>@L["Login"] - SynapseAdmin.NET</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
-    <MudCard Elevation="3">
-        <MudCardHeader>
-            <CardHeaderContent>
-                <MudText Typo="Typo.h5" Color="Color.Primary">@L["LoginTitle"]</MudText>
-            </CardHeaderContent>
-        </MudCardHeader>
-        <MudCardContent>
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
-            }
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="height: 100vh;">
+    <MudPaper Elevation="4" Class="pa-8" Style="width: 100%; max-width: 400px;">
+        <div class="d-flex flex-column align-center mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+            <MudText Typo="Typo.h4" Align="Align.Center">@L["AppName"]</MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">@L["LoginTitle"]</MudText>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="@errorSeverity" Variant="Variant.Filled" Class="mb-4">@errorMessage</MudAlert>
+        }
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
             
-            <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-                <DataAnnotationsValidator />
-                
-                <MudTextField @bind-Value="loginModel.Homeserver" Label="@L["HomeserverUrl"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Required="true" Placeholder="https://matrix.org" />
-                
-                <MudTextField @bind-Value="loginModel.Username" Label="@L["Username"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Required="true" Placeholder="@usernamePlaceholder" />
-                
-                <MudTextField @bind-Value="loginModel.Password" Label="@L["Password"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-6" InputType="InputType.Password" Required="true" />
-                
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="@isSubmitting">
-                    @if (isSubmitting)
-                    {
-                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
-                        <MudText Class="ms-2">@L["LoggingIn"]</MudText>
-                    }
-                    else
-                    {
-                        <MudText>@L["Login"]</MudText>
-                    }
-                </MudButton>
-            </EditForm>
-        </MudCardContent>
-    </MudCard>
+            <MudTextField Label="@L["HomeserverUrl"]" @bind-Value="loginModel.Homeserver" 
+                          Variant="Variant.Outlined" Margin="Margin.Normal"
+                          Placeholder="https://matrix.org" 
+                          For="@(() => loginModel.Homeserver)" />
+
+            <MudTextField Label="@L["Username"]" @bind-Value="loginModel.Username" 
+                          Variant="Variant.Outlined" Margin="Margin.Normal"
+                          Placeholder="@usernamePlaceholder"
+                          For="@(() => loginModel.Username)" />
+
+            <MudTextField Label="@L["Password"]" @bind-Value="loginModel.Password" 
+                          InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Normal"
+                          For="@(() => loginModel.Password)" />
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" 
+                       FullWidth="true" Class="mt-6 py-3" Disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">@L["LoggingIn"]</MudText>
+                }
+                else
+                {
+                    @L["Login"]
+                }
+            </MudButton>
+        </EditForm>
+    </MudPaper>
 </MudContainer>

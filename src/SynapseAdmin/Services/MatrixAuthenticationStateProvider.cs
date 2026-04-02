@@ -78,10 +78,10 @@ public class MatrixAuthenticationStateProvider(
             var principal = new ClaimsPrincipal(identity);
             
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(principal)));
-            return OperationResult.Ok(result.Message);
+            return result;
         }
         
-        return OperationResult.Failure(result.Message);
+        return result;
     }
 
     public async Task LogoutAsync()

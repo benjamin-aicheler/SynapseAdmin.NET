@@ -44,7 +44,11 @@ namespace SynapseAdmin.Components.Pages
                 return new TableData<UserListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Users };
             }
             
-            Snackbar.Add(result.Message, Severity.Error);
+            if (!result.Success)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
+            
             return new TableData<UserListViewModel>() { TotalItems = 0, Items = new List<UserListViewModel>() };
         }
     }
