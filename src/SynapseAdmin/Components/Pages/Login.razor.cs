@@ -22,19 +22,18 @@ namespace SynapseAdmin.Components.Pages
             errorMessage = null;
             isSubmitting = true;
 
-            try
+            var result = await AuthProvider.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
+            
+            if (result.Success)
             {
-                await AuthProvider.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
                 Navigation.NavigateTo("/");
             }
-            catch (Exception ex)
+            else
             {
-                errorMessage = $"Login failed: {ex.Message}";
+                errorMessage = result.Message;
             }
-            finally
-            {
-                isSubmitting = false;
-            }
+
+            isSubmitting = false;
         }
     }
 }

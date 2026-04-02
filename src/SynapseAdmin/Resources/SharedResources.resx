@@ -112,6 +112,9 @@
   <data name="LoggingIn" xml:space="preserve">
     <value>Logging in...</value>
   </data>
+  <data name="LoginSuccessful" xml:space="preserve">
+    <value>Login successful.</value>
+  </data>
   <data name="Refresh" xml:space="preserve">
     <value>Refresh</value>
   </data>
@@ -513,5 +516,41 @@
   </data>
   <data name="ErrorDeletingToken" xml:space="preserve">
     <value>Error deleting token: {0}</value>
+  </data>
+  <data name="NotAuthenticated" xml:space="preserve">
+    <value>Not authenticated.</value>
+  </data>
+  <data name="ErrorFetchingUserList" xml:space="preserve">
+    <value>Error fetching user list: {0}</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>User not found.</value>
+  </data>
+  <data name="ErrorFetchingUserDetails" xml:space="preserve">
+    <value>Error fetching user details: {0}</value>
+  </data>
+  <data name="UserDeactivatedSuccessfully" xml:space="preserve">
+    <value>User deactivated successfully.</value>
+  </data>
+  <data name="ErrorDeactivatingUser" xml:space="preserve">
+    <value>Error deactivating user: {0}</value>
+  </data>
+  <data name="UserMediaQuarantinedSuccessfully" xml:space="preserve">
+    <value>User media quarantined successfully.</value>
+  </data>
+  <data name="ErrorQuarantiningMedia" xml:space="preserve">
+    <value>Error quarantining media: {0}</value>
+  </data>
+  <data name="ShadowLoginSuccessful" xml:space="preserve">
+    <value>Shadow login successful for user {0}. Access Token retrieved (Simulation).</value>
+  </data>
+  <data name="ErrorLoggingInAsUser" xml:space="preserve">
+    <value>Error logging in as user: {0}</value>
+  </data>
+  <data name="ServerNoticeSentSuccessfully" xml:space="preserve">
+    <value>Server notice sent successfully!</value>
+  </data>
+  <data name="ErrorSendingServerNotice" xml:space="preserve">
+    <value>Error sending server notice: {0}</value>
   </data>
 </root>

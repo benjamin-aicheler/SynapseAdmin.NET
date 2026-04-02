@@ -44,7 +44,7 @@ namespace SynapseAdmin.Components.Pages
                 return new TableData<UserListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Users };
             }
             
-            Snackbar.Add(result.ErrorMessage ?? "Error fetching users", Severity.Error);
+            Snackbar.Add(result.Message, Severity.Error);
             return new TableData<UserListViewModel>() { TotalItems = 0, Items = new List<UserListViewModel>() };
         }
     }

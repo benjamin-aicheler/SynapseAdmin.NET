@@ -112,6 +112,9 @@
   <data name="LoggingIn" xml:space="preserve">
     <value>Connexion en cours...</value>
   </data>
+  <data name="LoginSuccessful" xml:space="preserve">
+    <value>Connexion réussie.</value>
+  </data>
   <data name="Refresh" xml:space="preserve">
     <value>Actualiser</value>
   </data>
@@ -513,5 +516,41 @@
   </data>
   <data name="ErrorDeletingToken" xml:space="preserve">
     <value>Erreur lors de la suppression du jeton : {0}</value>
+  </data>
+  <data name="NotAuthenticated" xml:space="preserve">
+    <value>Non authentifié.</value>
+  </data>
+  <data name="ErrorFetchingUserList" xml:space="preserve">
+    <value>Erreur lors de la récupération de la liste des utilisateurs : {0}</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>Utilisateur non trouvé.</value>
+  </data>
+  <data name="ErrorFetchingUserDetails" xml:space="preserve">
+    <value>Erreur lors de la récupération des détails de l'utilisateur : {0}</value>
+  </data>
+  <data name="UserDeactivatedSuccessfully" xml:space="preserve">
+    <value>Utilisateur désactivé avec succès.</value>
+  </data>
+  <data name="ErrorDeactivatingUser" xml:space="preserve">
+    <value>Erreur lors de la désactivation de l'utilisateur : {0}</value>
+  </data>
+  <data name="UserMediaQuarantinedSuccessfully" xml:space="preserve">
+    <value>Médias de l'utilisateur mis en quarantaine avec succès.</value>
+  </data>
+  <data name="ErrorQuarantiningMedia" xml:space="preserve">
+    <value>Erreur lors de la mise en quarantaine des médias : {0}</value>
+  </data>
+  <data name="ShadowLoginSuccessful" xml:space="preserve">
+    <value>Connexion fantôme réussie pour l'utilisateur {0}. Jeton d'accès récupéré (Simulation).</value>
+  </data>
+  <data name="ErrorLoggingInAsUser" xml:space="preserve">
+    <value>Erreur lors de la connexion en tant qu'utilisateur : {0}</value>
+  </data>
+  <data name="ServerNoticeSentSuccessfully" xml:space="preserve">
+    <value>Notification du serveur envoyée avec succès !</value>
+  </data>
+  <data name="ErrorSendingServerNotice" xml:space="preserve">
+    <value>Erreur lors de l'envoi de la notification du serveur : {0}</value>
   </data>
 </root>

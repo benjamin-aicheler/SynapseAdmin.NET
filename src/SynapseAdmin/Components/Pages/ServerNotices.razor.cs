@@ -34,7 +34,7 @@ namespace SynapseAdmin.Components.Pages
             
             if (result.Success)
             {
-                Snackbar.Add("Server notice sent successfully!", Severity.Success);
+                Snackbar.Add(result.Message, Severity.Success);
                 
                 // Reset form
                 noticeMessage = string.Empty;
@@ -46,7 +46,7 @@ namespace SynapseAdmin.Components.Pages
             }
             else
             {
-                Snackbar.Add(result.ErrorMessage ?? "Failed to send notice", Severity.Error);
+                Snackbar.Add(result.Message, Severity.Error);
             }
 
             isSending = false;

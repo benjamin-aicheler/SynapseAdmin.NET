@@ -1,10 +1,12 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
 using SynapseAdmin.Models;
+using SynapseAdmin.Resources;
+using Microsoft.Extensions.Localization;
 
 namespace SynapseAdmin.Services;
 
-public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<MatrixSessionService> logger)
+public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<MatrixSessionService> logger, IStringLocalizer<SharedResources> L)
 {
     public AuthenticatedHomeserverGeneric? AuthenticatedHomeserver { get; private set; }
 
@@ -17,7 +19,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
             var loginResponse = await hsProvider.Login(homeserver, username, password);
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
             logger.LogInformation("User {Username} successfully logged into {Homeserver}", username, homeserver);
-            return OperationResult.Ok();
+            return OperationResult.Ok(L["LoginSuccessful"] ?? "Login successful.");
         }
         catch (Exception ex)
         {

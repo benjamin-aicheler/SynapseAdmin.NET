@@ -40,7 +40,7 @@ namespace SynapseAdmin.Components.Pages
             }
             else
             {
-                Snackbar.Add(result.ErrorMessage ?? "Error fetching user details", Severity.Error);
+                Snackbar.Add(result.Message, Severity.Error);
             }
         }
 
@@ -56,12 +56,12 @@ namespace SynapseAdmin.Components.Pages
                 var result = await UserService.DeactivateUserAsync(UserId);
                 if (result.Success)
                 {
-                    Snackbar.Add("User deactivated.", Severity.Success);
+                    Snackbar.Add(result.Message, Severity.Success);
                     await LoadUserDetails();
                 }
                 else
                 {
-                    Snackbar.Add(result.ErrorMessage ?? "Error deactivating user", Severity.Error);
+                    Snackbar.Add(result.Message, Severity.Error);
                 }
             }
         }
@@ -78,11 +78,11 @@ namespace SynapseAdmin.Components.Pages
                 var result = await UserService.QuarantineMediaAsync(UserId);
                 if (result.Success)
                 {
-                    Snackbar.Add("User media quarantined successfully.", Severity.Success);
+                    Snackbar.Add(result.Message, Severity.Success);
                 }
                 else
                 {
-                    Snackbar.Add(result.ErrorMessage ?? "Error quarantining media", Severity.Error);
+                    Snackbar.Add(result.Message, Severity.Error);
                 }
             }
         }
@@ -92,11 +92,11 @@ namespace SynapseAdmin.Components.Pages
             var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1));
             if (result.Success && !string.IsNullOrEmpty(result.Data))
             {
-                Snackbar.Add($"Login successful for 1 hour. Access Token retrieved. (Simulation)", Severity.Info);
+                Snackbar.Add(result.Message, Severity.Info);
             }
             else
             {
-                Snackbar.Add(result.ErrorMessage ?? "Error logging in as user", Severity.Error);
+                Snackbar.Add(result.Message, Severity.Error);
             }
         }
     }

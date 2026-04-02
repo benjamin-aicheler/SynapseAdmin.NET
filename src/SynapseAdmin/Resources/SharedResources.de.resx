@@ -110,7 +110,10 @@
     <value>Passwort</value>
   </data>
   <data name="LoggingIn" xml:space="preserve">
-    <value>Anmeldung läuft...</value>
+    <value>Anmelden...</value>
+  </data>
+  <data name="LoginSuccessful" xml:space="preserve">
+    <value>Anmeldung erfolgreich.</value>
   </data>
   <data name="Refresh" xml:space="preserve">
     <value>Aktualisieren</value>
@@ -513,5 +516,41 @@
   </data>
   <data name="ErrorDeletingToken" xml:space="preserve">
     <value>Fehler beim Löschen des Tokens: {0}</value>
+  </data>
+  <data name="NotAuthenticated" xml:space="preserve">
+    <value>Nicht authentifiziert.</value>
+  </data>
+  <data name="ErrorFetchingUserList" xml:space="preserve">
+    <value>Fehler beim Laden der Benutzerliste: {0}</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>Benutzer nicht gefunden.</value>
+  </data>
+  <data name="ErrorFetchingUserDetails" xml:space="preserve">
+    <value>Fehler beim Laden der Benutzerdetails: {0}</value>
+  </data>
+  <data name="UserDeactivatedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich deaktiviert.</value>
+  </data>
+  <data name="ErrorDeactivatingUser" xml:space="preserve">
+    <value>Fehler beim Deaktivieren des Benutzers: {0}</value>
+  </data>
+  <data name="UserMediaQuarantinedSuccessfully" xml:space="preserve">
+    <value>Benutzermedien erfolgreich unter Quarantäne gestellt.</value>
+  </data>
+  <data name="ErrorQuarantiningMedia" xml:space="preserve">
+    <value>Fehler bei der Quarantäne der Medien: {0}</value>
+  </data>
+  <data name="ShadowLoginSuccessful" xml:space="preserve">
+    <value>Schatten-Login für Benutzer {0} erfolgreich. Access Token erhalten (Simulation).</value>
+  </data>
+  <data name="ErrorLoggingInAsUser" xml:space="preserve">
+    <value>Fehler beim Login als Benutzer: {0}</value>
+  </data>
+  <data name="ServerNoticeSentSuccessfully" xml:space="preserve">
+    <value>Server-Benachrichtigung erfolgreich gesendet!</value>
+  </data>
+  <data name="ErrorSendingServerNotice" xml:space="preserve">
+    <value>Fehler beim Senden der Server-Benachrichtigung: {0}</value>
   </data>
 </root>
