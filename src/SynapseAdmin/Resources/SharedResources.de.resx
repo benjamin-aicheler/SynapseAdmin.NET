@@ -553,4 +553,37 @@
   <data name="ErrorSendingServerNotice" xml:space="preserve">
     <value>Fehler beim Senden der Server-Benachrichtigung: {0}</value>
   </data>
+  <data name="ErrorFetchingRoomList" xml:space="preserve">
+    <value>Fehler beim Laden der Raumliste: {0}</value>
+  </data>
+  <data name="RoomNotFound" xml:space="preserve">
+    <value>Raum nicht gefunden.</value>
+  </data>
+  <data name="ErrorFetchingRoomDetails" xml:space="preserve">
+    <value>Fehler beim Laden der Raumdetails: {0}</value>
+  </data>
+  <data name="RoomDeletedSuccessfully" xml:space="preserve">
+    <value>Raum erfolgreich gelöscht.</value>
+  </data>
+  <data name="ErrorDeletingRoom" xml:space="preserve">
+    <value>Fehler beim Löschen des Raums: {0}</value>
+  </data>
+  <data name="RoomMediaQuarantinedSuccessfully" xml:space="preserve">
+    <value>Raummedien erfolgreich unter Quarantäne gestellt.</value>
+  </data>
+  <data name="ErrorQuarantiningRoomMedia" xml:space="preserve">
+    <value>Fehler bei der Quarantäne der Raummedien: {0}</value>
+  </data>
+  <data name="RoomBlockedSuccessfully" xml:space="preserve">
+    <value>Raum erfolgreich gesperrt.</value>
+  </data>
+  <data name="RoomUnblockedSuccessfully" xml:space="preserve">
+    <value>Raum erfolgreich entsperrt.</value>
+  </data>
+  <data name="ErrorBlockingRoom" xml:space="preserve">
+    <value>Fehler beim Sperren des Raums: {0}</value>
+  </data>
+  <data name="ErrorUnblockingRoom" xml:space="preserve">
+    <value>Fehler beim Entsperren des Raums: {0}</value>
+  </data>
 </root>

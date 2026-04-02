@@ -33,7 +33,7 @@ builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
 builder.Services.AddScoped<MatrixSessionService>();
-builder.Services.AddScoped<RoomService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<FederationService>();
 builder.Services.AddScoped<EventReportService>();
