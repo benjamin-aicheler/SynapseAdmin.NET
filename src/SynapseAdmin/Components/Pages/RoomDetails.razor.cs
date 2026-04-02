@@ -49,9 +49,9 @@ namespace SynapseAdmin.Components.Pages
         private async Task DeleteRoom()
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Delete Room", 
-                "Are you sure you want to delete this room? This will NOT block it. This action cannot be undone.", 
-                yesText: "Delete", cancelText: "Cancel");
+                L["DeleteRoomTitle"], 
+                L["DeleteRoomConfirmation"], 
+                yesText: L["Delete"], cancelText: L["Cancel"]);
             
             if (confirmed == true)
             {
@@ -63,9 +63,9 @@ namespace SynapseAdmin.Components.Pages
         private async Task DeleteAndBlockRoom()
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Delete & Block Room", 
-                "Are you sure you want to delete AND block this room? This action cannot be undone.", 
-                yesText: "Delete & Block", cancelText: "Cancel");
+                L["DeleteAndBlockRoomTitle"], 
+                L["DeleteAndBlockRoomConfirmation"], 
+                yesText: L["DeleteAndBlock"], cancelText: L["Cancel"]);
             
             if (confirmed == true)
             {
@@ -77,9 +77,9 @@ namespace SynapseAdmin.Components.Pages
         private async Task QuarantineMedia()
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Quarantine Media", 
-                "Are you sure you want to quarantine all media in this room?", 
-                yesText: "Quarantine", cancelText: "Cancel");
+                L["QuarantineMediaTitle"], 
+                L["QuarantineRoomMediaConfirmation"], 
+                yesText: L["Quarantine"], cancelText: L["Cancel"]);
             
             if (confirmed == true)
             {

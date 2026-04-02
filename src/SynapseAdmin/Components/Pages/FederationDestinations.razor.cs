@@ -56,9 +56,9 @@ namespace SynapseAdmin.Components.Pages
         private async Task ResetConnection(string destination)
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Reset Connection", 
-                $"Are you sure you want to reset the federation connection backoff for {destination}?", 
-                yesText: "Reset", cancelText: "Cancel");
+                L["ResetConnectionTitle"], 
+                string.Format(L["ResetConnectionConfirmation"], destination), 
+                yesText: L["Reset"], cancelText: L["Cancel"]);
                 
             if (confirmed == true)
             {

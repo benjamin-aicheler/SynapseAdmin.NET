@@ -604,4 +604,55 @@
   <data name="ErrorDeletingEventReport" xml:space="preserve">
     <value>Fehler beim Löschen des Ereignisberichts {0}: {1}</value>
   </data>
+  <data name="ResetConnectionTitle" xml:space="preserve">
+    <value>Verbindung zurücksetzen</value>
+  </data>
+  <data name="ResetConnectionConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Föderationsverbindungs-Backoff für {0} zurücksetzen möchten?</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Zurücksetzen</value>
+  </data>
+  <data name="DismissReportTitle" xml:space="preserve">
+    <value>Bericht verwerfen</value>
+  </data>
+  <data name="DismissReportConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diesen Bericht verwerfen (löschen) möchten? Das gemeldete Ereignis wird nicht aus dem Raum gelöscht.</value>
+  </data>
+  <data name="DeleteRoomTitle" xml:space="preserve">
+    <value>Raum löschen</value>
+  </data>
+  <data name="DeleteRoomConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diesen Raum löschen möchten? Dies wird ihn NICHT sperren. Diese Aktion kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="DeleteAndBlockRoomTitle" xml:space="preserve">
+    <value>Raum löschen &amp; sperren</value>
+  </data>
+  <data name="DeleteAndBlockRoomConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diesen Raum löschen UND sperren möchten? Diese Aktion kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="DeleteAndBlock" xml:space="preserve">
+    <value>Löschen &amp; Sperren</value>
+  </data>
+  <data name="QuarantineMediaTitle" xml:space="preserve">
+    <value>Medien unter Quarantäne stellen</value>
+  </data>
+  <data name="QuarantineRoomMediaConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie alle Medien in diesem Raum unter Quarantäne stellen möchten?</value>
+  </data>
+  <data name="Quarantine" xml:space="preserve">
+    <value>Quarantäne</value>
+  </data>
+  <data name="DeactivateUserTitle" xml:space="preserve">
+    <value>Benutzer deaktivieren</value>
+  </data>
+  <data name="DeactivateUserConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diesen Benutzer deaktivieren möchten?</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>Deaktivieren</value>
+  </data>
+  <data name="QuarantineUserMediaConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie alle von diesem Benutzer hochgeladenen Medien unter Quarantäne stellen möchten?</value>
+  </data>
 </root>

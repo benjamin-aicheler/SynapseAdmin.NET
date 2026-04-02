@@ -47,9 +47,9 @@ namespace SynapseAdmin.Components.Pages
         private async Task DeactivateUser()
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Deactivate User", 
-                "Are you sure you want to deactivate this user?", 
-                yesText: "Deactivate", cancelText: "Cancel");
+                L["DeactivateUserTitle"], 
+                L["DeactivateUserConfirmation"], 
+                yesText: L["Deactivate"], cancelText: L["Cancel"]);
                 
             if (confirmed == true)
             {
@@ -65,9 +65,9 @@ namespace SynapseAdmin.Components.Pages
         private async Task QuarantineAllMedia()
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Quarantine Media", 
-                "Are you sure you want to quarantine all media uploaded by this user?", 
-                yesText: "Quarantine", cancelText: "Cancel");
+                L["QuarantineMediaTitle"], 
+                L["QuarantineUserMediaConfirmation"], 
+                yesText: L["Quarantine"], cancelText: L["Cancel"]);
             
             if (confirmed == true)
             {
