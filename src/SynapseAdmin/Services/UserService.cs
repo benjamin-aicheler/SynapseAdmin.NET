@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.EventTypes.Spec;
