@@ -68,26 +68,36 @@ dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj
 
 ### Running with Docker
 
-You can use the official pre-built images from the [GitHub Container Registry](https://github.com/benjamin-aicheler/SynapseAdmin.NET/pkgs/container/synapseadmin.net):
+You can run the application using our pre-built images from the [GitHub Container Registry](https://github.com/benjamin-aicheler/SynapseAdmin.NET/pkgs/container/synapseadmin.net).
+
+#### Using Docker Compose (Recommended)
+The easiest way to get started is by using the default `docker-compose.yml` file:
 
 ```bash
-docker pull ghcr.io/benjamin-aicheler/synapseadmin.net:latest
+docker compose up -d
 ```
 
-Alternatively, to run the application using Docker Compose with the provided `docker-compose.yml`:
+This will:
+- Pull the latest image from GHCR.
+- Map port `8080` for the web interface.
+- Persist application logs to a `./logs` directory on your host.
+
+#### Using Docker CLI
+Alternatively, you can run the container directly:
 
 ```bash
-docker compose up --build
+docker run -d \
+  -p 8080:8080 \
+  -v ./logs:/app/logs \
+  --name synapseadmin \
+  ghcr.io/benjamin-aicheler/synapseadmin.net:latest
 ```
 
-The application logs are stored in the `/app/logs` directory within the container. You can mount a volume to this directory to persist logs on the host:
+#### Building from Source
+If you prefer to build the image yourself, use the provided build-specific compose file:
 
-```yaml
-services:
-  synapseadmin:
-    image: ghcr.io/benjamin-aicheler/synapseadmin.net:latest
-    volumes:
-      - ./logs:/app/logs
+```bash
+docker compose -f docker-compose.build.yml up --build
 ```
 
 ### Reverse Proxy Configuration
