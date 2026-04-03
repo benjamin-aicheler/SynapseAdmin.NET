@@ -12,5 +12,5 @@ services:
       - DP_PASSPHRASE=your-secure-passphrase-here
     volumes:
       - ./logs:/app/logs
-      - ./keys:/root/.aspnet/DataProtection-Keys
+      - ./keys:/app/keys
     restart: unless-stopped
