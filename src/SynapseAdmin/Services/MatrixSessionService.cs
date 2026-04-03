@@ -29,8 +29,15 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         }
     }
 
-    public async Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken)
+    public async Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken, bool force = false)
     {
+        if (!force && AuthenticatedHomeserver != null && 
+            AuthenticatedHomeserver.BaseUrl == homeserver && 
+            AuthenticatedHomeserver.AccessToken == accessToken)
+        {
+            return OperationResult.Ok();
+        }
+
         try
         {
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
