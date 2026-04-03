@@ -41,9 +41,9 @@ The project uses the standard .NET 10 CLI and Docker:
 
 ## Security
 - **Data Protection:** The application uses ASP.NET Core Data Protection to encrypt sensitive session data (Matrix access tokens). 
-    - **Docker:** Keys are persisted to the host via a volume mount to `./keys` (\`/root/.aspnet/DataProtection-Keys\` in the container).
-    - **Host:** Keys are stored in the user's home directory (\`~/.aspnet/DataProtection-Keys\`).
-- **Encryption at Rest:** (Planned - Issue #74) Implement a universal passphrase-based encryption for DataProtection keys to ensure they are encrypted on disk even if the storage directory is compromised.
+    - **Docker:** Keys are persisted to the host via a volume mount to `./keys` (\`/app/keys\` in the container).
+    - **Host:** Keys are stored in the application's root directory (\`./keys\`).
+- **Encryption at Rest:** Implemented a universal passphrase-based encryption (AES-256-GCM) for DataProtection keys to ensure they are encrypted on disk.
 
 ## Git & GitHub Workflow
 We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are prohibited.

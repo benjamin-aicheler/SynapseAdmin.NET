@@ -99,7 +99,7 @@ docker run -d \
   -p 8080:8080 \
   -e DP_PASSPHRASE="your-secure-passphrase-here" \
   -v ./logs:/app/logs \
-  -v ./keys:/root/.aspnet/DataProtection-Keys \
+  -v ./keys:/app/keys \
   --name synapseadmin \
   ghcr.io/benjamin-aicheler/synapseadmin.net:latest
 ```
