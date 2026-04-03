@@ -71,7 +71,7 @@ dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj
 You can run the application using our pre-built images from the [GitHub Container Registry](https://github.com/benjamin-aicheler/SynapseAdmin.NET/pkgs/container/synapseadmin.net).
 
 #### Using Docker Compose (Recommended)
-The easiest way to get started is by using the default `docker-compose.yml` file:
+The easiest way to get started is by using the default `docker-compose.yml` file. **Important:** Change the `DP_PASSPHRASE` value in the file to a secure, random string to encrypt your session keys on disk.
 
 ```bash
 docker compose up -d
@@ -82,13 +82,15 @@ This will:
 - Map port `8080` for the web interface.
 - Persist application logs to a `./logs` directory on your host.
 - Persist encryption keys to a `./keys` directory on your host (keeps you logged in across restarts).
+- **Encrypt** the persisted keys using the `DP_PASSPHRASE`.
 
 #### Using Docker CLI
-Alternatively, you can run the container directly:
+Alternatively, you can run the container directly. Make sure to provide a secure passphrase:
 
 ```bash
 docker run -d \
   -p 8080:8080 \
+  -e DP_PASSPHRASE="your-secure-passphrase-here" \
   -v ./logs:/app/logs \
   -v ./keys:/root/.aspnet/DataProtection-Keys \
   --name synapseadmin \

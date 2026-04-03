@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using MudBlazor.Translations;
 using Serilog;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.DataProtection;
+using SynapseAdmin.Infrastructure.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,15 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+var dpBuilder = builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")));
+
+var passphrase = builder.Configuration["DP_PASSPHRASE"];
+if (!string.IsNullOrEmpty(passphrase))
+{
+    dpBuilder.AddKeyManagementOptions(options => options.XmlEncryptor = new AesXmlEncryptor(passphrase));
+}
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
