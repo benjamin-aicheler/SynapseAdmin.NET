@@ -7,6 +7,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080
+      # IMPORTANT: Change this to a secure, unique passphrase in production!
+      # It is used for encrypting session tokens on disk.
       - DP_PASSPHRASE=your-secure-passphrase-here
     volumes:
       - ./logs:/app/logs

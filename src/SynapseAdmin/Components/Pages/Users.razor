@@ -1,6 +1,7 @@
 @page "/users"
 @using LibMatrix.Homeservers
 @using Microsoft.AspNetCore.Authorization
+@using SynapseAdmin.Models.ViewModels
 
 @attribute [Authorize]
 
@@ -29,12 +30,12 @@ else
 
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>@L["UserId"]</MudTh>
-            <MudTh>@L["DisplayName"]</MudTh>
-            <MudTh>@L["Admin"]</MudTh>
-            <MudTh>@L["Guest"]</MudTh>
-            <MudTh>@L["Deactivated"]</MudTh>
-            <MudTh>@L["Created"]</MudTh>
+            <MudTh><MudTableSortLabel SortLabel="name" T="UserListViewModel">@L["UserId"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="displayname" T="UserListViewModel">@L["DisplayName"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="admin" T="UserListViewModel">@L["Admin"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="is_guest" T="UserListViewModel">@L["Guest"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="deactivated" T="UserListViewModel">@L["Deactivated"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="creation_ts" T="UserListViewModel">@L["Created"]</MudTableSortLabel></MudTh>
             <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>

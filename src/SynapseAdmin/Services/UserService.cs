@@ -79,7 +79,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 Media = mediaResult == null ? null : new UserMediaViewModel
                 {
                     TotalCount = mediaResult.Total,
-                    TotalSize = 0, 
+                    TotalSize = mediaResult.Media.Sum(m => m.MediaLength), 
                     Media = mediaResult.Media.Select(m => new UserMediaItemViewModel
                     {
                         MediaId = m.MediaId,
