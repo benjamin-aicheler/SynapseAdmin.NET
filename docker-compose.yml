@@ -9,4 +9,5 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
     volumes:
       - ./logs:/app/logs
+      - ./keys:/root/.aspnet/DataProtection-Keys
     restart: unless-stopped
