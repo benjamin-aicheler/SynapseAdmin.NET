@@ -39,6 +39,12 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
 
+## Security
+- **Data Protection:** The application uses ASP.NET Core Data Protection to encrypt sensitive session data (Matrix access tokens). 
+    - **Docker:** Keys are persisted to the host via a volume mount to `./keys` (\`/root/.aspnet/DataProtection-Keys\` in the container).
+    - **Host:** Keys are stored in the user's home directory (\`~/.aspnet/DataProtection-Keys\`).
+- **Encryption at Rest:** (Planned - Issue #74) Implement a universal passphrase-based encryption for DataProtection keys to ensure they are encrypted on disk even if the storage directory is compromised.
+
 ## Git & GitHub Workflow
 We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are prohibited.
 
