@@ -7,8 +7,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MudBlazor.Translations;
-using Microsoft.AspNetCore.Localization;
-using System.Globalization;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
