@@ -29,11 +29,11 @@ else
 
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>@L["Name"]</MudTh>
-            <MudTh>@L["RoomId"]</MudTh>
-            <MudTh>@L["Creator"]</MudTh>
-            <MudTh>@L["Members"]</MudTh>
-            <MudTh>@L["Public"]</MudTh>
+            <MudTh><MudTableSortLabel SortLabel="name" T="RoomListViewModel">@L["Name"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="room_id" T="RoomListViewModel">@L["RoomId"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="creator" T="RoomListViewModel">@L["Creator"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="joined_members" T="RoomListViewModel">@L["Members"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="public" T="RoomListViewModel">@L["Public"]</MudTableSortLabel></MudTh>
             <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>

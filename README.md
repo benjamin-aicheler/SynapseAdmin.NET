@@ -25,6 +25,13 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 - **Server Notices:** Broadcast important notices directly to users from the server.
 - **Multi-Language Support:** Fully localized interface with support for English, German, and French.
 
+## Security
+
+SynapseAdmin.NET implements **AES-256-GCM** encryption for session tokens stored on disk. This ensures that even if someone has access to your server's storage, they cannot read your Matrix access tokens without the passphrase.
+
+> [!IMPORTANT]
+> **Always** set a secure, unique `DP_PASSPHRASE` environment variable in production. If this value is changed, all existing sessions will be invalidated, but your data will remain secure.
+
 ## Technologies
 
 - **Architecture:** N-Tier Service Pattern (Separation of UI and Logic)
