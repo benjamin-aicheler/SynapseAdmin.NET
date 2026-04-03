@@ -4,6 +4,7 @@
   <img src="https://img.shields.io/badge/AI-Assisted-blue" alt="AI Assisted" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License: AGPL v3" /></a>
   <a href="https://github.com/benjamin-aicheler/SynapseAdmin.NET/actions"><img src="https://img.shields.io/github/actions/workflow/status/benjamin-aicheler/SynapseAdmin.NET/dotnet.yml?branch=main" alt="GitHub build status" /></a>
+  <a href="https://github.com/benjamin-aicheler/SynapseAdmin.NET/pkgs/container/synapseadmin.net"><img src="https://img.shields.io/github/v/release/benjamin-aicheler/SynapseAdmin.NET?label=Docker&logo=github&color=blue" alt="GHCR Docker Image" /></a>
   <img src="https://img.shields.io/badge/.NET_10-512BD4?style=flat&logo=dotnet&logoColor=white" alt=".NET 10" />
   <img src="https://img.shields.io/badge/Blazor-512BD4?style=flat&logo=blazor&logoColor=white" alt="Blazor" />
   <img src="https://img.shields.io/badge/C%23-239120?style=flat&logo=c-sharp&logoColor=white" alt="C#" />
@@ -67,7 +68,13 @@ dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj
 
 ### Running with Docker
 
-To run the application using Docker Compose:
+You can use the official pre-built images from the [GitHub Container Registry](https://github.com/benjamin-aicheler/SynapseAdmin.NET/pkgs/container/synapseadmin.net):
+
+```bash
+docker pull ghcr.io/benjamin-aicheler/synapseadmin.net:latest
+```
+
+Alternatively, to run the application using Docker Compose with the provided `docker-compose.yml`:
 
 ```bash
 docker compose up --build
@@ -78,8 +85,20 @@ The application logs are stored in the `/app/logs` directory within the containe
 ```yaml
 services:
   synapseadmin:
+    image: ghcr.io/benjamin-aicheler/synapseadmin.net:latest
     volumes:
       - ./logs:/app/logs
+```
+
+### Reverse Proxy Configuration
+
+If you are running the application behind a reverse proxy (like Nginx, Traefik, or Cloudflare) with SSL termination, the app is already configured to respect `X-Forwarded-For` and `X-Forwarded-Proto` headers.
+
+Ensure your proxy is configured to pass these headers. For example, in **Nginx**:
+
+```nginx
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
 ```
 
 ## License
