@@ -1,6 +1,5 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
