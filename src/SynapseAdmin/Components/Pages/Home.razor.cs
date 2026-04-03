@@ -1,6 +1,5 @@
 using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
-using SynapseAdmin.Services;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages

@@ -1,10 +1,6 @@
-using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
-using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages

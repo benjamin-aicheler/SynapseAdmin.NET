@@ -1,8 +1,5 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 

@@ -1,8 +1,5 @@
-using LibMatrix.EventTypes.Spec;
-using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using SynapseAdmin.Services;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
