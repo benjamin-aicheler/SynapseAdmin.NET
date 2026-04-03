@@ -81,6 +81,7 @@ This will:
 - Pull the latest image from GHCR.
 - Map port `8080` for the web interface.
 - Persist application logs to a `./logs` directory on your host.
+- Persist encryption keys to a `./keys` directory on your host (keeps you logged in across restarts).
 
 #### Using Docker CLI
 Alternatively, you can run the container directly:
@@ -89,6 +90,7 @@ Alternatively, you can run the container directly:
 docker run -d \
   -p 8080:8080 \
   -v ./logs:/app/logs \
+  -v ./keys:/root/.aspnet/DataProtection-Keys \
   --name synapseadmin \
   ghcr.io/benjamin-aicheler/synapseadmin.net:latest
 ```
