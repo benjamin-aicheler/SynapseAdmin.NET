@@ -21,6 +21,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
         try
         {
+            if (orderBy == "room_id") orderBy = "alphabetical";
             var dir = direction == SortDirection.Descending ? "b" : "f";
             var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={limit}&dir={dir}&order_by={Uri.EscapeDataString(orderBy)}";
             if (!string.IsNullOrEmpty(searchTerm))
