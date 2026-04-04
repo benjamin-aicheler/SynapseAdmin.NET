@@ -1,6 +1,5 @@
 @page "/"
 @using Microsoft.AspNetCore.Authorization
-
 @attribute [Authorize]
 
 <PageTitle>@L["Dashboard"] - SynapseAdmin.NET</PageTitle>
@@ -23,16 +22,71 @@
     </MudItem>
 </MudGrid>
 
-@if (isSynapse)
+@if (loading)
 {
-    <MudCard Elevation="3" Class="mt-6">
-        <MudCardHeader>
-            <CardHeaderContent>
-                <MudText Typo="Typo.h6">@L["SynapseAdminInfo"]</MudText>
-            </CardHeaderContent>
-        </MudCardHeader>
-        <MudCardContent>
-            <MudText Typo="Typo.body1" Class="mb-4">@L["ConnectedToSynapseWithAdmin"]</MudText>
-        </MudCardContent>
-    </MudCard>
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mt-6" />
+}
+else if (isSynapse)
+{
+    <MudGrid Class="mt-6">
+        @* Totals Cards *@
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column align-center justify-center">
+                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.h4" Class="mt-2">@totalUsers</MudText>
+                <MudText Typo="Typo.subtitle1">@L["Users"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column align-center justify-center">
+                <MudIcon Icon="@Icons.Material.Filled.MeetingRoom" Size="Size.Large" Color="Color.Secondary" />
+                <MudText Typo="Typo.h4" Class="mt-2">@totalRooms</MudText>
+                <MudText Typo="Typo.subtitle1">@L["Rooms"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4 d-flex flex-column align-center justify-center">
+                <MudIcon Icon="@Icons.Material.Filled.Report" Size="Size.Large" Color="Color.Error" />
+                <MudText Typo="Typo.h4" Class="mt-2">@totalReports</MudText>
+                <MudText Typo="Typo.subtitle1">@L["EventReports"]</MudText>
+            </MudPaper>
+        </MudItem>
+
+        @* Tables *@
+        <MudItem xs="12" lg="6">
+            <MudTable Items="latestUsers" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3" Dense="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">@L["LatestUsers"]</MudText>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/users">@L["Details"]</MudButton>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>@L["UserId"]</MudTh>
+                    <MudTh>@L["Created"]</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@L["UserId"]">@context.UserId</MudTd>
+                    <MudTd DataLabel="@L["Created"]">@DateTimeOffset.FromUnixTimeSeconds(context.CreationTs).ToString("g")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+
+        <MudItem xs="12" lg="6">
+            <MudTable Items="latestReports" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3" Dense="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">@L["LatestEventReports"]</MudText>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/event-reports">@L["Details"]</MudButton>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>@L["Reporter"]</MudTh>
+                    <MudTh>@L["Reason"]</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@L["Reporter"]">@context.UserId</MudTd>
+                    <MudTd DataLabel="@L["Reason"]">@(string.IsNullOrWhiteSpace(context.Reason) ? "-" : context.Reason)</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
 }

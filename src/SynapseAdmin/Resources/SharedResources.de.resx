@@ -655,4 +655,10 @@
   <data name="QuarantineUserMediaConfirmation" xml:space="preserve">
     <value>Sind Sie sicher, dass Sie alle von diesem Benutzer hochgeladenen Medien unter Quarantäne stellen möchten?</value>
   </data>
+  <data name="LatestUsers" xml:space="preserve">
+    <value>Neueste Benutzer</value>
+  </data>
+  <data name="LatestEventReports" xml:space="preserve">
+    <value>Neueste Ereignisberichte</value>
+  </data>
 </root>
