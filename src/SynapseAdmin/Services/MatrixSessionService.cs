@@ -18,7 +18,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         try
         {
             // Explicitly resolve homeserver with federation support to ensure correct server type detection
-            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true, useCache: false);
+            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
 
             var loginResponse = await hsProvider.Login(homeserver, username, password);
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
@@ -44,7 +44,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         try
         {
             // Explicitly resolve homeserver with federation support to ensure correct server type detection
-            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true, useCache: false);
+            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
 
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
             logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId, homeserver);
