@@ -17,9 +17,8 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
     {
         try
         {
-            // Workaround for LibMatrix cache poisoning bug: Ensure the homeserver is resolved
-            // with federation support (enableServer: true) first so Synapse is correctly detected.
-            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
+            // Explicitly resolve homeserver with federation support to ensure correct server type detection
+            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true, useCache: false);
 
             var loginResponse = await hsProvider.Login(homeserver, username, password);
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
@@ -44,9 +43,8 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
 
         try
         {
-            // Workaround for LibMatrix cache poisoning bug: Ensure the homeserver is resolved
-            // with federation support (enableServer: true) first so Synapse is correctly detected.
-            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
+            // Explicitly resolve homeserver with federation support to ensure correct server type detection
+            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true, useCache: false);
 
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
             logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId, homeserver);
