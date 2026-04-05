@@ -1,6 +1,6 @@
 @inherits LayoutComponentBase
 
-<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
+<MudThemeProvider @bind-IsDarkMode="ThemeService.IsDarkMode" Theme="ThemeService.CurrentTheme" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
@@ -11,15 +11,16 @@
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
             <MudText Typo="Typo.h5" Class="ml-3">SynapseAdmin.NET</MudText>
             <MudSpacer />
+            <ThemeSelector />
             <LanguageSelector />
-            <MudToggleIconButton @bind-Toggled="@_isDarkMode"
-                                 Icon="@Icons.Material.Filled.DarkMode"
-                                 Color="@Color.Inherit"
-                                 ToggledIcon="@Icons.Material.Filled.LightMode"
-                                 ToggledColor="@Color.Inherit"
-                                 title="Toggle Light/Dark Mode" />
-        </MudAppBar>
-        <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+            <MudToggleIconButton Toggled="ThemeService.IsDarkMode"
+                                  ToggledChanged="ThemeService.ToggleDarkModeAsync"
+                                  Icon="@Icons.Material.Filled.DarkMode"
+                                  Color="@Color.Inherit"
+                                  ToggledIcon="@Icons.Material.Filled.LightMode"
+                                  ToggledColor="@Color.Inherit"
+                                  title="Toggle Light/Dark Mode" />
+        </MudAppBar>        <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
             <MudDrawerHeader>
                 <MudText Typo="Typo.h6">@L["Navigation"]</MudText>
             </MudDrawerHeader>

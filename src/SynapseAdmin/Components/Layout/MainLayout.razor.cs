@@ -1,30 +1,38 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Layout;
 
-public partial class MainLayout : LayoutComponentBase
+public partial class MainLayout : LayoutComponentBase, IDisposable
 {
+    [Inject]
+    public IThemeService ThemeService { get; set; } = default!;
+
     private bool _drawerOpen = true;
-    private bool _isDarkMode = true;
     private bool _isRtl => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
 
-    private MudTheme _theme = new MudTheme
+    protected override void OnInitialized()
     {
-        PaletteLight = new PaletteLight()
+        ThemeService.OnThemeChanged += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            Primary = Colors.Indigo.Default,
-            AppbarBackground = Colors.Indigo.Default,
-        },
-        PaletteDark = new PaletteDark()
-        {
-            Primary = Colors.Indigo.Lighten1,
+            await ThemeService.InitializeAsync();
         }
-    };
+    }
 
     private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= StateHasChanged;
     }
 }
