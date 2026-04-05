@@ -1,0 +1,12 @@
+@namespace SynapseAdmin.Components
+@using SynapseAdmin.Interfaces
+
+<MudMenu Icon="@Icons.Material.Filled.Palette" Color="Color.Inherit" title="Select Theme">
+    @foreach (var theme in ThemeService.AvailableThemes)
+    {
+        <MudMenuItem OnClick="@(() => ThemeService.SetThemeAsync(theme.Id))"
+                     Icon="@(ThemeService.CurrentThemeId == theme.Id ? Icons.Material.Filled.Check : null)">
+            @theme.Name
+        </MudMenuItem>
+    }
+</MudMenu>
