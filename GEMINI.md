@@ -38,6 +38,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
+    - **Themes:** Support multiple themes by implementing the `IAppTheme` interface in `src/SynapseAdmin/Infrastructure/Themes/`. Themes are automatically discovered via reflection. User preferences are persisted using `ProtectedLocalStorage`. See [Theme Guide](./THEMING.md).
 
 ## Security
 - **Data Protection:** The application uses ASP.NET Core Data Protection to encrypt sensitive session data (Matrix access tokens). 
