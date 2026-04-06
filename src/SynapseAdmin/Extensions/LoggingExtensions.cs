@@ -2,24 +2,47 @@ namespace SynapseAdmin.Extensions;
 
 public static class LoggingExtensions
 {
+    private const int DefaultMaxLogLength = 1024;
+
     /// <summary>
-    /// Sanitizes a string for safe logging by removing line breaks, control characters and trimming.
-    /// This prevents Log Injection/Forging vulnerabilities (CodeQL cs/log-forging).
+    /// Sanitizes a string for safe logging by removing line breaks, control characters, and limiting length.
+    /// This prevents Log Injection/Forging vulnerabilities (CodeQL cs/log-forging) and log-based DoS.
     /// </summary>
-    public static string? SanitizeForLogging(this string? input)
+    /// <param name="input">The untrusted input string.</param>
+    /// <param name="maxLength">Optional maximum length for the log entry. Defaults to 1024.</param>
+    /// <returns>A sanitized and truncated string safe for logging.</returns>
+    public static string? SanitizeForLogging(this string? input, int maxLength = DefaultMaxLogLength)
     {
         if (string.IsNullOrEmpty(input)) return input;
 
-        // Work on a copy and remove all newline variants and control characters.
+        // Truncate first to prevent processing excessively large strings (DoS protection)
+        if (input.Length > maxLength)
+        {
+            input = input[..maxLength] + "...(truncated)";
+        }
+
+        // Replace newlines with spaces to preserve context without allowing injection
         var sanitized = input
-            .Replace("\r\n", string.Empty)
-            .Replace("\n\r", string.Empty)
-            .Replace("\n", string.Empty)
-            .Replace("\r", string.Empty);
+            .Replace("\r\n", " ")
+            .Replace("\n\r", " ")
+            .Replace("\n", " ")
+            .Replace("\r", " ");
 
-        // Strip remaining control characters (except tab) to avoid hidden log manipulation.
-        sanitized = new string(sanitized.Where(c => !char.IsControl(c) || c == '\t').ToArray());
+        // Allow only a conservative subset of printable characters in logs.
+        // Replace any disallowed character with '?' so that the log structure remains intact.
+        var result = new string(sanitized.Select(c =>
+        {
+            // Allow basic printable ASCII characters (0x20-0x7E).
+            // This excludes control characters and potential terminal escape sequences.
+            if (c >= 0x20 && c <= 0x7E)
+            {
+                return c;
+            }
 
-        return sanitized.Trim();
+            // For anything else (including non-ASCII), replace with a visible placeholder.
+            return '?';
+        }).ToArray());
+
+        return result.Trim();
     }
 }
