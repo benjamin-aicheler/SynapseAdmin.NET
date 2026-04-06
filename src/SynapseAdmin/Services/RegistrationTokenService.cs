@@ -5,6 +5,7 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
+using System.Net.Http.Json;
 
 namespace SynapseAdmin.Services;
 
@@ -50,7 +51,13 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
                 UsesAllowed = viewModel.UsesAllowed,
                 ExpiryTime = viewModel.ExpiryTime
             };
-            var result = await SynapseAdmin.Admin.CreateRegistrationTokenAsync(req);
+            
+            var resp = await SynapseAdmin.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/registration_tokens", req);
+            resp.EnsureSuccessStatusCode();
+            var result = await resp.Content.ReadFromJsonAsync<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>();
+            
+            if (result == null) return OperationResult.Failure(L["ErrorCreatingToken"]);
+
             logger.LogInformation("Successfully created registration token: {Token}", result.Token);
             return OperationResult.Ok(L["TokenCreatedSuccessfully"]);
         }
