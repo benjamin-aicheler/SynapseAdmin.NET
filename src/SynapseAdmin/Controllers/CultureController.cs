@@ -15,7 +15,8 @@ public class CultureController : Controller
                 CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)),
                 new CookieOptions
                 {
-                    Expires = DateTimeOffset.UtcNow.AddYears(1)
+                    Expires = DateTimeOffset.UtcNow.AddYears(1),
+                    Secure = true
                 });
         }
 
