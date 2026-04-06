@@ -15,14 +15,18 @@ public static class LoggingExtensions
     {
         if (string.IsNullOrEmpty(input)) return input;
 
+        // Work on a local copy so we never return the original (tainted) reference.
+        var sanitized = input;
+
         // Truncate first to prevent processing excessively large strings (DoS protection)
-        if (input.Length > maxLength)
+        if (sanitized.Length > maxLength)
         {
-            input = input[..maxLength] + "...(truncated)";
+            sanitized = sanitized[..maxLength] + "...(truncated)";
         }
 
-        // Replace newlines with spaces to preserve context without allowing injection
-        var sanitized = input
+        // Normalize and replace all newline variants with spaces to preserve context
+        sanitized = sanitized
+            .Replace(Environment.NewLine, " ")
             .Replace("\r\n", " ")
             .Replace("\n\r", " ")
             .Replace("\n", " ")
