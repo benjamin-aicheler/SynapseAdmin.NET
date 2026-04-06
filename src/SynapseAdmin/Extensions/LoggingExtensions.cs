@@ -13,7 +13,8 @@ public static class LoggingExtensions
     /// <returns>A sanitized and truncated string safe for logging.</returns>
     public static string? SanitizeForLogging(this string? input, int maxLength = DefaultMaxLogLength)
     {
-        if (string.IsNullOrEmpty(input)) return input;
+        // Always return a sanitized value, never the original (tainted) reference.
+        if (string.IsNullOrEmpty(input)) return string.Empty;
 
         // Work on a local copy so we never return the original (tainted) reference.
         var sanitized = input;
