@@ -6,6 +6,7 @@ using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
 
@@ -49,12 +50,12 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
         try
         {
             await SynapseAdmin.Admin.ResetFederationConnectionTimeoutAsync(destination);
-            logger.LogInformation("Successfully reset federation connection timeout for {Destination}", destination);
+            logger.LogInformation("Successfully reset federation connection timeout for {Destination}", destination.SanitizeForLogging());
             return OperationResult.Ok(string.Format(L["ResetFederationConnectionSuccessful"], destination));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error resetting federation connection timeout for {Destination}", destination);
+            logger.LogError(ex, "Error resetting federation connection timeout for {Destination}", destination.SanitizeForLogging());
             return OperationResult.Failure(string.Format(L["ErrorResettingFederationConnection"], destination, ex.Message));
         }
     }

@@ -93,7 +93,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching user details for {UserId}", userId);
+            logger.LogError(ex, "Error fetching user details for {UserId}", userId.SanitizeForLogging());
             return OperationResult<UserDetailViewModel>.Failure(string.Format(L["ErrorFetchingUserDetails"], ex.Message));
         }
     }
@@ -105,12 +105,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         try
         {
             await SynapseAdmin.Admin.DeactivateUserAsync(userId, erase);
-            logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId, erase);
+            logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId.SanitizeForLogging(), erase);
             return OperationResult.Ok(L["UserDeactivatedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deactivating user {UserId}", userId);
+            logger.LogError(ex, "Error deactivating user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Failure(string.Format(L["ErrorDeactivatingUser"], ex.Message));
         }
     }
@@ -121,12 +121,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         try
         {
             await SynapseAdmin.Admin.QuarantineMediaByUserId(userId);
-            logger.LogInformation("Successfully quarantined media for user {UserId}", userId);
+            logger.LogInformation("Successfully quarantined media for user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["UserMediaQuarantinedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error quarantining media for user {UserId}", userId);
+            logger.LogError(ex, "Error quarantining media for user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Failure(string.Format(L["ErrorQuarantiningMedia"], ex.Message));
         }
     }
@@ -137,12 +137,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         try
         {
             var resp = await SynapseAdmin.Admin.LoginUserAsync(userId, expireIn);
-            logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId);
+            logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
             return OperationResult<string>.Ok(resp.AccessToken, string.Format(L["ShadowLoginSuccessful"], userId));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error performing shadow login for user {UserId}", userId);
+            logger.LogError(ex, "Error performing shadow login for user {UserId}", userId.SanitizeForLogging());
             return OperationResult<string>.Failure(string.Format(L["ErrorLoggingInAsUser"], ex.Message));
         }
     }
@@ -154,12 +154,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         {
             var content = new RoomMessageEventContent(body: message);
             await SynapseAdmin.SendServerNoticeAsync(userId, content);
-            logger.LogInformation("Successfully sent server notice to user {UserId}", userId);
+            logger.LogInformation("Successfully sent server notice to user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["ServerNoticeSentSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error sending server notice to user {UserId}", userId);
+            logger.LogError(ex, "Error sending server notice to user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Failure(string.Format(L["ErrorSendingServerNotice"], ex.Message));
         }
     }

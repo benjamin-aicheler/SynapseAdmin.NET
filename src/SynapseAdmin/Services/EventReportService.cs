@@ -6,6 +6,7 @@ using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
 
@@ -53,12 +54,12 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
         try
         {
             await SynapseAdmin.Admin.DeleteEventReportAsync(reportId);
-            logger.LogInformation("Successfully deleted event report {ReportId}", reportId);
+            logger.LogInformation("Successfully deleted event report {ReportId}", reportId.SanitizeForLogging());
             return OperationResult.Ok(L["EventReportDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting event report {ReportId}", reportId);
+            logger.LogError(ex, "Error deleting event report {ReportId}", reportId.SanitizeForLogging());
             return OperationResult.Failure(string.Format(L["ErrorDeletingEventReport"], reportId, ex.Message));
         }
     }

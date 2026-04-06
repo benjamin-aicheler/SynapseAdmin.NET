@@ -6,6 +6,7 @@ using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using System.Net.Http.Json;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
 
@@ -58,7 +59,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
             
             if (result == null) return OperationResult.Failure(L["ErrorCreatingToken"]);
 
-            logger.LogInformation("Successfully created registration token: {Token}", result.Token);
+            logger.LogInformation("Successfully created registration token");
             return OperationResult.Ok(L["TokenCreatedSuccessfully"]);
         }
         catch (Exception ex)
@@ -80,12 +81,12 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
                 ExpiryTime = viewModel.ExpiryTime
             };
             await SynapseAdmin.Admin.UpdateRegistrationTokenAsync(token, req);
-            logger.LogInformation("Successfully updated registration token: {Token}", token);
+            logger.LogInformation("Successfully updated registration token");
             return OperationResult.Ok(L["TokenUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating registration token {Token}", token);
+            logger.LogError(ex, "Error updating registration token");
             return OperationResult.Failure(string.Format(L["ErrorUpdatingToken"], ex.Message));
         }
     }
@@ -96,12 +97,12 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
         try
         {
             await SynapseAdmin.Admin.DeleteRegistrationTokenAsync(token);
-            logger.LogInformation("Successfully deleted registration token: {Token}", token);
+            logger.LogInformation("Successfully deleted registration token");
             return OperationResult.Ok(L["TokenDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting registration token {Token}", token);
+            logger.LogError(ex, "Error deleting registration token");
             return OperationResult.Failure(string.Format(L["ErrorDeletingToken"], ex.Message));
         }
     }
