@@ -15,9 +15,6 @@ public class CultureController : Controller
                 CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)),
                 new CookieOptions
                 {
-                    Secure = true,
-                    HttpOnly = true,
-                    SameSite = SameSiteMode.Lax,
                     Expires = DateTimeOffset.UtcNow.AddYears(1)
                 });
         }
