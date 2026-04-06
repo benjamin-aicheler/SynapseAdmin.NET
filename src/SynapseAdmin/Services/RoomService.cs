@@ -69,8 +69,14 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             
             if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
 
-            var members = await SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
-            var stateEvents = await SynapseAdmin.Admin.GetRoomStateAsync(roomId);
+            var membersTask = SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
+            var stateTask = SynapseAdmin.Admin.GetRoomStateAsync(roomId);
+
+            await Task.WhenAll(membersTask, stateTask);
+
+            var members = await membersTask;
+            var stateEvents = await stateTask;
+            
             var tombstone = stateEvents?.Events
                 .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
                 .ContentAs<RoomTombstoneEventContent>();

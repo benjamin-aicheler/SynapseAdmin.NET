@@ -54,21 +54,25 @@ namespace SynapseAdmin.Components.Pages
 
                 await Task.WhenAll(userTask, roomTask, reportTask);
 
-                if (userTask.Result.Success)
+                var userResult = await userTask;
+                var roomResult = await roomTask;
+                var reportResult = await reportTask;
+
+                if (userResult.Success)
                 {
-                    totalUsers = userTask.Result.Data.Total;
-                    latestUsers = userTask.Result.Data.Users;
+                    totalUsers = userResult.Data.Total;
+                    latestUsers = userResult.Data.Users;
                 }
 
-                if (roomTask.Result.Success)
+                if (roomResult.Success)
                 {
-                    totalRooms = roomTask.Result.Data.Total;
+                    totalRooms = roomResult.Data.Total;
                 }
 
-                if (reportTask.Result.Success)
+                if (reportResult.Success)
                 {
-                    totalReports = reportTask.Result.Data.Total;
-                    latestReports = reportTask.Result.Data.Reports;
+                    totalReports = reportResult.Data.Total;
+                    latestReports = reportResult.Data.Reports;
                 }
             }
             finally
