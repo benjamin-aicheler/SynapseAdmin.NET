@@ -4,6 +4,7 @@ using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
 
@@ -22,12 +23,12 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
 
             var loginResponse = await hsProvider.Login(homeserver, username, password);
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
-            logger.LogInformation("User {Username} successfully logged into {Homeserver}", username, homeserver);
+            logger.LogInformation("User {Username} successfully logged into {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"] ?? "Login successful.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Login failed for user {Username} on {Homeserver}", username, homeserver);
+            logger.LogError(ex, "Login failed for user {Username} on {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Failure(ex.Message);
         }
     }
@@ -47,12 +48,12 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
             await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
 
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
-            logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId, homeserver);
+            logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok();
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to restore session for {Homeserver}", homeserver);
+            logger.LogWarning(ex, "Failed to restore session for {Homeserver}", homeserver.SanitizeForLogging());
             AuthenticatedHomeserver = null;
             return OperationResult.Failure(string.Format(L["ErrorLoadingTokens"], ex.Message));
         }
@@ -62,7 +63,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
     {
         if (AuthenticatedHomeserver != null)
         {
-            logger.LogInformation("User {UserId} logged out from {Homeserver}", AuthenticatedHomeserver.UserId, AuthenticatedHomeserver.ServerName);
+            logger.LogInformation("User {UserId} logged out from {Homeserver}", AuthenticatedHomeserver.UserId.SanitizeForLogging(), AuthenticatedHomeserver.ServerName.SanitizeForLogging());
         }
         AuthenticatedHomeserver = null;
     }

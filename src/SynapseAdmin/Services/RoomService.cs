@@ -8,6 +8,7 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
 
@@ -114,7 +115,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching room details for {RoomId}", roomId);
+            logger.LogError(ex, "Error fetching room details for {RoomId}", roomId.SanitizeForLogging());
             return OperationResult<RoomDetailViewModel>.Failure(string.Format(L["ErrorFetchingRoomDetails"], ex.Message));
         }
     }
@@ -131,12 +132,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 Purge = purge
             };
             await SynapseAdmin.Admin.DeleteRoom(roomId, req);
-            logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId, block, purge);
+            logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
             return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting room {RoomId}", roomId);
+            logger.LogError(ex, "Error deleting room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult.Failure(string.Format(L["ErrorDeletingRoom"], ex.Message));
         }
     }
@@ -147,12 +148,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             await SynapseAdmin.Admin.QuarantineMediaByRoomId(roomId);
-            logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId);
+            logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult.Ok(L["RoomMediaQuarantinedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId);
+            logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult.Failure(string.Format(L["ErrorQuarantiningRoomMedia"], ex.Message));
         }
     }
@@ -163,12 +164,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             await SynapseAdmin.Admin.BlockRoom(roomId, block);
-            logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId);
+            logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId.SanitizeForLogging());
             return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId);
+            logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult.Failure(string.Format(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"], ex.Message));
         }
     }

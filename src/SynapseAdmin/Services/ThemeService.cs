@@ -4,6 +4,7 @@ using MudBlazor;
 using SynapseAdmin.Infrastructure.Themes;
 using SynapseAdmin.Interfaces;
 using System.Reflection;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
 
@@ -61,7 +62,7 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
                 var theme = AvailableThemes.FirstOrDefault(t => t.Id == themeResult.Value);
                 if (theme != null)
                 {
-                    logger.LogInformation("Restored theme: {ThemeId}", theme.Id);
+                    logger.LogInformation("Restored theme: {ThemeId}", theme.Id.SanitizeForLogging());
                     _currentThemeInstance = theme;
                 }
             }
@@ -88,7 +89,7 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
         var theme = AvailableThemes.FirstOrDefault(t => t.Id == themeId);
         if (theme != null && theme.Id != _currentThemeInstance.Id)
         {
-            logger.LogInformation("Switching theme to: {ThemeId} ({ThemeName})", theme.Id, theme.Name);
+            logger.LogInformation("Switching theme to: {ThemeId} ({ThemeName})", theme.Id.SanitizeForLogging(), theme.Name.SanitizeForLogging());
             _currentThemeInstance = theme;
             await localStorage.SetAsync(StorageKey_ThemeId, themeId);
             OnThemeChanged?.Invoke();
@@ -118,13 +119,13 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
             {
                 if (Activator.CreateInstance(type) is IAppTheme theme)
                 {
-                    logger.LogDebug("Found theme: {ThemeId} ({ThemeName})", theme.Id, theme.Name);
+                    logger.LogDebug("Found theme: {ThemeId} ({ThemeName})", theme.Id.SanitizeForLogging(), theme.Name.SanitizeForLogging());
                     themes.Add(theme);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to instantiate theme type: {TypeName}", type.FullName);
+                logger.LogWarning(ex, "Failed to instantiate theme type: {TypeName}", type.FullName.SanitizeForLogging());
             }
         }
 

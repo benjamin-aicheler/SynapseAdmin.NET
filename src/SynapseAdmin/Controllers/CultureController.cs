@@ -12,7 +12,11 @@ public class CultureController : Controller
         {
             HttpContext.Response.Cookies.Append(
                 CookieRequestCultureProvider.DefaultCookieName,
-                CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)));
+                CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)),
+                new CookieOptions
+                {
+                    Expires = DateTimeOffset.UtcNow.AddYears(1)
+                });
         }
 
         if (string.IsNullOrEmpty(redirectUri) || !Url.IsLocalUrl(redirectUri))
