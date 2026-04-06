@@ -64,6 +64,9 @@ builder.Services.AddScoped<MatrixAuthenticationStateProvider>(sp => (MatrixAuthe
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options => {
         options.LoginPath = "/login";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
     });
 builder.Services.AddAuthorization();
 
@@ -72,6 +75,13 @@ builder.Services.AddMudServices();
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always,
+    Secure = CookieSecurePolicy.Always,
+    MinimumSameSitePolicy = SameSiteMode.Lax
+});
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
