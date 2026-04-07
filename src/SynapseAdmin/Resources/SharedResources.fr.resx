@@ -673,4 +673,16 @@
   <data name="ErrorFetchingLargestRooms" xml:space="preserve">
     <value>Erreur lors de la récupération des plus grands salons.</value>
   </data>
+  <data name="TopMediaUsers" xml:space="preserve">
+    <value>Utilisateurs avec le plus de médias</value>
+  </data>
+  <data name="MediaCount" xml:space="preserve">
+    <value>Nombre de médias</value>
+  </data>
+  <data name="TotalSize" xml:space="preserve">
+    <value>Taille totale</value>
+  </data>
+  <data name="ErrorFetchingTopMediaUsers" xml:space="preserve">
+    <value>Erreur lors de la récupération des utilisateurs avec le plus de médias.</value>
+  </data>
   </root>

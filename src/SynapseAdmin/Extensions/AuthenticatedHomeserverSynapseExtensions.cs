@@ -32,4 +32,10 @@ public static class AuthenticatedHomeserverSynapseExtensions
     {
         return await homeserver.ClientHttpClient.GetFromJsonAsync<RoomStatisticsResponse>("/_synapse/admin/v1/statistics/database/rooms");
     }
+
+    public static async Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(this AuthenticatedHomeserverSynapse homeserver, int limit = 10, string orderBy = "media_length", string dir = "b")
+    {
+        var url = $"/_synapse/admin/v1/statistics/users/media?limit={limit}&order_by={orderBy}&dir={dir}";
+        return await homeserver.ClientHttpClient.GetFromJsonAsync<UserMediaStatisticsResponse>(url);
+    }
 }

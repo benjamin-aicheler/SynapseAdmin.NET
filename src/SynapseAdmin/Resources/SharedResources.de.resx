@@ -673,4 +673,16 @@
   <data name="ErrorFetchingLargestRooms" xml:space="preserve">
     <value>Fehler beim Abrufen der größten Räume.</value>
   </data>
+  <data name="TopMediaUsers" xml:space="preserve">
+    <value>Benutzer mit den meisten Medien</value>
+  </data>
+  <data name="MediaCount" xml:space="preserve">
+    <value>Anzahl Medien</value>
+  </data>
+  <data name="TotalSize" xml:space="preserve">
+    <value>Gesamtgröße</value>
+  </data>
+  <data name="ErrorFetchingTopMediaUsers" xml:space="preserve">
+    <value>Fehler beim Abrufen der Benutzer mit den meisten Medien.</value>
+  </data>
   </root>

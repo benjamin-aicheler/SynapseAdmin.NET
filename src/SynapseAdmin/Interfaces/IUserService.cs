@@ -12,4 +12,5 @@ public interface IUserService
     Task<OperationResult> QuarantineMediaAsync(string userId);
     Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn);
     Task<OperationResult> SendServerNoticeAsync(string userId, string message);
+    Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10);
 }
