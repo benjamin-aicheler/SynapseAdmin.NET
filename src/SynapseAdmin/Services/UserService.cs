@@ -163,4 +163,29 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             return OperationResult.Failure(L["ErrorSendingServerNotice"]);
         }
     }
+
+    public async Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10)
+    {
+        if (SynapseAdmin == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
+        try
+        {
+            var result = await SynapseAdmin.GetUserMediaStatisticsAsync(count);
+            if (result == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Ok([]);
+
+            var vms = result.Users.Select(u => new UserMediaStatisticsViewModel
+            {
+                UserId = u.UserId,
+                DisplayName = u.DisplayName,
+                MediaCount = u.MediaCount,
+                TotalSize = u.MediaLength
+            }).ToList();
+
+            return OperationResult<List<UserMediaStatisticsViewModel>>.Ok(vms);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching top media users");
+            return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["ErrorFetchingTopMediaUsers"]);
+        }
+    }
 }

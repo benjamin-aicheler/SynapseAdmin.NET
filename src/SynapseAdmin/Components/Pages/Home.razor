@@ -112,5 +112,31 @@ else if (isSynapse)
                 </MudTable>
             </MudItem>
         }
+
+        @if (topMediaUsers.Any())
+        {
+            <MudItem xs="12">
+                <MudTable Items="topMediaUsers" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3" Dense="true">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@L["TopMediaUsers"]</MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/users">@L["Details"]</MudButton>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>@L["User"]</MudTh>
+                        <MudTh>@L["MediaCount"]</MudTh>
+                        <MudTh>@L["TotalSize"]</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="@L["User"]">
+                            <MudText Typo="Typo.body2">@context.DisplayName</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.UserId</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="@L["MediaCount"]">@context.MediaCount</MudTd>
+                        <MudTd DataLabel="@L["TotalSize"]">@context.TotalSize.FormatSize()</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        }
     </MudGrid>
 }

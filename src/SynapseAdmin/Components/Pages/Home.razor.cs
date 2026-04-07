@@ -29,6 +29,7 @@ namespace SynapseAdmin.Components.Pages
         private List<UserListViewModel> latestUsers = [];
         private List<EventReportListViewModel> latestReports = [];
         private List<RoomStatisticsViewModel> largestRooms = [];
+        private List<UserMediaStatisticsViewModel> topMediaUsers = [];
         private bool loading = true;
 
         protected override async Task OnInitializedAsync()
@@ -53,13 +54,15 @@ namespace SynapseAdmin.Components.Pages
                 var roomTask = RoomService.GetRoomListAsync(0, 1, "room_id", SortDirection.Ascending);
                 var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending);
                 var largestRoomsTask = RoomService.GetLargestRoomsAsync();
+                var topMediaUsersTask = UserService.GetTopMediaUsersAsync(10);
 
-                await Task.WhenAll(userTask, roomTask, reportTask, largestRoomsTask);
+                await Task.WhenAll(userTask, roomTask, reportTask, largestRoomsTask, topMediaUsersTask);
 
                 var userResult = await userTask;
                 var roomResult = await roomTask;
                 var reportResult = await reportTask;
                 var largestRoomsResult = await largestRoomsTask;
+                var topMediaUsersResult = await topMediaUsersTask;
 
                 if (userResult.Success)
                 {
@@ -81,6 +84,11 @@ namespace SynapseAdmin.Components.Pages
                 if (largestRoomsResult.Success && largestRoomsResult.Data != null)
                 {
                     largestRooms = largestRoomsResult.Data;
+                }
+
+                if (topMediaUsersResult.Success && topMediaUsersResult.Data != null)
+                {
+                    topMediaUsers = topMediaUsersResult.Data;
                 }
             }
             finally
