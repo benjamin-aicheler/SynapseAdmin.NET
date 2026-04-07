@@ -45,7 +45,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit})", offset, limit);
-            return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(string.Format(L["ErrorFetchingUserList"], ex.Message));
+            return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["ErrorFetchingUserList"]);
         }
     }
 
@@ -94,7 +94,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching user details for {UserId}", userId.SanitizeForLogging());
-            return OperationResult<UserDetailViewModel>.Failure(string.Format(L["ErrorFetchingUserDetails"], ex.Message));
+            return OperationResult<UserDetailViewModel>.Failure(L["ErrorFetchingUserDetails"]);
         }
     }
 
@@ -111,7 +111,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deactivating user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(L["ErrorDeactivatingUser"], ex.Message));
+            return OperationResult.Failure(L["ErrorDeactivatingUser"]);
         }
     }
 
@@ -127,7 +127,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error quarantining media for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(L["ErrorQuarantiningMedia"], ex.Message));
+            return OperationResult.Failure(L["ErrorQuarantiningMedia"]);
         }
     }
 
@@ -138,12 +138,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         {
             var resp = await SynapseAdmin.Admin.LoginUserAsync(userId, expireIn);
             logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
-            return OperationResult<string>.Ok(resp.AccessToken, string.Format(L["ShadowLoginSuccessful"], userId));
+            return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error performing shadow login for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult<string>.Failure(string.Format(L["ErrorLoggingInAsUser"], ex.Message));
+            return OperationResult<string>.Failure(L["ErrorLoggingInAsUser"]);
         }
     }
 
@@ -160,7 +160,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error sending server notice to user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(L["ErrorSendingServerNotice"], ex.Message));
+            return OperationResult.Failure(L["ErrorSendingServerNotice"]);
         }
     }
 }

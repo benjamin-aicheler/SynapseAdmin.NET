@@ -40,7 +40,7 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching federation destinations (offset: {Offset}, limit: {Limit})", offset, limit);
-            return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Failure(string.Format(L["ErrorFetchingFederationDestinations"], ex.Message));
+            return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Failure(L["ErrorFetchingFederationDestinations"]);
         }
     }
 
@@ -51,12 +51,12 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
         {
             await SynapseAdmin.Admin.ResetFederationConnectionTimeoutAsync(destination);
             logger.LogInformation("Successfully reset federation connection timeout for {Destination}", destination.SanitizeForLogging());
-            return OperationResult.Ok(string.Format(L["ResetFederationConnectionSuccessful"], destination));
+            return OperationResult.Ok(L["ResetFederationConnectionSuccessful"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error resetting federation connection timeout for {Destination}", destination.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(L["ErrorResettingFederationConnection"], destination, ex.Message));
+            return OperationResult.Failure(L["ErrorResettingFederationConnection"]);
         }
     }
 }

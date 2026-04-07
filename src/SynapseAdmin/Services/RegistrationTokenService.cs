@@ -36,7 +36,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching registration tokens");
-            return OperationResult<List<RegistrationTokenViewModel>>.Failure(string.Format(L["ErrorLoadingTokens"], ex.Message));
+            return OperationResult<List<RegistrationTokenViewModel>>.Failure(L["ErrorLoadingTokens"]);
         }
     }
 
@@ -65,7 +65,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating registration token");
-            return OperationResult.Failure(string.Format(L["ErrorCreatingToken"], ex.Message));
+            return OperationResult.Failure(L["ErrorCreatingToken"]);
         }
     }
 
@@ -87,7 +87,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
         catch (Exception ex)
         {
             logger.LogError(ex, "Error updating registration token");
-            return OperationResult.Failure(string.Format(L["ErrorUpdatingToken"], ex.Message));
+            return OperationResult.Failure(L["ErrorUpdatingToken"]);
         }
     }
 
@@ -103,7 +103,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deleting registration token");
-            return OperationResult.Failure(string.Format(L["ErrorDeletingToken"], ex.Message));
+            return OperationResult.Failure(L["ErrorDeletingToken"]);
         }
     }
 }

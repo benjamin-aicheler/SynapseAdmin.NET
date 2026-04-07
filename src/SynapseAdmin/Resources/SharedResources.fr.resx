@@ -115,6 +115,9 @@
   <data name="LoginSuccessful" xml:space="preserve">
     <value>Connexion réussie.</value>
   </data>
+  <data name="LoginFailed" xml:space="preserve">
+    <value>Connexion échouée.</value>
+  </data>
   <data name="Refresh" xml:space="preserve">
     <value>Actualiser</value>
   </data>
@@ -506,73 +509,73 @@
     <value>Jeton supprimé avec succès.</value>
   </data>
   <data name="ErrorLoadingTokens" xml:space="preserve">
-    <value>Erreur lors du chargement des jetons : {0}</value>
+    <value>Erreur lors du chargement des jetons.</value>
   </data>
   <data name="ErrorCreatingToken" xml:space="preserve">
-    <value>Erreur lors de la création du jeton : {0}</value>
+    <value>Erreur lors de la création du jeton.</value>
   </data>
   <data name="ErrorUpdatingToken" xml:space="preserve">
-    <value>Erreur lors de la mise à jour du jeton : {0}</value>
+    <value>Erreur lors de la mise à jour du jeton.</value>
   </data>
   <data name="ErrorDeletingToken" xml:space="preserve">
-    <value>Erreur lors de la suppression du jeton : {0}</value>
+    <value>Erreur lors de la suppression du jeton.</value>
   </data>
   <data name="NotAuthenticated" xml:space="preserve">
     <value>Non authentifié.</value>
   </data>
   <data name="ErrorFetchingUserList" xml:space="preserve">
-    <value>Erreur lors de la récupération de la liste des utilisateurs : {0}</value>
+    <value>Erreur lors de la récupération de la liste des utilisateurs.</value>
   </data>
   <data name="UserNotFound" xml:space="preserve">
     <value>Utilisateur non trouvé.</value>
   </data>
   <data name="ErrorFetchingUserDetails" xml:space="preserve">
-    <value>Erreur lors de la récupération des détails de l'utilisateur : {0}</value>
+    <value>Erreur lors de la récupération des détails de l'utilisateur.</value>
   </data>
   <data name="UserDeactivatedSuccessfully" xml:space="preserve">
     <value>Utilisateur désactivé avec succès.</value>
   </data>
   <data name="ErrorDeactivatingUser" xml:space="preserve">
-    <value>Erreur lors de la désactivation de l'utilisateur : {0}</value>
+    <value>Erreur lors de la désactivation de l'utilisateur.</value>
   </data>
   <data name="UserMediaQuarantinedSuccessfully" xml:space="preserve">
     <value>Médias de l'utilisateur mis en quarantaine avec succès.</value>
   </data>
   <data name="ErrorQuarantiningMedia" xml:space="preserve">
-    <value>Erreur lors de la mise en quarantaine des médias : {0}</value>
+    <value>Erreur lors de la mise en quarantaine des médias.</value>
   </data>
   <data name="ShadowLoginSuccessful" xml:space="preserve">
-    <value>Connexion fantôme réussie pour l'utilisateur {0}. Jeton d'accès récupéré (Simulation).</value>
+    <value>Connexion fantôme réussie. Jeton d'accès récupéré (Simulation).</value>
   </data>
   <data name="ErrorLoggingInAsUser" xml:space="preserve">
-    <value>Erreur lors de la connexion en tant qu'utilisateur : {0}</value>
+    <value>Erreur lors de la connexion en tant qu'utilisateur.</value>
   </data>
   <data name="ServerNoticeSentSuccessfully" xml:space="preserve">
     <value>Notification du serveur envoyée avec succès !</value>
   </data>
   <data name="ErrorSendingServerNotice" xml:space="preserve">
-    <value>Erreur lors de l'envoi de la notification du serveur : {0}</value>
+    <value>Erreur lors de l'envoi de la notification du serveur.</value>
   </data>
   <data name="ErrorFetchingRoomList" xml:space="preserve">
-    <value>Erreur lors de la récupération de la liste des salons : {0}</value>
+    <value>Erreur lors de la récupération de la liste des salons.</value>
   </data>
   <data name="RoomNotFound" xml:space="preserve">
     <value>Salon non trouvé.</value>
   </data>
   <data name="ErrorFetchingRoomDetails" xml:space="preserve">
-    <value>Erreur lors de la récupération des détails du salon : {0}</value>
+    <value>Erreur lors de la récupération des détails du salon.</value>
   </data>
   <data name="RoomDeletedSuccessfully" xml:space="preserve">
     <value>Salon supprimé avec succès.</value>
   </data>
   <data name="ErrorDeletingRoom" xml:space="preserve">
-    <value>Erreur lors de la suppression du salon : {0}</value>
+    <value>Erreur lors de la suppression du salon.</value>
   </data>
   <data name="RoomMediaQuarantinedSuccessfully" xml:space="preserve">
     <value>Médias du salon mis en quarantaine avec succès.</value>
   </data>
   <data name="ErrorQuarantiningRoomMedia" xml:space="preserve">
-    <value>Erreur lors de la mise en quarantaine des médias du salon : {0}</value>
+    <value>Erreur lors de la mise en quarantaine des médias du salon.</value>
   </data>
   <data name="RoomBlockedSuccessfully" xml:space="preserve">
     <value>Salon bloqué avec succès.</value>
@@ -581,28 +584,28 @@
     <value>Salon débloqué avec succès.</value>
   </data>
   <data name="ErrorBlockingRoom" xml:space="preserve">
-    <value>Erreur lors du blocage du salon : {0}</value>
+    <value>Erreur lors du blocage du salon.</value>
   </data>
   <data name="ErrorUnblockingRoom" xml:space="preserve">
-    <value>Erreur lors du déblocage du salon : {0}</value>
+    <value>Erreur lors du déblocage du salon.</value>
   </data>
   <data name="ErrorFetchingFederationDestinations" xml:space="preserve">
-    <value>Erreur lors de la récupération des destinations de fédération : {0}</value>
+    <value>Erreur lors de la récupération des destinations de fédération.</value>
   </data>
   <data name="ResetFederationConnectionSuccessful" xml:space="preserve">
-    <value>Délai de connexion de fédération pour {0} réinitialisé avec succès.</value>
+    <value>Délai de connexion de fédération réinitialisé avec succès.</value>
   </data>
   <data name="ErrorResettingFederationConnection" xml:space="preserve">
-    <value>Erreur lors de la réinitialisation du délai de connexion de fédération pour {0} : {1}</value>
+    <value>Erreur lors de la réinitialisation du délai de connexion de fédération.</value>
   </data>
   <data name="ErrorFetchingEventReports" xml:space="preserve">
-    <value>Erreur lors de la récupération des rapports d'événements : {0}</value>
+    <value>Erreur lors de la récupération des rapports d'événements</value>
   </data>
   <data name="EventReportDeletedSuccessfully" xml:space="preserve">
     <value>Rapport d'événement supprimé avec succès.</value>
   </data>
   <data name="ErrorDeletingEventReport" xml:space="preserve">
-    <value>Erreur lors de la suppression du rapport d'événement {0} : {1}</value>
+    <value>Erreur lors de la suppression du rapport d'événement.</value>
   </data>
   <data name="ResetConnectionTitle" xml:space="preserve">
     <value>Réinitialiser la connexion</value>
