@@ -182,8 +182,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var stats = await SynapseAdmin.GetLargestRoomsAsync();
             if (stats == null) return OperationResult<List<RoomStatisticsViewModel>>.Ok([]);
 
-            var result = new List<RoomStatisticsViewModel>();
-            foreach (var roomStat in stats.Rooms.Take(10))
+            var tasks = stats.Rooms.Take(10).Select(async roomStat =>
             {
                 var vm = new RoomStatisticsViewModel
                 {
@@ -200,13 +199,14 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         vm.Name = roomDetails.Name;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore errors fetching individual room details
+                    logger.LogDebug(ex, "Failed to fetch metadata for room {RoomId} during statistics gathering.", roomStat.RoomId.SanitizeForLogging());
                 }
-                result.Add(vm);
-            }
+                return vm;
+            });
 
+            var result = (await Task.WhenAll(tasks)).ToList();
             return OperationResult<List<RoomStatisticsViewModel>>.Ok(result);
         }
         catch (Exception ex)
