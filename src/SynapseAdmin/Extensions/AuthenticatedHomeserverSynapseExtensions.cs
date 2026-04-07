@@ -27,4 +27,9 @@ public static class AuthenticatedHomeserverSynapseExtensions
         
         return await resp.Content.ReadFromJsonAsync<SendServerNoticeResponse>();
     }
+
+    public static async Task<RoomStatisticsResponse?> GetLargestRoomsAsync(this AuthenticatedHomeserverSynapse homeserver)
+    {
+        return await homeserver.ClientHttpClient.GetFromJsonAsync<RoomStatisticsResponse>("/_synapse/admin/v1/statistics/database/rooms");
+    }
 }

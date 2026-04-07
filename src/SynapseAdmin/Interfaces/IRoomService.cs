@@ -11,4 +11,5 @@ public interface IRoomService
     Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true);
     Task<OperationResult> QuarantineMediaAsync(string roomId);
     Task<OperationResult> BlockRoomAsync(string roomId, bool block);
+    Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync();
 }

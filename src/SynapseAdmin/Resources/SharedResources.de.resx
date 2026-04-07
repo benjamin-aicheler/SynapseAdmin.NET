@@ -664,4 +664,13 @@
   <data name="LatestEventReports" xml:space="preserve">
     <value>Neueste Ereignisberichte</value>
   </data>
-</root>
+  <data name="LargestRooms" xml:space="preserve">
+    <value>Größte Räume</value>
+  </data>
+  <data name="EstimatedSize" xml:space="preserve">
+    <value>Geschätzte Größe</value>
+  </data>
+  <data name="ErrorFetchingLargestRooms" xml:space="preserve">
+    <value>Fehler beim Abrufen der größten Räume.</value>
+  </data>
+  </root>
