@@ -13,8 +13,12 @@ public class MatrixAuthenticationStateProvider(
     private const string StorageKey_Homeserver = "matrix_homeserver";
     private const string StorageKey_AccessToken = "matrix_access_token";
 
+    private AuthenticationState? _cachedState;
+
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
+        if (_cachedState != null) return _cachedState;
+
         try
         {
             // Attempt to read from local storage
@@ -38,7 +42,8 @@ public class MatrixAuthenticationStateProvider(
 
                     var identity = new ClaimsIdentity(claims, "MatrixAuth");
                     var principal = new ClaimsPrincipal(identity);
-                    return new AuthenticationState(principal);
+                    _cachedState = new AuthenticationState(principal);
+                    return _cachedState;
                 }
                 else
                 {
@@ -54,7 +59,8 @@ public class MatrixAuthenticationStateProvider(
             // Or if data is tampered with. We just fallback to unauthenticated.
         }
 
-        return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        return _cachedState;
     }
 
     public async Task<OperationResult> LoginAsync(string homeserver, string username, string password)
@@ -76,7 +82,8 @@ public class MatrixAuthenticationStateProvider(
             var identity = new ClaimsIdentity(claims, "MatrixAuth");
             var principal = new ClaimsPrincipal(identity);
             
-            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(principal)));
+            _cachedState = new AuthenticationState(principal);
+            NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
             return result;
         }
         
@@ -89,6 +96,7 @@ public class MatrixAuthenticationStateProvider(
         await localStorage.DeleteAsync(StorageKey_Homeserver);
         await localStorage.DeleteAsync(StorageKey_AccessToken);
         
-        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()))));
+        _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
     }
 }
