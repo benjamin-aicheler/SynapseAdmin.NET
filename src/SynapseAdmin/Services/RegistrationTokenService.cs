@@ -53,7 +53,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
                 ExpiryTime = viewModel.ExpiryTime
             };
             
-            var resp = await SynapseAdmin.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/registration_tokens", req);
+            var resp = await SynapseAdmin.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/registration_tokens/new", req);
             resp.EnsureSuccessStatusCode();
             var result = await resp.Content.ReadFromJsonAsync<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>();
             
