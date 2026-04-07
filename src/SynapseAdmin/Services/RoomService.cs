@@ -1,4 +1,3 @@
-using LibMatrix;
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
