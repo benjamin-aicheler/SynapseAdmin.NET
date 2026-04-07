@@ -18,6 +18,10 @@
             <MudCardContent>
                 <MudText Typo="Typo.h5">@MatrixSession.AuthenticatedHomeserver?.ServerName</MudText>
                 <MudText Typo="Typo.body2">@MatrixSession.AuthenticatedHomeserver?.BaseUrl</MudText>
+                @if (!string.IsNullOrEmpty(serverVersion))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Synapse @serverVersion</MudText>
+                }
             </MudCardContent>
         </MudCard>
     </MudItem>

@@ -38,4 +38,9 @@ public static class AuthenticatedHomeserverSynapseExtensions
         var url = $"/_synapse/admin/v1/statistics/users/media?limit={limit}&order_by={orderBy}&dir={dir}";
         return await homeserver.ClientHttpClient.GetFromJsonAsync<UserMediaStatisticsResponse>(url);
     }
+
+    public static async Task<SynapseVersionResponse?> GetSynapseVersionAsync(this AuthenticatedHomeserverSynapse homeserver)
+    {
+        return await homeserver.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>("/_synapse/admin/v1/server_version");
+    }
 }
