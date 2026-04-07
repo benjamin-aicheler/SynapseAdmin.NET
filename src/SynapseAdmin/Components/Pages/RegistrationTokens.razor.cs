@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
@@ -17,6 +18,8 @@ namespace SynapseAdmin.Components.Pages
         public ISnackbar Snackbar { get; set; } = null!;
         [Inject] 
         public IDialogService DialogService { get; set; } = null!;
+        [Inject]
+        public IJSRuntime JSRuntime { get; set; } = null!;
 
         private List<RegistrationTokenViewModel> tokens = new();
         private bool isLoading = true;
@@ -98,6 +101,19 @@ namespace SynapseAdmin.Components.Pages
                 {
                     await LoadTokens();
                 }
+            }
+        }
+
+        private async Task CopyToClipboard(string text)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+                Snackbar.Add(L["TokenCopiedToClipboard"], Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(L["ErrorCopyingToClipboard"], Severity.Error);
             }
         }
     }
