@@ -173,4 +173,46 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             return OperationResult.Failure(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"]);
         }
     }
+
+    public async Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync()
+    {
+        if (SynapseAdmin == null) return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
+        try
+        {
+            var stats = await SynapseAdmin.GetLargestRoomsAsync();
+            if (stats == null) return OperationResult<List<RoomStatisticsViewModel>>.Ok([]);
+
+            var result = new List<RoomStatisticsViewModel>();
+            foreach (var roomStat in stats.Rooms.Take(10))
+            {
+                var vm = new RoomStatisticsViewModel
+                {
+                    RoomId = roomStat.RoomId,
+                    EstimatedSize = roomStat.EstimatedSize,
+                    Name = roomStat.RoomId
+                };
+
+                try
+                {
+                    var roomDetails = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{Uri.EscapeDataString(roomStat.RoomId)}");
+                    if (roomDetails != null && !string.IsNullOrEmpty(roomDetails.Name))
+                    {
+                        vm.Name = roomDetails.Name;
+                    }
+                }
+                catch
+                {
+                    // Ignore errors fetching individual room details
+                }
+                result.Add(vm);
+            }
+
+            return OperationResult<List<RoomStatisticsViewModel>>.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching largest rooms");
+            return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["ErrorFetchingLargestRooms"]);
+        }
+    }
 }

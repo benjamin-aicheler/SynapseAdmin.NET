@@ -1,5 +1,6 @@
 @page "/"
 @using Microsoft.AspNetCore.Authorization
+@using SynapseAdmin.Extensions
 @attribute [Authorize]
 
 <PageTitle>@L["Dashboard"] - SynapseAdmin.NET</PageTitle>
@@ -88,5 +89,28 @@ else if (isSynapse)
                 </RowTemplate>
             </MudTable>
         </MudItem>
+
+        @if (largestRooms.Any())
+        {
+            <MudItem xs="12">
+                <MudTable Items="largestRooms" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3" Dense="true">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@L["LargestRooms"]</MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/rooms">@L["Details"]</MudButton>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>@L["Name"]</MudTh>
+                        <MudTh>@L["RoomId"]</MudTh>
+                        <MudTh>@L["EstimatedSize"]</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="@L["Name"]">@context.Name</MudTd>
+                        <MudTd DataLabel="@L["RoomId"]">@context.RoomId</MudTd>
+                        <MudTd DataLabel="@L["EstimatedSize"]">@context.EstimatedSize.FormatSize()</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        }
     </MudGrid>
 }
