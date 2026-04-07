@@ -35,7 +35,12 @@ else
             <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="@L["Token"]"><MudText Typo="Typo.body2">@context.Token</MudText></MudTd>
+            <MudTd DataLabel="@L["Token"]">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.body2">@context.Token</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" OnClick="@(() => CopyToClipboard(context.Token))" Title="@L["CopyToClipboard"]" />
+                </MudStack>
+            </MudTd>
             <MudTd DataLabel="@L["Uses"]">
                 @context.Completed / @(context.UsesAllowed.HasValue ? context.UsesAllowed.Value.ToString() : L["Unlimited"])
             </MudTd>

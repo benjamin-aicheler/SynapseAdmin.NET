@@ -685,4 +685,13 @@
   <data name="ErrorFetchingTopMediaUsers" xml:space="preserve">
     <value>Fehler beim Abrufen der Benutzer mit den meisten Medien.</value>
   </data>
+  <data name="TokenCopiedToClipboard" xml:space="preserve">
+    <value>Token in Zwischenablage kopiert!</value>
+  </data>
+  <data name="ErrorCopyingToClipboard" xml:space="preserve">
+    <value>Fehler beim Kopieren in die Zwischenablage.</value>
+  </data>
+  <data name="CopyToClipboard" xml:space="preserve">
+    <value>In Zwischenablage kopieren</value>
+  </data>
   </root>

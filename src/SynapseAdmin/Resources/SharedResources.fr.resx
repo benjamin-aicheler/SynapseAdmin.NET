@@ -685,4 +685,13 @@
   <data name="ErrorFetchingTopMediaUsers" xml:space="preserve">
     <value>Erreur lors de la récupération des utilisateurs avec le plus de médias.</value>
   </data>
+  <data name="TokenCopiedToClipboard" xml:space="preserve">
+    <value>Token copié dans le presse-papiers !</value>
+  </data>
+  <data name="ErrorCopyingToClipboard" xml:space="preserve">
+    <value>Erreur lors de la copie dans le presse-papiers.</value>
+  </data>
+  <data name="CopyToClipboard" xml:space="preserve">
+    <value>Copier dans le presse-papiers</value>
+  </data>
   </root>
