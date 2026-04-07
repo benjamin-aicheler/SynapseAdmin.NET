@@ -55,7 +55,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit})", offset, limit);
-            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(string.Format(L["ErrorFetchingRoomList"], ex.Message));
+            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(L["ErrorFetchingRoomList"]);
         }
     }
 
@@ -116,7 +116,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching room details for {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult<RoomDetailViewModel>.Failure(string.Format(L["ErrorFetchingRoomDetails"], ex.Message));
+            return OperationResult<RoomDetailViewModel>.Failure(L["ErrorFetchingRoomDetails"]);
         }
     }
 
@@ -138,7 +138,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deleting room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(L["ErrorDeletingRoom"], ex.Message));
+            return OperationResult.Failure(L["ErrorDeletingRoom"]);
         }
     }
 
@@ -154,7 +154,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(L["ErrorQuarantiningRoomMedia"], ex.Message));
+            return OperationResult.Failure(L["ErrorQuarantiningRoomMedia"]);
         }
     }
 
@@ -170,7 +170,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"], ex.Message));
+            return OperationResult.Failure(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"]);
         }
     }
 }

@@ -44,7 +44,7 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching event reports (offset: {Offset}, limit: {Limit})", offset, limit);
-            return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Failure(string.Format(L["ErrorFetchingEventReports"], ex.Message));
+            return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Failure(L["ErrorFetchingEventReports"]);
         }
     }
 
@@ -60,7 +60,7 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deleting event report {ReportId}", reportId.SanitizeForLogging());
-            return OperationResult.Failure(string.Format(L["ErrorDeletingEventReport"], reportId, ex.Message));
+            return OperationResult.Failure(L["ErrorDeletingEventReport"]);
         }
     }
 }

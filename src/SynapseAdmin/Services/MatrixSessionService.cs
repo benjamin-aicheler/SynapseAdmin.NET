@@ -24,12 +24,12 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
             var loginResponse = await hsProvider.Login(homeserver, username, password);
             AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
             logger.LogInformation("User {Username} successfully logged into {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
-            return OperationResult.Ok(L["LoginSuccessful"] ?? "Login successful.");
+            return OperationResult.Ok(L["LoginSuccessful"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Login failed for user {Username} on {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
-            return OperationResult.Failure(ex.Message);
+            return OperationResult.Failure(L["LoginFailed"]);
         }
     }
 
@@ -55,7 +55,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         {
             logger.LogWarning(ex, "Failed to restore session for {Homeserver}", homeserver.SanitizeForLogging());
             AuthenticatedHomeserver = null;
-            return OperationResult.Failure(string.Format(L["ErrorLoadingTokens"], ex.Message));
+            return OperationResult.Failure(L["ErrorLoadingTokens"]);
         }
     }
 
