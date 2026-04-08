@@ -111,7 +111,7 @@ namespace SynapseAdmin.Components.Pages
                 await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
                 Snackbar.Add(L["TokenCopiedToClipboard"], Severity.Success);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Snackbar.Add(L["ErrorCopyingToClipboard"], Severity.Error);
             }

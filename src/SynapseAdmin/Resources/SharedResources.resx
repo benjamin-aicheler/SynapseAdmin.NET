@@ -694,4 +694,16 @@
   <data name="CopyToClipboard" xml:space="preserve">
     <value>Copy to clipboard</value>
   </data>
-  </root>
+    <data name="LocalMedia" xml:space="preserve">
+    <value>Local Media</value>
+  </data>
+  <data name="NoLocalMedia" xml:space="preserve">
+    <value>No local media found in this room.</value>
+  </data>
+  <data name="RemoteMedia" xml:space="preserve">
+    <value>Remote Media</value>
+  </data>
+  <data name="NoRemoteMedia" xml:space="preserve">
+    <value>No remote media found in this room.</value>
+  </data>
+</root>

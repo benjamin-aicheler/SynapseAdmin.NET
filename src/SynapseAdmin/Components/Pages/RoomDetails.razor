@@ -116,5 +116,54 @@ else
                 </PagerContent>
             </MudTable>
         </MudTabPanel>
+
+        <MudTabPanel Text="@L["Media"]" Icon="@Icons.Material.Filled.PermMedia">
+            @if (room.Media == null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
+            }
+            else
+            {
+                <MudText Typo="Typo.h6" Class="mt-4 mb-2">@L["LocalMedia"]</MudText>
+                @if (room.Media.Local.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="mb-4">@L["NoLocalMedia"]</MudText>
+                }
+                else
+                {
+                    <MudTable Items="room.Media.Local" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6">
+                        <HeaderContent>
+                            <MudTh>@L["MediaId"]</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="@L["MediaId"]">@context.MediaId</MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                    </MudTable>
+                }
+
+                <MudText Typo="Typo.h6" Class="mt-4 mb-2">@L["RemoteMedia"]</MudText>
+                @if (room.Media.Remote.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">@L["NoRemoteMedia"]</MudText>
+                }
+                else
+                {
+                    <MudTable Items="room.Media.Remote" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>@L["MediaId"]</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="@L["MediaId"]">@context.MediaId</MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                    </MudTable>
+                }
+            }
+        </MudTabPanel>
     </MudTabs>
 }

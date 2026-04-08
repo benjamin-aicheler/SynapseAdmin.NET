@@ -694,4 +694,16 @@
   <data name="CopyToClipboard" xml:space="preserve">
     <value>In Zwischenablage kopieren</value>
   </data>
-  </root>
+    <data name="LocalMedia" xml:space="preserve">
+    <value>Lokale Medien</value>
+  </data>
+  <data name="NoLocalMedia" xml:space="preserve">
+    <value>Keine lokalen Medien in diesem Raum gefunden.</value>
+  </data>
+  <data name="RemoteMedia" xml:space="preserve">
+    <value>Entfernte Medien</value>
+  </data>
+  <data name="NoRemoteMedia" xml:space="preserve">
+    <value>Keine entfernten Medien in diesem Raum gefunden.</value>
+  </data>
+</root>

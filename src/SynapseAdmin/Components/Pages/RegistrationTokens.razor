@@ -38,7 +38,7 @@ else
             <MudTd DataLabel="@L["Token"]">
                 <MudStack Row="true" AlignItems="AlignItems.Center">
                     <MudText Typo="Typo.body2">@context.Token</MudText>
-                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" OnClick="@(() => CopyToClipboard(context.Token))" Title="@L["CopyToClipboard"]" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" OnClick="@(() => CopyToClipboard(context.Token))" title="@L["CopyToClipboard"]" />
                 </MudStack>
             </MudTd>
             <MudTd DataLabel="@L["Uses"]">

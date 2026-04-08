@@ -72,11 +72,13 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
             var membersTask = SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
             var stateTask = SynapseAdmin.Admin.GetRoomStateAsync(roomId);
+            var mediaTask = SynapseAdmin.Admin.GetRoomMediaAsync(roomId);
 
-            await Task.WhenAll(membersTask, stateTask);
+            await Task.WhenAll(membersTask, stateTask, mediaTask);
 
             var members = await membersTask;
             var stateEvents = await stateTask;
+            var media = await mediaTask;
             
             var tombstone = stateEvents?.Events
                 .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
@@ -109,7 +111,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     StateKey = e.StateKey,
                     Sender = e.Sender,
                     RawContent = e.RawContent?.ToJsonString()
-                }).ToList() ?? []
+                }).ToList() ?? [],
+                Media = media == null ? null : new RoomMediaViewModel
+                {
+                    Local = media.Local.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList(),
+                    Remote = media.Remote.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList()
+                }
             };
             return OperationResult<RoomDetailViewModel>.Ok(vm);
         }
