@@ -694,4 +694,16 @@
   <data name="CopyToClipboard" xml:space="preserve">
     <value>Copier dans le presse-papiers</value>
   </data>
-  </root>
+    <data name="LocalMedia" xml:space="preserve">
+    <value>Médias locaux</value>
+  </data>
+  <data name="NoLocalMedia" xml:space="preserve">
+    <value>Aucun média local trouvé dans ce salon.</value>
+  </data>
+  <data name="RemoteMedia" xml:space="preserve">
+    <value>Médias distants</value>
+  </data>
+  <data name="NoRemoteMedia" xml:space="preserve">
+    <value>Aucun média distant trouvé dans ce salon.</value>
+  </data>
+</root>

@@ -25,6 +25,7 @@ public class RoomDetailViewModel
     
     public List<string> Members { get; set; } = [];
     public List<RoomStateEventViewModel> StateEvents { get; set; } = [];
+    public RoomMediaViewModel? Media { get; set; }
 }
 
 public class RoomStateEventViewModel
@@ -33,4 +34,15 @@ public class RoomStateEventViewModel
     public string? StateKey { get; set; }
     public string? Sender { get; set; }
     public string? RawContent { get; set; }
+}
+
+public class RoomMediaViewModel
+{
+    public List<RoomMediaItemViewModel> Local { get; set; } = [];
+    public List<RoomMediaItemViewModel> Remote { get; set; } = [];
+}
+
+public class RoomMediaItemViewModel
+{
+    public string MediaId { get; set; } = string.Empty;
 }
