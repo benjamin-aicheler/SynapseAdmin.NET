@@ -155,7 +155,7 @@
     <value>Nom d'affichage</value>
   </data>
   <data name="Admin" xml:space="preserve">
-    <value>Admin</value>
+    <value>Administrateur</value>
   </data>
   <data name="Guest" xml:space="preserve">
     <value>Invité</value>
@@ -705,5 +705,17 @@
   </data>
   <data name="NoRemoteMedia" xml:space="preserve">
     <value>Aucun média distant trouvé dans ce salon.</value>
+  </data>
+  <data name="UserCreatedSuccessfully" xml:space="preserve">
+    <value>Utilisateur créé avec succès.</value>
+  </data>
+  <data name="ErrorCreatingUser" xml:space="preserve">
+    <value>Erreur lors de la création de l'utilisateur.</value>
+  </data>
+  <data name="CreateUser" xml:space="preserve">
+    <value>Créer un utilisateur</value>
+  </data>
+  <data name="RegisterUser" xml:space="preserve">
+    <value>Enregistrer l'utilisateur</value>
   </data>
 </root>

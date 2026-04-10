@@ -155,7 +155,7 @@
     <value>Anzeigename</value>
   </data>
   <data name="Admin" xml:space="preserve">
-    <value>Admin</value>
+    <value>Administrator</value>
   </data>
   <data name="Guest" xml:space="preserve">
     <value>Gast</value>
@@ -705,5 +705,17 @@
   </data>
   <data name="NoRemoteMedia" xml:space="preserve">
     <value>Keine entfernten Medien in diesem Raum gefunden.</value>
+  </data>
+  <data name="UserCreatedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich erstellt.</value>
+  </data>
+  <data name="ErrorCreatingUser" xml:space="preserve">
+    <value>Fehler beim Erstellen des Benutzers.</value>
+  </data>
+  <data name="CreateUser" xml:space="preserve">
+    <value>Benutzer erstellen</value>
+  </data>
+  <data name="RegisterUser" xml:space="preserve">
+    <value>Benutzer registrieren</value>
   </data>
 </root>

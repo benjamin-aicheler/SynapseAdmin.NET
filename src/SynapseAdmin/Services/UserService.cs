@@ -2,6 +2,7 @@ using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.EventTypes.Spec;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
@@ -186,6 +187,37 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         {
             logger.LogError(ex, "Error fetching top media users");
             return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["ErrorFetchingTopMediaUsers"]);
+        }
+    }
+
+    public async Task<OperationResult> CreateUserAsync(UserCreateViewModel model)
+    {
+        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var encodedUserId = Uri.EscapeDataString(model.UserId);
+            var req = new SynapseAdminUserUpsertRequest
+            {
+                Password = model.Password,
+                DisplayName = model.DisplayName,
+                Admin = model.Admin,
+                Deactivated = model.Deactivated
+            };
+
+            var response = await SynapseAdmin.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{encodedUserId}", req);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>();
+            
+            if (result == null) return OperationResult.Failure(L["ErrorCreatingUser"]);
+
+            logger.LogInformation("Successfully created user {UserId}", model.UserId.SanitizeForLogging());
+            return OperationResult.Ok(L["UserCreatedSuccessfully"]);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error creating user {UserId}", model.UserId.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorCreatingUser"]);
         }
     }
 }
