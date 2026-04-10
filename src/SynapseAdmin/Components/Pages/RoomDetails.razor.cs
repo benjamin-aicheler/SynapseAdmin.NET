@@ -48,11 +48,19 @@ namespace SynapseAdmin.Components.Pages
         {
             loadingMessages = true;
             var result = await RoomService.GetRoomMessagesAsync(RoomId, from: from, limit: 50, dir: "b");
-            if (result.Success)
+            if (result.Success && result.Data != null)
             {
-                messages = result.Data;
+                if (from == null || messages == null)
+                {
+                    messages = result.Data;
+                }
+                else
+                {
+                    messages.Messages.AddRange(result.Data.Messages);
+                    messages.EndToken = result.Data.EndToken;
+                }
             }
-            else
+            else if (!result.Success)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
