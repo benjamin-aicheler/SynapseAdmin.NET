@@ -95,6 +95,33 @@ public class MatrixAuthenticationStateProvider(
         return result;
     }
 
+    public async Task<OperationResult> LoginWithTokenAsync(string homeserver, string accessToken)
+    {
+        var result = await sessionService.LoginWithTokenAsync(homeserver, accessToken);
+
+        if (result.Success && sessionService.IsLoggedIn)
+        {
+            await localStorage.SetAsync(StorageKey_Homeserver, homeserver);
+            await localStorage.SetAsync(StorageKey_AccessToken, accessToken);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, sessionService.AuthenticatedHomeserver!.UserId),
+                new Claim(ClaimTypes.Name, sessionService.AuthenticatedHomeserver!.UserLocalpart),
+                new Claim("Homeserver", sessionService.AuthenticatedHomeserver!.ServerName)
+            };
+
+            var identity = new ClaimsIdentity(claims, "MatrixAuth");
+            var principal = new ClaimsPrincipal(identity);
+
+            _cachedState = new AuthenticationState(principal);
+            NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
+            return result;
+        }
+
+        return result;
+    }
+
     public async Task LogoutAsync()
     {
         sessionService.Logout();

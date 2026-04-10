@@ -33,6 +33,25 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         }
     }
 
+    public async Task<OperationResult> LoginWithTokenAsync(string homeserver, string accessToken)
+    {
+        try
+        {
+            // Explicitly resolve homeserver with federation support to ensure correct server type detection
+            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
+
+            AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
+            logger.LogInformation("Session successfully logged in via token for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
+            return OperationResult.Ok(L["LoginSuccessful"]);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Login with token failed for {Homeserver}", homeserver.SanitizeForLogging());
+            AuthenticatedHomeserver = null;
+            return OperationResult.Failure(L["LoginFailed"]);
+        }
+    }
+
     public async Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken, bool force = false)
     {
         if (!force && AuthenticatedHomeserver != null && 
