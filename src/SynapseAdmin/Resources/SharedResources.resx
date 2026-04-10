@@ -209,6 +209,9 @@
   <data name="Status" xml:space="preserve">
     <value>Status</value>
   </data>
+  <data name="Membership" xml:space="preserve">
+    <value>Membership</value>
+  </data>
   <data name="Active" xml:space="preserve">
     <value>Active</value>
   </data>
@@ -562,6 +565,9 @@
   </data>
   <data name="UserNotFound" xml:space="preserve">
     <value>User not found.</value>
+  </data>
+  <data name="ErrorFetchingUserMemberships" xml:space="preserve">
+    <value>Error fetching memberships for user.</value>
   </data>
   <data name="ErrorFetchingUserDetails" xml:space="preserve">
     <value>Error fetching user details.</value>

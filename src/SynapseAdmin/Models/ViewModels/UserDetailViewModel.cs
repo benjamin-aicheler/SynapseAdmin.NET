@@ -19,6 +19,13 @@ public class UserDetailViewModel
     // Threepids, external ids etc could be added here as flattened properties or specific VMs
     
     public UserMediaViewModel? Media { get; set; }
+    public List<UserMembershipViewModel> Memberships { get; set; } = [];
+}
+
+public class UserMembershipViewModel
+{
+    public string RoomId { get; set; } = string.Empty;
+    public string Membership { get; set; } = string.Empty;
 }
 
 public class UserMediaViewModel

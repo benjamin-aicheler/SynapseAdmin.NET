@@ -14,4 +14,5 @@ public interface IUserService
     Task<OperationResult> SendServerNoticeAsync(string userId, string message);
     Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10);
     Task<OperationResult> CreateUserAsync(UserCreateViewModel model);
+    Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId);
 }

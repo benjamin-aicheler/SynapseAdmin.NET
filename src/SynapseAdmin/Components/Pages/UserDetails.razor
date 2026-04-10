@@ -90,6 +90,35 @@ else
     </MudGrid>
 
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
+        <MudTabPanel Text="@L["Rooms"]" Icon="@Icons.Material.Filled.MeetingRoom">
+            <MudTable Items="user.Memberships" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                <HeaderContent>
+                    <MudTh>@L["RoomId"]</MudTh>
+                    <MudTh>@L["Membership"]</MudTh>
+                    <MudTh>@L["Actions"]</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@L["RoomId"]">@context.RoomId</MudTd>
+                    <MudTd DataLabel="@L["Membership"]">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" 
+                                 Color="@(context.Membership == "join" ? Color.Success : context.Membership == "invite" ? Color.Info : Color.Default)">
+                            @context.Membership
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="@L["Actions"]">
+                        <MudButton Href="@($"/rooms/{Uri.EscapeDataString(context.RoomId)}")"
+                                   Variant="Variant.Text"
+                                   Color="Color.Primary">
+                            @L["Details"]
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        </MudTabPanel>
+
         <MudTabPanel Text="@L["Media"]" Icon="@Icons.Material.Filled.PermMedia">
              @if (user.Media == null)
             {
