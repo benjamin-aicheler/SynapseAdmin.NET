@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
 using MudBlazor;
+using SynapseAdmin.Models;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -19,12 +20,26 @@ namespace SynapseAdmin.Components.Pages
         private bool isSubmitting;
         private string usernamePlaceholder = "@user:matrix.org";
 
+        private int selectedTabIndex
+        {
+            get => (int)loginModel.Method;
+            set => loginModel.Method = (LoginMethod)value;
+        }
+
         private async Task HandleLogin()
         {
             errorMessage = null;
             isSubmitting = true;
 
-            var result = await AuthProvider.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
+            OperationResult result;
+            if (loginModel.Method == LoginMethod.Password)
+            {
+                result = await AuthProvider.LoginAsync(loginModel.Homeserver, loginModel.Username, loginModel.Password);
+            }
+            else
+            {
+                result = await AuthProvider.LoginWithTokenAsync(loginModel.Homeserver, loginModel.AccessToken);
+            }
             
             if (result.Success)
             {

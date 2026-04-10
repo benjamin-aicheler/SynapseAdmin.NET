@@ -745,4 +745,7 @@
   <data name="Membership" xml:space="preserve">
     <value>Mitgliedschaft</value>
   </data>
+  <data name="AccessToken" xml:space="preserve">
+    <value>Zugriffstoken</value>
+  </data>
 </root>

@@ -746,4 +746,7 @@
   <data name="NoRemoteMedia" xml:space="preserve">
     <value>No remote media found in this room.</value>
   </data>
+  <data name="AccessToken" xml:space="preserve">
+    <value>Access Token</value>
+  </data>
 </root>
