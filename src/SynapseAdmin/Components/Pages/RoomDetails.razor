@@ -83,6 +83,53 @@ else
     </MudGrid>
 
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
+        <MudTabPanel Text="@L["Messages"]" Icon="@Icons.Material.Filled.Message">
+            <MudToolBar Dense="true" Class="px-2">
+                <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="() => LoadMessages()" Disabled="loadingMessages" Variant="Variant.Text">@L["Refresh"]</MudButton>
+                <MudSpacer />
+                @if (messages?.EndToken != null)
+                {
+                    <MudButton EndIcon="@Icons.Material.Filled.ArrowForward" OnClick="() => LoadMessages(messages.EndToken)" Disabled="loadingMessages" Variant="Variant.Text">@L["LoadMore"]</MudButton>
+                }
+            </MudToolBar>
+            
+            @if (loadingMessages && (messages == null || messages.Messages.Count == 0))
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+            }
+            else if (messages == null || messages.Messages.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="ma-4">@L["NoMessagesFound"]</MudAlert>
+            }
+            else
+            {
+                <MudTable Items="messages.Messages" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" Loading="loadingMessages">
+                    <HeaderContent>
+                        <MudTh>@L["Time"]</MudTh>
+                        <MudTh>@L["Sender"]</MudTh>
+                        <MudTh>@L["Content"]</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="@L["Time"]">@context.OriginServerTs.ToString("g")</MudTd>
+                        <MudTd DataLabel="@L["Sender"]"><MudText Typo="Typo.body2" Color="Color.Primary">@context.Sender</MudText></MudTd>
+                        <MudTd DataLabel="@L["Content"]">
+                            @if (!string.IsNullOrEmpty(context.Body))
+                            {
+                                <MudText Typo="Typo.body2" Style="white-space: pre-wrap; word-break: break-word;">@context.Body</MudText>
+                            }
+                            else
+                            {
+                                <pre style="max-height: 100px; max-width: 600px; overflow: auto; font-size: 0.8em; white-space: pre-wrap; font-family: monospace; color: gray;">@context.Content</pre>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            }
+        </MudTabPanel>
+
         <MudTabPanel Text="@L["Members"]" Icon="@Icons.Material.Filled.People">
             <MudTable Items="room.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                 <HeaderContent>

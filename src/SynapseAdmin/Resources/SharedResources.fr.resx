@@ -718,4 +718,25 @@
   <data name="RegisterUser" xml:space="preserve">
     <value>Enregistrer l'utilisateur</value>
   </data>
+  <data name="ErrorFetchingRoomMessages" xml:space="preserve">
+    <value>Erreur lors de la récupération des messages de la salle.</value>
+  </data>
+  <data name="RoomMessages" xml:space="preserve">
+    <value>Messages de la salle</value>
+  </data>
+  <data name="EventId" xml:space="preserve">
+    <value>ID de l'événement</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Heure</value>
+  </data>
+  <data name="Messages" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="LoadMore" xml:space="preserve">
+    <value>Charger plus</value>
+  </data>
+  <data name="NoMessagesFound" xml:space="preserve">
+    <value>Aucun message trouvé.</value>
+  </data>
 </root>
