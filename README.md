@@ -17,8 +17,8 @@ A modern .NET 10 Blazor Server web application for administering Synapse (Matrix
 SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix homeserver right from your browser. Current capabilities include:
 
 - **Dashboard:** At-a-glance overview of your server's status and metrics, including Synapse version, room storage usage, and user media consumption.
-- **User Management:** Search, view, create, deactivate, and manage properties of server users.
-- **Room Management:** Search and inspect server rooms and their details.
+- **User Management:** Search, view, create, deactivate, and manage properties of server users, including their room memberships.
+- **Room Management:** Search and inspect server rooms and their details, including message history.
 - **Event Reports:** Review and manage reported events/messages from users.
 - **Registration Tokens:** Generate and manage tokens to restrict server registration.
 - **Federation Destinations:** Check federation status and manage destination queues.
