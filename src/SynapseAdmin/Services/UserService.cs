@@ -37,7 +37,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 AvatarUrl = u.AvatarUrl,
                 Deactivated = u.Deactivated,
                 Admin = u.Admin == true,
-                CreationTs = u.CreationTs / 1000, 
+                CreationTs = DateTimeOffset.FromUnixTimeMilliseconds(u.CreationTs).ToUnixTimeSeconds(), 
                 UserType = u.UserType ?? "user",
                 Locked = u.Locked,
                 IsGuest = u.IsGuest == true
@@ -78,7 +78,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 AvatarUrl = u.AvatarUrl,
                 Deactivated = u.Deactivated,
                 Admin = u.Admin == true,
-                CreationTs = u.CreationTs / 1000,
+                CreationTs = DateTimeOffset.FromUnixTimeMilliseconds(u.CreationTs).ToUnixTimeSeconds(),
                 UserType = u.UserType ?? "user",
                 Locked = u.Locked,
                 ShadowBanned = u.ShadowBanned,

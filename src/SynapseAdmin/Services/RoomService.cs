@@ -247,6 +247,14 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     .Where(m => m.Type == "m.room.message")
                     .Select(m =>
                     {
+                        if (m.Content == null) return new RoomMessageItemViewModel {
+                            EventId = m.EventId,
+                            Sender = m.Sender,
+                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs).DateTime,
+                            Type = m.Type,
+                            StateKey = m.StateKey
+                        };
+
                         var contentJson = JsonSerializer.SerializeToElement(m.Content);
                         string? body = null;
                         if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))

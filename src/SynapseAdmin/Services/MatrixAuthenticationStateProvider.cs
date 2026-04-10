@@ -53,10 +53,15 @@ public class MatrixAuthenticationStateProvider(
                 }
             }
         }
-        catch
+        catch (Exception ex) when (ex is InvalidOperationException or Microsoft.JSInterop.JSException)
         {
             // ProtectedLocalStorage can throw if JS is not available (e.g. prerendering)
             // Or if data is tampered with. We just fallback to unauthenticated.
+        }
+        catch
+        {
+            // Unexpected errors should be logged or handled more explicitly if needed
+            throw;
         }
 
         _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
