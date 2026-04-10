@@ -18,8 +18,11 @@
 else
 {
     <MudToolBar Class="mb-4">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh" Class="mr-2">
             @L["Refresh"]
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="OpenCreateUserDialog" StartIcon="@Icons.Material.Filled.PersonAdd">
+            @L["CreateUser"]
         </MudButton>
         <MudSpacer />
         @if (totalUsers.HasValue)

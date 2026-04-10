@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Resources;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -15,6 +17,8 @@ namespace SynapseAdmin.Components.Pages
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
+        [Inject]
+        public IDialogService DialogService { get; set; } = null!;
 
         private MudTable<UserListViewModel>? table;
         private int? totalUsers;
@@ -24,6 +28,18 @@ namespace SynapseAdmin.Components.Pages
             if (table != null)
             {
                 await table.ReloadServerData();
+            }
+        }
+
+        private async Task OpenCreateUserDialog()
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<UserCreateDialog>(L["CreateUser"], options);
+            var result = await dialog.Result;
+
+            if (result != null && !result.Canceled)
+            {
+                await ReloadTable();
             }
         }
 

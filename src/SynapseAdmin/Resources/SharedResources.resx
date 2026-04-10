@@ -98,8 +98,21 @@
     <value>About</value>
   </data>
   <data name="LoginTitle" xml:space="preserve">
-    <value>Login to Matrix Homeserver</value>
+    <value>Login to your Matrix Homeserver</value>
   </data>
+  <data name="UserCreatedSuccessfully" xml:space="preserve">
+    <value>User created successfully.</value>
+  </data>
+  <data name="ErrorCreatingUser" xml:space="preserve">
+    <value>Error creating user.</value>
+  </data>
+  <data name="CreateUser" xml:space="preserve">
+    <value>Create User</value>
+  </data>
+  <data name="RegisterUser" xml:space="preserve">
+    <value>Register User</value>
+  </data>
+
   <data name="HomeserverUrl" xml:space="preserve">
     <value>Homeserver URL</value>
   </data>

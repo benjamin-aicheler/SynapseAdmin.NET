@@ -1,0 +1,41 @@
+@using SynapseAdmin.Models.ViewModels
+@using SynapseAdmin.Interfaces
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-3 mb-n1" />
+            @L["CreateUser"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@success">
+            <MudTextField T="string" Label="@L["UserId"]" @bind-Value="model.UserId" Required="true" 
+                          RequiredError="@L["UserIdRequired"]" HelperText="@L["UserIdFormatHelper"]" 
+                          Validation="@(new Func<string, string?>(v => !string.IsNullOrEmpty(v) && !v.StartsWith("@") ? "Must start with @" : null))" />
+            
+            <MudTextField T="string" Label="@L["Password"]" @bind-Value="model.Password" Required="true" 
+                          InputType="InputType.Password" RequiredError="@L["PasswordRequired"]" />
+            
+            <MudTextField T="string" Label="@L["DisplayName"]" @bind-Value="model.DisplayName" />
+            
+            <MudSwitch T="bool" Label="@L["Admin"]" @bind-Value="model.Admin" Color="Color.Primary" />
+            
+            <MudSwitch T="bool" Label="@L["Deactivated"]" @bind-Value="model.Deactivated" Color="Color.Error" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!success || loading)">
+            @if (loading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">@L["Loading"]</MudText>
+            }
+            else
+            {
+                @L["Create"]
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>

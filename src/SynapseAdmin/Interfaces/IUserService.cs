@@ -13,4 +13,5 @@ public interface IUserService
     Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn);
     Task<OperationResult> SendServerNoticeAsync(string userId, string message);
     Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10);
+    Task<OperationResult> CreateUserAsync(UserCreateViewModel model);
 }
