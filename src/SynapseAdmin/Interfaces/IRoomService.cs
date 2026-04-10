@@ -12,4 +12,5 @@ public interface IRoomService
     Task<OperationResult> QuarantineMediaAsync(string roomId);
     Task<OperationResult> BlockRoomAsync(string roomId, bool block);
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync();
+    Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null);
 }

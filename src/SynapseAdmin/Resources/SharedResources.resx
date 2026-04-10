@@ -113,6 +113,27 @@
     <value>Register User</value>
   </data>
 
+  <data name="ErrorFetchingRoomMessages" xml:space="preserve">
+    <value>Error fetching room messages.</value>
+  </data>
+  <data name="RoomMessages" xml:space="preserve">
+    <value>Room Messages</value>
+  </data>
+  <data name="Messages" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="LoadMore" xml:space="preserve">
+    <value>Load More</value>
+  </data>
+  <data name="NoMessagesFound" xml:space="preserve">
+    <value>No messages found.</value>
+  </data>
+  <data name="EventId" xml:space="preserve">
+    <value>Event ID</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Time</value>
+  </data>
   <data name="HomeserverUrl" xml:space="preserve">
     <value>Homeserver URL</value>
   </data>

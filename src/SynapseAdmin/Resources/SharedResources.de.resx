@@ -718,4 +718,25 @@
   <data name="RegisterUser" xml:space="preserve">
     <value>Benutzer registrieren</value>
   </data>
+  <data name="ErrorFetchingRoomMessages" xml:space="preserve">
+    <value>Fehler beim Abrufen der Raumnachrichten.</value>
+  </data>
+  <data name="RoomMessages" xml:space="preserve">
+    <value>Raumnachrichten</value>
+  </data>
+  <data name="EventId" xml:space="preserve">
+    <value>Ereignis-ID</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Zeit</value>
+  </data>
+  <data name="Messages" xml:space="preserve">
+    <value>Nachrichten</value>
+  </data>
+  <data name="LoadMore" xml:space="preserve">
+    <value>Mehr laden</value>
+  </data>
+  <data name="NoMessagesFound" xml:space="preserve">
+    <value>Keine Nachrichten gefunden.</value>
+  </data>
 </root>

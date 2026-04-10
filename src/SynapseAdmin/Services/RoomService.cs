@@ -5,10 +5,12 @@ using LibMatrix.EventTypes.Spec.State.RoomInfo;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
+using System.Text.Json;
 
 namespace SynapseAdmin.Services;
 
@@ -220,6 +222,57 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         {
             logger.LogError(ex, "Error fetching largest rooms");
             return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["ErrorFetchingLargestRooms"]);
+        }
+    }
+
+    public async Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null)
+    {
+        if (SynapseAdmin == null) return OperationResult<RoomMessagesViewModel>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var url = $"/_synapse/admin/v1/rooms/{Uri.EscapeDataString(roomId)}/messages?limit={limit}&dir={dir}";
+            if (!string.IsNullOrEmpty(from)) url += $"&from={Uri.EscapeDataString(from)}";
+            if (!string.IsNullOrEmpty(to)) url += $"&to={Uri.EscapeDataString(to)}";
+            if (!string.IsNullOrEmpty(filter)) url += $"&filter={Uri.EscapeDataString(filter)}";
+
+            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomMessagesResponse>(url);
+            if (result == null) return OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel());
+
+            var vm = new RoomMessagesViewModel
+            {
+                StartToken = result.Start,
+                EndToken = result.End,
+                Messages = result.Chunk
+                    .Where(m => m.Type == "m.room.message")
+                    .Select(m =>
+                    {
+                        var contentJson = JsonSerializer.SerializeToElement(m.Content);
+                        string? body = null;
+                        if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
+                        {
+                            body = bodyProp.GetString();
+                        }
+
+                        return new RoomMessageItemViewModel
+                        {
+                            EventId = m.EventId,
+                            Sender = m.Sender,
+                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs).DateTime,
+                            Type = m.Type,
+                            StateKey = m.StateKey,
+                            Content = JsonSerializer.Serialize(m.Content),
+                            Body = body
+                        };
+                    }).ToList()
+            };
+
+            return OperationResult<RoomMessagesViewModel>.Ok(vm);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching room messages for {RoomId}", roomId.SanitizeForLogging());
+            return OperationResult<RoomMessagesViewModel>.Failure(L["ErrorFetchingRoomMessages"]);
         }
     }
 }

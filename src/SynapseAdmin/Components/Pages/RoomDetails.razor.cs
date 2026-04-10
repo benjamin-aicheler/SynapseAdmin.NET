@@ -22,10 +22,13 @@ namespace SynapseAdmin.Components.Pages
         public string RoomId { get; set; } = string.Empty;
 
         private RoomDetailViewModel? room;
+        private RoomMessagesViewModel? messages;
+        private bool loadingMessages;
 
         protected override async Task OnParametersSetAsync()
         {
             await LoadRoomDetails();
+            await LoadMessages();
         }
 
         private async Task LoadRoomDetails()
@@ -39,6 +42,21 @@ namespace SynapseAdmin.Components.Pages
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
+        }
+
+        private async Task LoadMessages(string? from = null)
+        {
+            loadingMessages = true;
+            var result = await RoomService.GetRoomMessagesAsync(RoomId, from: from, limit: 50, dir: "b");
+            if (result.Success)
+            {
+                messages = result.Data;
+            }
+            else
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
+            loadingMessages = false;
         }
 
         private async Task DeleteRoom()
