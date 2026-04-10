@@ -3,12 +3,14 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.EventTypes.Spec;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
+using System.Net.Http.Json;
 
 namespace SynapseAdmin.Services;
 
@@ -61,7 +63,13 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             
             if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
 
-            var mediaResult = await SynapseAdmin.Admin.GetUserMediaAsync(userId);
+            var mediaTask = SynapseAdmin.Admin.GetUserMediaAsync(userId);
+            var membershipsTask = GetUserMembershipsAsync(userId);
+
+            await Task.WhenAll(mediaTask, membershipsTask);
+
+            var mediaResult = await mediaTask;
+            var membershipsResult = await membershipsTask;
 
             var vm = new UserDetailViewModel
             {
@@ -88,7 +96,8 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                         MediaLength = m.MediaLength,
                         CreatedTimestamp = m.CreatedTimestamp
                     }).ToList()
-                }
+                },
+                Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : []
             };
             return OperationResult<UserDetailViewModel>.Ok(vm);
         }
@@ -218,6 +227,32 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         {
             logger.LogError(ex, "Error creating user {UserId}", model.UserId.SanitizeForLogging());
             return OperationResult.Failure(L["ErrorCreatingUser"]);
+        }
+    }
+
+    public async Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId)
+    {
+        if (SynapseAdmin == null) return OperationResult<List<UserMembershipViewModel>>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var encodedUserId = Uri.EscapeDataString(userId);
+            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMembershipsResponse>($"/_synapse/admin/v1/users/{encodedUserId}/memberships");
+            
+            if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
+
+            var vms = result.Memberships.Select(kvp => new UserMembershipViewModel
+            {
+                RoomId = kvp.Key,
+                Membership = kvp.Value
+            }).ToList();
+
+            return OperationResult<List<UserMembershipViewModel>>.Ok(vms);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching memberships for user {UserId}", userId.SanitizeForLogging());
+            return OperationResult<List<UserMembershipViewModel>>.Failure(L["ErrorFetchingUserMemberships"]);
         }
     }
 }

@@ -739,4 +739,10 @@
   <data name="NoMessagesFound" xml:space="preserve">
     <value>Keine Nachrichten gefunden.</value>
   </data>
+  <data name="ErrorFetchingUserMemberships" xml:space="preserve">
+    <value>Fehler beim Abrufen der Raummitgliedschaften des Benutzers.</value>
+  </data>
+  <data name="Membership" xml:space="preserve">
+    <value>Mitgliedschaft</value>
+  </data>
 </root>

@@ -739,4 +739,10 @@
   <data name="NoMessagesFound" xml:space="preserve">
     <value>Aucun message trouvé.</value>
   </data>
+  <data name="ErrorFetchingUserMemberships" xml:space="preserve">
+    <value>Erreur lors de la récupération des adhésions aux salons de l'utilisateur.</value>
+  </data>
+  <data name="Membership" xml:space="preserve">
+    <value>Adhésion</value>
+  </data>
 </root>
