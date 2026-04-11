@@ -1,6 +1,7 @@
 @page "/users/{UserId}"
 @using LibMatrix.Homeservers
 @using Microsoft.AspNetCore.Authorization
+@using SynapseAdmin.Models.ViewModels
 
 @attribute [Authorize]
 
@@ -39,7 +40,7 @@ else
                                 }
                                 else
                                 {
-                                    <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"/api/Media/avatar?mxc={Uri.EscapeDataString(user.AvatarUrl)}" : user.AvatarUrl)" />
+                                    <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(user.AvatarUrl)}" : user.AvatarUrl)" />
                                 }
                             </MudAvatar>
                         }
@@ -139,12 +140,30 @@ else
                         <MudTh>@L["Type"]</MudTh>
                         <MudTh>@L["Size"]</MudTh>
                         <MudTh>@L["Created"]</MudTh>
+                        <MudTh>@L["Actions"]</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="@L["MediaId"]">@context.MediaId</MudTd>
-                        <MudTd DataLabel="@L["Type"]">@context.UploadName</MudTd>
+                        <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
                         <MudTd DataLabel="@L["Size"]">@(context.MediaLength / 1024) KB</MudTd>
                         <MudTd DataLabel="@L["Created"]">@DateTimeOffset.FromUnixTimeMilliseconds(context.CreatedTimestamp).DateTime.ToString("g")</MudTd>
+                        <MudTd DataLabel="@L["Actions"]">
+                            <div class="d-flex">
+                                <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                               Color="Color.Primary" 
+                                               Href="@($"/Media/Download?mxc=mxc://{MatrixSession.AuthenticatedHomeserver!.ServerName}/{context.MediaId}")"
+                                               Target="_blank"
+                                               title="@L["Download"]" />
+                                
+                                @if (IsPreviewable(context.MediaType))
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                                   Color="Color.Secondary" 
+                                                   OnClick="@(() => ShowPreview(context))"
+                                                   title="@L["Preview"]" />
+                                }
+                            </div>
+                        </MudTd>
                     </RowTemplate>
                     <PagerContent>
                         <MudTablePager />
@@ -153,4 +172,28 @@ else
             }
         </MudTabPanel>
     </MudTabs>
+}
+
+@code {
+    private bool IsPreviewable(string? mimeType)
+    {
+        if (string.IsNullOrEmpty(mimeType)) return false;
+        return mimeType.StartsWith("image/") || mimeType.StartsWith("video/") || mimeType.StartsWith("audio/");
+    }
+
+    private async Task ShowPreview(UserMediaItemViewModel media)
+    {
+        var mxc = $"mxc://{MatrixSession.AuthenticatedHomeserver!.ServerName}/{media.MediaId}";
+        var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
+        
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var parameters = new DialogParameters
+        {
+            { "Title", media.UploadName ?? media.MediaId },
+            { "PreviewUrl", previewUrl },
+            { "MediaType", media.MediaType }
+        };
+
+        await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
+    }
 }

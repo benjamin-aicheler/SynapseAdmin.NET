@@ -749,4 +749,25 @@
   <data name="AccessToken" xml:space="preserve">
     <value>Access Token</value>
   </data>
+  <data name="Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="VideoNotSupported" xml:space="preserve">
+    <value>Your browser does not support the video tag.</value>
+  </data>
+  <data name="AudioNotSupported" xml:space="preserve">
+    <value>Your browser does not support the audio tag.</value>
+  </data>
+  <data name="PreviewNotAvailable" xml:space="preserve">
+    <value>Preview not available for this file type.</value>
+  </data>
+  <data name="MediaPreview" xml:space="preserve">
+    <value>Media Preview</value>
+  </data>
+  <data name="ErrorFetchingMedia" xml:space="preserve">
+    <value>Error fetching media.</value>
+  </data>
 </root>

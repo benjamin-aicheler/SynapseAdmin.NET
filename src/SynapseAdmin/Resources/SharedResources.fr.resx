@@ -748,4 +748,25 @@
   <data name="AccessToken" xml:space="preserve">
     <value>Jeton d'accès</value>
   </data>
+  <data name="Download" xml:space="preserve">
+    <value>Télécharger</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Aperçu</value>
+  </data>
+  <data name="VideoNotSupported" xml:space="preserve">
+    <value>Votre navigateur ne prend pas en charge la balise vidéo.</value>
+  </data>
+  <data name="AudioNotSupported" xml:space="preserve">
+    <value>Votre navigateur ne prend pas en charge la balise audio.</value>
+  </data>
+  <data name="PreviewNotAvailable" xml:space="preserve">
+    <value>Aperçu non disponible pour ce type de fichier.</value>
+  </data>
+  <data name="MediaPreview" xml:space="preserve">
+    <value>Aperçu du média</value>
+  </data>
+  <data name="ErrorFetchingMedia" xml:space="preserve">
+    <value>Erreur lors de la récupération des médias.</value>
+  </data>
 </root>

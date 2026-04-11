@@ -22,6 +22,9 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container.
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ISessionBridgeService, SessionBridgeService>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -51,6 +54,7 @@ builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
 builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();
+builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFederationService, FederationService>();
