@@ -1,0 +1,37 @@
+@using SynapseAdmin.Resources
+@inject IStringLocalizer<SharedResources> L
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex justify-center align-center" style="min-height: 200px; max-height: 70vh; overflow: auto;">
+            @if (MediaType?.StartsWith("image/") == true)
+            {
+                <img src="@PreviewUrl" style="max-width: 100%; height: auto;" alt="@Title" />
+            }
+            else if (MediaType?.StartsWith("video/") == true)
+            {
+                <video controls style="max-width: 100%; height: auto;">
+                    <source src="@PreviewUrl" type="@MediaType">
+                    @L["VideoNotSupported"]
+                </video>
+            }
+            else if (MediaType?.StartsWith("audio/") == true)
+            {
+                <audio controls style="width: 100%;">
+                    <source src="@PreviewUrl" type="@MediaType">
+                    @L["AudioNotSupported"]
+                </audio>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">@L["PreviewNotAvailable"]</MudAlert>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>

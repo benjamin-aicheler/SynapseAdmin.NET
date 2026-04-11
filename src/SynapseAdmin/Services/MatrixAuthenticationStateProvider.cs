@@ -1,6 +1,8 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Http;
 using SynapseAdmin.Models;
 using SynapseAdmin.Interfaces;
 
@@ -8,7 +10,8 @@ namespace SynapseAdmin.Services;
 
 public class MatrixAuthenticationStateProvider(
     ProtectedLocalStorage localStorage,
-    IMatrixSessionService sessionService) : AuthenticationStateProvider
+    IMatrixSessionService sessionService,
+    IHttpContextAccessor httpContextAccessor) : AuthenticationStateProvider
 {
     private const string StorageKey_Homeserver = "matrix_homeserver";
     private const string StorageKey_AccessToken = "matrix_access_token";
@@ -33,11 +36,26 @@ public class MatrixAuthenticationStateProvider(
                 
                 if (restoreResult.Success && sessionService.IsLoggedIn)
                 {
+                    // PROACTIVE SYNC: Check if the cookie exists. 
+                    // Standard controllers need the cookie to work.
+                    var httpContext = httpContextAccessor.HttpContext;
+                    var isCookieAuthenticated = httpContext?.User?.Identity?.IsAuthenticated ?? false;
+                    
+                    if (!isCookieAuthenticated)
+                    {
+                        // The Blazor session exists but the Cookie is gone!
+                        // We can't set cookies from here, so we return the state 
+                        // but the app should handle the redirect if needed or the user 
+                        // will be synced on next Login. 
+                        // Note: NavigationManager is often not available yet in the first call of this method.
+                    }
+
                     var claims = new[]
                     {
                         new Claim(ClaimTypes.NameIdentifier, sessionService.AuthenticatedHomeserver!.UserId),
                         new Claim(ClaimTypes.Name, sessionService.AuthenticatedHomeserver!.UserLocalpart),
-                        new Claim("Homeserver", sessionService.AuthenticatedHomeserver!.ServerName)
+                        new Claim("Homeserver", sessionService.AuthenticatedHomeserver!.ServerName),
+                        new Claim("AccessToken", sessionService.AuthenticatedHomeserver!.AccessToken)
                     };
 
                     var identity = new ClaimsIdentity(claims, "MatrixAuth");
@@ -122,7 +140,11 @@ public class MatrixAuthenticationStateProvider(
         return result;
     }
 
-    public async Task LogoutAsync()
+    public string? GetAccessToken() => sessionService.AuthenticatedHomeserver?.AccessToken;
+    public string? GetUserId() => sessionService.AuthenticatedHomeserver?.UserId;
+    public string? GetHomeserver() => sessionService.AuthenticatedHomeserver?.BaseUrl;
+
+    public async Task LogoutAsync(NavigationManager? navigation = null)
     {
         sessionService.Logout();
         await localStorage.DeleteAsync(StorageKey_Homeserver);
@@ -130,5 +152,10 @@ public class MatrixAuthenticationStateProvider(
         
         _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
+
+        if (navigation != null)
+        {
+            navigation.NavigateTo("/Auth/SignOutAction", forceLoad: true);
+        }
     }
 }

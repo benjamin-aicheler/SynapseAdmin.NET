@@ -93,6 +93,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                     {
                         MediaId = m.MediaId,
                         UploadName = m.UploadName,
+                        MediaType = m.MediaType,
                         MediaLength = m.MediaLength,
                         CreatedTimestamp = m.CreatedTimestamp
                     }).ToList()

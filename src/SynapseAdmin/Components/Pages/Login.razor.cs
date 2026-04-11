@@ -3,6 +3,7 @@ using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
 using MudBlazor;
 using SynapseAdmin.Models;
+using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -13,6 +14,9 @@ namespace SynapseAdmin.Components.Pages
 
         [Inject] 
         public NavigationManager Navigation { get; set; } = null!;
+
+        [Inject]
+        public ISessionBridgeService BridgeService { get; set; } = null!;
 
         private LoginViewModel loginModel = new();
         private string? errorMessage;
@@ -43,7 +47,17 @@ namespace SynapseAdmin.Components.Pages
             
             if (result.Success)
             {
-                Navigation.NavigateTo("/");
+                var homeserver = loginModel.Homeserver;
+                var token = loginModel.Method == LoginMethod.Password 
+                    ? AuthProvider.GetAccessToken() 
+                    : loginModel.AccessToken;
+                var userId = AuthProvider.GetUserId();
+
+                // Use the bridge to hide sensitive data from the URL
+                var key = BridgeService.CreateBridge(homeserver, token!, userId!);
+
+                var url = $"/Auth/SignIn?key={Uri.EscapeDataString(key)}&redirectUri={Uri.EscapeDataString("/")}";
+                Navigation.NavigateTo(url, forceLoad: true);
             }
             else
             {

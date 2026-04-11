@@ -748,4 +748,25 @@
   <data name="AccessToken" xml:space="preserve">
     <value>Zugriffstoken</value>
   </data>
+  <data name="Download" xml:space="preserve">
+    <value>Herunterladen</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Vorschau</value>
+  </data>
+  <data name="VideoNotSupported" xml:space="preserve">
+    <value>Ihr Browser unterstützt das Video-Tag nicht.</value>
+  </data>
+  <data name="AudioNotSupported" xml:space="preserve">
+    <value>Ihr Browser unterstützt das Audio-Tag nicht.</value>
+  </data>
+  <data name="PreviewNotAvailable" xml:space="preserve">
+    <value>Vorschau für diesen Dateityp nicht verfügbar.</value>
+  </data>
+  <data name="MediaPreview" xml:space="preserve">
+    <value>Medienvorschau</value>
+  </data>
+  <data name="ErrorFetchingMedia" xml:space="preserve">
+    <value>Fehler beim Abrufen der Medien.</value>
+  </data>
 </root>
