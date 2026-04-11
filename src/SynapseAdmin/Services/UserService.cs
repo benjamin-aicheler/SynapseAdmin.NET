@@ -99,6 +99,35 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 },
                 Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : []
             };
+
+            // Fetch avatar data if available and not too large (3MB limit)
+            if (!string.IsNullOrEmpty(vm.AvatarUrl))
+            {
+                try
+                {
+                    var downloadUrl = await SynapseAdmin.GetMediaUrlAsync(vm.AvatarUrl);
+                    using var response = await SynapseAdmin.ClientHttpClient.GetAsync(downloadUrl);
+                    response.EnsureSuccessStatusCode();
+
+                    var contentLength = response.Content.Headers.ContentLength;
+                    if (contentLength is null or <= 3 * 1024 * 1024)
+                    {
+                        var stream = await response.Content.ReadAsStreamAsync();
+                        using var ms = new MemoryStream();
+                        await stream.CopyToAsync(ms);
+                        vm.AvatarData = ms.ToArray();
+                    }
+                    else
+                    {
+                        logger.LogWarning("Avatar for user {UserId} is too large ({Size} bytes), skipping embed", userId.SanitizeForLogging(), contentLength);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to fetch avatar data for user {UserId}", userId.SanitizeForLogging());
+                }
+            }
+
             return OperationResult<UserDetailViewModel>.Ok(vm);
         }
         catch (Exception ex)

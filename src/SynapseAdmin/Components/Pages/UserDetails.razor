@@ -33,7 +33,14 @@ else
                         @if (!string.IsNullOrEmpty(user.AvatarUrl))
                         {
                             <MudAvatar Size="Size.Large" Class="mr-4">
-                                <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"{MatrixSession.AuthenticatedHomeserver.WellKnownUris.Client}/_matrix/media/v3/download/{user.AvatarUrl.Substring(6)}" : user.AvatarUrl)" />
+                                @if (user.AvatarData != null)
+                                {
+                                    <MudImage Src="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.AvatarData)}")" />
+                                }
+                                else
+                                {
+                                    <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"/api/Media/avatar?mxc={Uri.EscapeDataString(user.AvatarUrl)}" : user.AvatarUrl)" />
+                                }
                             </MudAvatar>
                         }
                         else

@@ -5,6 +5,7 @@ public class UserDetailViewModel
     public string UserId { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
     public string? AvatarUrl { get; set; }
+    public byte[]? AvatarData { get; set; }
     public bool Deactivated { get; set; }
     public bool Admin { get; set; }
     public long CreationTs { get; set; }
