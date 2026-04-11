@@ -56,7 +56,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit})", offset, limit);
+            logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging());
             return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(L["ErrorFetchingRoomList"]);
         }
     }
