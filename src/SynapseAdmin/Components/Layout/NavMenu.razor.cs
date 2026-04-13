@@ -11,16 +11,19 @@ public partial class NavMenu : ComponentBase
     [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
     [Inject] private ISessionBridgeService BridgeService { get; set; } = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        CheckSessionSync();
+        await CheckSessionSync();
     }
 
-    private void CheckSessionSync()
+    private async Task CheckSessionSync()
     {
         // Don't sync if we are already on the login or auth pages
         var currentUri = Navigation.Uri.ToLower();
         if (currentUri.Contains("/login") || currentUri.Contains("/auth/")) return;
+
+        // Ensure the AuthProvider has had a chance to restore the session from LocalStorage
+        await AuthProvider.GetAuthenticationStateAsync();
 
         // If Blazor is logged in but the Cookie is missing, we need to bridge.
         var isBlazorAuth = AuthProvider.GetUserId() != null;
