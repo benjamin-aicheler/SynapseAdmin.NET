@@ -2,12 +2,14 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Controllers;
 
 [Route("[controller]/[action]")]
-public class AuthController(ISessionBridgeService bridgeService) : Controller
+public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthController> logger) : Controller
 {
     [HttpGet]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
@@ -15,8 +17,12 @@ public class AuthController(ISessionBridgeService bridgeService) : Controller
     {
         if (!bridgeService.TryConsumeBridge(key, out var data))
         {
-            return Unauthorized("Invalid or expired login key.");
+            logger.LogWarning("SignIn attempt failed: invalid or expired session bridge key.");
+            return LocalRedirect($"/login?Error=SessionBridgeFailed");
         }
+
+        logger.LogInformation("SignIn successful for user {UserId} on {Homeserver}. Redirecting to: {RedirectUri}", 
+            data.UserId.SanitizeForLogging(), data.Homeserver.SanitizeForLogging(), redirectUri.SanitizeForLogging());
 
         var claims = new List<Claim>
         {
@@ -48,6 +54,9 @@ public class AuthController(ISessionBridgeService bridgeService) : Controller
     [HttpGet]
     public async Task<IActionResult> SignOutAction()
     {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        logger.LogInformation("SignOut initiated for user {UserId}", userId.SanitizeForLogging());
+        
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return LocalRedirect("~/");
     }
