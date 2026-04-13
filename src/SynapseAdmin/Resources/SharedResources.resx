@@ -770,4 +770,7 @@
   <data name="ErrorFetchingMedia" xml:space="preserve">
     <value>Error fetching media.</value>
   </data>
+  <data name="ErrorSessionBridgeFailed" xml:space="preserve">
+    <value>The login session expired or is invalid. Please try logging in again.</value>
+  </data>
 </root>

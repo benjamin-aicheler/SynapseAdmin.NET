@@ -1,14 +1,19 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Services;
 
-public class SessionBridgeService(IMemoryCache cache) : ISessionBridgeService
+public class SessionBridgeService(IMemoryCache cache, ILogger<SessionBridgeService> logger) : ISessionBridgeService
 {
     public string CreateBridge(string homeserver, string accessToken, string userId)
     {
         var key = Guid.NewGuid().ToString();
         var data = (homeserver, accessToken, userId);
+        
+        logger.LogInformation("Creating session bridge for user {UserId} on {Homeserver}", 
+            userId.SanitizeForLogging(), homeserver.SanitizeForLogging());
         
         cache.Set(key, data, TimeSpan.FromSeconds(60));
         return key;
@@ -18,11 +23,14 @@ public class SessionBridgeService(IMemoryCache cache) : ISessionBridgeService
     {
         if (cache.TryGetValue(key, out (string, string, string) cachedData))
         {
+            logger.LogInformation("Successfully consumed session bridge for user {UserId}", 
+                cachedData.Item3.SanitizeForLogging());
             data = cachedData;
             cache.Remove(key); // One-time use only
             return true;
         }
 
+        logger.LogWarning("Failed to consume session bridge - key not found or expired");
         data = (string.Empty, string.Empty, string.Empty);
         return false;
     }

@@ -4,6 +4,8 @@ using SynapseAdmin.Models.ViewModels;
 using MudBlazor;
 using SynapseAdmin.Models;
 using SynapseAdmin.Interfaces;
+using Microsoft.Extensions.Localization;
+using SynapseAdmin.Resources;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -18,11 +20,24 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public ISessionBridgeService BridgeService { get; set; } = null!;
 
+        [Parameter]
+        [SupplyParameterFromQuery]
+        public string? Error { get; set; }
+
         private LoginViewModel loginModel = new();
         private string? errorMessage;
         private Severity errorSeverity = Severity.Error;
         private bool isSubmitting;
         private string usernamePlaceholder = "@user:matrix.org";
+
+        protected override void OnInitialized()
+        {
+            if (Error == "SessionBridgeFailed")
+            {
+                errorMessage = L["ErrorSessionBridgeFailed"];
+                errorSeverity = Severity.Error;
+            }
+        }
 
         private int selectedTabIndex
         {
