@@ -44,6 +44,44 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private async Task<TableData<RoomMediaItemViewModel>> LoadLocalMedia(TableState state, CancellationToken token)
+        {
+            if (room?.Media?.Local == null) return new TableData<RoomMediaItemViewModel> { TotalItems = 0, Items = [] };
+
+            var uris = room.Media.Local.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
+            if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
+
+            var result = await RoomService.GetMediaMetadataBatchAsync(uris);
+            if (result.Success)
+            {
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = result.Data };
+            }
+            else
+            {
+                Snackbar.Add(result.Message, result.Severity);
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
+            }
+        }
+
+        private async Task<TableData<RoomMediaItemViewModel>> LoadRemoteMedia(TableState state, CancellationToken token)
+        {
+            if (room?.Media?.Remote == null) return new TableData<RoomMediaItemViewModel> { TotalItems = 0, Items = [] };
+
+            var uris = room.Media.Remote.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
+            if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
+
+            var result = await RoomService.GetMediaMetadataBatchAsync(uris);
+            if (result.Success)
+            {
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = result.Data };
+            }
+            else
+            {
+                Snackbar.Add(result.Message, result.Severity);
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
+            }
+        }
+
         private async Task LoadMessages(string? from = null)
         {
             loadingMessages = true;
@@ -113,6 +151,34 @@ namespace SynapseAdmin.Components.Pages
         {
             var result = await RoomService.BlockRoomAsync(RoomId, true);
             Snackbar.Add(result.Message, result.Severity);
+        }
+
+        private bool IsPreviewable(string? mimeType)
+        {
+            if (string.IsNullOrEmpty(mimeType))
+            {
+                // For room media we often don't have the mime type upfront. 
+                // We'll allow previewing by default if it's missing, 
+                // the preview dialog handles the error if it's not actually an image/video/audio.
+                return true; 
+            }
+            return mimeType.StartsWith("image/") || mimeType.StartsWith("video/") || mimeType.StartsWith("audio/");
+        }
+
+        private async Task ShowPreview(RoomMediaItemViewModel media)
+        {
+            var mxc = media.MediaId;
+            var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
+            
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var parameters = new DialogParameters
+            {
+                { "Title", media.UploadName ?? media.MediaId },
+                { "PreviewUrl", previewUrl },
+                { "MediaType", media.MediaType }
+            };
+
+            await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
         }
     }
 }

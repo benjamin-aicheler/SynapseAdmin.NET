@@ -45,4 +45,8 @@ public class RoomMediaViewModel
 public class RoomMediaItemViewModel
 {
     public string MediaId { get; set; } = string.Empty;
+    public string? UploadName { get; set; }
+    public string? MediaType { get; set; }
+    public long MediaLength { get; set; }
+    public long CreatedTimestamp { get; set; }
 }

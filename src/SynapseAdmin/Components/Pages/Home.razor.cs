@@ -1,9 +1,7 @@
 using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Extensions;
 using MudBlazor;
 
