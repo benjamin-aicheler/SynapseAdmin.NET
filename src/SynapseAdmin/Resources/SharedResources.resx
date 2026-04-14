@@ -236,6 +236,9 @@
   <data name="MediaId" xml:space="preserve">
     <value>Media ID</value>
   </data>
+  <data name="FileName" xml:space="preserve">
+    <value>File Name</value>
+  </data>
   <data name="Type" xml:space="preserve">
     <value>Type</value>
   </data>
