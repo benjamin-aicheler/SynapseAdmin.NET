@@ -137,6 +137,7 @@ else
                 <MudTable Items="user.Media.Media" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                     <HeaderContent>
                         <MudTh>@L["MediaId"]</MudTh>
+                        <MudTh>@L["FileName"]</MudTh>
                         <MudTh>@L["Type"]</MudTh>
                         <MudTh>@L["Size"]</MudTh>
                         <MudTh>@L["Created"]</MudTh>
@@ -144,6 +145,7 @@ else
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="@L["MediaId"]">@context.MediaId</MudTd>
+                        <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
                         <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
                         <MudTd DataLabel="@L["Size"]">@(context.MediaLength / 1024) KB</MudTd>
                         <MudTd DataLabel="@L["Created"]">@DateTimeOffset.FromUnixTimeMilliseconds(context.CreatedTimestamp).DateTime.ToString("g")</MudTd>
