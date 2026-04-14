@@ -1,5 +1,6 @@
 **/.git
 **/.gitignore
+**/.gitmodules
 **/bin
 **/obj
 **/.vs
@@ -10,4 +11,12 @@
 **/Dockerfile
 **/.dockerignore
 docker-compose.yml
-GEMINI.md
+docker-compose.build.yml
+.devcontainer/
+.github/
+reviews/
+keys/
+logs/
+*.md
+SynapseAdmin.NET.slnx
+LICENSE
