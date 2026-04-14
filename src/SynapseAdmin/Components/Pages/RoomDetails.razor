@@ -181,9 +181,33 @@ else
                     <MudTable Items="room.Media.Local" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6">
                         <HeaderContent>
                             <MudTh>@L["MediaId"]</MudTh>
+                            <MudTh>@L["FileName"]</MudTh>
+                            <MudTh>@L["Type"]</MudTh>
+                            <MudTh>@L["Size"]</MudTh>
+                            <MudTh>@L["Actions"]</MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd DataLabel="@L["MediaId"]">@context.MediaId</MudTd>
+                            <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
+                            <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
+                            <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
+                            <MudTd DataLabel="@L["Actions"]">
+                                <div class="d-flex">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                                   Color="Color.Primary" 
+                                                   Href="@($"/Media/Download?mxc={Uri.EscapeDataString(context.MediaId)}")"
+                                                   Target="_blank"
+                                                   title="@L["Download"]" />
+                                    
+                                    @if (IsPreviewable(context.MediaType))
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                                       Color="Color.Secondary" 
+                                                       OnClick="@(() => ShowPreview(context))"
+                                                       title="@L["Preview"]" />
+                                    }
+                                </div>
+                            </MudTd>
                         </RowTemplate>
                         <PagerContent>
                             <MudTablePager />
@@ -201,9 +225,33 @@ else
                     <MudTable Items="room.Media.Remote" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                         <HeaderContent>
                             <MudTh>@L["MediaId"]</MudTh>
+                            <MudTh>@L["FileName"]</MudTh>
+                            <MudTh>@L["Type"]</MudTh>
+                            <MudTh>@L["Size"]</MudTh>
+                            <MudTh>@L["Actions"]</MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd DataLabel="@L["MediaId"]">@context.MediaId</MudTd>
+                            <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
+                            <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
+                            <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
+                            <MudTd DataLabel="@L["Actions"]">
+                                <div class="d-flex">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                                   Color="Color.Primary" 
+                                                   Href="@($"/Media/Download?mxc={Uri.EscapeDataString(context.MediaId)}")"
+                                                   Target="_blank"
+                                                   title="@L["Download"]" />
+                                    
+                                    @if (IsPreviewable(context.MediaType))
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                                       Color="Color.Secondary" 
+                                                       OnClick="@(() => ShowPreview(context))"
+                                                       title="@L["Preview"]" />
+                                    }
+                                </div>
+                            </MudTd>
                         </RowTemplate>
                         <PagerContent>
                             <MudTablePager />

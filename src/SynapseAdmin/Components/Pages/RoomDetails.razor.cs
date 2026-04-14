@@ -114,5 +114,33 @@ namespace SynapseAdmin.Components.Pages
             var result = await RoomService.BlockRoomAsync(RoomId, true);
             Snackbar.Add(result.Message, result.Severity);
         }
+
+        private bool IsPreviewable(string? mimeType)
+        {
+            if (string.IsNullOrEmpty(mimeType))
+            {
+                // For room media we often don't have the mime type upfront. 
+                // We'll allow previewing by default if it's missing, 
+                // the preview dialog handles the error if it's not actually an image/video/audio.
+                return true; 
+            }
+            return mimeType.StartsWith("image/") || mimeType.StartsWith("video/") || mimeType.StartsWith("audio/");
+        }
+
+        private async Task ShowPreview(RoomMediaItemViewModel media)
+        {
+            var mxc = media.MediaId;
+            var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
+            
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var parameters = new DialogParameters
+            {
+                { "Title", media.UploadName ?? media.MediaId },
+                { "PreviewUrl", previewUrl },
+                { "MediaType", media.MediaType }
+            };
+
+            await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
+        }
     }
 }

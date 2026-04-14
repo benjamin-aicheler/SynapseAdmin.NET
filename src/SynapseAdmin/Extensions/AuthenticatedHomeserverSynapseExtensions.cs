@@ -1,5 +1,7 @@
 using System.Net.Http.Json;
 using LibMatrix.Homeservers;
+using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
+using LibMatrix.StructuredData;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 
@@ -7,6 +9,17 @@ namespace SynapseAdmin.Extensions;
 
 public static class AuthenticatedHomeserverSynapseExtensions
 {
+    public static async Task<SynapseAdminUserMediaResult.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, string serverName, string mediaId)
+    {
+        return await homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMediaResult.MediaInfo>(
+            $"/_synapse/admin/v1/media/{serverName}/{mediaId}");
+    }
+
+    public static async Task<SynapseAdminUserMediaResult.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, MxcUri mxcUri)
+    {
+        return await homeserver.GetMediaMetadataAsync(mxcUri.ServerName, mxcUri.MediaId);
+    }
+
     public static async Task<SendServerNoticeResponse?> SendServerNoticeAsync(
         this AuthenticatedHomeserverSynapse homeserver,
         string userId,

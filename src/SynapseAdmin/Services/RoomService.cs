@@ -2,6 +2,7 @@ using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using LibMatrix.EventTypes.Spec.State.RoomInfo;
+using LibMatrix.StructuredData;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
@@ -81,7 +82,54 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var members = await membersTask;
             var stateEvents = await stateTask;
             var media = await mediaTask;
-            
+
+            var localMediaTasks = (media?.Local ?? []).Select(async m =>
+            {
+                var vm = new RoomMediaItemViewModel { MediaId = m };
+                try
+                {
+                    var mxc = MxcUri.Parse(m);
+                    var meta = await SynapseAdmin.GetMediaMetadataAsync(mxc);
+                    if (meta != null)
+                    {
+                        vm.UploadName = meta.UploadName;
+                        vm.MediaType = meta.MediaType;
+                        vm.MediaLength = meta.MediaLength;
+                        vm.CreatedTimestamp = meta.CreatedTimestamp;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug(ex, "Failed to fetch metadata for local media {Mxc}", m);
+                }
+                return vm;
+            });
+
+            var remoteMediaTasks = (media?.Remote ?? []).Select(async m =>
+            {
+                var vm = new RoomMediaItemViewModel { MediaId = m };
+                try
+                {
+                    var mxc = MxcUri.Parse(m);
+                    var meta = await SynapseAdmin.GetMediaMetadataAsync(mxc);
+                    if (meta != null)
+                    {
+                        vm.UploadName = meta.UploadName;
+                        vm.MediaType = meta.MediaType;
+                        vm.MediaLength = meta.MediaLength;
+                        vm.CreatedTimestamp = meta.CreatedTimestamp;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug(ex, "Failed to fetch metadata for remote media {Mxc}", m);
+                }
+                return vm;
+            });
+
+            var localMedia = (await Task.WhenAll(localMediaTasks)).ToList();
+            var remoteMedia = (await Task.WhenAll(remoteMediaTasks)).ToList();
+
             var tombstone = stateEvents?.Events
                 .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
                 .ContentAs<RoomTombstoneEventContent>();
@@ -116,8 +164,8 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 }).ToList() ?? [],
                 Media = media == null ? null : new RoomMediaViewModel
                 {
-                    Local = media.Local.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList(),
-                    Remote = media.Remote.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList()
+                    Local = localMedia,
+                    Remote = remoteMedia
                 }
             };
             return OperationResult<RoomDetailViewModel>.Ok(vm);
