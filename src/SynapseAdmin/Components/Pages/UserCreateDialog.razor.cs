@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Resources;
-using Microsoft.Extensions.Localization;
 
 namespace SynapseAdmin.Components.Pages;
 

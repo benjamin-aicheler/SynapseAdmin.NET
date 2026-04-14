@@ -1,6 +1,5 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Layout;
