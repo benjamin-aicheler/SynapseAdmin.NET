@@ -1,6 +1,7 @@
 @page "/rooms/{RoomId}"
 @using LibMatrix.Homeservers
 @using Microsoft.AspNetCore.Authorization
+@using SynapseAdmin.Models.ViewModels
 
 @attribute [Authorize]
 
@@ -178,7 +179,7 @@ else
                 }
                 else
                 {
-                    <MudTable Items="room.Media.Local" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6">
+                    <MudTable T="RoomMediaItemViewModel" ServerData="LoadLocalMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6" RowsPerPage="10">
                         <HeaderContent>
                             <MudTh>@L["MediaId"]</MudTh>
                             <MudTh>@L["FileName"]</MudTh>
@@ -222,7 +223,7 @@ else
                 }
                 else
                 {
-                    <MudTable Items="room.Media.Remote" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                    <MudTable T="RoomMediaItemViewModel" ServerData="LoadRemoteMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" RowsPerPage="10">
                         <HeaderContent>
                             <MudTh>@L["MediaId"]</MudTh>
                             <MudTh>@L["FileName"]</MudTh>

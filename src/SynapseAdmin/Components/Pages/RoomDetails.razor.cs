@@ -44,6 +44,44 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private async Task<TableData<RoomMediaItemViewModel>> LoadLocalMedia(TableState state, CancellationToken token)
+        {
+            if (room?.Media?.Local == null) return new TableData<RoomMediaItemViewModel> { TotalItems = 0, Items = [] };
+
+            var uris = room.Media.Local.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
+            if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
+
+            var result = await RoomService.GetMediaMetadataBatchAsync(uris);
+            if (result.Success)
+            {
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = result.Data };
+            }
+            else
+            {
+                Snackbar.Add(result.Message, result.Severity);
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
+            }
+        }
+
+        private async Task<TableData<RoomMediaItemViewModel>> LoadRemoteMedia(TableState state, CancellationToken token)
+        {
+            if (room?.Media?.Remote == null) return new TableData<RoomMediaItemViewModel> { TotalItems = 0, Items = [] };
+
+            var uris = room.Media.Remote.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
+            if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
+
+            var result = await RoomService.GetMediaMetadataBatchAsync(uris);
+            if (result.Success)
+            {
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = result.Data };
+            }
+            else
+            {
+                Snackbar.Add(result.Message, result.Severity);
+                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
+            }
+        }
+
         private async Task LoadMessages(string? from = null)
         {
             loadingMessages = true;
