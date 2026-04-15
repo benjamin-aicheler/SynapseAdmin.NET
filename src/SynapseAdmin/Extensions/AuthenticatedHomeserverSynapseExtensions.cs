@@ -12,8 +12,9 @@ public static class AuthenticatedHomeserverSynapseExtensions
 {
     public static async Task<SynapseAdminUserMediaResult.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, string serverName, string mediaId)
     {
-        return await homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMediaResult.MediaInfo>(
+        var result = await homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminMediaMetadataResponse>(
             $"/_synapse/admin/v1/media/{serverName}/{mediaId}");
+        return result?.MediaInfo;
     }
 
     public static async Task<SynapseAdminUserMediaResult.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, MxcUri mxcUri)
