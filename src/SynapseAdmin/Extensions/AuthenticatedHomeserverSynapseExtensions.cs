@@ -10,14 +10,14 @@ namespace SynapseAdmin.Extensions;
 
 public static class AuthenticatedHomeserverSynapseExtensions
 {
-    public static async Task<SynapseAdminUserMediaResult.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, string serverName, string mediaId)
+    public static async Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, string serverName, string mediaId)
     {
         var result = await homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminMediaMetadataResponse>(
-            $"/_synapse/admin/v1/media/{serverName}/{mediaId}");
-        return result?.MediaInfo;
+            $"/_synapse/admin/v1/media/{serverName.UrlEncode()}/{mediaId.UrlEncode()}");
+        return result?.Info;
     }
 
-    public static async Task<SynapseAdminUserMediaResult.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, MxcUri mxcUri)
+    public static async Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(this AuthenticatedHomeserverSynapse homeserver, MxcUri mxcUri)
     {
         return await homeserver.GetMediaMetadataAsync(mxcUri.ServerName, mxcUri.MediaId);
     }
