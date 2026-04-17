@@ -8,7 +8,7 @@ public class UserListViewModel
     public bool Deactivated { get; set; }
     public bool Admin { get; set; }
     public long CreationTs { get; set; }
-    public DateTime CreationTsDateTime => DateTimeOffset.FromUnixTimeSeconds(CreationTs).DateTime;
+    public DateTimeOffset CreationTsDateTime => DateTimeOffset.FromUnixTimeMilliseconds(CreationTs);
     public string UserType { get; set; } = string.Empty;
     public bool Locked { get; set; }
     public bool IsGuest { get; set; }

@@ -19,9 +19,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     [HttpGet]
     public async Task<IActionResult> Avatar(string mxc)
     {
-        // Avatars are small images, we can safely assume image/jpeg for the proxy
-        // as we only use this for the fallback if base64 embedding failed.
-        return await Preview(mxc, "image/jpeg");
+        return await Preview(mxc);
     }
 
     [HttpGet]
@@ -53,6 +51,17 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         }
 
         var mxcUri = LibMatrix.StructuredData.MxcUri.Parse(mxc);
+        
+        // If no MIME type was provided, try to get it from metadata
+        if (string.IsNullOrEmpty(safeMimeType))
+        {
+            var metaResult = await mediaService.GetMediaMetadataAsync(mxc);
+            if (metaResult.Success && metaResult.Data != null)
+            {
+                safeMimeType = metaResult.Data.MediaType;
+            }
+        }
+
         var finalFileName = safeFilename ?? mxcUri.MediaId;
         var finalMimeType = safeMimeType ?? "application/octet-stream";
         
@@ -83,7 +92,17 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return NotFound();
         }
 
-        // Default to image/jpeg if no mime type is provided, but browser usually auto-detects from stream
+        // If no MIME type was provided, try to get it from metadata
+        if (string.IsNullOrEmpty(mimeType))
+        {
+            var metaResult = await mediaService.GetMediaMetadataAsync(mxc);
+            if (metaResult.Success && metaResult.Data != null)
+            {
+                mimeType = metaResult.Data.MediaType;
+            }
+        }
+
+        // Default to image/jpeg if still unknown, but browser usually auto-detects from stream
         return File(result.Data, mimeType ?? "image/jpeg");
     }
 }

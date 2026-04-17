@@ -34,11 +34,12 @@ public partial class NavMenu : ComponentBase
             var homeserver = AuthProvider.GetHomeserver();
             var token = AuthProvider.GetAccessToken();
             var userId = AuthProvider.GetUserId();
+            var username = AuthProvider.GetUsername();
 
-            if (homeserver != null && token != null && userId != null)
+            if (homeserver != null && token != null && userId != null && username != null)
             {
                 // Use the bridge to hide sensitive data from the URL during proactive sync
-                var key = BridgeService.CreateBridge(homeserver, token, userId);
+                var key = BridgeService.CreateBridge(homeserver, token, userId, username);
                 var url = $"/Auth/SignIn?key={Uri.EscapeDataString(key)}&redirectUri={Uri.EscapeDataString(Navigation.Uri)}";
                 Navigation.NavigateTo(url, forceLoad: true);
             }

@@ -277,7 +277,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         if (m.Content == null) return new RoomMessageItemViewModel {
                             EventId = m.EventId,
                             Sender = m.Sender,
-                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs).DateTime,
+                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
                             Type = m.Type,
                             StateKey = m.StateKey
                         };
@@ -293,7 +293,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         {
                             EventId = m.EventId,
                             Sender = m.Sender,
-                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs).DateTime,
+                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
                             Type = m.Type,
                             StateKey = m.StateKey,
                             Content = JsonSerializer.Serialize(m.Content),
