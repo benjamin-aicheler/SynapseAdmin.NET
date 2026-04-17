@@ -152,7 +152,7 @@ else
                             <div class="d-flex">
                                 <MudIconButton Icon="@Icons.Material.Filled.Download" 
                                                Color="Color.Primary" 
-                                               Href="@($"/Media/Download?mxc=mxc://{MatrixSession.AuthenticatedHomeserver!.ServerName}/{context.MediaId}")"
+                                               Href="@($"/Media/Download?mxc={Uri.EscapeDataString($"mxc://{MatrixSession.AuthenticatedHomeserver!.ServerName}/{context.MediaId}")}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
                                                Target="_blank"
                                                title="@L["Download"]" />
                                 
