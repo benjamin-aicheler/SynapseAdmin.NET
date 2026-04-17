@@ -49,4 +49,23 @@ public class RoomMediaItemViewModel
     public string? MediaType { get; set; }
     public long MediaLength { get; set; }
     public long CreatedTimestamp { get; set; }
+
+    public string DownloadName
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(UploadName)) return UploadName;
+            var mediaIdPart = "media";
+            try
+            {
+                mediaIdPart = LibMatrix.StructuredData.MxcUri.Parse(MediaId).MediaId;
+            }
+            catch
+            {
+                // Fallback to "media" if parsing fails
+            }
+
+            return mediaIdPart + Infrastructure.Helpers.MediaHelper.GetExtensionFromMediaType(MediaType);
+        }
+    }
 }

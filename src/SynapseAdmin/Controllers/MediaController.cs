@@ -25,12 +25,16 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     }
 
     [HttpGet]
-    public async Task<IActionResult> Download(string mxc)
+    public async Task<IActionResult> Download(string mxc, string? filename = null, string? mimeType = null)
     {
         if (string.IsNullOrWhiteSpace(mxc)) return BadRequest();
         
-        logger.LogInformation("Download request for MXC {Mxc} from user {UserId}", 
-            mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
+        // Sanitize parameters
+        var safeFilename = !string.IsNullOrEmpty(filename) ? Path.GetFileName(filename) : null;
+        var safeMimeType = mimeType?.Split(';')[0].Trim(); // Only take the main type, ignore params/injections
+
+        logger.LogInformation("Download request for MXC {Mxc} (file: {Filename}, mime: {MimeType}) from user {UserId}", 
+            mxc.SanitizeForLogging(), safeFilename.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
         if (string.IsNullOrEmpty(Homeserver) || string.IsNullOrEmpty(AccessToken))
         {
@@ -48,10 +52,11 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return NotFound();
         }
 
-        var mxcUri = MxcUri.Parse(mxc);
-        var fileName = mxcUri.MediaId;
+        var mxcUri = LibMatrix.StructuredData.MxcUri.Parse(mxc);
+        var finalFileName = safeFilename ?? mxcUri.MediaId;
+        var finalMimeType = safeMimeType ?? "application/octet-stream";
         
-        return File(result.Data, "application/octet-stream", fileName);
+        return File(result.Data, finalMimeType, finalFileName);
     }
 
     [HttpGet]
