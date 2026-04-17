@@ -21,9 +21,7 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
         try
         {
             var dir = direction == SortDirection.Ascending ? "f" : "b";
-            var url = $"/_synapse/admin/v1/federation/destinations?from={offset}&limit={limit}&dir={dir}";
-
-            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminDestinationListResult>(url, cancellationToken: token);
+            var result = await SynapseAdmin.GetFederationDestinationListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((0, []));
             
             var vms = result.Destinations.Select(d => new FederationDestinationListViewModel

@@ -21,9 +21,7 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
         try
         {
             var dir = direction == SortDirection.Ascending ? "f" : "b";
-            var url = $"/_synapse/admin/v1/event_reports?from={offset}&limit={limit}&dir={dir}";
-
-            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminEventReportListResult>(url, cancellationToken: token);
+            var result = await SynapseAdmin.GetEventReportListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((0, []));
             
             var vms = result.Reports.Select(r => new EventReportListViewModel

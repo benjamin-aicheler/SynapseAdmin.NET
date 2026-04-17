@@ -27,13 +27,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         {
             if (orderBy == "room_id") orderBy = "alphabetical";
             var dir = direction == SortDirection.Descending ? "b" : "f";
-            var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={limit}&dir={dir}&order_by={Uri.EscapeDataString(orderBy)}";
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                url += $"&search_term={Uri.EscapeDataString(searchTerm)}";
-            }
-
-            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: token);
+            var result = await SynapseAdmin.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
             
             var vms = result.Rooms.Select(r => new RoomListViewModel
@@ -68,8 +62,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
         try
         {
-            var encodedRoomId = Uri.EscapeDataString(roomId);
-            var r = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{encodedRoomId}");
+            var r = await SynapseAdmin.GetRoomDetailsAsync(roomId);
             
             if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
 
@@ -241,7 +234,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
                 try
                 {
-                    var roomDetails = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom>($"/_synapse/admin/v1/rooms/{Uri.EscapeDataString(roomStat.RoomId)}");
+                    var roomDetails = await SynapseAdmin.GetRoomDetailsAsync(roomStat.RoomId);
                     if (roomDetails != null && !string.IsNullOrEmpty(roomDetails.Name))
                     {
                         vm.Name = roomDetails.Name;
@@ -270,12 +263,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
         try
         {
-            var url = $"/_synapse/admin/v1/rooms/{Uri.EscapeDataString(roomId)}/messages?limit={limit}&dir={dir}";
-            if (!string.IsNullOrEmpty(from)) url += $"&from={Uri.EscapeDataString(from)}";
-            if (!string.IsNullOrEmpty(to)) url += $"&to={Uri.EscapeDataString(to)}";
-            if (!string.IsNullOrEmpty(filter)) url += $"&filter={Uri.EscapeDataString(filter)}";
-
-            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomMessagesResponse>(url);
+            var result = await SynapseAdmin.GetRoomMessagesAsync(roomId, limit, from, dir, filter, to);
             if (result == null) return OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel());
 
             var vm = new RoomMessagesViewModel
