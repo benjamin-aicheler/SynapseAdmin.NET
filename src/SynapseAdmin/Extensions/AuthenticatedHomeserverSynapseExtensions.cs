@@ -22,17 +22,9 @@ public static class AuthenticatedHomeserverSynapseExtensions
         return await homeserver.GetMediaMetadataAsync(mxcUri.ServerName, mxcUri.MediaId);
     }
 
-    public static async Task<SynapseAdminRoomMediaListResult?> GetRoomMediaListAsync(this AuthenticatedHomeserverSynapse homeserver, string roomId, int? limit = null, string? from = null)
+    public static async Task<SynapseAdminRoomMediaListResult?> GetRoomMediaListAsync(this AuthenticatedHomeserverSynapse homeserver, string roomId)
     {
         var url = $"/_synapse/admin/v1/room/{roomId.UrlEncode()}/media";
-        // Parameters are included for future compatibility as requested
-        if (limit.HasValue || !string.IsNullOrEmpty(from))
-        {
-            var query = new List<string>();
-            if (limit.HasValue) query.Add($"limit={limit}");
-            if (!string.IsNullOrEmpty(from)) query.Add($"from={from}");
-            url += "?" + string.Join("&", query);
-        }
         return await homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomMediaListResult>(url);
     }
 
