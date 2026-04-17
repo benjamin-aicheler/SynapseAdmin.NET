@@ -25,9 +25,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         try
         {
             var dir = direction == SortDirection.Descending ? "b" : "f";
-            var url = $"/_synapse/admin/v2/users?from={offset}&limit={limit}&dir={dir}&order_by={orderBy}";
-
-            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult>(url, cancellationToken: token);
+            var result = await SynapseAdmin.GetUserListAsync(offset, limit, orderBy, dir, token);
             if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
             
             var vms = result.Users.Select(u => new UserListViewModel
@@ -58,10 +56,9 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
         try
         {
-            var encodedUserId = Uri.EscapeDataString(userId);
-            var u = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>($"/_synapse/admin/v2/users/{encodedUserId}");
-            
+            var u = await SynapseAdmin.GetUserDetailsAsync(userId);
             if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
+
 
             var mediaTask = SynapseAdmin.Admin.GetUserMediaAsync(userId);
             var membershipsTask = GetUserMembershipsAsync(userId);
@@ -106,21 +103,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             {
                 try
                 {
-                    var downloadUrl = await SynapseAdmin.GetMediaUrlAsync(vm.AvatarUrl);
-                    using var response = await SynapseAdmin.ClientHttpClient.GetAsync(downloadUrl);
-                    response.EnsureSuccessStatusCode();
-
-                    var contentLength = response.Content.Headers.ContentLength;
-                    if (contentLength is null or <= 3 * 1024 * 1024)
+                    vm.AvatarData = await SynapseAdmin.DownloadMediaAsync(vm.AvatarUrl);
+                    if (vm.AvatarData == null)
                     {
-                        var stream = await response.Content.ReadAsStreamAsync();
-                        using var ms = new MemoryStream();
-                        await stream.CopyToAsync(ms);
-                        vm.AvatarData = ms.ToArray();
-                    }
-                    else
-                    {
-                        logger.LogWarning("Avatar for user {UserId} is too large ({Size} bytes), skipping embed", userId.SanitizeForLogging(), contentLength);
+                        logger.LogWarning("Avatar for user {UserId} is too large or failed to download, skipping embed", userId.SanitizeForLogging());
                     }
                 }
                 catch (Exception ex)
@@ -235,7 +221,6 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
         try
         {
-            var encodedUserId = Uri.EscapeDataString(model.UserId);
             var req = new SynapseAdminUserUpsertRequest
             {
                 Password = model.Password,
@@ -244,7 +229,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 Deactivated = model.Deactivated
             };
 
-            var response = await SynapseAdmin.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{encodedUserId}", req);
+            var response = await SynapseAdmin.UpdateUserAsync(model.UserId, req);
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>();
             
@@ -266,8 +251,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
         try
         {
-            var encodedUserId = Uri.EscapeDataString(userId);
-            var result = await SynapseAdmin.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMembershipsResponse>($"/_synapse/admin/v1/users/{encodedUserId}/memberships");
+            var result = await SynapseAdmin.GetUserMembershipsAsync(userId);
             
             if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
 
