@@ -67,9 +67,10 @@ namespace SynapseAdmin.Components.Pages
                     ? AuthProvider.GetAccessToken() 
                     : loginModel.AccessToken;
                 var userId = AuthProvider.GetUserId();
+                var username = AuthProvider.GetUsername();
 
                 // Use the bridge to hide sensitive data from the URL
-                var key = BridgeService.CreateBridge(homeserver, token!, userId!);
+                var key = BridgeService.CreateBridge(homeserver, token!, userId!, username!);
 
                 var url = $"/Auth/SignIn?key={Uri.EscapeDataString(key)}&redirectUri={Uri.EscapeDataString("/")}";
                 Navigation.NavigateTo(url, forceLoad: true);

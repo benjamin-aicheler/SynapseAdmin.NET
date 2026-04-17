@@ -27,6 +27,7 @@ public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthCon
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, data.UserId),
+            new(ClaimTypes.Name, data.Username),
             new("Homeserver", data.Homeserver),
             new("AccessToken", data.AccessToken)
         };

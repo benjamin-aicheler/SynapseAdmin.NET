@@ -142,6 +142,7 @@ public class MatrixAuthenticationStateProvider(
 
     public string? GetAccessToken() => sessionService.AuthenticatedHomeserver?.AccessToken;
     public string? GetUserId() => sessionService.AuthenticatedHomeserver?.UserId;
+    public string? GetUsername() => sessionService.AuthenticatedHomeserver?.UserLocalpart;
     public string? GetHomeserver() => sessionService.AuthenticatedHomeserver?.BaseUrl;
 
     public async Task LogoutAsync(NavigationManager? navigation = null)

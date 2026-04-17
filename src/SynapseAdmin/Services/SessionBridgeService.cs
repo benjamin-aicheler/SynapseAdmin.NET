@@ -7,10 +7,10 @@ namespace SynapseAdmin.Services;
 
 public class SessionBridgeService(IMemoryCache cache, ILogger<SessionBridgeService> logger) : ISessionBridgeService
 {
-    public string CreateBridge(string homeserver, string accessToken, string userId)
+    public string CreateBridge(string homeserver, string accessToken, string userId, string username)
     {
         var key = Guid.NewGuid().ToString();
-        var data = (homeserver, accessToken, userId);
+        var data = (homeserver, accessToken, userId, username);
         
         logger.LogInformation("Creating session bridge for user {UserId} on {Homeserver}", 
             userId.SanitizeForLogging(), homeserver.SanitizeForLogging());
@@ -19,9 +19,9 @@ public class SessionBridgeService(IMemoryCache cache, ILogger<SessionBridgeServi
         return key;
     }
 
-    public bool TryConsumeBridge(string key, out (string Homeserver, string AccessToken, string UserId) data)
+    public bool TryConsumeBridge(string key, out (string Homeserver, string AccessToken, string UserId, string Username) data)
     {
-        if (cache.TryGetValue(key, out (string, string, string) cachedData))
+        if (cache.TryGetValue(key, out (string, string, string, string) cachedData))
         {
             logger.LogInformation("Successfully consumed session bridge for user {UserId}", 
                 cachedData.Item3.SanitizeForLogging());
@@ -31,7 +31,7 @@ public class SessionBridgeService(IMemoryCache cache, ILogger<SessionBridgeServi
         }
 
         logger.LogWarning("Failed to consume session bridge - key not found or expired");
-        data = (string.Empty, string.Empty, string.Empty);
+        data = (string.Empty, string.Empty, string.Empty, string.Empty);
         return false;
     }
 }
