@@ -54,3 +54,6 @@ TestResult.xml
 nunit-*.xml
 # SynapseAdmin Sensitive Data
 src/SynapseAdmin/keys/
+
+# Tools
+repomix-output.xml
