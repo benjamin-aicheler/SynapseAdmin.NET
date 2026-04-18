@@ -3,6 +3,8 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using LibMatrix.Responses;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Models.Responses;
+using System.Net.Http;
+using System.IO;
 
 namespace SynapseAdmin.Interfaces.Gateways;
 
@@ -55,6 +57,7 @@ public interface IMatrixGateway
 
     // --- Media (Standard/Admin) ---
     Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 3 * 1024 * 1024, CancellationToken cancellationToken = default);
+    Task<Stream> GetMediaStreamAsync(string mxcUri, string? filename = null, int? timeout = null, CancellationToken cancellationToken = default);
     Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(MxcUri mxc, CancellationToken cancellationToken = default);
 }

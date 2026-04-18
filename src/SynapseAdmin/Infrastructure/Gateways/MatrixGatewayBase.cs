@@ -1,10 +1,13 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
+using LibMatrix.EventTypes.Spec;
 using LibMatrix.Responses;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
+using System.Net.Http;
+using System.IO;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 
@@ -30,6 +33,11 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
             return await response.Content.ReadAsByteArrayAsync(cancellationToken);
         }
         return null;
+    }
+
+    public virtual async Task<Stream> GetMediaStreamAsync(string mxcUri, string? filename = null, int? timeout = null, CancellationToken cancellationToken = default)
+    {
+        return await Homeserver.GetMediaStreamAsync(mxcUri, filename, timeout);
     }
 
     // --- Abstract Admin Methods (Must be implemented by server-specific gateways) ---
