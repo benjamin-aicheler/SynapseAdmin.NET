@@ -5,22 +5,22 @@ using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Resources;
+using SynapseAdmin.Interfaces.Gateways;
 
 namespace SynapseAdmin.Services;
 
 public class MediaService(IMatrixSessionService sessionService, ILogger<MediaService> logger, IStringLocalizer<SharedResources> L) : IMediaService
 {
-    private AuthenticatedHomeserverGeneric? AuthenticatedHomeserver => sessionService.AuthenticatedHomeserver;
-    private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
+    private IMatrixGateway? Gateway => sessionService.Gateway;
 
     public async Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc)
     {
-        if (AuthenticatedHomeserver == null) return OperationResult<Stream>.Failure(L["NotAuthenticated"]);
+        if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<Stream>.Failure(L["NotAuthenticated"]);
         if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<Stream>.Failure(L["ErrorFetchingMedia"]);
 
         try
         {
-            var stream = await AuthenticatedHomeserver.GetMediaStreamAsync(mxc);
+            var stream = await Gateway.GetMediaStreamAsync(mxc);
             return OperationResult<Stream>.Ok(stream);
         }
         catch (Exception ex)
@@ -32,13 +32,13 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
 
     public async Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc)
     {
-        if (SynapseAdmin == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["NotAuthenticated"]);
+        if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["NotAuthenticated"]);
         if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["ErrorFetchingMedia"]);
 
         try
         {
             var mxcUri = LibMatrix.StructuredData.MxcUri.Parse(mxc);
-            var meta = await SynapseAdmin.GetMediaMetadataAsync(mxcUri);
+            var meta = await Gateway.GetMediaMetadataAsync(mxcUri);
             if (meta == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["ErrorFetchingMedia"]);
             return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Ok(meta);
         }

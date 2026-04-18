@@ -53,6 +53,8 @@ builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
 builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
+builder.Services.AddScoped<SynapseAdmin.Interfaces.Gateways.IMatrixAuthGateway, SynapseAdmin.Infrastructure.Gateways.MatrixAuthGateway>();
+
 builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
