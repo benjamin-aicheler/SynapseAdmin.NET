@@ -1,6 +1,3 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using LibMatrix.EventTypes.Spec.State.RoomInfo;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Models.ViewModels;
@@ -12,22 +9,24 @@ using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
 using System.Text.Json;
+using SynapseAdmin.Interfaces.Gateways;
+using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 
 namespace SynapseAdmin.Services;
 
 public class RoomService(IMatrixSessionService sessionService, ILogger<RoomService> logger, IStringLocalizer<SharedResources> L) : IRoomService
 {
-    private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
+    private IMatrixGateway? Gateway => sessionService.Gateway;
 
     public async Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
     {
-        if (SynapseAdmin == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(L["NotAuthenticated"]);
 
         try
         {
             if (orderBy == "room_id") orderBy = "alphabetical";
             var dir = direction == SortDirection.Descending ? "b" : "f";
-            var result = await SynapseAdmin.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
+            var result = await Gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
             
             var vms = result.Rooms.Select(r => new RoomListViewModel
@@ -58,17 +57,17 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public async Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId)
     {
-        if (SynapseAdmin == null) return OperationResult<RoomDetailViewModel>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<RoomDetailViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var r = await SynapseAdmin.GetRoomDetailsAsync(roomId);
+            var r = await Gateway.GetRoomDetailsAsync(roomId);
             
             if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
 
-            var membersTask = SynapseAdmin.Admin.GetRoomMembersAsync(roomId);
-            var stateTask = SynapseAdmin.Admin.GetRoomStateAsync(roomId);
-            var mediaTask = SynapseAdmin.GetRoomMediaListAsync(roomId);
+            var membersTask = Gateway.GetRoomMembersAsync(roomId);
+            var stateTask = Gateway.GetRoomStateAsync(roomId);
+            var mediaTask = Gateway.GetRoomMediaListAsync(roomId);
 
             await Task.WhenAll(membersTask, stateTask, mediaTask);
 
@@ -125,7 +124,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public async Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris)
     {
-        if (SynapseAdmin == null) return OperationResult<List<RoomMediaItemViewModel>>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<List<RoomMediaItemViewModel>>.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -135,7 +134,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 try
                 {
                     var mxc = MxcUri.Parse(m);
-                    var meta = await SynapseAdmin.GetMediaMetadataAsync(mxc);
+                    var meta = await Gateway.GetMediaMetadataAsync(mxc);
                     if (meta != null)
                     {
                         vm.UploadName = meta.UploadName;
@@ -163,7 +162,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public async Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -172,7 +171,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 Block = block,
                 Purge = purge
             };
-            await SynapseAdmin.Admin.DeleteRoom(roomId, req);
+            await Gateway.DeleteRoomAsync(roomId, req);
             logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
             return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
         }
@@ -185,10 +184,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public async Task<OperationResult> QuarantineMediaAsync(string roomId)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await SynapseAdmin.Admin.QuarantineMediaByRoomId(roomId);
+            await Gateway.QuarantineMediaByRoomIdAsync(roomId);
             logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult.Ok(L["RoomMediaQuarantinedSuccessfully"]);
         }
@@ -201,10 +200,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public async Task<OperationResult> BlockRoomAsync(string roomId, bool block)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await SynapseAdmin.Admin.BlockRoom(roomId, block);
+            await Gateway.BlockRoomAsync(roomId, block);
             logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId.SanitizeForLogging());
             return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
         }
@@ -217,10 +216,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public async Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync()
     {
-        if (SynapseAdmin == null) return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
         try
         {
-            var stats = await SynapseAdmin.GetLargestRoomsAsync();
+            var stats = await Gateway.GetLargestRoomsAsync();
             if (stats == null) return OperationResult<List<RoomStatisticsViewModel>>.Ok([]);
 
             var tasks = stats.Rooms.Take(10).Select(async roomStat =>
@@ -234,7 +233,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
                 try
                 {
-                    var roomDetails = await SynapseAdmin.GetRoomDetailsAsync(roomStat.RoomId);
+                    var roomDetails = await Gateway.GetRoomDetailsAsync(roomStat.RoomId);
                     if (roomDetails != null && !string.IsNullOrEmpty(roomDetails.Name))
                     {
                         vm.Name = roomDetails.Name;
@@ -259,11 +258,11 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public async Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null)
     {
-        if (SynapseAdmin == null) return OperationResult<RoomMessagesViewModel>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<RoomMessagesViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var result = await SynapseAdmin.GetRoomMessagesAsync(roomId, limit, from, dir, filter, to);
+            var result = await Gateway.GetRoomMessagesAsync(roomId, limit, from, dir, filter, to);
             if (result == null) return OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel());
 
             var vm = new RoomMessagesViewModel
