@@ -24,6 +24,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public virtual async Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 3 * 1024 * 1024, CancellationToken cancellationToken = default)
     {
         var downloadUrl = await Homeserver.GetMediaUrlAsync(mxcUrl);
+        // Optimization: Use standard GetAsync as MatrixHttpClient doesn't support ResponseHeadersRead overload
         using var response = await Homeserver.ClientHttpClient.GetAsync(downloadUrl, cancellationToken);
         response.EnsureSuccessStatusCode();
 
