@@ -10,7 +10,8 @@ namespace SynapseAdmin.Services;
 public class MatrixAuthenticationStateProvider(
     ProtectedLocalStorage localStorage,
     IMatrixSessionService sessionService,
-    IHttpContextAccessor httpContextAccessor) : AuthenticationStateProvider
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<MatrixAuthenticationStateProvider> logger) : AuthenticationStateProvider
 {
     private const string StorageKey_Homeserver = "matrix_homeserver";
     private const string StorageKey_AccessToken = "matrix_access_token";
@@ -69,11 +70,11 @@ public class MatrixAuthenticationStateProvider(
         catch (Exception ex) when (ex is InvalidOperationException or Microsoft.JSInterop.JSException)
         {
             // ProtectedLocalStorage can throw if JS is not available (e.g. prerendering)
+            logger.LogDebug(ex, "Failed to read from local storage during prerendering.");
         }
-        catch
+        catch (Exception ex)
         {
-            // Unexpected errors should be logged or handled more explicitly if needed
-            throw;
+            logger.LogError(ex, "Unexpected error during GetAuthenticationStateAsync");
         }
 
         _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));

@@ -5,6 +5,7 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces.Gateways;
 
 namespace SynapseAdmin.Services;
@@ -23,14 +24,7 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
             var result = await Gateway.GetFederationDestinationListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((0, []));
             
-            var vms = result.Destinations.Select(d => new FederationDestinationListViewModel
-            {
-                Destination = d.Destination,
-                RetryLastTs = d.RetryLastTs,
-                RetryInterval = d.RetryInterval,
-                FailureTs = d.FailureTs,
-                LastSuccessfulStreamOrdering = d.LastSuccessfulStreamOrdering
-            }).ToList();
+            var vms = result.Destinations.ToViewModels();
 
             return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((result.Total, vms));
         }
