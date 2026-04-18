@@ -1,6 +1,6 @@
 @page "/users/{UserId}"
-@using LibMatrix.Homeservers
 @using Microsoft.AspNetCore.Authorization
+@using SynapseAdmin.Infrastructure.Gateways
 
 @attribute [Authorize]
 
@@ -8,7 +8,7 @@
 
 <MudText Typo="Typo.h3" Class="mb-6">@L["UserDetails"]</MudText>
 
-@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+@if (MatrixSession.Gateway is not SynapseAdminGateway synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
         @L["SynapseAdminApiRequired"]
@@ -152,7 +152,7 @@ else
                             <div class="d-flex">
                                 <MudIconButton Icon="@Icons.Material.Filled.Download" 
                                                Color="Color.Primary" 
-                                               Href="@($"/Media/Download?mxc={Uri.EscapeDataString($"mxc://{MatrixSession.AuthenticatedHomeserver!.ServerName}/{context.MediaId}")}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
+                                               Href="@($"/Media/Download?mxc={Uri.EscapeDataString($"mxc://{MatrixSession.Gateway!.ServerName}/{context.MediaId}")}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
                                                Target="_blank"
                                                title="@L["Download"]" />
                                 
@@ -174,4 +174,3 @@ else
         </MudTabPanel>
     </MudTabs>
 }
-
