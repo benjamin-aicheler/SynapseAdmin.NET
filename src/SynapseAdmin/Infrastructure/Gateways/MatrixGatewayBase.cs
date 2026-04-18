@@ -19,6 +19,12 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 {
     protected readonly AuthenticatedHomeserverGeneric Homeserver = homeserver;
 
+    // --- Session Info Implementation ---
+    public string UserId => Homeserver.UserId;
+    public string Username => Homeserver.UserLocalpart;
+    public string HomeserverUrl => Homeserver.BaseUrl;
+    public string AccessToken => Homeserver.AccessToken;
+
     // --- Standard Matrix CS API Implementation ---
     
     public virtual async Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 3 * 1024 * 1024, CancellationToken cancellationToken = default)
