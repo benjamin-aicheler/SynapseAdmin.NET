@@ -18,6 +18,7 @@ public interface IMatrixGateway
     string UserId { get; }
     string Username { get; }
     string HomeserverUrl { get; }
+    string ServerName { get; }
     string AccessToken { get; }
 
     // --- User Management (Admin/Synapse) ---

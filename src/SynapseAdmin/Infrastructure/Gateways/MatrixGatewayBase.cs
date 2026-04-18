@@ -23,6 +23,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public string UserId => Homeserver.UserId;
     public string Username => Homeserver.UserLocalpart;
     public string HomeserverUrl => Homeserver.BaseUrl;
+    public string ServerName => Homeserver.ServerName;
     public string AccessToken => Homeserver.AccessToken;
 
     // --- Standard Matrix CS API Implementation ---
