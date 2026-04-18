@@ -1,26 +1,25 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
-using System.Net.Http.Json;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Interfaces.Gateways;
+using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 
 namespace SynapseAdmin.Services;
 
 public class RegistrationTokenService(IMatrixSessionService sessionService, ILogger<RegistrationTokenService> logger, IStringLocalizer<SharedResources> L) : IRegistrationTokenService
 {
-    private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
+    private IMatrixGateway? Gateway => sessionService.Gateway;
 
     public async Task<OperationResult<List<RegistrationTokenViewModel>>> GetRegistrationTokensAsync()
     {
-        if (SynapseAdmin == null) return OperationResult<List<RegistrationTokenViewModel>>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<List<RegistrationTokenViewModel>>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var sdkTokens = await SynapseAdmin.Admin.GetRegistrationTokensAsync();
+            var sdkTokens = await Gateway.GetRegistrationTokensAsync();
             
             var vms = sdkTokens.Select(t => new RegistrationTokenViewModel
             {
@@ -42,7 +41,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
 
     public async Task<OperationResult> CreateRegistrationTokenAsync(RegistrationTokenViewModel viewModel)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -53,7 +52,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
                 ExpiryTime = viewModel.ExpiryTime
             };
             
-            var result = await SynapseAdmin.CreateRegistrationTokenAsync(req);
+            var result = await Gateway.CreateRegistrationTokenAsync(req);
             
             if (result == null) return OperationResult.Failure(L["ErrorCreatingToken"]);
 
@@ -69,7 +68,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
 
     public async Task<OperationResult> UpdateRegistrationTokenAsync(string token, RegistrationTokenViewModel viewModel)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -78,7 +77,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
                 UsesAllowed = viewModel.UsesAllowed,
                 ExpiryTime = viewModel.ExpiryTime
             };
-            await SynapseAdmin.Admin.UpdateRegistrationTokenAsync(token, req);
+            await Gateway.UpdateRegistrationTokenAsync(token, req);
             logger.LogInformation("Successfully updated registration token");
             return OperationResult.Ok(L["TokenUpdatedSuccessfully"]);
         }
@@ -91,10 +90,10 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
 
     public async Task<OperationResult> DeleteRegistrationTokenAsync(string token)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await SynapseAdmin.Admin.DeleteRegistrationTokenAsync(token);
+            await Gateway.DeleteRegistrationTokenAsync(token);
             logger.LogInformation("Successfully deleted registration token");
             return OperationResult.Ok(L["TokenDeletedSuccessfully"]);
         }
