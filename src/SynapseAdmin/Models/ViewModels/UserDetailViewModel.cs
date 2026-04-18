@@ -5,7 +5,6 @@ public class UserDetailViewModel
     public string UserId { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
     public string? AvatarUrl { get; set; }
-    public byte[]? AvatarData { get; set; }
     public bool Deactivated { get; set; }
     public bool Admin { get; set; }
     public long CreationTs { get; set; }
@@ -49,14 +48,26 @@ public class UserMediaItemViewModel
         get
         {
             if (!string.IsNullOrEmpty(UploadName)) return UploadName;
+            
             var mediaIdPart = "media";
-            try
+            if (!string.IsNullOrEmpty(MediaId))
             {
-                mediaIdPart = LibMatrix.StructuredData.MxcUri.Parse(MediaId).MediaId;
-            }
-            catch
-            {
-                // Fallback to "media" if parsing fails
+                if (MediaId.StartsWith("mxc://"))
+                {
+                    try
+                    {
+                        mediaIdPart = LibMatrix.StructuredData.MxcUri.Parse(MediaId).MediaId;
+                    }
+                    catch
+                    {
+                        mediaIdPart = "media";
+                    }
+                }
+                else
+                {
+                    // It's already just the ID part
+                    mediaIdPart = MediaId;
+                }
             }
 
             return mediaIdPart + Infrastructure.Helpers.MediaHelper.GetExtensionFromMediaType(MediaType);

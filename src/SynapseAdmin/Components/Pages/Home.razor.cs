@@ -1,9 +1,9 @@
-using LibMatrix.Homeservers;
 using Microsoft.AspNetCore.Components;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Extensions;
 using MudBlazor;
+using SynapseAdmin.Infrastructure.Gateways;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -36,7 +36,8 @@ namespace SynapseAdmin.Components.Pages
         {
             if (MatrixSession.IsLoggedIn)
             {
-                isSynapse = MatrixSession.AuthenticatedHomeserver is AuthenticatedHomeserverSynapse;
+                // We check if the gateway is Synapse
+                isSynapse = MatrixSession.Gateway is SynapseAdminGateway;
                 if (isSynapse)
                 {
                     await LoadDashboardData();
@@ -55,7 +56,7 @@ namespace SynapseAdmin.Components.Pages
                 var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending);
                 var largestRoomsTask = RoomService.GetLargestRoomsAsync();
                 var topMediaUsersTask = UserService.GetTopMediaUsersAsync(10);
-                var versionTask = (MatrixSession.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse)?.GetSynapseVersionAsync() ?? Task.FromResult<SynapseAdmin.Models.Responses.SynapseVersionResponse?>(null);
+                var versionTask = MatrixSession.Gateway?.GetSynapseVersionAsync() ?? Task.FromResult<SynapseAdmin.Models.Responses.SynapseVersionResponse?>(null);
 
                 await Task.WhenAll(userTask, roomTask, reportTask, largestRoomsTask, topMediaUsersTask, versionTask);
 

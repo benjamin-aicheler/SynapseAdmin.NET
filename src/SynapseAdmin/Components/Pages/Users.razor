@@ -1,7 +1,7 @@
 @page "/users"
-@using LibMatrix.Homeservers
 @using Microsoft.AspNetCore.Authorization
 @using SynapseAdmin.Models.ViewModels
+@using SynapseAdmin.Infrastructure.Gateways
 
 @attribute [Authorize]
 
@@ -9,7 +9,7 @@
 
 <MudText Typo="Typo.h3" Class="mb-6">@L["UserManagement"]</MudText>
 
-@if (MatrixSession.AuthenticatedHomeserver is not AuthenticatedHomeserverSynapse synapseAdmin)
+@if (MatrixSession.Gateway is not SynapseAdminGateway synapseAdmin)
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
         @L["SynapseAdminApiRequired"]

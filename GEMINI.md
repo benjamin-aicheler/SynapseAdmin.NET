@@ -23,12 +23,15 @@ The project uses the standard .NET 10 CLI and Docker:
 - **N-Tier Architecture:** The application follows an N-Tier architecture pattern.
     - **Presentation Layer:** Blazor Components (`.razor` and `.razor.cs`). These should exclusively handle UI state, user interaction, and data display.
     - **Application Layer (Services):** Classes in `src/SynapseAdmin/Services/`. These handle business logic, Matrix protocol orchestration, and mapping data.
-    - **Infrastructure Layer:** `LibMatrix` SDK and underlying storage services.
+    - **Infrastructure Layer:** `LibMatrix` SDK and the **Gateway Layer** (`src/SynapseAdmin/Infrastructure/Gateways/`).
 - **Authentication Bridge:** The application uses a "Cookie Bridge" pattern to synchronize authentication between the Blazor circuit and standard ASP.NET Core Controllers.
     - **SessionBridgeService:** A singleton service used to securely hand off authentication data using short-lived GUID keys.
     - **AuthController:** Issues the `matrix_auth` cookie required by standard HTTP requests.
     - **MediaController:** Uses the authentication cookie to support native browser streaming for large files.
 - **Interfaces:** ALWAYS extract an Interface (in `src/SynapseAdmin/Interfaces/`) for every service to enable unit testing, mocking, and decoupling.
+- **Gateway Pattern:** The application uses a Gateway-based architecture to decouple services from the `LibMatrix` SDK.
+    - **Contract:** Services should only interact with the Matrix server via the `IMatrixGateway` interface (available through `IMatrixSessionService`).
+    - **Authentication:** Unauthenticated operations (Login, Discovery) are handled by `IMatrixAuthGateway`, which acts as a factory for producing authenticated `IMatrixGateway` instances.
 - **Error Handling:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. This forces the UI to handle success/failure explicitly.
 - **Localization Rule:** 
     - **Services:** Responsible for generating localized, user-friendly messages for **Business Outcomes** (the result of a protocol or data operation) using `IStringLocalizer`.

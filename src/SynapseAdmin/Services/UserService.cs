@@ -1,31 +1,29 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.EventTypes.Spec;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Models.Requests;
-using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
-using System.Net.Http.Json;
+using SynapseAdmin.Interfaces.Gateways;
+using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 
 namespace SynapseAdmin.Services;
 
 public class UserService(IMatrixSessionService sessionService, ILogger<UserService> logger, IStringLocalizer<SharedResources> L) : IUserService
 {
-    private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
+    private IMatrixGateway? Gateway => sessionService.Gateway;
 
     public async Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, CancellationToken token = default)
     {
-        if (SynapseAdmin == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var dir = direction == SortDirection.Descending ? "b" : "f";
-            var result = await SynapseAdmin.GetUserListAsync(offset, limit, orderBy, dir, token);
+            var result = await Gateway.GetUserListAsync(offset, limit, orderBy, dir, token);
             if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
             
             var vms = result.Users.Select(u => new UserListViewModel
@@ -52,15 +50,15 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId)
     {
-        if (SynapseAdmin == null) return OperationResult<UserDetailViewModel>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<UserDetailViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var u = await SynapseAdmin.GetUserDetailsAsync(userId);
+            var u = await Gateway.GetUserDetailsAsync(userId);
             if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
 
 
-            var mediaTask = SynapseAdmin.Admin.GetUserMediaAsync(userId);
+            var mediaTask = Gateway.GetUserMediaAsync(userId);
             var membershipsTask = GetUserMembershipsAsync(userId);
 
             await Task.WhenAll(mediaTask, membershipsTask);
@@ -75,7 +73,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 AvatarUrl = u.AvatarUrl,
                 Deactivated = u.Deactivated,
                 Admin = u.Admin == true,
-                CreationTs = u.CreationTs * 1000,
+                CreationTs = u.CreationTs * 1000, // Converting seconds to milliseconds as expected by the ViewModel
                 UserType = u.UserType ?? "user",
                 Locked = u.Locked,
                 ShadowBanned = u.ShadowBanned,
@@ -98,23 +96,6 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : []
             };
 
-            // Fetch avatar data if available and not too large (3MB limit)
-            if (!string.IsNullOrEmpty(vm.AvatarUrl))
-            {
-                try
-                {
-                    vm.AvatarData = await SynapseAdmin.DownloadMediaAsync(vm.AvatarUrl);
-                    if (vm.AvatarData == null)
-                    {
-                        logger.LogWarning("Avatar for user {UserId} is too large or failed to download, skipping embed", userId.SanitizeForLogging());
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to fetch avatar data for user {UserId}", userId.SanitizeForLogging());
-                }
-            }
-
             return OperationResult<UserDetailViewModel>.Ok(vm);
         }
         catch (Exception ex)
@@ -126,11 +107,11 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
-            await SynapseAdmin.Admin.DeactivateUserAsync(userId, erase);
+            await Gateway.DeactivateUserAsync(userId, erase);
             logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId.SanitizeForLogging(), erase);
             return OperationResult.Ok(L["UserDeactivatedSuccessfully"]);
         }
@@ -143,10 +124,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult> QuarantineMediaAsync(string userId)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await SynapseAdmin.Admin.QuarantineMediaByUserId(userId);
+            await Gateway.QuarantineMediaByUserIdAsync(userId);
             logger.LogInformation("Successfully quarantined media for user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["UserMediaQuarantinedSuccessfully"]);
         }
@@ -159,10 +140,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn)
     {
-        if (SynapseAdmin == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
         try
         {
-            var resp = await SynapseAdmin.Admin.LoginUserAsync(userId, expireIn);
+            var resp = await Gateway.LoginAsUserAsync(userId, expireIn);
             logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
             return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful"]);
         }
@@ -175,11 +156,11 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult> SendServerNoticeAsync(string userId, string message)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
             var content = new RoomMessageEventContent(body: message);
-            await SynapseAdmin.SendServerNoticeAsync(userId, content);
+            await Gateway.SendServerNoticeAsync(userId, content);
             logger.LogInformation("Successfully sent server notice to user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["ServerNoticeSentSuccessfully"]);
         }
@@ -192,10 +173,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10)
     {
-        if (SynapseAdmin == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
         try
         {
-            var result = await SynapseAdmin.GetUserMediaStatisticsAsync(count);
+            var result = await Gateway.GetUserMediaStatisticsAsync(count);
             if (result == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Ok([]);
 
             var vms = result.Users.Select(u => new UserMediaStatisticsViewModel
@@ -217,7 +198,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult> CreateUserAsync(UserCreateViewModel model)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
@@ -229,7 +210,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 Deactivated = model.Deactivated
             };
 
-            var response = await SynapseAdmin.UpdateUserAsync(model.UserId, req);
+            var response = await Gateway.UpdateUserAsync(model.UserId, req);
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>();
             
@@ -247,11 +228,11 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
     public async Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId)
     {
-        if (SynapseAdmin == null) return OperationResult<List<UserMembershipViewModel>>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<List<UserMembershipViewModel>>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var result = await SynapseAdmin.GetUserMembershipsAsync(userId);
+            var result = await Gateway.GetUserMembershipsAsync(userId);
             
             if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
 

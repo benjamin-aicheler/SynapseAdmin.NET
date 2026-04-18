@@ -1,5 +1,3 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
@@ -7,21 +5,22 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Interfaces.Gateways;
 
 namespace SynapseAdmin.Services;
 
 public class FederationService(IMatrixSessionService sessionService, ILogger<FederationService> logger, IStringLocalizer<SharedResources> L) : IFederationService
 {
-    private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
+    private IMatrixGateway? Gateway => sessionService.Gateway;
 
     public async Task<OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>> GetDestinationsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
     {
-        if (SynapseAdmin == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var dir = direction == SortDirection.Ascending ? "f" : "b";
-            var result = await SynapseAdmin.GetFederationDestinationListAsync(offset, limit, dir, token);
+            var result = await Gateway.GetFederationDestinationListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((0, []));
             
             var vms = result.Destinations.Select(d => new FederationDestinationListViewModel
@@ -44,10 +43,10 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
 
     public async Task<OperationResult> ResetConnectionTimeoutAsync(string destination)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await SynapseAdmin.Admin.ResetFederationConnectionTimeoutAsync(destination);
+            await Gateway.ResetFederationConnectionTimeoutAsync(destination);
             logger.LogInformation("Successfully reset federation connection timeout for {Destination}", destination.SanitizeForLogging());
             return OperationResult.Ok(L["ResetFederationConnectionSuccessful"]);
         }

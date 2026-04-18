@@ -1,16 +1,18 @@
 using LibMatrix.Homeservers;
-using LibMatrix.Services;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Infrastructure.Gateways;
 
 namespace SynapseAdmin.Services;
 
-public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<MatrixSessionService> logger, IStringLocalizer<SharedResources> L) : IMatrixSessionService
+public class MatrixSessionService(IMatrixAuthGateway authGateway, ILogger<MatrixSessionService> logger, IStringLocalizer<SharedResources> L) : IMatrixSessionService
 {
     public AuthenticatedHomeserverGeneric? AuthenticatedHomeserver { get; private set; }
+    public IMatrixGateway? Gateway { get; private set; }
 
     public bool IsLoggedIn => AuthenticatedHomeserver != null;
 
@@ -18,11 +20,14 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
     {
         try
         {
-            // Explicitly resolve homeserver with federation support to ensure correct server type detection
-            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
+            // Resolve homeserver via gateway
+            await authGateway.ResolveHomeserverAsync(homeserver);
 
-            var loginResponse = await hsProvider.Login(homeserver, username, password);
-            AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, loginResponse.AccessToken);
+            var loginResponse = await authGateway.LoginAsync(homeserver, username, password);
+            AuthenticatedHomeserver = await authGateway.GetAuthenticatedAsync(homeserver, loginResponse.AccessToken);
+            
+            InitializeGateway();
+
             logger.LogInformation("User {Username} successfully logged into {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"]);
         }
@@ -37,10 +42,13 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
     {
         try
         {
-            // Explicitly resolve homeserver with federation support to ensure correct server type detection
-            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
+            // Resolve homeserver via gateway
+            await authGateway.ResolveHomeserverAsync(homeserver);
 
-            AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
+            AuthenticatedHomeserver = await authGateway.GetAuthenticatedAsync(homeserver, accessToken);
+            
+            InitializeGateway();
+
             logger.LogInformation("Session successfully logged in via token for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"]);
         }
@@ -48,6 +56,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         {
             logger.LogError(ex, "Login with token failed for {Homeserver}", homeserver.SanitizeForLogging());
             AuthenticatedHomeserver = null;
+            Gateway = null;
             return OperationResult.Failure(L["LoginFailed"]);
         }
     }
@@ -63,10 +72,13 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
 
         try
         {
-            // Explicitly resolve homeserver with federation support to ensure correct server type detection
-            await hsProvider.GetRemoteHomeserver(homeserver, enableServer: true);
+            // Resolve homeserver via gateway
+            await authGateway.ResolveHomeserverAsync(homeserver);
 
-            AuthenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserver, accessToken);
+            AuthenticatedHomeserver = await authGateway.GetAuthenticatedAsync(homeserver, accessToken);
+            
+            InitializeGateway();
+
             logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", AuthenticatedHomeserver.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok();
         }
@@ -74,6 +86,7 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
         {
             logger.LogWarning(ex, "Failed to restore session for {Homeserver}", homeserver.SanitizeForLogging());
             AuthenticatedHomeserver = null;
+            Gateway = null;
             return OperationResult.Failure(L["ErrorLoadingTokens"]);
         }
     }
@@ -85,5 +98,20 @@ public class MatrixSessionService(HomeserverProviderService hsProvider, ILogger<
             logger.LogInformation("User {UserId} logged out from {Homeserver}", AuthenticatedHomeserver.UserId.SanitizeForLogging(), AuthenticatedHomeserver.ServerName.SanitizeForLogging());
         }
         AuthenticatedHomeserver = null;
+        Gateway = null;
+    }
+
+    private void InitializeGateway()
+    {
+        if (AuthenticatedHomeserver is AuthenticatedHomeserverSynapse synapse)
+        {
+            Gateway = new SynapseAdminGateway(synapse);
+        }
+        else if (AuthenticatedHomeserver != null)
+        {
+            // Fallback to a generic gateway if not synapse (to be implemented if needed)
+            // For now, we only support Synapse
+            Gateway = null; 
+        }
     }
 }

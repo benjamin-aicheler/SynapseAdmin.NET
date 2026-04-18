@@ -87,7 +87,8 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task ShowPreview(UserMediaItemViewModel media)
         {
-            var mxc = $"mxc://{MatrixSession.AuthenticatedHomeserver!.ServerName}/{media.MediaId}";
+            if (MatrixSession.Gateway == null) return;
+            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{media.MediaId}";
             var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
 
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
