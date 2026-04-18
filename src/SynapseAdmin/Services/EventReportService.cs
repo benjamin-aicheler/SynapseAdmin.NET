@@ -1,5 +1,3 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
@@ -7,21 +5,22 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Interfaces.Gateways;
 
 namespace SynapseAdmin.Services;
 
 public class EventReportService(IMatrixSessionService sessionService, ILogger<EventReportService> logger, IStringLocalizer<SharedResources> L) : IEventReportService
 {
-    private AuthenticatedHomeserverSynapse? SynapseAdmin => sessionService.AuthenticatedHomeserver as AuthenticatedHomeserverSynapse;
+    private IMatrixGateway? Gateway => sessionService.Gateway;
 
     public async Task<OperationResult<(int Total, List<EventReportListViewModel> Reports)>> GetEventReportsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
     {
-        if (SynapseAdmin == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var dir = direction == SortDirection.Ascending ? "f" : "b";
-            var result = await SynapseAdmin.GetEventReportListAsync(offset, limit, dir, token);
+            var result = await Gateway.GetEventReportListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((0, []));
             
             var vms = result.Reports.Select(r => new EventReportListViewModel
@@ -48,10 +47,10 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
 
     public async Task<OperationResult> DeleteEventReportAsync(string reportId)
     {
-        if (SynapseAdmin == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await SynapseAdmin.Admin.DeleteEventReportAsync(reportId);
+            await Gateway.DeleteEventReportAsync(reportId);
             logger.LogInformation("Successfully deleted event report {ReportId}", reportId.SanitizeForLogging());
             return OperationResult.Ok(L["EventReportDeletedSuccessfully"]);
         }
