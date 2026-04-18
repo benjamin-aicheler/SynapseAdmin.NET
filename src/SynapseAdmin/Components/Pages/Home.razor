@@ -71,7 +71,7 @@ else if (isSynapse)
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@L["UserId"]">@context.UserId</MudTd>
-                    <MudTd DataLabel="@L["Created"]">@DateTimeOffset.FromUnixTimeSeconds(context.CreationTs).ToString("g")</MudTd>
+                    <MudTd DataLabel="@L["Created"]">@context.CreationTsDateTime.ToString("g")</MudTd>
                 </RowTemplate>
             </MudTable>
         </MudItem>
