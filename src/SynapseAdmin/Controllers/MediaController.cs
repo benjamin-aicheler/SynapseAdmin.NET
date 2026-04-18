@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using LibMatrix.StructuredData;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using System.Security.Claims;

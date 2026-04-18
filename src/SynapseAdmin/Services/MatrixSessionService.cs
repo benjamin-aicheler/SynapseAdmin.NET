@@ -1,5 +1,4 @@
 using LibMatrix.Homeservers;
-using LibMatrix.Services;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;

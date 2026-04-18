@@ -3,7 +3,6 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
-using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces.Gateways;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 

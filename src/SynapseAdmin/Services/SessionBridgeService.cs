@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 

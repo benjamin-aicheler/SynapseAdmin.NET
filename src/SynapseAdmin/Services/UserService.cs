@@ -1,14 +1,12 @@
 using LibMatrix.EventTypes.Spec;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Models.Requests;
-using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
-using System.Net.Http.Json;
 using SynapseAdmin.Interfaces.Gateways;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 

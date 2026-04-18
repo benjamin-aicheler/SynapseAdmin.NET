@@ -1,4 +1,3 @@
-using LibMatrix.Homeservers;
 using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;

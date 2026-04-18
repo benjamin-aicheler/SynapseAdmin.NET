@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using Microsoft.Extensions.Logging;
 using MudBlazor;
 using SynapseAdmin.Infrastructure.Themes;
 using SynapseAdmin.Interfaces;
