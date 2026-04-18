@@ -96,23 +96,6 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : []
             };
 
-            // Fetch avatar data if available and not too large (3MB limit)
-            if (!string.IsNullOrEmpty(vm.AvatarUrl))
-            {
-                try
-                {
-                    vm.AvatarData = await Gateway.DownloadMediaAsync(vm.AvatarUrl);
-                    if (vm.AvatarData == null)
-                    {
-                        logger.LogWarning("Avatar for user {UserId} is too large or failed to download, skipping embed", userId.SanitizeForLogging());
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to fetch avatar data for user {UserId}", userId.SanitizeForLogging());
-                }
-            }
-
             return OperationResult<UserDetailViewModel>.Ok(vm);
         }
         catch (Exception ex)

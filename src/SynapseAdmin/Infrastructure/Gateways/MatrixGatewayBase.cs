@@ -28,19 +28,29 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     // --- Standard Matrix CS API Implementation ---
     
-    public virtual async Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 3 * 1024 * 1024, CancellationToken cancellationToken = default)
+    public virtual async Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5 * 1024 * 1024, CancellationToken cancellationToken = default)
     {
-        var downloadUrl = await Homeserver.GetMediaUrlAsync(mxcUrl);
-        // Optimization: Use standard GetAsync as MatrixHttpClient doesn't support ResponseHeadersRead overload
-        using var response = await Homeserver.ClientHttpClient.GetAsync(downloadUrl, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var contentLength = response.Content.Headers.ContentLength;
-        if (contentLength is null || contentLength.Value <= maxBytes)
+        try
         {
-            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            using var responseStream = await GetMediaStreamAsync(mxcUrl, cancellationToken: cancellationToken);
+            using var ms = new MemoryStream();
+            var buffer = new byte[8192];
+            int read;
+            long totalRead = 0;
+
+            while ((read = await responseStream.ReadAsync(buffer, cancellationToken)) > 0)
+            {
+                totalRead += read;
+                if (totalRead > maxBytes) return null;
+                await ms.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            }
+
+            return ms.ToArray();
         }
-        return null;
+        catch
+        {
+            return null;
+        }
     }
 
     public virtual async Task<Stream> GetMediaStreamAsync(string mxcUri, string? filename = null, int? timeout = null, CancellationToken cancellationToken = default)

@@ -33,14 +33,7 @@ else
                         @if (!string.IsNullOrEmpty(user.AvatarUrl))
                         {
                             <MudAvatar Size="Size.Large" Class="mr-4">
-                                @if (user.AvatarData != null)
-                                {
-                                    <MudImage Src="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.AvatarData)}")" />
-                                }
-                                else
-                                {
-                                    <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(user.AvatarUrl)}" : user.AvatarUrl)" />
-                                }
+                                <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(user.AvatarUrl)}" : user.AvatarUrl)" />
                             </MudAvatar>
                         }
                         else
