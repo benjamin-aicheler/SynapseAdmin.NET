@@ -34,7 +34,7 @@ public class MatrixAuthenticationStateProvider(
                 // We have a stored session, restore it
                 var restoreResult = await sessionService.RestoreSessionAsync(homeserverResult.Value, tokenResult.Value);
                 
-                if (restoreResult.Success && sessionService.IsLoggedIn)
+                if (restoreResult.Success && sessionService.IsLoggedIn && sessionService.Gateway != null)
                 {
                     // PROACTIVE SYNC: Check if the cookie exists. 
                     // Standard controllers need the cookie to work.
@@ -44,18 +44,14 @@ public class MatrixAuthenticationStateProvider(
                     if (!isCookieAuthenticated)
                     {
                         // The Blazor session exists but the Cookie is gone!
-                        // We can't set cookies from here, so we return the state 
-                        // but the app should handle the redirect if needed or the user 
-                        // will be synced on next Login. 
-                        // Note: NavigationManager is often not available yet in the first call of this method.
                     }
 
                     var claims = new[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, sessionService.AuthenticatedHomeserver!.UserId),
-                        new Claim(ClaimTypes.Name, sessionService.AuthenticatedHomeserver!.UserLocalpart),
-                        new Claim("Homeserver", sessionService.AuthenticatedHomeserver!.ServerName),
-                        new Claim("AccessToken", sessionService.AuthenticatedHomeserver!.AccessToken)
+                        new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
+                        new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
+                        new Claim("Homeserver", sessionService.Gateway.ServerName),
+                        new Claim("AccessToken", sessionService.Gateway.AccessToken)
                     };
 
                     var identity = new ClaimsIdentity(claims, "MatrixAuth");
@@ -74,7 +70,6 @@ public class MatrixAuthenticationStateProvider(
         catch (Exception ex) when (ex is InvalidOperationException or Microsoft.JSInterop.JSException)
         {
             // ProtectedLocalStorage can throw if JS is not available (e.g. prerendering)
-            // Or if data is tampered with. We just fallback to unauthenticated.
         }
         catch
         {
@@ -90,16 +85,16 @@ public class MatrixAuthenticationStateProvider(
     {
         var result = await sessionService.LoginAsync(homeserver, username, password);
         
-        if (result.Success && sessionService.IsLoggedIn)
+        if (result.Success && sessionService.IsLoggedIn && sessionService.Gateway != null)
         {
             await localStorage.SetAsync(StorageKey_Homeserver, homeserver);
-            await localStorage.SetAsync(StorageKey_AccessToken, sessionService.AuthenticatedHomeserver!.AccessToken);
+            await localStorage.SetAsync(StorageKey_AccessToken, sessionService.Gateway.AccessToken);
             
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, sessionService.AuthenticatedHomeserver!.UserId),
-                new Claim(ClaimTypes.Name, sessionService.AuthenticatedHomeserver!.UserLocalpart),
-                new Claim("Homeserver", sessionService.AuthenticatedHomeserver!.ServerName)
+                new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
+                new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
+                new Claim("Homeserver", sessionService.Gateway.ServerName)
             };
 
             var identity = new ClaimsIdentity(claims, "MatrixAuth");
@@ -117,16 +112,16 @@ public class MatrixAuthenticationStateProvider(
     {
         var result = await sessionService.LoginWithTokenAsync(homeserver, accessToken);
 
-        if (result.Success && sessionService.IsLoggedIn)
+        if (result.Success && sessionService.IsLoggedIn && sessionService.Gateway != null)
         {
             await localStorage.SetAsync(StorageKey_Homeserver, homeserver);
             await localStorage.SetAsync(StorageKey_AccessToken, accessToken);
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, sessionService.AuthenticatedHomeserver!.UserId),
-                new Claim(ClaimTypes.Name, sessionService.AuthenticatedHomeserver!.UserLocalpart),
-                new Claim("Homeserver", sessionService.AuthenticatedHomeserver!.ServerName)
+                new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
+                new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
+                new Claim("Homeserver", sessionService.Gateway.ServerName)
             };
 
             var identity = new ClaimsIdentity(claims, "MatrixAuth");
@@ -140,10 +135,10 @@ public class MatrixAuthenticationStateProvider(
         return result;
     }
 
-    public string? GetAccessToken() => sessionService.AuthenticatedHomeserver?.AccessToken;
-    public string? GetUserId() => sessionService.AuthenticatedHomeserver?.UserId;
-    public string? GetUsername() => sessionService.AuthenticatedHomeserver?.UserLocalpart;
-    public string? GetHomeserver() => sessionService.AuthenticatedHomeserver?.BaseUrl;
+    public string? GetAccessToken() => sessionService.Gateway?.AccessToken;
+    public string? GetUserId() => sessionService.Gateway?.UserId;
+    public string? GetUsername() => sessionService.Gateway?.Username;
+    public string? GetHomeserver() => sessionService.Gateway?.HomeserverUrl;
 
     public async Task LogoutAsync(NavigationManager? navigation = null)
     {
