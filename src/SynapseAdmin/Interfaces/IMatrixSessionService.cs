@@ -1,11 +1,13 @@
 using LibMatrix.Homeservers;
 using SynapseAdmin.Models;
+using SynapseAdmin.Interfaces.Gateways;
 
 namespace SynapseAdmin.Interfaces;
 
 public interface IMatrixSessionService
 {
     AuthenticatedHomeserverGeneric? AuthenticatedHomeserver { get; }
+    IMatrixGateway? Gateway { get; }
     bool IsLoggedIn { get; }
     Task<OperationResult> LoginAsync(string homeserver, string username, string password);
     Task<OperationResult> LoginWithTokenAsync(string homeserver, string accessToken);
