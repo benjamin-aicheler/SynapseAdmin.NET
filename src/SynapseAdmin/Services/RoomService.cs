@@ -7,6 +7,7 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Extensions.Mapping;
 using System.Text.Json;
 using SynapseAdmin.Interfaces.Gateways;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
@@ -28,22 +29,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var result = await Gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
             
-            var vms = result.Rooms.Select(r => new RoomListViewModel
-            {
-                RoomId = r.RoomId,
-                Name = r.Name,
-                CanonicalAlias = r.CanonicalAlias,
-                JoinedMembers = r.JoinedMembers,
-                JoinedLocalMembers = r.JoinedLocalMembers,
-                Version = r.Version ?? "1",
-                Creator = r.Creator ?? "",
-                Encryption = r.Encryption,
-                Federated = r.Federatable,
-                Public = r.Public,
-                AvatarUrl = "", 
-                JoinRules = r.JoinRules,
-                RoomType = "" 
-            }).ToList();
+            var vms = result.Rooms.ToViewModels();
 
             return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((result.TotalRooms, vms));
         }
@@ -78,40 +64,23 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
                 .ContentAs<RoomTombstoneEventContent>();
 
-            var vm = new RoomDetailViewModel
+            var vm = r.ToDetailViewModel();
+            vm.IsTombstoned = tombstone != null;
+            vm.ReplacementRoom = tombstone?.ReplacementRoom;
+            vm.Members = members?.Members ?? [];
+            vm.StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
             {
-                RoomId = r.RoomId,
-                Name = r.Name,
-                CanonicalAlias = r.CanonicalAlias,
-                JoinedMembers = r.JoinedMembers,
-                JoinedLocalMembers = r.JoinedLocalMembers,
-                Version = r.Version ?? "1",
-                Creator = r.Creator ?? "",
-                Encryption = r.Encryption,
-                Federated = r.Federatable,
-                Public = r.Public,
-                AvatarUrl = "",
-                JoinRules = r.JoinRules,
-                GuestAccess = r.GuestAccess,
-                HistoryVisibility = r.HistoryVisibility,
-                RoomType = "",
-                Forgotten = false, 
-                IsTombstoned = tombstone != null,
-                ReplacementRoom = tombstone?.ReplacementRoom,
-                Members = members?.Members ?? [],
-                StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
-                {
-                    Type = e.Type,
-                    StateKey = e.StateKey,
-                    Sender = e.Sender,
-                    RawContent = e.RawContent?.ToJsonString()
-                }).ToList() ?? [],
-                Media = media == null ? null : new RoomMediaViewModel
-                {
-                    Local = media.Local.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList(),
-                    Remote = media.Remote.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList()
-                }
+                Type = e.Type,
+                StateKey = e.StateKey,
+                Sender = e.Sender,
+                RawContent = e.RawContent?.ToJsonString()
+            }).ToList() ?? [];
+            vm.Media = media == null ? null : new RoomMediaViewModel
+            {
+                Local = media.Local.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList(),
+                Remote = media.Remote.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList()
             };
+            
             return OperationResult<RoomDetailViewModel>.Ok(vm);
         }
         catch (Exception ex)

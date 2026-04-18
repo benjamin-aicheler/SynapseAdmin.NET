@@ -2,6 +2,7 @@ using LibMatrix.EventTypes.Spec;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
@@ -26,18 +27,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             var result = await Gateway.GetUserListAsync(offset, limit, orderBy, dir, token);
             if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
             
-            var vms = result.Users.Select(u => new UserListViewModel
-            {
-                UserId = u.Name,
-                DisplayName = u.DisplayName,
-                AvatarUrl = u.AvatarUrl,
-                Deactivated = u.Deactivated,
-                Admin = u.Admin == true,
-                CreationTs = u.CreationTs, 
-                UserType = u.UserType ?? "user",
-                Locked = u.Locked,
-                IsGuest = u.IsGuest == true
-            }).ToList();
+            var vms = result.Users.ToViewModels();
 
             return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((result.Total, vms));
         }
@@ -66,35 +56,21 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             var mediaResult = await mediaTask;
             var membershipsResult = await membershipsTask;
 
-            var vm = new UserDetailViewModel
+            var vm = u.ToDetailViewModel();
+            vm.Media = mediaResult == null ? null : new UserMediaViewModel
             {
-                UserId = u.Name,
-                DisplayName = u.DisplayName,
-                AvatarUrl = u.AvatarUrl,
-                Deactivated = u.Deactivated,
-                Admin = u.Admin == true,
-                CreationTs = u.CreationTs * 1000, // Converting seconds to milliseconds as expected by the ViewModel
-                UserType = u.UserType ?? "user",
-                Locked = u.Locked,
-                ShadowBanned = u.ShadowBanned,
-                ConsentVersion = "", 
-                ConsentServerNoticeSent = "",
-                AppserviceId = "",
-                Media = mediaResult == null ? null : new UserMediaViewModel
+                TotalCount = mediaResult.Total,
+                TotalSize = mediaResult.Media.Sum(m => m.MediaLength), 
+                Media = mediaResult.Media.Select(m => new UserMediaItemViewModel
                 {
-                    TotalCount = mediaResult.Total,
-                    TotalSize = mediaResult.Media.Sum(m => m.MediaLength), 
-                    Media = mediaResult.Media.Select(m => new UserMediaItemViewModel
-                    {
-                        MediaId = m.MediaId,
-                        UploadName = m.UploadName,
-                        MediaType = m.MediaType,
-                        MediaLength = m.MediaLength,
-                        CreatedTimestamp = m.CreatedTimestamp
-                    }).ToList()
-                },
-                Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : []
+                    MediaId = m.MediaId,
+                    UploadName = m.UploadName,
+                    MediaType = m.MediaType,
+                    MediaLength = m.MediaLength,
+                    CreatedTimestamp = m.CreatedTimestamp
+                }).ToList()
             };
+            vm.Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : [];
 
             return OperationResult<UserDetailViewModel>.Ok(vm);
         }

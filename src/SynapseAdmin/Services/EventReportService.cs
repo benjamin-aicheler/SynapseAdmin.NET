@@ -5,6 +5,7 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces.Gateways;
 
 namespace SynapseAdmin.Services;
@@ -23,18 +24,7 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
             var result = await Gateway.GetEventReportListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((0, []));
             
-            var vms = result.Reports.Select(r => new EventReportListViewModel
-            {
-                Id = r.Id,
-                ReceivedTs = r.ReceivedTs,
-                UserId = r.UserId,
-                RoomId = r.RoomId,
-                EventId = r.EventId,
-                Reason = r.Reason ?? string.Empty,
-                Score = r.Score,
-                Sender = r.Sender,
-                CanonicalAlias = r.CanonicalAlias
-            }).ToList();
+            var vms = result.Reports.ToViewModels();
 
             return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((result.Total, vms));
         }

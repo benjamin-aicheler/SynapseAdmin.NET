@@ -3,6 +3,7 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
+using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces.Gateways;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 
@@ -20,14 +21,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
         {
             var sdkTokens = await Gateway.GetRegistrationTokensAsync();
             
-            var vms = sdkTokens.Select(t => new RegistrationTokenViewModel
-            {
-                Token = t.Token,
-                UsesAllowed = t.UsesAllowed,
-                Pending = t.Pending,
-                Completed = t.Completed,
-                ExpiryTime = t.ExpiryTime
-            }).ToList();
+            var vms = sdkTokens.ToViewModels();
 
             return OperationResult<List<RegistrationTokenViewModel>>.Ok(vms);
         }
