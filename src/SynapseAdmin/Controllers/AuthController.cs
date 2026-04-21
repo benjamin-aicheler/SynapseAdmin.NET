@@ -35,7 +35,7 @@ public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthCon
         var authProperties = new AuthenticationProperties
         {
             IsPersistent = true,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(1)
         };
 
         await HttpContext.SignInAsync(
