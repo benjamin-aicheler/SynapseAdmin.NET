@@ -17,11 +17,14 @@ namespace SynapseAdmin.Components.Pages
         public ISnackbar Snackbar { get; set; } = null!;
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
+        [Inject]
+        public IMediaService MediaService { get; set; } = null!;
 
         [Parameter]
         public string UserId { get; set; } = string.Empty;
 
         private UserDetailViewModel? user;
+        private MudTable<UserMediaItemViewModel>? mediaTable;
 
         protected override async Task OnInitializedAsync()
         {
@@ -77,6 +80,44 @@ namespace SynapseAdmin.Components.Pages
         {
             var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1));
             Snackbar.Add(result.Message, result.Severity);
+        }
+
+        private async Task QuarantineSingleMedia(string mediaIdPart)
+        {
+            if (MatrixSession.Gateway == null) return;
+            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+            
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["QuarantineMediaTitle"],
+                L["QuarantineMediaConfirmation"],
+                yesText: L["Quarantine"], cancelText: L["Cancel"]);
+
+            if (confirmed == true)
+            {
+                var result = await MediaService.QuarantineMediaAsync(mxc);
+                Snackbar.Add(result.Message, result.Severity);
+            }
+        }
+
+        private async Task DeleteSingleMedia(string mediaIdPart)
+        {
+            if (MatrixSession.Gateway == null) return;
+            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["DeleteMediaTitle"],
+                L["DeleteMediaConfirmation"],
+                yesText: L["Delete"], cancelText: L["Cancel"]);
+
+            if (confirmed == true)
+            {
+                var result = await MediaService.DeleteMediaAsync(mxc);
+                Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    await LoadUserDetails();
+                }
+            }
         }
 
         private bool IsPreviewable(string? mimeType)

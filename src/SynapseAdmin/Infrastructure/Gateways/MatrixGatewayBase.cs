@@ -104,4 +104,6 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     // Media
     public abstract Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(MxcUri mxc, CancellationToken cancellationToken = default);
+    public abstract Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    public abstract Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
 }

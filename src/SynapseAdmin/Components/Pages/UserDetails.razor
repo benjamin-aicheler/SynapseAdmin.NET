@@ -126,7 +126,7 @@ else
             }
             else
             {
-                <MudTable Items="user.Media.Media" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                <MudTable Items="user.Media.Media" @ref="mediaTable" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                     <HeaderContent>
                         <MudTh>@L["MediaId"]</MudTh>
                         <MudTh>@L["FileName"]</MudTh>
@@ -156,6 +156,16 @@ else
                                                    OnClick="@(() => ShowPreview(context))"
                                                    title="@L["Preview"]" />
                                 }
+
+                                <MudIconButton Icon="@Icons.Material.Filled.Block" 
+                                               Color="Color.Warning" 
+                                               OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
+                                               title="@L["Quarantine"]" />
+                                
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Color="Color.Error" 
+                                               OnClick="@(() => DeleteSingleMedia(context.MediaId))"
+                                               title="@L["Delete"]" />
                             </div>
                         </MudTd>
                     </RowTemplate>

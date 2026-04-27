@@ -775,4 +775,19 @@
   <data name="ErrorSessionBridgeFailed" xml:space="preserve">
     <value>Die Anmeldesitzung ist abgelaufen oder ungültig. Bitte versuchen Sie, sich erneut anzumelden.</value>
   </data>
+  <data name="MediaQuarantinedSuccessfully" xml:space="preserve">
+    <value>Medien erfolgreich unter Quarantäne gestellt.</value>
+  </data>
+  <data name="MediaDeletedSuccessfully" xml:space="preserve">
+    <value>Medien erfolgreich gelöscht.</value>
+  </data>
+  <data name="QuarantineMediaConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diese Medien unter Quarantäne stellen möchten?</value>
+  </data>
+  <data name="DeleteMediaConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diese Medien löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="DeleteMediaTitle" xml:space="preserve">
+    <value>Medien löschen</value>
+  </data>
 </root>

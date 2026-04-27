@@ -775,4 +775,19 @@
   <data name="ErrorSessionBridgeFailed" xml:space="preserve">
     <value>La session de connexion a expiré ou est invalide. Veuillez essayer de vous reconnecter.</value>
   </data>
+  <data name="MediaQuarantinedSuccessfully" xml:space="preserve">
+    <value>Média mis en quarantaine avec succès.</value>
+  </data>
+  <data name="MediaDeletedSuccessfully" xml:space="preserve">
+    <value>Média supprimé avec succès.</value>
+  </data>
+  <data name="QuarantineMediaConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir mettre ce média en quarantaine ?</value>
+  </data>
+  <data name="DeleteMediaConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer ce média ? Cette action est irréversible.</value>
+  </data>
+  <data name="DeleteMediaTitle" xml:space="preserve">
+    <value>Supprimer le média</value>
+  </data>
 </root>

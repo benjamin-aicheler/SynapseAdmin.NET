@@ -221,7 +221,7 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
         return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>("/_synapse/admin/v1/server_version", cancellationToken: cancellationToken);
     }
 
-    // --- Media ---
+    // Media
 
     public override async Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
@@ -234,4 +234,15 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
     {
         return await GetMediaMetadataAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
-}
+
+    public override async Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
+    {
+        await _synapse.Admin.QuarantineMediaById(serverName, mediaId);
+    }
+
+    public override async Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
+    {
+        await _synapse.Admin.DeleteMediaById(serverName, mediaId);
+    }
+    }
+
