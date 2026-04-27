@@ -12,6 +12,8 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IRoomService RoomService { get; set; } = null!;
         [Inject]
+        public IMediaService MediaService { get; set; } = null!;
+        [Inject]
         public NavigationManager Navigation { get; set; } = null!;
         [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
@@ -24,6 +26,8 @@ namespace SynapseAdmin.Components.Pages
         private RoomDetailViewModel? room;
         private RoomMessagesViewModel? messages;
         private bool loadingMessages;
+        private MudTable<RoomMediaItemViewModel>? localMediaTable;
+        private MudTable<RoomMediaItemViewModel>? remoteMediaTable;
 
         protected override async Task OnParametersSetAsync()
         {
@@ -151,6 +155,45 @@ namespace SynapseAdmin.Components.Pages
         {
             var result = await RoomService.BlockRoomAsync(RoomId, true);
             Snackbar.Add(result.Message, result.Severity);
+        }
+
+        private async Task QuarantineSingleMedia(string mxc)
+        {
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["QuarantineMediaTitle"],
+                L["QuarantineMediaConfirmation"],
+                yesText: L["Quarantine"], cancelText: L["Cancel"]);
+
+            if (confirmed == true)
+            {
+                var result = await MediaService.QuarantineMediaAsync(mxc);
+                Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                    await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                }
+            }
+        }
+
+        private async Task DeleteSingleMedia(string mxc)
+        {
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["DeleteMediaTitle"],
+                L["DeleteMediaConfirmation"],
+                yesText: L["Delete"], cancelText: L["Cancel"]);
+
+            if (confirmed == true)
+            {
+                var result = await MediaService.DeleteMediaAsync(mxc);
+                Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    await LoadRoomDetails();
+                    await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                    await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                }
+            }
         }
 
         private bool IsPreviewable(string? mimeType)

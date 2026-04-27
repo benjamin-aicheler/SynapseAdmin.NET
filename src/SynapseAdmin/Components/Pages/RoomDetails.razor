@@ -179,7 +179,7 @@ else
                 }
                 else
                 {
-                    <MudTable T="RoomMediaItemViewModel" ServerData="LoadLocalMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6" RowsPerPage="10">
+                    <MudTable T="RoomMediaItemViewModel" @ref="localMediaTable" ServerData="LoadLocalMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6" RowsPerPage="10">
                         <HeaderContent>
                             <MudTh>@L["MediaId"]</MudTh>
                             <MudTh>@L["FileName"]</MudTh>
@@ -207,6 +207,16 @@ else
                                                        OnClick="@(() => ShowPreview(context))"
                                                        title="@L["Preview"]" />
                                     }
+
+                                    <MudIconButton Icon="@Icons.Material.Filled.Block" 
+                                                   Color="Color.Warning" 
+                                                   OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
+                                                   title="@L["Quarantine"]" />
+                                    
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                   Color="Color.Error" 
+                                                   OnClick="@(() => DeleteSingleMedia(context.MediaId))"
+                                                   title="@L["Delete"]" />
                                 </div>
                             </MudTd>
                         </RowTemplate>
@@ -223,7 +233,7 @@ else
                 }
                 else
                 {
-                    <MudTable T="RoomMediaItemViewModel" ServerData="LoadRemoteMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" RowsPerPage="10">
+                    <MudTable T="RoomMediaItemViewModel" @ref="remoteMediaTable" ServerData="LoadRemoteMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" RowsPerPage="10">
                         <HeaderContent>
                             <MudTh>@L["MediaId"]</MudTh>
                             <MudTh>@L["FileName"]</MudTh>
@@ -251,6 +261,16 @@ else
                                                        OnClick="@(() => ShowPreview(context))"
                                                        title="@L["Preview"]" />
                                     }
+
+                                    <MudIconButton Icon="@Icons.Material.Filled.Block" 
+                                                   Color="Color.Warning" 
+                                                   OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
+                                                   title="@L["Quarantine"]" />
+                                    
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                   Color="Color.Error" 
+                                                   OnClick="@(() => DeleteSingleMedia(context.MediaId))"
+                                                   title="@L["Delete"]" />
                                 </div>
                             </MudTd>
                         </RowTemplate>
