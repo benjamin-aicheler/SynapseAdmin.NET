@@ -47,6 +47,12 @@ The project uses the standard .NET 10 CLI and Docker:
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
     - **Themes:** Support multiple themes by implementing the `IAppTheme` interface in `src/SynapseAdmin/Infrastructure/Themes/`. Themes are automatically discovered via reflection. User preferences are persisted using `ProtectedLocalStorage`. See [Theme Guide](./THEMING.md).
 
+## Synapse API Compatibility
+- **Inconsistent Types:** Some Synapse Admin APIs (e.g., User Media) return pagination tokens (`next_token`) as JSON Numbers, while the SDK/DTOs expect Strings.
+- **Handling Strategy:** To avoid modifying the `LibMatrix` submodule, use `SynapseCompatibilityJsonOptions` (defined in `SynapseAdminGateway`).
+- **Implementation:** This utilizes `JsonStringConverter` to safely coerce Numbers into Strings during deserialization.
+- **Guideline:** Apply these options to any `GetFromJsonAsync` calls where Synapse returns inconsistent types to prevent `JsonException` crashes.
+
 ## Security
 - **Data Protection:** The application uses ASP.NET Core Data Protection to encrypt sensitive session data (Matrix access tokens). 
     - **Docker:** Keys are persisted to the host via a volume mount to `./keys` (\`/app/keys\` in the container).
