@@ -28,6 +28,10 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
 
             return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((result.Total, vms));
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching event reports (offset: {Offset}, limit: {Limit})", offset, limit);
@@ -43,6 +47,10 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
             await Gateway.DeleteEventReportAsync(reportId, token);
             logger.LogInformation("Successfully deleted event report {ReportId}", reportId.SanitizeForLogging());
             return OperationResult.Ok(L["EventReportDeletedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {

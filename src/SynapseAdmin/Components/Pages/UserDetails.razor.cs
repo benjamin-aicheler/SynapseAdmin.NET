@@ -5,7 +5,7 @@ using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class UserDetails
+    public partial class UserDetails : IDisposable
     {
         [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -25,6 +25,7 @@ namespace SynapseAdmin.Components.Pages
 
         private UserDetailViewModel? user;
         private MudTable<UserMediaItemViewModel>? mediaTable;
+        private readonly CancellationTokenSource _cts = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -33,12 +34,12 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task LoadUserDetails()
         {
-            var result = await UserService.GetUserDetailsAsync(UserId);
+            var result = await UserService.GetUserDetailsAsync(UserId, _cts.Token);
             if (result.Success)
             {
                 user = result.Data;
             }
-            else
+            else if (result.Severity != Severity.Normal) // Don't show snackbar if cancelled
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -53,7 +54,7 @@ namespace SynapseAdmin.Components.Pages
                 
             if (confirmed == true)
             {
-                var result = await UserService.DeactivateUserAsync(UserId);
+                var result = await UserService.DeactivateUserAsync(UserId, token: _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
@@ -71,14 +72,14 @@ namespace SynapseAdmin.Components.Pages
             
             if (confirmed == true)
             {
-                var result = await UserService.QuarantineMediaAsync(UserId);
+                var result = await UserService.QuarantineMediaAsync(UserId, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
             }
         }
 
         private async Task LoginAsUser()
         {
-            var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1));
+            var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1), _cts.Token);
             Snackbar.Add(result.Message, result.Severity);
         }
 
@@ -94,7 +95,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                var result = await MediaService.QuarantineMediaAsync(mxc);
+                var result = await MediaService.QuarantineMediaAsync(mxc, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
@@ -115,7 +116,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                var result = await MediaService.UnquarantineMediaAsync(mxc);
+                var result = await MediaService.UnquarantineMediaAsync(mxc, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
@@ -136,7 +137,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                var result = await MediaService.DeleteMediaAsync(mxc);
+                var result = await MediaService.DeleteMediaAsync(mxc, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
@@ -166,6 +167,12 @@ namespace SynapseAdmin.Components.Pages
             };
 
             await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

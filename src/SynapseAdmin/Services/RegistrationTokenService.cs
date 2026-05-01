@@ -26,6 +26,10 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
 
             return OperationResult<List<RegistrationTokenViewModel>>.Ok(vms);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<List<RegistrationTokenViewModel>>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching registration tokens");
@@ -53,6 +57,10 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
             logger.LogInformation("Successfully created registration token");
             return OperationResult.Ok(L["TokenCreatedSuccessfully"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating registration token");
@@ -75,6 +83,10 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
             logger.LogInformation("Successfully updated registration token");
             return OperationResult.Ok(L["TokenUpdatedSuccessfully"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error updating registration token");
@@ -90,6 +102,10 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
             await Gateway.DeleteRegistrationTokenAsync(token, cancellationToken);
             logger.LogInformation("Successfully deleted registration token");
             return OperationResult.Ok(L["TokenDeletedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {

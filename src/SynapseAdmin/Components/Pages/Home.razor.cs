@@ -7,7 +7,7 @@ using SynapseAdmin.Infrastructure.Gateways;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class Home
+    public partial class Home : IDisposable
     {
         [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -31,6 +31,7 @@ namespace SynapseAdmin.Components.Pages
         private List<UserMediaStatisticsViewModel> topMediaUsers = [];
         private string? serverVersion;
         private bool loading = true;
+        private readonly CancellationTokenSource _cts = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -51,12 +52,12 @@ namespace SynapseAdmin.Components.Pages
             loading = true;
             try
             {
-                var userTask = UserService.GetUserListAsync(0, 5, "creation_ts", SortDirection.Descending);
-                var roomTask = RoomService.GetRoomListAsync(0, 1, "room_id", SortDirection.Ascending);
-                var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending);
-                var largestRoomsTask = RoomService.GetLargestRoomsAsync();
-                var topMediaUsersTask = UserService.GetTopMediaUsersAsync(10);
-                var versionTask = MatrixSession.Gateway?.GetSynapseVersionAsync() ?? Task.FromResult<SynapseAdmin.Models.Responses.SynapseVersionResponse?>(null);
+                var userTask = UserService.GetUserListAsync(0, 5, "creation_ts", SortDirection.Descending, _cts.Token);
+                var roomTask = RoomService.GetRoomListAsync(0, 1, "room_id", SortDirection.Ascending, token: _cts.Token);
+                var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending, _cts.Token);
+                var largestRoomsTask = RoomService.GetLargestRoomsAsync(_cts.Token);
+                var topMediaUsersTask = UserService.GetTopMediaUsersAsync(10, _cts.Token);
+                var versionTask = MatrixSession.Gateway?.GetSynapseVersionAsync(_cts.Token) ?? Task.FromResult<SynapseAdmin.Models.Responses.SynapseVersionResponse?>(null);
 
                 await Task.WhenAll(userTask, roomTask, reportTask, largestRoomsTask, topMediaUsersTask, versionTask);
 
@@ -99,10 +100,20 @@ namespace SynapseAdmin.Components.Pages
                     serverVersion = versionResult.ServerVersion;
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Silent cancellation
+            }
             finally
             {
                 loading = false;
             }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

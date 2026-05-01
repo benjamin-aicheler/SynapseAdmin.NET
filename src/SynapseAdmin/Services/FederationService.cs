@@ -28,6 +28,10 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
 
             return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((result.Total, vms));
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching federation destinations (offset: {Offset}, limit: {Limit})", offset, limit);
@@ -43,6 +47,10 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
             await Gateway.ResetFederationConnectionTimeoutAsync(destination, token);
             logger.LogInformation("Successfully reset federation connection timeout for {Destination}", destination.SanitizeForLogging());
             return OperationResult.Ok(L["ResetFederationConnectionSuccessful"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {

@@ -23,7 +23,8 @@ The project uses the standard .NET 10 CLI and Docker:
 - **N-Tier Architecture:** The application follows an N-Tier architecture pattern.
     - **Presentation Layer:** Blazor Components (`.razor` and `.razor.cs`). These should exclusively handle UI state, user interaction, and data display.
     - **Application Layer (Services):** Classes in `src/SynapseAdmin/Services/`. These handle business logic, Matrix protocol orchestration, and mapping data.
-    - **Infrastructure Layer:** `LibMatrix` SDK and the **Gateway Layer** (`src/SynapseAdmin/Infrastructure/Gateways/`).
+    - **Gateway Layer:** `LibMatrix` SDK and the **Gateway Layer** (`src/SynapseAdmin/Infrastructure/Gateways/`).
+        - **Responsibility:** The Gateway layer is responsible for all "wire-level" concerns, including raw HTTP calls, URI encoding, and JSON deserialization. It MUST return structured DTOs or nullable models to the Application Layer, never raw `HttpResponseMessage` or technical SDK objects that leak protocol details.
 - **Authentication Bridge:** The application uses a "Cookie Bridge" pattern to synchronize authentication between the Blazor circuit and standard ASP.NET Core Controllers.
     - **SessionBridgeService:** A singleton service used to securely hand off authentication data using short-lived GUID keys.
     - **AuthController:** Issues the `matrix_auth` cookie required by standard HTTP requests.
@@ -31,9 +32,13 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Interfaces:** ALWAYS extract an Interface (in `src/SynapseAdmin/Interfaces/`) for every service to enable unit testing, mocking, and decoupling.
 - **Gateway Pattern:** The application uses a Gateway-based architecture to decouple services from the `LibMatrix` SDK.
     - **Contract:** Services should only interact with the Matrix server via the `IMatrixGateway` interface (available through `IMatrixSessionService`).
+    - **Responsibility:** Gateways handle protocol-specific quirks and mapping. They ensure that business services remain "protocol-clean."
     - **SDK Limitations:** If a required Synapse Admin API endpoint is missing from the `LibMatrix` SDK (e.g., Unquarantine Media), it should be implemented directly in `SynapseAdminGateway` using `ClientHttpClient` rather than modifying the submodule. This maintains clean separation and allows for easier SDK updates.
     - **Authentication:** Unauthenticated operations (Login, Discovery) are handled by `IMatrixAuthGateway`, which acts as a factory for producing authenticated `IMatrixGateway` instances.
-- **Error Handling:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. This forces the UI to handle success/failure explicitly.
+- **Error Handling:** 
+    - **Pattern:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. This forces the UI to handle success/failure explicitly.
+    - **Silent Cancellation:** Services MUST catch `OperationCanceledException` and return `OperationResult.Cancelled()` (Severity.Normal). UI components MUST check for `Severity.Normal` to suppress error Snackbars during navigation or rapid reloading.
+    - **Safe Messages:** NEVER pass technical exception details (`ex.Message`, stack traces) to `OperationResult.Failure`. Always return a localized, friendly string and log the technical details on the server.
 - **Localization Rule:** 
     - **Services:** Responsible for generating localized, user-friendly messages for **Business Outcomes** (the result of a protocol or data operation) using `IStringLocalizer`.
     - **Code-Behind (.razor.cs):** Allowed to inject `IStringLocalizer` ONLY for **Interaction Logic** (e.g., Dialog titles/messages, complex UI-only alerts, or dynamic Page Titles). They should NEVER perform translations for service-level business logic.

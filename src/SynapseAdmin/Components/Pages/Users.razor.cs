@@ -5,7 +5,7 @@ using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class Users
+    public partial class Users : IDisposable
     {
         [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -20,6 +20,7 @@ namespace SynapseAdmin.Components.Pages
 
         private MudTable<UserListViewModel>? table;
         private int? totalUsers;
+        private readonly CancellationTokenSource _cts = new();
 
         private async Task ReloadTable()
         {
@@ -55,12 +56,18 @@ namespace SynapseAdmin.Components.Pages
                 return new TableData<UserListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Users };
             }
             
-            if (!result.Success)
+            if (!result.Success && result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
             
             return new TableData<UserListViewModel>() { TotalItems = 0, Items = new List<UserListViewModel>() };
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

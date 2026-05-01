@@ -6,7 +6,7 @@ using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class RegistrationTokens
+    public partial class RegistrationTokens : IDisposable
     {
         [Inject] 
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -23,6 +23,7 @@ namespace SynapseAdmin.Components.Pages
 
         private List<RegistrationTokenViewModel> tokens = new();
         private bool isLoading = true;
+        private readonly CancellationTokenSource _cts = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -32,12 +33,12 @@ namespace SynapseAdmin.Components.Pages
         private async Task LoadTokens()
         {
             isLoading = true;
-            var result = await RegistrationTokenService.GetRegistrationTokensAsync();
+            var result = await RegistrationTokenService.GetRegistrationTokensAsync(_cts.Token);
             if (result.Success && result.Data != default)
             {
                 tokens = result.Data;
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -52,7 +53,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
-                var createResult = await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel);
+                var createResult = await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel, _cts.Token);
                 Snackbar.Add(createResult.Message, createResult.Severity);
                 if (createResult.Success)
                 {
@@ -77,7 +78,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
-                var updateResult = await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel);
+                var updateResult = await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel, _cts.Token);
                 Snackbar.Add(updateResult.Message, updateResult.Severity);
                 if (updateResult.Success)
                 {
@@ -95,7 +96,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                var deleteResult = await RegistrationTokenService.DeleteRegistrationTokenAsync(token);
+                var deleteResult = await RegistrationTokenService.DeleteRegistrationTokenAsync(token, _cts.Token);
                 Snackbar.Add(deleteResult.Message, deleteResult.Severity);
                 if (deleteResult.Success)
                 {
@@ -115,6 +116,12 @@ namespace SynapseAdmin.Components.Pages
             {
                 Snackbar.Add(L["ErrorCopyingToClipboard"], Severity.Error);
             }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

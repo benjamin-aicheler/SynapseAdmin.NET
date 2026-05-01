@@ -5,7 +5,7 @@ using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class FederationDestinations
+    public partial class FederationDestinations : IDisposable
     {
         [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -20,6 +20,7 @@ namespace SynapseAdmin.Components.Pages
 
         private MudTable<FederationDestinationListViewModel>? table;
         private int? totalDestinations;
+        private readonly CancellationTokenSource _cts = new();
 
         private async Task ReloadTable()
         {
@@ -42,7 +43,7 @@ namespace SynapseAdmin.Components.Pages
                 return new TableData<FederationDestinationListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Destinations };
             }
             
-            if (!result.Success)
+            if (!result.Success && result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -59,13 +60,19 @@ namespace SynapseAdmin.Components.Pages
                 
             if (confirmed == true)
             {
-                var result = await FederationService.ResetConnectionTimeoutAsync(destination);
+                var result = await FederationService.ResetConnectionTimeoutAsync(destination, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
                     await ReloadTable();
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

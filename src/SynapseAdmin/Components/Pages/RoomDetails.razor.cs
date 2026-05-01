@@ -5,7 +5,7 @@ using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class RoomDetails
+    public partial class RoomDetails : IDisposable
     {
         [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -28,6 +28,7 @@ namespace SynapseAdmin.Components.Pages
         private bool loadingMessages;
         private MudTable<RoomMediaItemViewModel>? localMediaTable;
         private MudTable<RoomMediaItemViewModel>? remoteMediaTable;
+        private readonly CancellationTokenSource _cts = new();
 
         protected override async Task OnParametersSetAsync()
         {
@@ -37,12 +38,12 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task LoadRoomDetails()
         {
-            var result = await RoomService.GetRoomDetailsAsync(RoomId);
+            var result = await RoomService.GetRoomDetailsAsync(RoomId, _cts.Token);
             if (result.Success)
             {
                 room = result.Data;
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -55,14 +56,14 @@ namespace SynapseAdmin.Components.Pages
             var uris = room.Media.Local.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
             if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
 
-            var result = await RoomService.GetMediaMetadataBatchAsync(uris);
+            var result = await RoomService.GetMediaMetadataBatchAsync(uris, token);
             if (result.Success)
             {
                 return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = result.Data };
             }
             else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal) Snackbar.Add(result.Message, result.Severity);
                 return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
             }
         }
@@ -74,14 +75,14 @@ namespace SynapseAdmin.Components.Pages
             var uris = room.Media.Remote.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
             if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
 
-            var result = await RoomService.GetMediaMetadataBatchAsync(uris);
+            var result = await RoomService.GetMediaMetadataBatchAsync(uris, token);
             if (result.Success)
             {
                 return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = result.Data };
             }
             else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal) Snackbar.Add(result.Message, result.Severity);
                 return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
             }
         }
@@ -89,7 +90,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task LoadMessages(string? from = null)
         {
             loadingMessages = true;
-            var result = await RoomService.GetRoomMessagesAsync(RoomId, from: from, limit: 50, dir: "b");
+            var result = await RoomService.GetRoomMessagesAsync(RoomId, from: from, limit: 50, dir: "b", token: _cts.Token);
             if (result.Success && result.Data != null)
             {
                 if (from == null || messages == null)
@@ -102,7 +103,7 @@ namespace SynapseAdmin.Components.Pages
                     messages.EndToken = result.Data.EndToken;
                 }
             }
-            else if (!result.Success)
+            else if (!result.Success && result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -118,7 +119,7 @@ namespace SynapseAdmin.Components.Pages
             
             if (confirmed == true)
             {
-                var result = await RoomService.DeleteRoomAsync(RoomId, block: false, purge: true);
+                var result = await RoomService.DeleteRoomAsync(RoomId, block: false, purge: true, token: _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
             }
         }
@@ -132,7 +133,7 @@ namespace SynapseAdmin.Components.Pages
             
             if (confirmed == true)
             {
-                var result = await RoomService.DeleteRoomAsync(RoomId, block: true, purge: true);
+                var result = await RoomService.DeleteRoomAsync(RoomId, block: true, purge: true, token: _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
             }
         }
@@ -146,14 +147,14 @@ namespace SynapseAdmin.Components.Pages
             
             if (confirmed == true)
             {
-                var result = await RoomService.QuarantineMediaAsync(RoomId);
+                var result = await RoomService.QuarantineMediaAsync(RoomId, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
             }
         }
 
         private async Task BlockRoom()
         {
-            var result = await RoomService.BlockRoomAsync(RoomId, true);
+            var result = await RoomService.BlockRoomAsync(RoomId, true, _cts.Token);
             Snackbar.Add(result.Message, result.Severity);
         }
 
@@ -166,7 +167,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                var result = await MediaService.QuarantineMediaAsync(mxc);
+                var result = await MediaService.QuarantineMediaAsync(mxc, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
@@ -185,7 +186,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                var result = await MediaService.UnquarantineMediaAsync(mxc);
+                var result = await MediaService.UnquarantineMediaAsync(mxc, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
@@ -204,7 +205,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirmed == true)
             {
-                var result = await MediaService.DeleteMediaAsync(mxc);
+                var result = await MediaService.DeleteMediaAsync(mxc, _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
                 if (result.Success)
                 {
@@ -241,6 +242,12 @@ namespace SynapseAdmin.Components.Pages
             };
 
             await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }
