@@ -83,9 +83,11 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
         return await _synapse.ClientHttpClient.GetFromJsonAsync<UserMediaStatisticsResponse>(url, cancellationToken: cancellationToken);
     }
 
-    public override async Task<HttpResponseMessage> UpdateUserAsync(string userId, object request, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, object request, CancellationToken cancellationToken = default)
     {
-        return await _synapse.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{userId.UrlEncode()}", request, cancellationToken: cancellationToken);
+        var resp = await _synapse.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{userId.UrlEncode()}", request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>(cancellationToken: cancellationToken);
     }
 
     public override async Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default)

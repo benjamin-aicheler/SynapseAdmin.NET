@@ -5,8 +5,8 @@ namespace SynapseAdmin.Interfaces;
 
 public interface IMediaService
 {
-    Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc);
-    Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc);
+    Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc, CancellationToken token = default);
+    Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc, CancellationToken token = default);
     Task<OperationResult> QuarantineMediaAsync(string mxc, CancellationToken token = default);
     Task<OperationResult> UnquarantineMediaAsync(string mxc, CancellationToken token = default);
     Task<OperationResult> DeleteMediaAsync(string mxc, CancellationToken token = default);

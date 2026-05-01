@@ -35,12 +35,12 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
         }
     }
 
-    public async Task<OperationResult> ResetConnectionTimeoutAsync(string destination)
+    public async Task<OperationResult> ResetConnectionTimeoutAsync(string destination, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await Gateway.ResetFederationConnectionTimeoutAsync(destination);
+            await Gateway.ResetFederationConnectionTimeoutAsync(destination, token);
             logger.LogInformation("Successfully reset federation connection timeout for {Destination}", destination.SanitizeForLogging());
             return OperationResult.Ok(L["ResetFederationConnectionSuccessful"]);
         }

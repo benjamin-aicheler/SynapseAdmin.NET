@@ -7,11 +7,11 @@ namespace SynapseAdmin.Interfaces;
 public interface IRoomService
 {
     Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default);
-    Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId);
-    Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true);
-    Task<OperationResult> QuarantineMediaAsync(string roomId);
-    Task<OperationResult> BlockRoomAsync(string roomId, bool block);
-    Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync();
-    Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null);
-    Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris);
+    Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId, CancellationToken token = default);
+    Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default);
+    Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default);
+    Task<OperationResult> BlockRoomAsync(string roomId, bool block, CancellationToken token = default);
+    Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);
+    Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default);
+    Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default);
 }
