@@ -109,6 +109,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         vm.MediaType = meta.MediaType;
                         vm.MediaLength = meta.MediaLength;
                         vm.CreatedTimestamp = meta.CreatedTimestamp;
+                        vm.QuarantinedBy = meta.QuarantinedBy;
                     }
                 }
                 catch (Exception ex)

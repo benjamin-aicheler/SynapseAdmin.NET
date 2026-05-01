@@ -42,6 +42,8 @@ public class UserMediaItemViewModel
     public string? MediaType { get; set; }
     public long MediaLength { get; set; }
     public long CreatedTimestamp { get; set; }
+    public string? QuarantinedBy { get; set; }
+    public bool IsQuarantined => !string.IsNullOrEmpty(QuarantinedBy);
 
     public string DownloadName
     {

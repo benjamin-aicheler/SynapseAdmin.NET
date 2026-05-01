@@ -67,7 +67,8 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                     UploadName = m.UploadName,
                     MediaType = m.MediaType,
                     MediaLength = m.MediaLength,
-                    CreatedTimestamp = m.CreatedTimestamp
+                    CreatedTimestamp = m.CreatedTimestamp,
+                    QuarantinedBy = m.QuarantinedBy
                 }).ToList()
             };
             vm.Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : [];

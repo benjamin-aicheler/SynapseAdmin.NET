@@ -794,4 +794,10 @@
   <data name="SharedPcWarning" xml:space="preserve">
     <value>Security Note: If you are using a public or shared computer, please remember to log out when you are finished.</value>
   </data>
+  <data name="Quarantined" xml:space="preserve">
+    <value>Quarantined</value>
+  </data>
+  <data name="QuarantinedBy" xml:space="preserve">
+    <value>Quarantined by</value>
+  </data>
 </root>
