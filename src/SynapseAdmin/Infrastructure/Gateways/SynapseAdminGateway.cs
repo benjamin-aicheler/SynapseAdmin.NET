@@ -9,7 +9,9 @@ using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using ArcaneLibs.Extensions;
+using SynapseAdmin.Infrastructure.Serialization;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 
@@ -21,6 +23,14 @@ namespace SynapseAdmin.Infrastructure.Gateways;
 public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : MatrixGatewayBase(synapse)
 {
     private readonly AuthenticatedHomeserverSynapse _synapse = synapse;
+
+    /// <summary>
+    /// Custom options to handle Synapse's inconsistent next_token types (String vs Number).
+    /// </summary>
+    private static readonly JsonSerializerOptions SynapseCompatibilityJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringConverter() }
+    };
 
     // --- User Management ---
 
@@ -85,9 +95,10 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     public override async Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
-        return await _synapse.Admin.GetUserMediaAsync(userId);
+        var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/media";
+        return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMediaResult>(url, SynapseCompatibilityJsonOptions, cancellationToken: cancellationToken);
     }
+
 
     // --- Room Management ---
 
