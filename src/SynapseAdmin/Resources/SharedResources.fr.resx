@@ -790,4 +790,7 @@
   <data name="DeleteMediaTitle" xml:space="preserve">
     <value>Supprimer le média</value>
   </data>
+  <data name="SharedPcWarning" xml:space="preserve">
+    <value>Note de sécurité : Si vous utilisez un ordinateur public ou partagé, n'oubliez pas de vous déconnecter lorsque vous avez terminé.</value>
+  </data>
 </root>
