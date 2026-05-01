@@ -793,4 +793,10 @@
   <data name="SharedPcWarning" xml:space="preserve">
     <value>Note de sécurité : Si vous utilisez un ordinateur public ou partagé, n'oubliez pas de vous déconnecter lorsque vous avez terminé.</value>
   </data>
-</root>
+  <data name="Quarantined" xml:space="preserve">
+    <value>En quarantaine</value>
+  </data>
+  <data name="QuarantinedBy" xml:space="preserve">
+    <value>Mis en quarantaine par</value>
+  </data>
+  </root>

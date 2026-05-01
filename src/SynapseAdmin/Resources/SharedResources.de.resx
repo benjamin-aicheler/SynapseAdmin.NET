@@ -793,4 +793,10 @@
   <data name="SharedPcWarning" xml:space="preserve">
     <value>Sicherheitshinweis: Wenn Sie einen öffentlichen oder gemeinsam genutzten Computer verwenden, denken Sie bitte daran, sich nach Abschluss Ihrer Arbeit abzumelden.</value>
   </data>
+  <data name="Quarantined" xml:space="preserve">
+    <value>In Quarantäne</value>
+  </data>
+  <data name="QuarantinedBy" xml:space="preserve">
+    <value>Quarantäne durch</value>
+  </data>
 </root>
