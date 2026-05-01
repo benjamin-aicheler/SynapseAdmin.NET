@@ -38,18 +38,18 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId)
+    public async Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<UserDetailViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var u = await Gateway.GetUserDetailsAsync(userId);
+            var u = await Gateway.GetUserDetailsAsync(userId, token);
             if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
 
 
-            var mediaTask = Gateway.GetUserMediaAsync(userId);
-            var membershipsTask = GetUserMembershipsAsync(userId);
+            var mediaTask = Gateway.GetUserMediaAsync(userId, token);
+            var membershipsTask = GetUserMembershipsAsync(userId, token);
 
             await Task.WhenAll(mediaTask, membershipsTask);
 
@@ -82,13 +82,13 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false)
+    public async Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
         try
         {
-            await Gateway.DeactivateUserAsync(userId, erase);
+            await Gateway.DeactivateUserAsync(userId, erase, token);
             logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId.SanitizeForLogging(), erase);
             return OperationResult.Ok(L["UserDeactivatedSuccessfully"]);
         }
@@ -99,12 +99,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult> QuarantineMediaAsync(string userId)
+    public async Task<OperationResult> QuarantineMediaAsync(string userId, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await Gateway.QuarantineMediaByUserIdAsync(userId);
+            await Gateway.QuarantineMediaByUserIdAsync(userId, token);
             logger.LogInformation("Successfully quarantined media for user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["UserMediaQuarantinedSuccessfully"]);
         }
@@ -115,12 +115,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn)
+    public async Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
         try
         {
-            var resp = await Gateway.LoginAsUserAsync(userId, expireIn);
+            var resp = await Gateway.LoginAsUserAsync(userId, expireIn, token);
             logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
             return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful"]);
         }
@@ -131,13 +131,13 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult> SendServerNoticeAsync(string userId, string message)
+    public async Task<OperationResult> SendServerNoticeAsync(string userId, string message, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
             var content = new RoomMessageEventContent(body: message);
-            await Gateway.SendServerNoticeAsync(userId, content);
+            await Gateway.SendServerNoticeAsync(userId, content, cancellationToken: token);
             logger.LogInformation("Successfully sent server notice to user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["ServerNoticeSentSuccessfully"]);
         }
@@ -148,12 +148,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10)
+    public async Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
         try
         {
-            var result = await Gateway.GetUserMediaStatisticsAsync(count);
+            var result = await Gateway.GetUserMediaStatisticsAsync(count, cancellationToken: token);
             if (result == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Ok([]);
 
             var vms = result.Users.Select(u => new UserMediaStatisticsViewModel
@@ -173,7 +173,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult> CreateUserAsync(UserCreateViewModel model)
+    public async Task<OperationResult> CreateUserAsync(UserCreateViewModel model, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
@@ -187,9 +187,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 Deactivated = model.Deactivated
             };
 
-            var response = await Gateway.UpdateUserAsync(model.UserId, req);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>();
+            var result = await Gateway.UpdateUserAsync(model.UserId, req, token);
             
             if (result == null) return OperationResult.Failure(L["ErrorCreatingUser"]);
 
@@ -203,13 +201,13 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
-    public async Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId)
+    public async Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<List<UserMembershipViewModel>>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var result = await Gateway.GetUserMembershipsAsync(userId);
+            var result = await Gateway.GetUserMembershipsAsync(userId, token);
             
             if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
 

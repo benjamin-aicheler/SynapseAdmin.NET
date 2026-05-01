@@ -40,19 +40,19 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId)
+    public async Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<RoomDetailViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var r = await Gateway.GetRoomDetailsAsync(roomId);
+            var r = await Gateway.GetRoomDetailsAsync(roomId, token);
             
             if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
 
-            var membersTask = Gateway.GetRoomMembersAsync(roomId);
-            var stateTask = Gateway.GetRoomStateAsync(roomId);
-            var mediaTask = Gateway.GetRoomMediaListAsync(roomId);
+            var membersTask = Gateway.GetRoomMembersAsync(roomId, token);
+            var stateTask = Gateway.GetRoomStateAsync(roomId, cancellationToken: token);
+            var mediaTask = Gateway.GetRoomMediaListAsync(roomId, token);
 
             await Task.WhenAll(membersTask, stateTask, mediaTask);
 
@@ -90,7 +90,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris)
+    public async Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<List<RoomMediaItemViewModel>>.Failure(L["NotAuthenticated"]);
 
@@ -102,7 +102,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 try
                 {
                     var mxc = MxcUri.Parse(m);
-                    var meta = await Gateway.GetMediaMetadataAsync(mxc);
+                    var meta = await Gateway.GetMediaMetadataAsync(mxc, token);
                     if (meta != null)
                     {
                         vm.UploadName = meta.UploadName;
@@ -129,7 +129,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true)
+    public async Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
 
@@ -140,7 +140,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 Block = block,
                 Purge = purge
             };
-            await Gateway.DeleteRoomAsync(roomId, req);
+            await Gateway.DeleteRoomAsync(roomId, req, token);
             logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
             return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
         }
@@ -151,12 +151,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult> QuarantineMediaAsync(string roomId)
+    public async Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await Gateway.QuarantineMediaByRoomIdAsync(roomId);
+            await Gateway.QuarantineMediaByRoomIdAsync(roomId, token);
             logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult.Ok(L["RoomMediaQuarantinedSuccessfully"]);
         }
@@ -167,28 +167,28 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult> BlockRoomAsync(string roomId, bool block)
+    public async Task<OperationResult> BlockRoomAsync(string roomId, bool block, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await Gateway.BlockRoomAsync(roomId, block);
+            await Gateway.BlockRoomAsync(roomId, block, token);
             logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId.SanitizeForLogging());
             return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"]);
+            return OperationResult.Failure(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockedSuccessfully"]);
         }
     }
 
-    public async Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync()
+    public async Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
         try
         {
-            var stats = await Gateway.GetLargestRoomsAsync();
+            var stats = await Gateway.GetLargestRoomsAsync(token);
             if (stats == null) return OperationResult<List<RoomStatisticsViewModel>>.Ok([]);
 
             var tasks = stats.Rooms.Take(10).Select(async roomStat =>
@@ -202,7 +202,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
                 try
                 {
-                    var roomDetails = await Gateway.GetRoomDetailsAsync(roomStat.RoomId);
+                    var roomDetails = await Gateway.GetRoomDetailsAsync(roomStat.RoomId, token);
                     if (roomDetails != null && !string.IsNullOrEmpty(roomDetails.Name))
                     {
                         vm.Name = roomDetails.Name;
@@ -225,13 +225,13 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null)
+    public async Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<RoomMessagesViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var result = await Gateway.GetRoomMessagesAsync(roomId, limit, from, dir, filter, to);
+            var result = await Gateway.GetRoomMessagesAsync(roomId, limit, from, dir, filter, to, token);
             if (result == null) return OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel());
 
             var vm = new RoomMessagesViewModel

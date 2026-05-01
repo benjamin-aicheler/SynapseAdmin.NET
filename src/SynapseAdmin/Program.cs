@@ -11,6 +11,8 @@ using Serilog;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
 using SynapseAdmin.Infrastructure.DataProtection;
+using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Infrastructure.Gateways;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,7 +55,7 @@ builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
 builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
-builder.Services.AddScoped<SynapseAdmin.Interfaces.Gateways.IMatrixAuthGateway, SynapseAdmin.Infrastructure.Gateways.MatrixAuthGateway>();
+builder.Services.AddScoped<IMatrixAuthGateway, MatrixAuthGateway>();
 
 builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();
 builder.Services.AddScoped<IMediaService, MediaService>();

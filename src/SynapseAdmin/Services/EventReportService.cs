@@ -35,12 +35,12 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
         }
     }
 
-    public async Task<OperationResult> DeleteEventReportAsync(string reportId)
+    public async Task<OperationResult> DeleteEventReportAsync(string reportId, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            await Gateway.DeleteEventReportAsync(reportId);
+            await Gateway.DeleteEventReportAsync(reportId, token);
             logger.LogInformation("Successfully deleted event report {ReportId}", reportId.SanitizeForLogging());
             return OperationResult.Ok(L["EventReportDeletedSuccessfully"]);
         }

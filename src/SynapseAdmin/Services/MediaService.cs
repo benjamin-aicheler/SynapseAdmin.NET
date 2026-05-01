@@ -13,14 +13,14 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
 {
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
-    public async Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc)
+    public async Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc, CancellationToken token = default)
     {
         if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<Stream>.Failure(L["NotAuthenticated"]);
         if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<Stream>.Failure(L["ErrorFetchingMedia"]);
 
         try
         {
-            var stream = await Gateway.GetMediaStreamAsync(mxc);
+            var stream = await Gateway.GetMediaStreamAsync(mxc, cancellationToken: token);
             return OperationResult<Stream>.Ok(stream);
         }
         catch (Exception ex)
@@ -30,7 +30,7 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
         }
     }
 
-    public async Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc)
+    public async Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc, CancellationToken token = default)
     {
         if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["NotAuthenticated"]);
         if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["ErrorFetchingMedia"]);
@@ -38,7 +38,7 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
         try
         {
             var mxcUri = MxcUri.Parse(mxc);
-            var meta = await Gateway.GetMediaMetadataAsync(mxcUri);
+            var meta = await Gateway.GetMediaMetadataAsync(mxcUri, token);
             if (meta == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["ErrorFetchingMedia"]);
             return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Ok(meta);
         }
