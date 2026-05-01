@@ -31,6 +31,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Interfaces:** ALWAYS extract an Interface (in `src/SynapseAdmin/Interfaces/`) for every service to enable unit testing, mocking, and decoupling.
 - **Gateway Pattern:** The application uses a Gateway-based architecture to decouple services from the `LibMatrix` SDK.
     - **Contract:** Services should only interact with the Matrix server via the `IMatrixGateway` interface (available through `IMatrixSessionService`).
+    - **SDK Limitations:** If a required Synapse Admin API endpoint is missing from the `LibMatrix` SDK (e.g., Unquarantine Media), it should be implemented directly in `SynapseAdminGateway` using `ClientHttpClient` rather than modifying the submodule. This maintains clean separation and allows for easier SDK updates.
     - **Authentication:** Unauthenticated operations (Login, Discovery) are handled by `IMatrixAuthGateway`, which acts as a factory for producing authenticated `IMatrixGateway` instances.
 - **Error Handling:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. This forces the UI to handle success/failure explicitly.
 - **Localization Rule:** 
