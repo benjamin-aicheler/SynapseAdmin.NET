@@ -791,4 +791,7 @@
   <data name="DeleteMediaTitle" xml:space="preserve">
     <value>Delete Media</value>
   </data>
+  <data name="SharedPcWarning" xml:space="preserve">
+    <value>Security Note: If you are using a public or shared computer, please remember to log out when you are finished.</value>
+  </data>
 </root>
