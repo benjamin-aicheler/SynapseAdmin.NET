@@ -66,6 +66,23 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
         }
     }
 
+    public async Task<OperationResult> UnquarantineMediaAsync(string mxc, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        try
+        {
+            var parsed = MxcUri.Parse(mxc);
+            await Gateway.UnquarantineMediaAsync(parsed.ServerName, parsed.MediaId, token);
+            logger.LogInformation("Successfully unquarantined media {Mxc}", mxc.SanitizeForLogging());
+            return OperationResult.Ok(L["MediaUnquarantinedSuccessfully"]);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error unquarantining media {Mxc}", mxc.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorUnquarantiningMedia"]);
+        }
+    }
+
     public async Task<OperationResult> DeleteMediaAsync(string mxc, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);

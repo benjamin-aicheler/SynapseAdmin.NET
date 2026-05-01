@@ -251,6 +251,13 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
         await _synapse.Admin.QuarantineMediaById(serverName, mediaId);
     }
 
+    public override async Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/media/unquarantine/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
     public override async Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         await _synapse.Admin.DeleteMediaById(serverName, mediaId);

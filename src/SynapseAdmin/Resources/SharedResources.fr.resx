@@ -799,4 +799,19 @@
   <data name="QuarantinedBy" xml:space="preserve">
     <value>Mis en quarantaine par</value>
   </data>
+  <data name="Unquarantine" xml:space="preserve">
+    <value>Sortir de quarantaine</value>
+  </data>
+  <data name="UnquarantineMediaConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir sortir ce média de la quarantaine ?</value>
+  </data>
+  <data name="UnquarantineMediaTitle" xml:space="preserve">
+    <value>Sortir le média de la quarantaine</value>
+  </data>
+  <data name="MediaUnquarantinedSuccessfully" xml:space="preserve">
+    <value>Le média a été sorti de la quarantaine avec succès.</value>
+  </data>
+  <data name="ErrorUnquarantiningMedia" xml:space="preserve">
+    <value>Erreur lors de la sortie du média de la quarantaine.</value>
+  </data>
   </root>

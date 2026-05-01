@@ -176,6 +176,25 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private async Task UnquarantineSingleMedia(string mxc)
+        {
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["UnquarantineMediaTitle"],
+                L["UnquarantineMediaConfirmation"],
+                yesText: L["Unquarantine"], cancelText: L["Cancel"]);
+
+            if (confirmed == true)
+            {
+                var result = await MediaService.UnquarantineMediaAsync(mxc);
+                Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                    await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                }
+            }
+        }
+
         private async Task DeleteSingleMedia(string mxc)
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(

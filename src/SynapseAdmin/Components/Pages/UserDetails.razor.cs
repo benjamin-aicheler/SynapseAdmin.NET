@@ -96,6 +96,31 @@ namespace SynapseAdmin.Components.Pages
             {
                 var result = await MediaService.QuarantineMediaAsync(mxc);
                 Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    await LoadUserDetails();
+                }
+            }
+        }
+
+        private async Task UnquarantineSingleMedia(string mediaIdPart)
+        {
+            if (MatrixSession.Gateway == null) return;
+            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["UnquarantineMediaTitle"],
+                L["UnquarantineMediaConfirmation"],
+                yesText: L["Unquarantine"], cancelText: L["Cancel"]);
+
+            if (confirmed == true)
+            {
+                var result = await MediaService.UnquarantineMediaAsync(mxc);
+                Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    await LoadUserDetails();
+                }
             }
         }
 
