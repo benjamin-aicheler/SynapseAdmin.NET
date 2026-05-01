@@ -1,6 +1,7 @@
 @page "/"
 @using Microsoft.AspNetCore.Authorization
 @using SynapseAdmin.Extensions
+@implements IDisposable
 @attribute [Authorize]
 
 <PageTitle>@L["Dashboard"] - SynapseAdmin.NET</PageTitle>

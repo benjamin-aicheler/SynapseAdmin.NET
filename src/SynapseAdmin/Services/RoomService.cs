@@ -33,6 +33,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
             return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((result.TotalRooms, vms));
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging());
@@ -83,6 +87,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             
             return OperationResult<RoomDetailViewModel>.Ok(vm);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<RoomDetailViewModel>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching room details for {RoomId}", roomId.SanitizeForLogging());
@@ -112,6 +120,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         vm.QuarantinedBy = meta.QuarantinedBy;
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    // Silent cancellation for inner task
+                }
                 catch (Exception ex)
                 {
                     logger.LogDebug(ex, "Failed to fetch metadata for media {Mxc}", m);
@@ -121,6 +133,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
             var results = (await Task.WhenAll(tasks)).ToList();
             return OperationResult<List<RoomMediaItemViewModel>>.Ok(results);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<List<RoomMediaItemViewModel>>.Cancelled();
         }
         catch (Exception ex)
         {
@@ -144,6 +160,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
             return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deleting room {RoomId}", roomId.SanitizeForLogging());
@@ -160,6 +180,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult.Ok(L["RoomMediaQuarantinedSuccessfully"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId.SanitizeForLogging());
@@ -175,6 +199,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             await Gateway.BlockRoomAsync(roomId, block, token);
             logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId.SanitizeForLogging());
             return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {
@@ -208,6 +236,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         vm.Name = roomDetails.Name;
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    // Silent cancellation for inner task
+                }
                 catch (Exception ex)
                 {
                     logger.LogDebug(ex, "Failed to fetch metadata for room {RoomId} during statistics gathering.", roomStat.RoomId.SanitizeForLogging());
@@ -217,6 +249,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
             var result = (await Task.WhenAll(tasks)).ToList();
             return OperationResult<List<RoomStatisticsViewModel>>.Ok(result);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<List<RoomStatisticsViewModel>>.Cancelled();
         }
         catch (Exception ex)
         {
@@ -271,6 +307,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             };
 
             return OperationResult<RoomMessagesViewModel>.Ok(vm);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<RoomMessagesViewModel>.Cancelled();
         }
         catch (Exception ex)
         {

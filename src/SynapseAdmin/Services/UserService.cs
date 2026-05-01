@@ -31,6 +31,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
             return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((result.Total, vms));
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<(int Total, List<UserListViewModel> Users)>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit})", offset, limit);
@@ -75,6 +79,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
             return OperationResult<UserDetailViewModel>.Ok(vm);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<UserDetailViewModel>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching user details for {UserId}", userId.SanitizeForLogging());
@@ -92,6 +100,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId.SanitizeForLogging(), erase);
             return OperationResult.Ok(L["UserDeactivatedSuccessfully"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error deactivating user {UserId}", userId.SanitizeForLogging());
@@ -107,6 +119,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             await Gateway.QuarantineMediaByUserIdAsync(userId, token);
             logger.LogInformation("Successfully quarantined media for user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["UserMediaQuarantinedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {
@@ -124,6 +140,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
             return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<string>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error performing shadow login for user {UserId}", userId.SanitizeForLogging());
@@ -140,6 +160,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             await Gateway.SendServerNoticeAsync(userId, content, cancellationToken: token);
             logger.LogInformation("Successfully sent server notice to user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["ServerNoticeSentSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {
@@ -165,6 +189,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             }).ToList();
 
             return OperationResult<List<UserMediaStatisticsViewModel>>.Ok(vms);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<List<UserMediaStatisticsViewModel>>.Cancelled();
         }
         catch (Exception ex)
         {
@@ -194,6 +222,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             logger.LogInformation("Successfully created user {UserId}", model.UserId.SanitizeForLogging());
             return OperationResult.Ok(L["UserCreatedSuccessfully"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating user {UserId}", model.UserId.SanitizeForLogging());
@@ -218,6 +250,10 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             }).ToList();
 
             return OperationResult<List<UserMembershipViewModel>>.Ok(vms);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<List<UserMembershipViewModel>>.Cancelled();
         }
         catch (Exception ex)
         {

@@ -23,6 +23,10 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
             var stream = await Gateway.GetMediaStreamAsync(mxc, cancellationToken: token);
             return OperationResult<Stream>.Ok(stream);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<Stream>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching media for MXC: {Mxc}", mxc.SanitizeForLogging());
@@ -42,6 +46,10 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
             if (meta == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["ErrorFetchingMedia"]);
             return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Ok(meta);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching media metadata for MXC: {Mxc}", mxc.SanitizeForLogging());
@@ -58,6 +66,10 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
             await Gateway.QuarantineMediaAsync(parsed.ServerName, parsed.MediaId, token);
             logger.LogInformation("Successfully quarantined media {Mxc}", mxc.SanitizeForLogging());
             return OperationResult.Ok(L["MediaQuarantinedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {
@@ -76,6 +88,10 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
             logger.LogInformation("Successfully unquarantined media {Mxc}", mxc.SanitizeForLogging());
             return OperationResult.Ok(L["MediaUnquarantinedSuccessfully"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error unquarantining media {Mxc}", mxc.SanitizeForLogging());
@@ -92,6 +108,10 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
             await Gateway.DeleteMediaAsync(parsed.ServerName, parsed.MediaId, token);
             logger.LogInformation("Successfully deleted media {Mxc}", mxc.SanitizeForLogging());
             return OperationResult.Ok(L["MediaDeletedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {

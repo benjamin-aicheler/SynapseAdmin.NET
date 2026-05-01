@@ -4,7 +4,7 @@ using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class ServerNotices
+    public partial class ServerNotices : IDisposable
     {
         [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -21,15 +21,19 @@ namespace SynapseAdmin.Components.Pages
         
         private string targetUserId = string.Empty;
         private string noticeMessage = string.Empty;
+        private readonly CancellationTokenSource _cts = new();
 
         private async Task SendNotice()
         {
             isSending = true;
             StateHasChanged();
             
-            var result = await UserService.SendServerNoticeAsync(targetUserId, noticeMessage);
+            var result = await UserService.SendServerNoticeAsync(targetUserId, noticeMessage, _cts.Token);
             
-            Snackbar.Add(result.Message, result.Severity);
+            if (result.Severity != Severity.Normal)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
             
             if (result.Success)
             {
@@ -44,6 +48,12 @@ namespace SynapseAdmin.Components.Pages
 
             isSending = false;
             StateHasChanged();
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }
