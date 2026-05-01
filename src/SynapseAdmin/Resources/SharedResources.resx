@@ -800,4 +800,19 @@
   <data name="QuarantinedBy" xml:space="preserve">
     <value>Quarantined by</value>
   </data>
+  <data name="Unquarantine" xml:space="preserve">
+    <value>Unquarantine</value>
+  </data>
+  <data name="UnquarantineMediaConfirmation" xml:space="preserve">
+    <value>Are you sure you want to unquarantine this media?</value>
+  </data>
+  <data name="UnquarantineMediaTitle" xml:space="preserve">
+    <value>Unquarantine Media</value>
+  </data>
+  <data name="MediaUnquarantinedSuccessfully" xml:space="preserve">
+    <value>Media unquarantined successfully.</value>
+  </data>
+  <data name="ErrorUnquarantiningMedia" xml:space="preserve">
+    <value>Error unquarantining media.</value>
+  </data>
 </root>

@@ -225,6 +225,13 @@ else
                                                        OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
                                                        title="@L["Quarantine"]" />
                                     }
+                                    else
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
+                                                       Color="Color.Success" 
+                                                       OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
+                                                       title="@L["Unquarantine"]" />
+                                    }
                                     
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                                    Color="Color.Error" 
@@ -291,6 +298,13 @@ else
                                                        Color="Color.Warning" 
                                                        OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
                                                        title="@L["Quarantine"]" />
+                                    }
+                                    else
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
+                                                       Color="Color.Success" 
+                                                       OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
+                                                       title="@L["Unquarantine"]" />
                                     }
                                     
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" 
