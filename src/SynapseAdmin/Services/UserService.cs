@@ -9,7 +9,6 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Interfaces.Gateways;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 
 namespace SynapseAdmin.Services;
 

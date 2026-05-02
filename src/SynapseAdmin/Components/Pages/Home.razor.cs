@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Extensions;
 using MudBlazor;
 using SynapseAdmin.Infrastructure.Gateways;
 

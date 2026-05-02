@@ -1,14 +1,10 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
-using LibMatrix.EventTypes.Spec;
 using LibMatrix.Responses;
 using LibMatrix.StructuredData;
-using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
-using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text.Json;
 using ArcaneLibs.Extensions;
 using SynapseAdmin.Infrastructure.Serialization;
