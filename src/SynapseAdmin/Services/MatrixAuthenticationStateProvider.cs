@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using SynapseAdmin.Models;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
 
@@ -43,7 +44,7 @@ public class MatrixAuthenticationStateProvider(
                     
                     if (!isCookieAuthenticated)
                     {
-                        // The Blazor session exists but the Cookie is gone!
+                        logger.LogInformation("Blazor session restored for user {UserId}, but authentication cookie is missing. Synchronization will be handled by UI components.", sessionService.Gateway.UserId.SanitizeForLogging());
                     }
 
                     var claims = new[]
