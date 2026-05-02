@@ -4,8 +4,6 @@ using SynapseAdmin.Models.ViewModels;
 using MudBlazor;
 using SynapseAdmin.Models;
 using SynapseAdmin.Interfaces;
-using Microsoft.Extensions.Localization;
-using SynapseAdmin.Resources;
 
 namespace SynapseAdmin.Components.Pages
 {

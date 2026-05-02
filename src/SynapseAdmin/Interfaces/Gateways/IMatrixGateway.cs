@@ -3,8 +3,6 @@ using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
 using LibMatrix.Responses;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Models.Responses;
-using System.Net.Http;
-using System.IO;
 
 namespace SynapseAdmin.Interfaces.Gateways;
 

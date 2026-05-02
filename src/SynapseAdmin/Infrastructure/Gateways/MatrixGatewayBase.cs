@@ -1,13 +1,10 @@
 using LibMatrix.Homeservers;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
 using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
-using LibMatrix.EventTypes.Spec;
 using LibMatrix.Responses;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
-using System.Net.Http;
-using System.IO;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 

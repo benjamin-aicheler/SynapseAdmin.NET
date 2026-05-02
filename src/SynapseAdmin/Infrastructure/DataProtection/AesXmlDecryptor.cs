@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.DataProtection.XmlEncryption;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace SynapseAdmin.Infrastructure.DataProtection;
 
