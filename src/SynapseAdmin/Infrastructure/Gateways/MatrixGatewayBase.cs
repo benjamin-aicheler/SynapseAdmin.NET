@@ -20,6 +20,8 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public string ServerName => Homeserver.ServerName;
     public string AccessToken => Homeserver.AccessToken;
 
+    public virtual bool SupportsAdminApi => false;
+
     // --- Standard Matrix CS API Implementation ---
     
     public virtual async Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5 * 1024 * 1024, CancellationToken cancellationToken = default)
@@ -92,10 +94,10 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default);
     public abstract Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default);
 
-    // Server Admin
+    // --- Server Admin ---
     public abstract Task<SynapseVersionResponse?> GetSynapseVersionAsync(CancellationToken cancellationToken = default);
 
-    // Media
+    // --- Media (Standard/Admin) ---
     public abstract Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default);
     public abstract Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);

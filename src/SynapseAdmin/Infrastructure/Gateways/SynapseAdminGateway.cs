@@ -18,6 +18,8 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 {
     private readonly AuthenticatedHomeserverSynapse _synapse = synapse;
 
+    public override bool SupportsAdminApi => true;
+
     /// <summary>
     /// Creates fresh options to handle Synapse's inconsistent next_token types (String vs Number).
     /// We create a fresh instance every time because LibMatrix's MatrixHttpClient mutates the options,

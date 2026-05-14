@@ -39,9 +39,9 @@ public static class UserMappingExtensions
             UserType = user.UserType ?? "user",
             Locked = user.Locked,
             ShadowBanned = user.ShadowBanned,
-            ConsentVersion = "",
-            ConsentServerNoticeSent = "",
-            AppserviceId = ""
+            ConsentVersion = user.ConsentVersion ?? "",
+            ConsentServerNoticeSent = user.ConsentServerNoticeSent ?? "",
+            AppserviceId = user.AppserviceId ?? ""
         };
     }
 }

@@ -56,5 +56,17 @@ public class SynapseAdminUserListResult
 
         [JsonPropertyName("approved")]
         public bool? Approved { get; set; }
+
+        [JsonPropertyName("suspended")]
+        public bool? Suspended { get; set; }
+
+        [JsonPropertyName("appservice_id")]
+        public string? AppserviceId { get; set; }
+
+        [JsonPropertyName("consent_version")]
+        public string? ConsentVersion { get; set; }
+
+        [JsonPropertyName("consent_server_notice_sent")]
+        public string? ConsentServerNoticeSent { get; set; }
     }
 }

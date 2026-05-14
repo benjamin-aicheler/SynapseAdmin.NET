@@ -6,7 +6,7 @@
 
 <MudText Typo="Typo.h3" Class="mb-6">@L["SendServerNotice"]</MudText>
 
-@if (MatrixSession.Gateway is not SynapseAdminGateway synapseAdmin)
+@if (MatrixSession.Gateway is not { SupportsAdminApi: true })
 {
     <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
         @L["ServerNoticeApiRequired"]

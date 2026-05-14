@@ -37,7 +37,7 @@ namespace SynapseAdmin.Components.Pages
             if (MatrixSession.IsLoggedIn)
             {
                 // We check if the gateway is Synapse
-                isSynapse = MatrixSession.Gateway is SynapseAdminGateway;
+                isSynapse = MatrixSession.Gateway?.SupportsAdminApi == true;
                 if (isSynapse)
                 {
                     await LoadDashboardData();

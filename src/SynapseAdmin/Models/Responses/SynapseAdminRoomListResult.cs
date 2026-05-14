@@ -63,6 +63,15 @@ public class SynapseAdminRoomListResult
         [JsonPropertyName("state_events")]
         public int StateEvents { get; set; }
 
+        [JsonPropertyName("avatar_url")]
+        public string? AvatarUrl { get; set; }
+
+        [JsonPropertyName("room_type")]
+        public string? RoomType { get; set; }
+
+        [JsonPropertyName("forgotten")]
+        public bool? Forgotten { get; set; }
+
         [JsonPropertyName("gay.rory.synapse_admin_extensions.tombstone")]
         public MatrixEventResponse? TombstoneEvent { get; set; }
 
