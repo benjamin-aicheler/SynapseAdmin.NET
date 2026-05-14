@@ -18,9 +18,9 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 
 - **Flexible Login:** Sign in using either standard Matrix credentials (Username/Password) or an existing Access Token.
 - **Dashboard:** At-a-glance overview of your server's status and metrics, including Synapse version, room storage usage, and user media consumption.
-- **User Management:** Search, view, create, deactivate, and manage properties of server users, including their room memberships and uploaded media.
+- **User Management:** Search, view, create, deactivate, and manage properties of server users, including their room memberships, uploaded media, and extended metadata like Appservice IDs and Consent status.
 - **Media Management:** Directly download or preview user-uploaded media (images, video, audio) with native browser streaming support. Includes capabilities to quarantine or unquarantine media and provides clear status indicators for quarantined items.
-- **Room Management:** Search and inspect server rooms and their details, including message history and room-specific media auditing with download/preview support.
+- **Room Management:** Search and inspect server rooms and their details, including message history, Room Type/Spaces identification, and room-specific media auditing with download/preview support.
 - **Event Reports:** Review and manage reported events/messages from users.
 - **Registration Tokens:** Generate and manage tokens to restrict server registration.
 - **Federation Destinations:** Check federation status and manage destination queues.

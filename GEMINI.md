@@ -35,6 +35,7 @@ The project uses the standard .NET 10 CLI and Docker:
     - **Responsibility:** Gateways handle protocol-specific quirks and mapping. They ensure that business services remain "protocol-clean."
     - **SDK Limitations:** If a required Synapse Admin API endpoint is missing from the `LibMatrix` SDK (e.g., Unquarantine Media), it should be implemented directly in `SynapseAdminGateway` using `ClientHttpClient` rather than modifying the submodule. This maintains clean separation and allows for easier SDK updates.
     - **Authentication:** Unauthenticated operations (Login, Discovery) are handled by `IMatrixAuthGateway`, which acts as a factory for producing authenticated `IMatrixGateway` instances.
+    - **Capability Checks:** To maintain N-Tier decoupling, the Presentation Layer (Razor components) MUST NOT perform direct type checks (e.g., `is SynapseAdminGateway`). Instead, use the `SupportsAdminApi` property on the `IMatrixGateway` interface to conditionally enable/disable admin-specific UI features.
 - **Error Handling:** 
     - **Pattern:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. This forces the UI to handle success/failure explicitly.
     - **Silent Cancellation:** Services MUST catch `OperationCanceledException` and return `OperationResult.Cancelled()` (Severity.Normal). UI components MUST check for `Severity.Normal` to suppress error Snackbars during navigation or rapid reloading.
