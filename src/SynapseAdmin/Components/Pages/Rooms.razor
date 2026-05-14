@@ -29,6 +29,7 @@ else
         <HeaderContent>
             <MudTh><MudTableSortLabel SortLabel="name" T="RoomListViewModel">@L["Name"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="room_id" T="RoomListViewModel">@L["RoomId"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="room_type" T="RoomListViewModel">@L["RoomType"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="creator" T="RoomListViewModel">@L["Creator"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="joined_members" T="RoomListViewModel">@L["Members"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="public" T="RoomListViewModel">@L["Public"]</MudTableSortLabel></MudTh>
@@ -37,6 +38,12 @@ else
         <RowTemplate>
             <MudTd DataLabel="@L["Name"]">@(string.IsNullOrEmpty(context.Name) ? L["NoName"] : context.Name)</MudTd>
             <MudTd DataLabel="@L["RoomId"]"><MudText Typo="Typo.caption">@context.RoomId</MudText></MudTd>
+            <MudTd DataLabel="@L["RoomType"]">
+                @if (!string.IsNullOrEmpty(context.RoomType))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@context.RoomType</MudChip>
+                }
+            </MudTd>
             <MudTd DataLabel="@L["Creator"]">@context.Creator</MudTd>
             <MudTd DataLabel="@L["Members"]">@context.JoinedMembers</MudTd>
             <MudTd DataLabel="@L["Public"]">

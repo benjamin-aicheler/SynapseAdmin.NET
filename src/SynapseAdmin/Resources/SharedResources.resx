@@ -815,4 +815,19 @@
   <data name="ErrorUnquarantiningMedia" xml:space="preserve">
     <value>Error unquarantining media.</value>
   </data>
+  <data name="RoomType" xml:space="preserve">
+    <value>Room Type</value>
+  </data>
+  <data name="AppserviceId" xml:space="preserve">
+    <value>Appservice ID</value>
+  </data>
+  <data name="ConsentVersion" xml:space="preserve">
+    <value>Consent Version</value>
+  </data>
+  <data name="ConsentSent" xml:space="preserve">
+    <value>Consent Sent</value>
+  </data>
+  <data name="Suspended" xml:space="preserve">
+    <value>Suspended</value>
+  </data>
 </root>
