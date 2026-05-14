@@ -1,13 +1,11 @@
 using LibMatrix.Homeservers;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
-using LibMatrix.Responses;
-using LibMatrix.StructuredData;
+using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
 using System.Text.Json;
 using ArcaneLibs.Extensions;
 using SynapseAdmin.Infrastructure.Serialization;
+using System.Net.Http.Json;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 
@@ -20,10 +18,14 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 {
     private readonly AuthenticatedHomeserverSynapse _synapse = synapse;
 
+    public override bool SupportsAdminApi => true;
+
     /// <summary>
-    /// Custom options to handle Synapse's inconsistent next_token types (String vs Number).
+    /// Creates fresh options to handle Synapse's inconsistent next_token types (String vs Number).
+    /// We create a fresh instance every time because LibMatrix's MatrixHttpClient mutates the options,
+    /// which causes an InvalidOperationException if the instance is reused and marked as read-only.
     /// </summary>
-    private static readonly JsonSerializerOptions SynapseCompatibilityJsonOptions = new(JsonSerializerDefaults.Web)
+    private static JsonSerializerOptions GetSynapseCompatibilityJsonOptions() => new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringConverter() }
     };
@@ -33,6 +35,7 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
     public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v3/users?from={offset}&limit={limit}&dir={direction.UrlEncode()}&order_by={orderBy.UrlEncode()}";
+        // We can read directly into our local model as it matches the JSON structure
         return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult>(url, cancellationToken: cancellationToken);
     }
 
@@ -55,8 +58,15 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     public override async Task<LoginResponse> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
-        return await _synapse.Admin.LoginUserAsync(userId, expireIn);
+        // SDK returns LibMatrix.Responses.LoginResponse, we need to map to SynapseAdmin.Models.Responses.LoginResponse
+        var sdkResp = await _synapse.Admin.LoginUserAsync(userId, expireIn);
+        return new LoginResponse
+        {
+            AccessToken = sdkResp.AccessToken,
+            DeviceId = sdkResp.DeviceId,
+            Homeserver = sdkResp.Homeserver,
+            UserId = sdkResp.UserId
+        };
     }
 
     public override async Task<SendServerNoticeResponse?> SendServerNoticeAsync(string userId, object content, string? type = null, string? stateKey = null, CancellationToken cancellationToken = default)
@@ -94,7 +104,11 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
     public override async Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/media";
-        return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMediaResult>(url, SynapseCompatibilityJsonOptions, cancellationToken: cancellationToken);
+        // We bypass GetFromJsonAsync to avoid LibMatrix's problematic option mutation
+        var response = await _synapse.ClientHttpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await JsonSerializer.DeserializeAsync<SynapseAdminUserMediaResult>(contentStream, GetSynapseCompatibilityJsonOptions(), cancellationToken);
     }
 
 
@@ -114,14 +128,31 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     public override async Task<SynapseAdminRoomMemberListResult?> GetRoomMembersAsync(string roomId, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
-        return await _synapse.Admin.GetRoomMembersAsync(roomId);
+        var sdkResp = await _synapse.Admin.GetRoomMembersAsync(roomId);
+        return new SynapseAdminRoomMemberListResult
+        {
+            Members = sdkResp.Members,
+            Total = sdkResp.Total
+        };
     }
 
     public override async Task<SynapseAdminRoomStateResult?> GetRoomStateAsync(string roomId, string? type = null, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
-        return await _synapse.Admin.GetRoomStateAsync(roomId, type);
+        var sdkResp = await _synapse.Admin.GetRoomStateAsync(roomId, type);
+        return new SynapseAdminRoomStateResult
+        {
+            Events = sdkResp.Events.Select(e => new MatrixEventResponse
+            {
+                Type = e.Type,
+                StateKey = e.StateKey,
+                RawContent = e.RawContent,
+                OriginServerTs = e.OriginServerTs,
+                RoomId = e.RoomId,
+                Sender = e.Sender,
+                Unsigned = e.Unsigned,
+                EventId = e.EventId
+            }).ToList()
+        };
     }
 
     public override async Task<SynapseAdminRoomMediaListResult?> GetRoomMediaListAsync(string roomId, CancellationToken cancellationToken = default)
@@ -132,19 +163,24 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     public override async Task DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
-        await _synapse.Admin.DeleteRoom(roomId, request);
+        var sdkReq = new LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests.SynapseAdminRoomDeleteRequest
+        {
+            Block = request.Block,
+            Purge = request.Purge,
+            Message = request.Message,
+            NewRoomUserId = request.NewRoomUserId,
+            RoomName = request.RoomName
+        };
+        await _synapse.Admin.DeleteRoom(roomId, sdkReq);
     }
 
     public override async Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
         await _synapse.Admin.QuarantineMediaByRoomId(roomId);
     }
 
     public override async Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
         await _synapse.Admin.BlockRoom(roomId, block);
     }
 
@@ -177,7 +213,6 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     public override async Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
         await _synapse.Admin.ResetFederationConnectionTimeoutAsync(destination);
     }
 
@@ -191,7 +226,6 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     public override async Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
         await _synapse.Admin.DeleteEventReportAsync(reportId);
     }
 
@@ -199,27 +233,44 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     public override async Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
-        return await _synapse.Admin.GetRegistrationTokensAsync();
+        var sdkTokens = await _synapse.Admin.GetRegistrationTokensAsync();
+        return sdkTokens.Select(t => new SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken
+        {
+            Token = t.Token,
+            UsesAllowed = t.UsesAllowed,
+            Pending = t.Pending,
+            Completed = t.Completed,
+            ExpiryTime = t.ExpiryTime
+        }).ToList();
     }
 
     public override async Task<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken?> CreateRegistrationTokenAsync(SynapseAdminRegistrationTokenCreateRequest request, CancellationToken cancellationToken = default)
     {
+        var sdkReq = new LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses.SynapseAdminRegistrationTokenCreateRequest
+        {
+            Token = request.Token,
+            UsesAllowed = request.UsesAllowed,
+            ExpiryTime = request.ExpiryTime,
+            Length = request.Length
+        };
         var url = "/_synapse/admin/v1/registration_tokens/new";
-        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, sdkReq, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>(cancellationToken: cancellationToken);
     }
 
     public override async Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
-        await _synapse.Admin.UpdateRegistrationTokenAsync(token, request);
+        var sdkReq = new LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses.SynapseAdminRegistrationTokenUpdateRequest
+        {
+            UsesAllowed = request.UsesAllowed,
+            ExpiryTime = request.ExpiryTime
+        };
+        await _synapse.Admin.UpdateRegistrationTokenAsync(token, sdkReq);
     }
 
     public override async Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default)
     {
-        // SDK doesn't support CancellationToken here
         await _synapse.Admin.DeleteRegistrationTokenAsync(token);
     }
 
@@ -239,8 +290,9 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
         return result?.Info;
     }
 
-    public override async Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(MxcUri mxc, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default)
     {
+        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
         return await GetMediaMetadataAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
@@ -260,5 +312,4 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
     {
         await _synapse.Admin.DeleteMediaById(serverName, mediaId);
     }
-    }
-
+}

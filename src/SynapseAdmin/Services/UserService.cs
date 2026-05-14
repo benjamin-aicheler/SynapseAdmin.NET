@@ -1,4 +1,3 @@
-using LibMatrix.EventTypes.Spec;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Extensions;
@@ -155,7 +154,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            var content = new RoomMessageEventContent(body: message);
+            var content = new { msgtype = "m.text", body = message };
             await Gateway.SendServerNoticeAsync(userId, content, cancellationToken: token);
             logger.LogInformation("Successfully sent server notice to user {UserId}", userId.SanitizeForLogging());
             return OperationResult.Ok(L["ServerNoticeSentSuccessfully"]);

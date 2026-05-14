@@ -50,28 +50,7 @@ public class UserMediaItemViewModel
         get
         {
             if (!string.IsNullOrEmpty(UploadName)) return UploadName;
-            
-            var mediaIdPart = "media";
-            if (!string.IsNullOrEmpty(MediaId))
-            {
-                if (MediaId.StartsWith("mxc://"))
-                {
-                    try
-                    {
-                        mediaIdPart = LibMatrix.StructuredData.MxcUri.Parse(MediaId).MediaId;
-                    }
-                    catch
-                    {
-                        mediaIdPart = "media";
-                    }
-                }
-                else
-                {
-                    // It's already just the ID part
-                    mediaIdPart = MediaId;
-                }
-            }
-
+            var mediaIdPart = Infrastructure.Helpers.MediaHelper.GetMediaIdFromMxc(MediaId);
             return mediaIdPart + Infrastructure.Helpers.MediaHelper.GetExtensionFromMediaType(MediaType);
         }
     }

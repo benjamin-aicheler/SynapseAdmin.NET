@@ -1,5 +1,4 @@
-using LibMatrix.Homeservers;
-using LibMatrix.Responses;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Interfaces.Gateways;
 
@@ -11,8 +10,9 @@ public interface IMatrixAuthGateway
 {
     /// <summary>
     /// Resolves a homeserver URL, checking for federation support and server type.
+    /// Throws an exception if the homeserver cannot be resolved or is invalid.
     /// </summary>
-    Task<RemoteHomeserver> ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default);
+    Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Performs a standard Matrix login.
@@ -22,5 +22,5 @@ public interface IMatrixAuthGateway
     /// <summary>
     /// Creates an authenticated homeserver session from an existing access token.
     /// </summary>
-    Task<AuthenticatedHomeserverGeneric> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default);
+    Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default);
 }

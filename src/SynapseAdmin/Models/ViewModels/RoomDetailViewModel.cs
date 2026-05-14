@@ -57,16 +57,7 @@ public class RoomMediaItemViewModel
         get
         {
             if (!string.IsNullOrEmpty(UploadName)) return UploadName;
-            var mediaIdPart = "media";
-            try
-            {
-                mediaIdPart = LibMatrix.StructuredData.MxcUri.Parse(MediaId).MediaId;
-            }
-            catch
-            {
-                // Fallback to "media" if parsing fails
-            }
-
+            var mediaIdPart = Infrastructure.Helpers.MediaHelper.GetMediaIdFromMxc(MediaId);
             return mediaIdPart + Infrastructure.Helpers.MediaHelper.GetExtensionFromMediaType(MediaType);
         }
     }

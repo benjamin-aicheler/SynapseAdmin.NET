@@ -1,10 +1,11 @@
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Extensions.Mapping;
 
 public static class FederationMappingExtensions
 {
-    public static FederationDestinationListViewModel ToViewModel(this LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses.SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination destination)
+    public static FederationDestinationListViewModel ToViewModel(this SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination destination)
     {
         return new FederationDestinationListViewModel
         {
@@ -16,7 +17,7 @@ public static class FederationMappingExtensions
         };
     }
 
-    public static List<FederationDestinationListViewModel> ToViewModels(this IEnumerable<LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses.SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination> destinations)
+    public static List<FederationDestinationListViewModel> ToViewModels(this IEnumerable<SynapseAdminDestinationListResult.SynapseAdminDestinationListResultDestination> destinations)
     {
         return destinations.Select(ToViewModel).ToList();
     }

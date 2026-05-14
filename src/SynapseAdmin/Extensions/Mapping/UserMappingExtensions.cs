@@ -1,5 +1,5 @@
 using SynapseAdmin.Models.ViewModels;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Extensions.Mapping;
 
@@ -39,9 +39,9 @@ public static class UserMappingExtensions
             UserType = user.UserType ?? "user",
             Locked = user.Locked,
             ShadowBanned = user.ShadowBanned,
-            ConsentVersion = "",
-            ConsentServerNoticeSent = "",
-            AppserviceId = ""
+            ConsentVersion = user.ConsentVersion ?? "",
+            ConsentServerNoticeSent = user.ConsentServerNoticeSent ?? "",
+            AppserviceId = user.AppserviceId ?? ""
         };
     }
 }

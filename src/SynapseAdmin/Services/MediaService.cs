@@ -5,7 +5,6 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Resources;
 using SynapseAdmin.Interfaces.Gateways;
-using LibMatrix.StructuredData;
 
 namespace SynapseAdmin.Services;
 
@@ -41,8 +40,7 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
 
         try
         {
-            var mxcUri = MxcUri.Parse(mxc);
-            var meta = await Gateway.GetMediaMetadataAsync(mxcUri, token);
+            var meta = await Gateway.GetMediaMetadataAsync(mxc, token);
             if (meta == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["ErrorFetchingMedia"]);
             return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Ok(meta);
         }
@@ -62,8 +60,19 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            var parsed = MxcUri.Parse(mxc);
-            await Gateway.QuarantineMediaAsync(parsed.ServerName, parsed.MediaId, token);
+            // We need to parse serverName and mediaId from MXC if the Gateway only takes those.
+            // But Gateway also has GetMediaMetadataAsync(string mxcUri).
+            // Let's check IMatrixGateway.
+            
+            // For now, let's assume we can use a helper or the Gateway has a method.
+            // Actually, IMatrixGateway has QuarantineMediaAsync(string serverName, string mediaId).
+            // I should probably add QuarantineMediaAsync(string mxcUri) to the gateway to be consistent.
+            
+            // Or just parse it here using a simple local logic to avoid LibMatrix dependency in service.
+            var parts = mxc.Replace("mxc://", "").Split('/');
+            if (parts.Length != 2) return OperationResult.Failure(L["ErrorQuarantiningMedia"]);
+
+            await Gateway.QuarantineMediaAsync(parts[0], parts[1], token);
             logger.LogInformation("Successfully quarantined media {Mxc}", mxc.SanitizeForLogging());
             return OperationResult.Ok(L["MediaQuarantinedSuccessfully"]);
         }
@@ -83,8 +92,10 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            var parsed = MxcUri.Parse(mxc);
-            await Gateway.UnquarantineMediaAsync(parsed.ServerName, parsed.MediaId, token);
+            var parts = mxc.Replace("mxc://", "").Split('/');
+            if (parts.Length != 2) return OperationResult.Failure(L["ErrorUnquarantiningMedia"]);
+
+            await Gateway.UnquarantineMediaAsync(parts[0], parts[1], token);
             logger.LogInformation("Successfully unquarantined media {Mxc}", mxc.SanitizeForLogging());
             return OperationResult.Ok(L["MediaUnquarantinedSuccessfully"]);
         }
@@ -104,8 +115,10 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
         if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
         try
         {
-            var parsed = MxcUri.Parse(mxc);
-            await Gateway.DeleteMediaAsync(parsed.ServerName, parsed.MediaId, token);
+            var parts = mxc.Replace("mxc://", "").Split('/');
+            if (parts.Length != 2) return OperationResult.Failure(L["ErrorDeletingMedia"]);
+
+            await Gateway.DeleteMediaAsync(parts[0], parts[1], token);
             logger.LogInformation("Successfully deleted media {Mxc}", mxc.SanitizeForLogging());
             return OperationResult.Ok(L["MediaDeletedSuccessfully"]);
         }

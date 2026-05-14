@@ -5,7 +5,8 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces.Gateways;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
+using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Services;
 

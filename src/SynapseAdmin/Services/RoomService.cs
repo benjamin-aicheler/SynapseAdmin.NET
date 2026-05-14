@@ -1,5 +1,3 @@
-using LibMatrix.EventTypes.Spec.State.RoomInfo;
-using LibMatrix.StructuredData;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
@@ -10,7 +8,7 @@ using SynapseAdmin.Extensions;
 using SynapseAdmin.Extensions.Mapping;
 using System.Text.Json;
 using SynapseAdmin.Interfaces.Gateways;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
+using SynapseAdmin.Models.Requests;
 
 namespace SynapseAdmin.Services;
 
@@ -65,12 +63,18 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var media = await mediaTask;
 
             var tombstone = stateEvents?.Events
-                .FirstOrDefault(x => x.Type == RoomTombstoneEventContent.EventId)?
-                .ContentAs<RoomTombstoneEventContent>();
+                .FirstOrDefault(x => x.Type == "m.room.tombstone");
 
             var vm = r.ToDetailViewModel();
             vm.IsTombstoned = tombstone != null;
-            vm.ReplacementRoom = tombstone?.ReplacementRoom;
+            
+            string? replacementRoom = null;
+            if (tombstone?.RawContent != null && tombstone.RawContent.TryGetPropertyValue("replacement_room", out var replacementNode))
+            {
+                replacementRoom = replacementNode?.GetValue<string>();
+            }
+
+            vm.ReplacementRoom = replacementRoom;
             vm.Members = members?.Members ?? [];
             vm.StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
             {
@@ -109,8 +113,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 var vm = new RoomMediaItemViewModel { MediaId = m };
                 try
                 {
-                    var mxc = MxcUri.Parse(m);
-                    var meta = await Gateway.GetMediaMetadataAsync(mxc, token);
+                    var meta = await Gateway.GetMediaMetadataAsync(m, token);
                     if (meta != null)
                     {
                         vm.UploadName = meta.UploadName;

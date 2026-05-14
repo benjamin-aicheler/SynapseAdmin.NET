@@ -48,7 +48,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return NotFound();
         }
 
-        var mxcUri = LibMatrix.StructuredData.MxcUri.Parse(mxc);
+        var mediaId = Infrastructure.Helpers.MediaHelper.GetMediaIdFromMxc(mxc);
         
         // If no MIME type was provided, try to get it from metadata
         if (string.IsNullOrEmpty(safeMimeType))
@@ -60,7 +60,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             }
         }
 
-        var finalFileName = safeFilename ?? mxcUri.MediaId;
+        var finalFileName = safeFilename ?? mediaId;
         var finalMimeType = safeMimeType ?? "application/octet-stream";
         
         return File(result.Data, finalMimeType, finalFileName);

@@ -1,5 +1,5 @@
 using SynapseAdmin.Models.ViewModels;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Extensions.Mapping;
 

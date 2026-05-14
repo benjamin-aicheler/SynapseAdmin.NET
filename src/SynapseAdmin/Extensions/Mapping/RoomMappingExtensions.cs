@@ -1,5 +1,5 @@
 using SynapseAdmin.Models.ViewModels;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Extensions.Mapping;
 
@@ -44,12 +44,12 @@ public static class RoomMappingExtensions
             Encryption = room.Encryption,
             Federated = room.Federatable,
             Public = room.Public,
-            AvatarUrl = "",
+            AvatarUrl = room.AvatarUrl ?? "",
             JoinRules = room.JoinRules,
             GuestAccess = room.GuestAccess,
             HistoryVisibility = room.HistoryVisibility,
-            RoomType = "",
-            Forgotten = false
+            RoomType = room.RoomType ?? "",
+            Forgotten = room.Forgotten == true
         };
     }
 }
