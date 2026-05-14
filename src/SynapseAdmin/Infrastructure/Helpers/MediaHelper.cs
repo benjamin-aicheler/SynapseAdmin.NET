@@ -68,4 +68,13 @@ public static class MediaHelper
 
         return ".bin";
     }
+
+    public static string GetMediaIdFromMxc(string? mxc)
+    {
+        if (string.IsNullOrEmpty(mxc)) return "media";
+        if (!mxc.StartsWith("mxc://")) return mxc;
+        
+        var parts = mxc.Split('/');
+        return parts.Last();
+    }
 }

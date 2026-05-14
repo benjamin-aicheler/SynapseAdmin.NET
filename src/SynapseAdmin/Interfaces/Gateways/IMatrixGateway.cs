@@ -1,8 +1,5 @@
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Responses;
-using LibMatrix.Homeservers.ImplementationDetails.Synapse.Models.Requests;
-using LibMatrix.Responses;
-using LibMatrix.StructuredData;
 using SynapseAdmin.Models.Responses;
+using SynapseAdmin.Models.Requests;
 
 namespace SynapseAdmin.Interfaces.Gateways;
 
@@ -64,7 +61,7 @@ public interface IMatrixGateway
     Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 3 * 1024 * 1024, CancellationToken cancellationToken = default);
     Task<Stream> GetMediaStreamAsync(string mxcUri, string? filename = null, int? timeout = null, CancellationToken cancellationToken = default);
     Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
-    Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(MxcUri mxc, CancellationToken cancellationToken = default);
+    Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default);
     Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
