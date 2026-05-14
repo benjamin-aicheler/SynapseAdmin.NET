@@ -47,6 +47,7 @@ else
                         <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@room.RoomId</MudText></MudListItem>
                         <MudListItem T="string"><b>@L["Name"]:</b> @(string.IsNullOrEmpty(room.Name) ? L["NoName"] : room.Name)</MudListItem>
                         <MudListItem T="string"><b>@L["Alias"]:</b> @room.CanonicalAlias</MudListItem>
+                        <MudListItem T="string"><b>@L["RoomType"]:</b> @room.RoomType</MudListItem>
                         <MudListItem T="string"><b>@L["Creator"]:</b> @room.Creator</MudListItem>
                         <MudListItem T="string"><b>@L["Version"]:</b> @room.Version</MudListItem>
                         @if (room.IsTombstoned)

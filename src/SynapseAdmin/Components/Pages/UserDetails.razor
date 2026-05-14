@@ -67,6 +67,18 @@ else
                                 <MudChip T="string" Color="Color.Default" Size="Size.Small">@L["StandardUser"]</MudChip>
                             }
                         </MudListItem>
+                        @if (!string.IsNullOrEmpty(user.AppserviceId))
+                        {
+                            <MudListItem T="string"><b>@L["AppserviceId"]:</b> <MudText Typo="Typo.caption">@user.AppserviceId</MudText></MudListItem>
+                        }
+                        @if (!string.IsNullOrEmpty(user.ConsentVersion))
+                        {
+                            <MudListItem T="string"><b>@L["ConsentVersion"]:</b> @user.ConsentVersion</MudListItem>
+                        }
+                        @if (!string.IsNullOrEmpty(user.ConsentServerNoticeSent))
+                        {
+                            <MudListItem T="string"><b>@L["ConsentSent"]:</b> @user.ConsentServerNoticeSent</MudListItem>
+                        }
                     </MudList>
                 </MudCardContent>
             </MudCard>

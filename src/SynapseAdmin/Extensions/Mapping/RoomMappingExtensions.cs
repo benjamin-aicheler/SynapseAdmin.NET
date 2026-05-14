@@ -19,9 +19,9 @@ public static class RoomMappingExtensions
             Encryption = room.Encryption,
             Federated = room.Federatable,
             Public = room.Public,
-            AvatarUrl = "",
+            AvatarUrl = room.AvatarUrl ?? "",
             JoinRules = room.JoinRules,
-            RoomType = ""
+            RoomType = room.RoomType ?? ""
         };
     }
 
