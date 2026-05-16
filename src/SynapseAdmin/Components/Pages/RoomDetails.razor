@@ -43,6 +43,23 @@ else
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
+                    <div class="d-flex align-center mb-4">
+                        @if (!string.IsNullOrEmpty(room.AvatarUrl))
+                        {
+                            <MudAvatar Size="Size.Large" Class="mr-4">
+                                <MudImage Src="@(room.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(room.AvatarUrl)}" : room.AvatarUrl)" />
+                            </MudAvatar>
+                        }
+                        else
+                        {
+                            <MudAvatar Color="Color.Primary" Size="Size.Large" Class="mr-4">@(room.Name?.FirstOrDefault() ?? room.RoomId.FirstOrDefault())</MudAvatar>
+                        }
+                        <div>
+                            <MudText Typo="Typo.h6">@(string.IsNullOrEmpty(room.Name) ? room.RoomId : room.Name)</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@room.RoomId</MudText>
+                        </div>
+                    </div>
+
                     <MudList T="string" Dense="true">
                         <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@room.RoomId</MudText></MudListItem>
                         <MudListItem T="string"><b>@L["Name"]:</b> @(string.IsNullOrEmpty(room.Name) ? L["NoName"] : room.Name)</MudListItem>
