@@ -56,7 +56,8 @@ The project uses the standard .NET 10 CLI and Docker:
 
 ## Synapse API Compatibility
 - **Inconsistent Types:** Some Synapse Admin APIs (e.g., User Media) return pagination tokens (`next_token`) as JSON Numbers, while the SDK/DTOs expect Strings.
-- **Handling Strategy:** To avoid modifying the `LibMatrix` submodule, use `SynapseCompatibilityJsonOptions` (defined in `SynapseAdminGateway`).
+- **Field Naming Inconsistency:** The Synapse Room Admin API uses the key **`avatar`** for room avatars in its responses, whereas the User Admin API (and most other Matrix APIs) uses **`avatar_url`**.
+- **Handling Strategy:** To avoid modifying the `LibMatrix` submodule, use `SynapseCompatibilityJsonOptions` (defined in `SynapseAdminGateway`) for type coercion. For field naming, ensure local DTOs map the correct keys.
 - **Implementation:** This utilizes `JsonStringConverter` to safely coerce Numbers into Strings during deserialization.
 - **Guideline:** Apply these options to any `GetFromJsonAsync` calls where Synapse returns inconsistent types to prevent `JsonException` crashes.
 
