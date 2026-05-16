@@ -67,10 +67,14 @@ else if (isSynapse)
                 <HeaderContent>
                     <MudTh>@L["UserId"]</MudTh>
                     <MudTh>@L["Created"]</MudTh>
+                    <MudTh>@L["Actions"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@L["UserId"]">@context.UserId</MudTd>
                     <MudTd DataLabel="@L["Created"]">@context.CreationTsDateTime.ToString("g")</MudTd>
+                    <MudTd DataLabel="@L["Actions"]">
+                        <MudButton Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
+                    </MudTd>
                 </RowTemplate>
             </MudTable>
         </MudItem>
@@ -87,7 +91,9 @@ else if (isSynapse)
                     <MudTh>@L["Reason"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="@L["Reporter"]">@context.UserId</MudTd>
+                    <MudTd DataLabel="@L["Reporter"]">
+                        <MudLink Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")">@context.UserId</MudLink>
+                    </MudTd>
                     <MudTd DataLabel="@L["Reason"]">@(string.IsNullOrWhiteSpace(context.Reason) ? "-" : context.Reason)</MudTd>
                 </RowTemplate>
             </MudTable>
@@ -106,11 +112,15 @@ else if (isSynapse)
                         <MudTh>@L["Name"]</MudTh>
                         <MudTh>@L["RoomId"]</MudTh>
                         <MudTh>@L["EstimatedSize"]</MudTh>
+                        <MudTh>@L["Actions"]</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="@L["Name"]">@context.Name</MudTd>
                         <MudTd DataLabel="@L["RoomId"]">@context.RoomId</MudTd>
                         <MudTd DataLabel="@L["EstimatedSize"]">@context.EstimatedSize.FormatSize()</MudTd>
+                        <MudTd DataLabel="@L["Actions"]">
+                            <MudButton Href="@($"/rooms/{Uri.EscapeDataString(context.RoomId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
+                        </MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudItem>
@@ -129,6 +139,7 @@ else if (isSynapse)
                         <MudTh>@L["User"]</MudTh>
                         <MudTh>@L["MediaCount"]</MudTh>
                         <MudTh>@L["TotalSize"]</MudTh>
+                        <MudTh>@L["Actions"]</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="@L["User"]">
@@ -137,6 +148,9 @@ else if (isSynapse)
                         </MudTd>
                         <MudTd DataLabel="@L["MediaCount"]">@context.MediaCount</MudTd>
                         <MudTd DataLabel="@L["TotalSize"]">@context.TotalSize.FormatSize()</MudTd>
+                        <MudTd DataLabel="@L["Actions"]">
+                            <MudButton Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
+                        </MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudItem>
