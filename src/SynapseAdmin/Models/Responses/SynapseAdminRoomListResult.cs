@@ -63,7 +63,7 @@ public class SynapseAdminRoomListResult
         [JsonPropertyName("state_events")]
         public int StateEvents { get; set; }
 
-        [JsonPropertyName("avatar_url")]
+        [JsonPropertyName("avatar")]
         public string? AvatarUrl { get; set; }
 
         [JsonPropertyName("room_type")]
