@@ -95,7 +95,8 @@ public class MatrixAuthenticationStateProvider(
             {
                 new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
                 new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                new Claim("Homeserver", sessionService.Gateway.ServerName)
+                new Claim("Homeserver", sessionService.Gateway.ServerName),
+                new Claim("AccessToken", sessionService.Gateway.AccessToken)
             };
 
             var identity = new ClaimsIdentity(claims, "MatrixAuth");
@@ -122,7 +123,8 @@ public class MatrixAuthenticationStateProvider(
             {
                 new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
                 new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                new Claim("Homeserver", sessionService.Gateway.ServerName)
+                new Claim("Homeserver", sessionService.Gateway.ServerName),
+                new Claim("AccessToken", sessionService.Gateway.AccessToken)
             };
 
             var identity = new ClaimsIdentity(claims, "MatrixAuth");
