@@ -36,15 +36,7 @@ else
             <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="@L["Name"]">
-                <div class="d-flex align-center gap-2">
-                    <span>@(string.IsNullOrEmpty(context.Name) ? L["NoName"] : context.Name)</span>
-                    @if (context.IsTombstoned)
-                    {
-                        <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Text" Class="ma-0">@L["Tombstoned"]</MudChip>
-                    }
-                </div>
-            </MudTd>
+            <MudTd DataLabel="@L["Name"]">@(string.IsNullOrEmpty(context.Name) ? L["NoName"] : context.Name)</MudTd>
             <MudTd DataLabel="@L["RoomId"]"><MudText Typo="Typo.caption">@context.RoomId</MudText></MudTd>
             <MudTd DataLabel="@L["RoomType"]">
                 @if (!string.IsNullOrEmpty(context.RoomType))

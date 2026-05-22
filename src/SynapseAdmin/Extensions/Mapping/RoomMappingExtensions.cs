@@ -21,9 +21,7 @@ public static class RoomMappingExtensions
             Public = room.Public,
             AvatarUrl = room.AvatarUrl ?? "",
             JoinRules = room.JoinRules,
-            RoomType = room.RoomType ?? "",
-            IsTombstoned = room.Tombstoned == true,
-            ReplacementRoom = room.ReplacementRoom
+            RoomType = room.RoomType ?? ""
         };
     }
 
