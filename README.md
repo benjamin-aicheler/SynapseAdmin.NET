@@ -87,6 +87,16 @@ The easiest way to get started is by using the default `docker-compose.yml` file
 docker compose up -d
 ```
 
+> [!IMPORTANT]
+> **Container Security & Permissions:**
+> The Docker container runs under a non-root user context (`app`, UID `1654`) for safety.
+> - **If using Docker Named Volumes:** Permissions are set automatically.
+> - **If using local Bind Mounts** (as configured in the default `docker-compose.yml`), the host directories **must be writable** by UID `1654`. Run the following command on your host *before* starting the container:
+>   ```bash
+>   mkdir -p logs keys
+>   sudo chown -R 1654:1654 logs keys
+>   ```
+
 This will:
 - Pull the latest image from GHCR.
 - Map port `8080` for the web interface.
@@ -95,7 +105,7 @@ This will:
 - **Encrypt** the persisted keys using the `DP_PASSPHRASE`.
 
 #### Using Docker CLI
-Alternatively, you can run the container directly. Make sure to provide a secure passphrase:
+Alternatively, you can run the container directly. Make sure to provide a secure passphrase, and that the host directories are writable by UID `1654` (as described in the Docker Compose section above):
 
 ```bash
 docker run -d \
