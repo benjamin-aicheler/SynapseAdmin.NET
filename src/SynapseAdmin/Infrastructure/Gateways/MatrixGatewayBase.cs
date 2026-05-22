@@ -101,6 +101,26 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default);
     public abstract Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+
+    public virtual async Task QuarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
+    {
+        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        await QuarantineMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
+    }
+
     public abstract Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+
+    public virtual async Task UnquarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
+    {
+        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        await UnquarantineMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
+    }
+
     public abstract Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+
+    public virtual async Task DeleteMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
+    {
+        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        await DeleteMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
+    }
 }
