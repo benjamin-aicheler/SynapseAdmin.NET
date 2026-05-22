@@ -19,4 +19,9 @@ RUN dotnet publish -c Release -o /app
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app .
+
+# Pre-create logs and keys directories and set ownership to non-root app user
+RUN mkdir -p /app/logs /app/keys && chown -R app:app /app/logs /app/keys
+
+USER app
 ENTRYPOINT ["dotnet", "SynapseAdmin.dll"]
