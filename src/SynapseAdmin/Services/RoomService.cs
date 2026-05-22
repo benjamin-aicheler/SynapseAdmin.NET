@@ -64,7 +64,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
             var vm = r.ToDetailViewModel();
             
-            if (!vm.IsTombstoned)
+            if (r.Tombstoned == null)
             {
                 var tombstone = stateEvents?.Events
                     .FirstOrDefault(x => x.Type == "m.room.tombstone");
