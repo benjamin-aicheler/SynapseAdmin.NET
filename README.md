@@ -124,6 +124,23 @@ If you prefer to build the image yourself, use the provided build-specific compo
 docker compose -f docker-compose.build.yml up --build
 ```
 
+#### Migrating from Older Versions (Root to Non-Root, v1.5.x and earlier)
+
+If you are upgrading from an older version of SynapseAdmin.NET that ran as `root`, existing files in your persistent storage will be owned by `root`. Since the container now runs as the non-root `app` user (UID `1654`), you will need to update the ownership of your existing files so the container can access them:
+
+- **If you are using Bind Mounts:**
+  Run the following command on your host from the project root:
+  ```bash
+  sudo chown -R 1654:1654 logs keys
+  ```
+
+- **If you are using Docker Named Volumes:**
+  Run the following one-off containers to fix file ownership inside your volumes (replace `synapseadmin_keys` and `synapseadmin_logs` with your actual volume names if different):
+  ```bash
+  docker run --rm -v synapseadmin_keys:/keys -u root alpine chown -R 1654:1654 /keys
+  docker run --rm -v synapseadmin_logs:/logs -u root alpine chown -R 1654:1654 /logs
+  ```
+
 ### Reverse Proxy Configuration
 
 If you are running the application behind a reverse proxy (like Nginx, Traefik, or Cloudflare) with SSL termination, the app is already configured to respect `X-Forwarded-For` and `X-Forwarded-Proto` headers.
