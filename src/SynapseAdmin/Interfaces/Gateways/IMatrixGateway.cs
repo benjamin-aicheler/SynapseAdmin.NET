@@ -65,6 +65,9 @@ public interface IMatrixGateway
     Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default);
     Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    Task QuarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default);
     Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    Task UnquarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default);
     Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    Task DeleteMediaAsync(string mxcUri, CancellationToken cancellationToken = default);
 }
