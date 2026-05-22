@@ -21,7 +21,9 @@ public static class RoomMappingExtensions
             Public = room.Public,
             AvatarUrl = room.AvatarUrl ?? "",
             JoinRules = room.JoinRules,
-            RoomType = room.RoomType ?? ""
+            RoomType = room.RoomType ?? "",
+            IsTombstoned = room.Tombstoned == true,
+            ReplacementRoom = room.ReplacementRoom
         };
     }
 
@@ -49,7 +51,9 @@ public static class RoomMappingExtensions
             GuestAccess = room.GuestAccess,
             HistoryVisibility = room.HistoryVisibility,
             RoomType = room.RoomType ?? "",
-            Forgotten = room.Forgotten == true
+            Forgotten = room.Forgotten == true,
+            IsTombstoned = room.Tombstoned == true,
+            ReplacementRoom = room.ReplacementRoom
         };
     }
 }

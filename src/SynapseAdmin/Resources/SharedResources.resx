@@ -503,6 +503,9 @@
   <data name="Tombstone" xml:space="preserve">
     <value>Tombstone</value>
   </data>
+  <data name="Tombstoned" xml:space="preserve">
+    <value>Tombstoned</value>
+  </data>
   <data name="EditRegistrationToken" xml:space="preserve">
     <value>Edit Registration Token</value>
   </data>

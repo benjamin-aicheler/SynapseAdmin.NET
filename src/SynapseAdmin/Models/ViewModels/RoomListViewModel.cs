@@ -15,4 +15,6 @@ public class RoomListViewModel
     public string? AvatarUrl { get; set; }
     public string? JoinRules { get; set; }
     public string? RoomType { get; set; }
+    public bool IsTombstoned { get; set; }
+    public string? ReplacementRoom { get; set; }
 }

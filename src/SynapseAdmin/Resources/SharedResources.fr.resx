@@ -466,6 +466,9 @@
   <data name="Tombstone" xml:space="preserve">
     <value>Tombe</value>
   </data>
+  <data name="Tombstoned" xml:space="preserve">
+    <value>Remplacée</value>
+  </data>
   <data name="EditRegistrationToken" xml:space="preserve">
     <value>Modifier le jeton d'enregistrement</value>
   </data>

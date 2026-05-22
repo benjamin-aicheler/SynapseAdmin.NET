@@ -62,19 +62,21 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var stateEvents = await stateTask;
             var media = await mediaTask;
 
-            var tombstone = stateEvents?.Events
-                .FirstOrDefault(x => x.Type == "m.room.tombstone");
-
             var vm = r.ToDetailViewModel();
-            vm.IsTombstoned = tombstone != null;
             
-            string? replacementRoom = null;
-            if (tombstone?.RawContent != null && tombstone.RawContent.TryGetPropertyValue("replacement_room", out var replacementNode))
+            if (!vm.IsTombstoned)
             {
-                replacementRoom = replacementNode?.GetValue<string>();
+                var tombstone = stateEvents?.Events
+                    .FirstOrDefault(x => x.Type == "m.room.tombstone");
+                if (tombstone != null)
+                {
+                    vm.IsTombstoned = true;
+                    if (tombstone.RawContent != null && tombstone.RawContent.TryGetPropertyValue("replacement_room", out var replacementNode))
+                    {
+                        vm.ReplacementRoom = replacementNode?.GetValue<string>();
+                    }
+                }
             }
-
-            vm.ReplacementRoom = replacementRoom;
             vm.Members = members?.Members ?? [];
             vm.StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
             {
