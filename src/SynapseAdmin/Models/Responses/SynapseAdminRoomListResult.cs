@@ -72,6 +72,12 @@ public class SynapseAdminRoomListResult
         [JsonPropertyName("forgotten")]
         public bool? Forgotten { get; set; }
 
+        [JsonPropertyName("tombstoned")]
+        public bool? Tombstoned { get; set; }
+
+        [JsonPropertyName("replacement_room")]
+        public string? ReplacementRoom { get; set; }
+
         [JsonPropertyName("gay.rory.synapse_admin_extensions.tombstone")]
         public MatrixEventResponse? TombstoneEvent { get; set; }
 

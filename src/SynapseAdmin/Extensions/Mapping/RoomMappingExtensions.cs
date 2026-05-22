@@ -49,7 +49,9 @@ public static class RoomMappingExtensions
             GuestAccess = room.GuestAccess,
             HistoryVisibility = room.HistoryVisibility,
             RoomType = room.RoomType ?? "",
-            Forgotten = room.Forgotten == true
+            Forgotten = room.Forgotten == true,
+            IsTombstoned = room.Tombstoned == true,
+            ReplacementRoom = room.ReplacementRoom
         };
     }
 }
