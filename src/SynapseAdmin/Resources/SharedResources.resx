@@ -830,4 +830,22 @@
   <data name="Suspended" xml:space="preserve">
     <value>Suspended</value>
   </data>
+  <data name="HomeserverUrlRequired" xml:space="preserve">
+    <value>Homeserver URL is required!</value>
+  </data>
+  <data name="UsernameRequired" xml:space="preserve">
+    <value>Username is required!</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Password is required!</value>
+  </data>
+  <data name="AccessTokenRequired" xml:space="preserve">
+    <value>Access token is required!</value>
+  </data>
+  <data name="InvalidMxidFormat" xml:space="preserve">
+    <value>Invalid MXID format!</value>
+  </data>
+  <data name="PasswordTooShort" xml:space="preserve">
+    <value>Password must be at least 8 characters!</value>
+  </data>
 </root>

@@ -814,4 +814,22 @@
   <data name="ErrorUnquarantiningMedia" xml:space="preserve">
     <value>Erreur lors de la sortie du média de la quarantaine.</value>
   </data>
-  </root>
+  <data name="HomeserverUrlRequired" xml:space="preserve">
+    <value>L'URL du serveur d'accueil est requise !</value>
+  </data>
+  <data name="UsernameRequired" xml:space="preserve">
+    <value>Le nom d'utilisateur est requis !</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Le mot de passe est requis !</value>
+  </data>
+  <data name="AccessTokenRequired" xml:space="preserve">
+    <value>Le jeton d'accès est requis !</value>
+  </data>
+  <data name="InvalidMxidFormat" xml:space="preserve">
+    <value>Format de MXID invalide !</value>
+  </data>
+  <data name="PasswordTooShort" xml:space="preserve">
+    <value>Le mot de passe doit comporter au moins 8 caractères !</value>
+  </data>
+</root>
