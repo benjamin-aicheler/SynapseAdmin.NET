@@ -1,15 +1,16 @@
 using System.ComponentModel.DataAnnotations;
+using SynapseAdmin.Resources;
 
 namespace SynapseAdmin.Models.ViewModels;
 
 public class UserCreateViewModel
 {
-    [Required]
-    [RegularExpression(@"^@[a-z0-9._=\-/]+:[a-z0-9.-]+\.[a-z]{2,}$", ErrorMessage = "Invalid MXID format")]
+    [Required(ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "UserIdRequired")]
+    [RegularExpression(@"^@[a-z0-9._=\-/]+:[a-z0-9.-]+\.[a-z]{2,}$", ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "InvalidMxidFormat")]
     public string UserId { get; set; } = string.Empty;
 
-    [Required]
-    [MinLength(8, ErrorMessage = "Password must be at least 8 characters")]
+    [Required(ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "PasswordRequired")]
+    [MinLength(8, ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "PasswordTooShort")]
     public string Password { get; set; } = string.Empty;
 
     public string? DisplayName { get; set; }
