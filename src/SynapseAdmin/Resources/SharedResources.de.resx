@@ -832,4 +832,100 @@
   <data name="PasswordTooShort" xml:space="preserve">
     <value>Das Passwort muss mindestens 8 Zeichen lang sein!</value>
   </data>
+  <data name="BackgroundUpdates" xml:space="preserve">
+    <value>Hintergrund-Aktualisierungen</value>
+  </data>
+  <data name="BackgroundUpdatesDescription" xml:space="preserve">
+    <value>Datenbank-Hintergrund-Aktualisierungen von Synapse verwalten und überwachen.</value>
+  </data>
+  <data name="BackgroundUpdatesApiRequired" xml:space="preserve">
+    <value>Die Hintergrund-Aktualisierungs-API erfordert Zugriff auf die Synapse-Admin-API.</value>
+  </data>
+  <data name="BackgroundUpdatesStatus" xml:space="preserve">
+    <value>Hintergrund-Aktualisierungsstatus</value>
+  </data>
+  <data name="Paused" xml:space="preserve">
+    <value>Pausiert</value>
+  </data>
+  <data name="PauseBackgroundUpdates" xml:space="preserve">
+    <value>Updates pausieren</value>
+  </data>
+  <data name="ResumeBackgroundUpdates" xml:space="preserve">
+    <value>Updates fortsetzen</value>
+  </data>
+  <data name="PauseUpdatesConfirmation" xml:space="preserve">
+    <value>Updates pausieren bestätigen</value>
+  </data>
+  <data name="PauseUpdatesWarning" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie die Datenbank-Hintergrundaktualisierungen pausieren möchten? Längeres Pausieren kann die Leistung von Synapse beeinträchtigen.</value>
+  </data>
+  <data name="ResumeUpdatesConfirmation" xml:space="preserve">
+    <value>Updates fortsetzen bestätigen</value>
+  </data>
+  <data name="ResumeUpdatesMessage" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie die Datenbank-Hintergrundaktualisierungen fortsetzen möchten?</value>
+  </data>
+  <data name="ActiveUpdates" xml:space="preserve">
+    <value>Aktive Aktualisierungen</value>
+  </data>
+  <data name="NoActiveUpdates" xml:space="preserve">
+    <value>Derzeit laufen keine aktiven Datenbank-Aktualisierungen.</value>
+  </data>
+  <data name="DatabaseName" xml:space="preserve">
+    <value>Datenbank</value>
+  </data>
+  <data name="UpdateName" xml:space="preserve">
+    <value>Aktualisierungs-Job</value>
+  </data>
+  <data name="ProcessedItems" xml:space="preserve">
+    <value>Verarbeitete Elemente</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Dauer</value>
+  </data>
+  <data name="AverageSpeed" xml:space="preserve">
+    <value>Durchschnittliche Geschwindigkeit</value>
+  </data>
+  <data name="ManualTriggerJobs" xml:space="preserve">
+    <value>Manuelles Auslösen von Jobs</value>
+  </data>
+  <data name="RecalculateRoomStats" xml:space="preserve">
+    <value>Raumstatistiken neu berechnen</value>
+  </data>
+  <data name="RecalculateRoomStatsDescription" xml:space="preserve">
+    <value>Plant eine sofortige, datenbankweite Neuberechnung von Statistiken (wie Benutzer- und Nachrichtenzahlen) für alle Räume.</value>
+  </data>
+  <data name="RegenerateUserDirectory" xml:space="preserve">
+    <value>Benutzerverzeichnis neu generieren</value>
+  </data>
+  <data name="RegenerateUserDirectoryDescription" xml:space="preserve">
+    <value>Plant eine sofortige Neuerstellung des Benutzerverzeichnis-Index, falls dieser veraltet oder asynchron ist.</value>
+  </data>
+  <data name="TriggerJobConfirmation" xml:space="preserve">
+    <value>Job-Auslösung bestätigen</value>
+  </data>
+  <data name="TriggerJobMessage" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Hintergrundjob '{0}' sofort ausführen möchten? Dies kann je nach Datenbankgröße erhebliche Ressourcen verbrauchen.</value>
+  </data>
+  <data name="Trigger" xml:space="preserve">
+    <value>Auslösen</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>Nein</value>
+  </data>
+  <data name="ErrorFetchingBackgroundUpdatesStatus" xml:space="preserve">
+    <value>Fehler beim Abrufen des Hintergrundaktualisierungsstatus.</value>
+  </data>
+  <data name="ErrorTogglingBackgroundUpdates" xml:space="preserve">
+    <value>Fehler beim Umschalten des Aktivierungsstatus der Hintergrundaktualisierungen.</value>
+  </data>
+  <data name="ErrorStartingBackgroundUpdateJob" xml:space="preserve">
+    <value>Fehler beim Starten des Hintergrundaktualisierungs-Jobs.</value>
+  </data>
+  <data name="BackgroundUpdateJobStarted" xml:space="preserve">
+    <value>Hintergrundaktualisierungs-Job erfolgreich gestartet.</value>
+  </data>
 </root>

@@ -848,4 +848,100 @@
   <data name="PasswordTooShort" xml:space="preserve">
     <value>Password must be at least 8 characters!</value>
   </data>
+  <data name="BackgroundUpdates" xml:space="preserve">
+    <value>Background Updates</value>
+  </data>
+  <data name="BackgroundUpdatesDescription" xml:space="preserve">
+    <value>Manage and monitor database background updates executed by Synapse.</value>
+  </data>
+  <data name="BackgroundUpdatesApiRequired" xml:space="preserve">
+    <value>The Background Updates API requires Synapse Admin API access.</value>
+  </data>
+  <data name="BackgroundUpdatesStatus" xml:space="preserve">
+    <value>Background Updates Status</value>
+  </data>
+  <data name="Paused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="PauseBackgroundUpdates" xml:space="preserve">
+    <value>Pause Updates</value>
+  </data>
+  <data name="ResumeBackgroundUpdates" xml:space="preserve">
+    <value>Resume Updates</value>
+  </data>
+  <data name="PauseUpdatesConfirmation" xml:space="preserve">
+    <value>Pause Updates Confirmation</value>
+  </data>
+  <data name="PauseUpdatesWarning" xml:space="preserve">
+    <value>Are you sure you want to pause database background updates? Keeping updates paused for long periods can severely impact homeserver performance.</value>
+  </data>
+  <data name="ResumeUpdatesConfirmation" xml:space="preserve">
+    <value>Resume Updates Confirmation</value>
+  </data>
+  <data name="ResumeUpdatesMessage" xml:space="preserve">
+    <value>Are you sure you want to resume database background updates?</value>
+  </data>
+  <data name="ActiveUpdates" xml:space="preserve">
+    <value>Active Updates</value>
+  </data>
+  <data name="NoActiveUpdates" xml:space="preserve">
+    <value>No active database updates are running at this time.</value>
+  </data>
+  <data name="DatabaseName" xml:space="preserve">
+    <value>Database</value>
+  </data>
+  <data name="UpdateName" xml:space="preserve">
+    <value>Update Job</value>
+  </data>
+  <data name="ProcessedItems" xml:space="preserve">
+    <value>Items Processed</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="AverageSpeed" xml:space="preserve">
+    <value>Average Speed</value>
+  </data>
+  <data name="ManualTriggerJobs" xml:space="preserve">
+    <value>Manual Trigger Jobs</value>
+  </data>
+  <data name="RecalculateRoomStats" xml:space="preserve">
+    <value>Recalculate Room Statistics</value>
+  </data>
+  <data name="RecalculateRoomStatsDescription" xml:space="preserve">
+    <value>Schedules an immediate database recalculation of room statistics (message counts, user counts, etc.).</value>
+  </data>
+  <data name="RegenerateUserDirectory" xml:space="preserve">
+    <value>Regenerate User Directory</value>
+  </data>
+  <data name="RegenerateUserDirectoryDescription" xml:space="preserve">
+    <value>Schedules an immediate rebuild of the user directory index if it has become stale or out of sync.</value>
+  </data>
+  <data name="TriggerJobConfirmation" xml:space="preserve">
+    <value>Trigger Job Confirmation</value>
+  </data>
+  <data name="TriggerJobMessage" xml:space="preserve">
+    <value>Are you sure you want to trigger the background job '{0}' immediately? This can consume database resources depending on your database size.</value>
+  </data>
+  <data name="Trigger" xml:space="preserve">
+    <value>Trigger</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="ErrorFetchingBackgroundUpdatesStatus" xml:space="preserve">
+    <value>Error fetching background updates status.</value>
+  </data>
+  <data name="ErrorTogglingBackgroundUpdates" xml:space="preserve">
+    <value>Error toggling background updates enabled state.</value>
+  </data>
+  <data name="ErrorStartingBackgroundUpdateJob" xml:space="preserve">
+    <value>Error starting background update job.</value>
+  </data>
+  <data name="BackgroundUpdateJobStarted" xml:space="preserve">
+    <value>Background update job started successfully.</value>
+  </data>
 </root>

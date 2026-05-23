@@ -312,4 +312,24 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
     {
         await _synapse.Admin.DeleteMediaById(serverName, mediaId);
     }
+
+    // --- Background Updates ---
+
+    public override async Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default)
+    {
+        return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminBackgroundUpdatesStatusResponse>("/_synapse/admin/v1/background_updates/status", cancellationToken: cancellationToken);
+    }
+
+    public override async Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default)
+    {
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/background_updates/enabled", new { enabled }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminBackgroundUpdatesEnabledResponse>(cancellationToken: cancellationToken);
+    }
+
+    public override async Task StartBackgroundUpdatesJobAsync(string jobName, CancellationToken cancellationToken = default)
+    {
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/background_updates/start_job", new { job_name = jobName }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
 }

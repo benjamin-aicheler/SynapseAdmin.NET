@@ -123,4 +123,9 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
         var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
         await DeleteMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
+
+    // --- Background Updates ---
+    public abstract Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default);
+    public abstract Task StartBackgroundUpdatesJobAsync(string jobName, CancellationToken cancellationToken = default);
 }

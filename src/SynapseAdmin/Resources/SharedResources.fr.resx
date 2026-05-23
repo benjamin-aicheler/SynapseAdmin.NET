@@ -832,4 +832,100 @@
   <data name="PasswordTooShort" xml:space="preserve">
     <value>Le mot de passe doit comporter au moins 8 caractères !</value>
   </data>
+  <data name="BackgroundUpdates" xml:space="preserve">
+    <value>Mises à jour en arrière-plan</value>
+  </data>
+  <data name="BackgroundUpdatesDescription" xml:space="preserve">
+    <value>Gérer et surveiller les mises à jour en arrière-plan de la base de données exécutées par Synapse.</value>
+  </data>
+  <data name="BackgroundUpdatesApiRequired" xml:space="preserve">
+    <value>L'API des mises à jour en arrière-plan nécessite l'accès à l'API d'administration de Synapse.</value>
+  </data>
+  <data name="BackgroundUpdatesStatus" xml:space="preserve">
+    <value>Statut des mises à jour en arrière-plan</value>
+  </data>
+  <data name="Paused" xml:space="preserve">
+    <value>Suspendu</value>
+  </data>
+  <data name="PauseBackgroundUpdates" xml:space="preserve">
+    <value>Mettre en pause</value>
+  </data>
+  <data name="ResumeBackgroundUpdates" xml:space="preserve">
+    <value>Reprendre les mises à jour</value>
+  </data>
+  <data name="PauseUpdatesConfirmation" xml:space="preserve">
+    <value>Confirmer la mise en pause</value>
+  </data>
+  <data name="PauseUpdatesWarning" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir suspendre les mises à jour en arrière-plan de la base de données ? Les suspendre trop longtemps peut dégrader les performances de Synapse.</value>
+  </data>
+  <data name="ResumeUpdatesConfirmation" xml:space="preserve">
+    <value>Confirmer la reprise</value>
+  </data>
+  <data name="ResumeUpdatesMessage" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir reprendre les mises à jour en arrière-plan de la base de données ?</value>
+  </data>
+  <data name="ActiveUpdates" xml:space="preserve">
+    <value>Mises à jour actives</value>
+  </data>
+  <data name="NoActiveUpdates" xml:space="preserve">
+    <value>Aucune mise à jour de base de données n'est en cours en ce moment.</value>
+  </data>
+  <data name="DatabaseName" xml:space="preserve">
+    <value>Base de données</value>
+  </data>
+  <data name="UpdateName" xml:space="preserve">
+    <value>Tâche de mise à jour</value>
+  </data>
+  <data name="ProcessedItems" xml:space="preserve">
+    <value>Éléments traités</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Durée</value>
+  </data>
+  <data name="AverageSpeed" xml:space="preserve">
+    <value>Vitesse moyenne</value>
+  </data>
+  <data name="ManualTriggerJobs" xml:space="preserve">
+    <value>Déclenchement manuel de tâches</value>
+  </data>
+  <data name="RecalculateRoomStats" xml:space="preserve">
+    <value>Recalculer les statistiques des salons</value>
+  </data>
+  <data name="RecalculateRoomStatsDescription" xml:space="preserve">
+    <value>Planifie un recalcul immédiat des statistiques (comme le nombre d'utilisateurs et de messages) de tous les salons dans la base de données.</value>
+  </data>
+  <data name="RegenerateUserDirectory" xml:space="preserve">
+    <value>Régénérer l'annuaire des utilisateurs</value>
+  </data>
+  <data name="RegenerateUserDirectoryDescription" xml:space="preserve">
+    <value>Planifie une reconstruction immédiate de l'index de l'annuaire des utilisateurs s'il est devenu obsolète ou désynchronisé.</value>
+  </data>
+  <data name="TriggerJobConfirmation" xml:space="preserve">
+    <value>Confirmer le déclenchement de la tâche</value>
+  </data>
+  <data name="TriggerJobMessage" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir déclencher immédiatement la tâche en arrière-plan '{0}' ? Cela peut consommer des ressources de la base de données en fonction de sa taille.</value>
+  </data>
+  <data name="Trigger" xml:space="preserve">
+    <value>Déclencher</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Oui</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>Non</value>
+  </data>
+  <data name="ErrorFetchingBackgroundUpdatesStatus" xml:space="preserve">
+    <value>Erreur lors de la récupération du statut des mises à jour en arrière-plan.</value>
+  </data>
+  <data name="ErrorTogglingBackgroundUpdates" xml:space="preserve">
+    <value>Erreur lors du basculement du statut d'activation des mises à jour.</value>
+  </data>
+  <data name="ErrorStartingBackgroundUpdateJob" xml:space="preserve">
+    <value>Erreur lors du démarrage de la tâche de mise à jour en arrière-plan.</value>
+  </data>
+  <data name="BackgroundUpdateJobStarted" xml:space="preserve">
+    <value>La tâche de mise à jour en arrière-plan a démarré avec succès.</value>
+  </data>
 </root>

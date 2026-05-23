@@ -1,0 +1,158 @@
+@page "/background-updates"
+
+@attribute [Authorize]
+
+<PageTitle>@L["BackgroundUpdates"] - SynapseAdmin.NET</PageTitle>
+
+<div class="d-flex align-center mb-6">
+    <MudIcon Icon="@Icons.Material.Filled.SettingsBackupRestore" Size="Size.Large" Class="mr-3" Color="Color.Primary" />
+    <div>
+        <MudText Typo="Typo.h3">@L["BackgroundUpdates"]</MudText>
+        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@L["BackgroundUpdatesDescription"]</MudText>
+    </div>
+    <MudSpacer />
+    <MudButton Variant="Variant.Outlined" 
+               StartIcon="@Icons.Material.Filled.Refresh" 
+               OnClick="LoadStatus" 
+               Disabled="@isLoading" 
+               Color="Color.Secondary">
+        @L["Refresh"]
+    </MudButton>
+</div>
+
+@if (MatrixSession.Gateway is not { SupportsAdminApi: true })
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        @L["BackgroundUpdatesApiRequired"]
+    </MudAlert>
+}
+else if (isLoading && statusResponse == null)
+{
+    <div class="d-flex align-center justify-center my-12">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else
+{
+    <MudGrid>
+        <!-- Status Card -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="3" Style="height: 100%;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@L["BackgroundUpdatesStatus"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between py-2">
+                        <div>
+                            <MudText Typo="Typo.body1" Inline="true" Class="mr-2">Status:</MudText>
+                            @if (statusResponse != null && statusResponse.Enabled)
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">@L["Active"]</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">@L["Paused"]</MudChip>
+                            }
+                        </div>
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="@(statusResponse != null && statusResponse.Enabled ? Color.Warning : Color.Success)" 
+                                   OnClick="ToggleEnabled" 
+                                   Disabled="@isToggling">
+                            @if (isToggling)
+                            {
+                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            }
+                            else
+                            {
+                                @(statusResponse != null && statusResponse.Enabled ? L["PauseBackgroundUpdates"] : L["ResumeBackgroundUpdates"])
+                              }
+                        </MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Active Updates Card -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="3" Style="height: 100%;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@L["ActiveUpdates"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (statusResponse?.CurrentUpdates == null || statusResponse.CurrentUpdates.Count == 0)
+                    {
+                        <div class="d-flex flex-column align-center justify-center py-4">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" Class="mb-2" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">@L["NoActiveUpdates"]</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudTable Items="@statusResponse.CurrentUpdates" Elevation="0" Dense="true" Hover="true">
+                            <HeaderContent>
+                                <MudTh>@L["DatabaseName"]</MudTh>
+                                <MudTh>@L["UpdateName"]</MudTh>
+                                <MudTh>@L["ProcessedItems"]</MudTh>
+                                <MudTh>@L["Duration"]</MudTh>
+                                <MudTh>@L["AverageSpeed"]</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="@L["DatabaseName"]">@context.Key</MudTd>
+                                <MudTd DataLabel="@L["UpdateName"]">@context.Value.Name</MudTd>
+                                <MudTd DataLabel="@L["ProcessedItems"]">@context.Value.TotalItemCount</MudTd>
+                                <MudTd DataLabel="@L["Duration"]">@((context.Value.TotalDurationMs / 1000.0).ToString("N1")) s</MudTd>
+                                <MudTd DataLabel="@L["AverageSpeed"]">@(context.Value.AverageItemsPerMs.ToString("N2")) / ms</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Manual Jobs Trigger Card -->
+        <MudItem xs="12">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@L["ManualTriggerJobs"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <!-- Job 1 -->
+                    <div class="d-flex align-center justify-space-between py-4 border-bottom">
+                        <div style="max-width: 80%;">
+                            <MudText Typo="Typo.subtitle1" Class="fw-bold">@L["RecalculateRoomStats"]</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["RecalculateRoomStatsDescription"]</MudText>
+                        </div>
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Primary" 
+                                   OnClick='() => TriggerJob("populate_stats_process_rooms", L["RecalculateRoomStats"])'
+                                   Disabled="@isTriggering">
+                            @L["Trigger"]
+                        </MudButton>
+                    </div>
+
+                    <MudDivider />
+
+                    <!-- Job 2 -->
+                    <div class="d-flex align-center justify-space-between py-4">
+                        <div style="max-width: 80%;">
+                            <MudText Typo="Typo.subtitle1" Class="fw-bold">@L["RegenerateUserDirectory"]</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["RegenerateUserDirectoryDescription"]</MudText>
+                        </div>
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Primary" 
+                                   OnClick='() => TriggerJob("regenerate_directory", L["RegenerateUserDirectory"])'
+                                   Disabled="@isTriggering">
+                            @L["Trigger"]
+                        </MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}
