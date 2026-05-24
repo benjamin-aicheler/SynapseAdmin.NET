@@ -9,6 +9,7 @@ using SynapseAdmin.Extensions.Mapping;
 using System.Text.Json;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Services;
 
@@ -321,6 +322,74 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         {
             logger.LogError(ex, "Error fetching room messages for {RoomId}", roomId.SanitizeForLogging());
             return OperationResult<RoomMessagesViewModel>.Failure(L["ErrorFetchingRoomMessages"]);
+        }
+    }
+
+    private readonly Dictionary<string, string> _activePurges = new();
+
+    public string? GetActivePurgeId(string roomId)
+    {
+        lock (_activePurges)
+        {
+            return _activePurges.TryGetValue(roomId, out var purgeId) ? purgeId : null;
+        }
+    }
+
+    public void SetActivePurgeId(string roomId, string purgeId)
+    {
+        lock (_activePurges)
+        {
+            _activePurges[roomId] = purgeId;
+        }
+    }
+
+    public void ClearActivePurgeId(string roomId)
+    {
+        lock (_activePurges)
+        {
+            _activePurges.Remove(roomId);
+        }
+    }
+
+    public async Task<OperationResult<SynapseAdminPurgeHistoryResponse>> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<SynapseAdminPurgeHistoryResponse>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var result = await Gateway.PurgeRoomHistoryAsync(roomId, request, token);
+            if (result == null) return OperationResult<SynapseAdminPurgeHistoryResponse>.Failure(L["ErrorPurgingHistory"]);
+            return OperationResult<SynapseAdminPurgeHistoryResponse>.Ok(result, L["PurgeStarted"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<SynapseAdminPurgeHistoryResponse>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error purging history for room {RoomId}", roomId.SanitizeForLogging());
+            return OperationResult<SynapseAdminPurgeHistoryResponse>.Failure(L["ErrorPurgingHistory"]);
+        }
+    }
+
+    public async Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var result = await Gateway.GetPurgeHistoryStatusAsync(purgeId, token);
+            if (result == null) return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["ErrorFetchingPurgeStatus"]);
+            return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Ok(result);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting purge status for purge {PurgeId}", purgeId.SanitizeForLogging());
+            return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["ErrorFetchingPurgeStatus"]);
         }
     }
 }
