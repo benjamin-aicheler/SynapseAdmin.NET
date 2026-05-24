@@ -1,0 +1,97 @@
+@page "/media-maintenance"
+
+@attribute [Authorize]
+
+<PageTitle>@L["MediaMaintenance"] - SynapseAdmin.NET</PageTitle>
+
+<div class="d-flex align-center mb-6">
+    <MudIcon Icon="@Icons.Material.Filled.PermMedia" Size="Size.Large" Class="mr-3" Color="Color.Primary" />
+    <div>
+        <MudText Typo="Typo.h3">@L["MediaMaintenance"]</MudText>
+        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@L["MediaMaintenanceDescription"]</MudText>
+    </div>
+</div>
+
+@if (MatrixSession.Gateway is not { SupportsAdminApi: true })
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        @L["BackgroundUpdatesApiRequired"]
+    </MudAlert>
+}
+else
+{
+    <MudGrid>
+        <!-- Purge Remote Media Cache Card -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="3" Style="height: 100%;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@L["PurgeRemoteCache"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Class="mb-4">
+                        @L["PurgeRemoteCacheDescription"]
+                    </MudText>
+                    
+                    <MudNumericField @bind-Value="purgeCacheDays" 
+                                     Label="@L["LastAccessedBeforeDays"]" 
+                                     Min="1" 
+                                     Variant="Variant.Outlined" 
+                                     Class="mb-4" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Warning" 
+                               OnClick="ConfirmPurgeRemoteCache" 
+                               Disabled="isWorking"
+                               StartIcon="@Icons.Material.Filled.DeleteSweep">
+                        @L["PurgeCache"]
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <!-- Delete Local Media Card -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="3" Style="height: 100%;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@L["DeleteLocalMedia"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Class="mb-4">
+                        @L["DeleteLocalMediaDescription"]
+                    </MudText>
+
+                    <MudNumericField @bind-Value="deleteLocalDays" 
+                                     Label="@L["UploadedBeforeDays"]" 
+                                     Min="0" 
+                                     Variant="Variant.Outlined" 
+                                     Class="mb-4" />
+
+                    <MudNumericField @bind-Value="deleteLocalSizeMb" 
+                                     Label="@L["SizeGreaterThanMb"]" 
+                                     Min="0" 
+                                     Variant="Variant.Outlined" 
+                                     Class="mb-4" />
+                                     
+                    <MudSwitch @bind-Value="keepProfiles" 
+                               Color="Color.Info"
+                               Label="@L["KeepProfiles"]" 
+                               Class="mb-4" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Error" 
+                               OnClick="ConfirmDeleteLocalMedia" 
+                               Disabled="isWorking"
+                               StartIcon="@Icons.Material.Filled.DeleteForever">
+                        @L["DeleteMedia"]
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}

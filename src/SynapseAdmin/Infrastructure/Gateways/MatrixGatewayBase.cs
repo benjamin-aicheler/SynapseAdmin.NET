@@ -126,6 +126,23 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
         await DeleteMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
+    public abstract Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    public virtual async Task ProtectMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
+    {
+        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        await ProtectMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
+    }
+
+    public abstract Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    public virtual async Task UnprotectMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
+    {
+        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        await UnprotectMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
+    }
+
+    public abstract Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default);
+
     // --- Background Updates ---
     public abstract Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default);

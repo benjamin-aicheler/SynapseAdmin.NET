@@ -146,6 +146,24 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private async Task ToggleMediaProtection(UserMediaItemViewModel media)
+        {
+            if (MatrixSession.Gateway == null) return;
+            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{media.MediaId}";
+
+            var result = media.SafeFromQuarantine
+                ? await MediaService.UnprotectMediaAsync(mxc, _cts.Token)
+                : await MediaService.ProtectMediaAsync(mxc, _cts.Token);
+
+            Snackbar.Add(result.Message, result.Severity);
+
+            if (result.Success)
+            {
+                media.SafeFromQuarantine = !media.SafeFromQuarantine;
+                await LoadUserDetails();
+            }
+        }
+
         private bool IsPreviewable(string? mimeType)
         {
             if (string.IsNullOrEmpty(mimeType)) return false;

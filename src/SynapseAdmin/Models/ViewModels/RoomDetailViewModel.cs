@@ -51,6 +51,7 @@ public class RoomMediaItemViewModel
     public long CreatedTimestamp { get; set; }
     public string? QuarantinedBy { get; set; }
     public bool IsQuarantined => !string.IsNullOrEmpty(QuarantinedBy);
+    public bool SafeFromQuarantine { get; set; }
 
     public string DownloadName
     {

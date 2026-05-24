@@ -997,4 +997,76 @@
   <data name="InvalidDateOrTime" xml:space="preserve">
     <value>Bitte wählen Sie ein gültiges Datum und eine gültige Uhrzeit aus.</value>
   </data>
+  <data name="MediaMaintenance" xml:space="preserve">
+    <value>Medienverwaltung</value>
+  </data>
+  <data name="PurgeRemoteCache" xml:space="preserve">
+    <value>Entfernten Cache leeren</value>
+  </data>
+  <data name="PurgeRemoteCacheDescription" xml:space="preserve">
+    <value>Löscht zwischengespeicherte Mediendateien von entfernten Homeservern, auf die seit einer bestimmten Anzahl von Tagen nicht mehr zugegriffen wurde.</value>
+  </data>
+  <data name="LastAccessedBeforeDays" xml:space="preserve">
+    <value>Letzter Zugriff vor (Tagen)</value>
+  </data>
+  <data name="PurgeCache" xml:space="preserve">
+    <value>Cache leeren</value>
+  </data>
+  <data name="PurgeCacheConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den entfernten Medien-Cache leeren möchten, auf den in den letzten {0} Tagen nicht zugegriffen wurde?</value>
+  </data>
+  <data name="PurgedCacheSuccess" xml:space="preserve">
+    <value>Entfernter Medien-Cache erfolgreich geleert ({0} Dateien gelöscht).</value>
+  </data>
+  <data name="DeleteLocalMedia" xml:space="preserve">
+    <value>Lokale Medien löschen</value>
+  </data>
+  <data name="DeleteLocalMediaDescription" xml:space="preserve">
+    <value>Massenhaftes Löschen lokaler Mediendateien, die vor einem bestimmten Datum hochgeladen wurden, eine bestimmte Größe überschreiten oder nicht geschützt sind. Diese Aktion kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="SizeGreaterThanMb" xml:space="preserve">
+    <value>Größe größer als (MB)</value>
+  </data>
+  <data name="KeepProfiles" xml:space="preserve">
+    <value>Profil-/Avatar-Medien behalten</value>
+  </data>
+  <data name="DeleteMedia" xml:space="preserve">
+    <value>Medien löschen</value>
+  </data>
+  <data name="DeleteLocalMediaConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie lokale Mediendateien löschen möchten, die vor mehr als {0} Tagen hochgeladen wurden und größer als {1} MB sind? Diese Aktion ist unumkehrbar!</value>
+  </data>
+  <data name="DeletedLocalMediaSuccess" xml:space="preserve">
+    <value>Erfolgreich {0} lokale Mediendateien gelöscht ({1} insgesamt gelöscht).</value>
+  </data>
+  <data name="Protect" xml:space="preserve">
+    <value>Schützen</value>
+  </data>
+  <data name="Unprotect" xml:space="preserve">
+    <value>Schutz aufheben</value>
+  </data>
+  <data name="Protected" xml:space="preserve">
+    <value>Geschützt</value>
+  </data>
+  <data name="MediaProtectedSuccessfully" xml:space="preserve">
+    <value>Medien erfolgreich als geschützt vor Quarantäne markiert.</value>
+  </data>
+  <data name="MediaUnprotectedSuccessfully" xml:space="preserve">
+    <value>Medien sind nicht mehr vor Quarantäne geschützt.</value>
+  </data>
+  <data name="ErrorProtectingMedia" xml:space="preserve">
+    <value>Fehler beim Schützen der Medien.</value>
+  </data>
+  <data name="ErrorUnprotectingMedia" xml:space="preserve">
+    <value>Fehler beim Aufheben des Medienschutzes.</value>
+  </data>
+  <data name="ErrorPurgingMediaCache" xml:space="preserve">
+    <value>Fehler beim Leeren des entfernten Medien-Caches.</value>
+  </data>
+  <data name="ErrorDeletingLocalMedia" xml:space="preserve">
+    <value>Fehler beim Löschen lokaler Medien.</value>
+  </data>
+  <data name="UploadedBeforeDays" xml:space="preserve">
+    <value>Hochgeladen vor (Tagen)</value>
+  </data>
 </root>
