@@ -46,7 +46,7 @@ else
                 <MudCardContent>
                     <div class="d-flex align-center justify-space-between py-2">
                         <div>
-                            <MudText Typo="Typo.body1" Inline="true" Class="mr-2">Status:</MudText>
+                            <MudText Typo="Typo.body1" Inline="true" Class="mr-2">@L["Status"]:</MudText>
                             @if (statusResponse != null && statusResponse.Enabled)
                             {
                                 <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">@L["Active"]</MudChip>

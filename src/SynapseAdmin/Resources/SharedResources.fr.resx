@@ -1069,4 +1069,7 @@
   <data name="UploadedBeforeDays" xml:space="preserve">
     <value>Mis en ligne il y a plus de (jours)</value>
   </data>
+  <data name="MustStartWithAt" xml:space="preserve">
+    <value>Doit commencer par @</value>
+  </data>
 </root>
