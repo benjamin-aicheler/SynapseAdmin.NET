@@ -34,6 +34,37 @@ else
         </MudAlert>
     }
 
+    @if (!string.IsNullOrEmpty(activePurgeId))
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="mb-4 d-flex align-center justify-space-between">
+            <div class="d-flex flex-column">
+                <MudText Typo="Typo.body1"><b>@L["PurgeInProgress"]:</b> @L["PurgeInProgressDescription"]</MudText>
+                @if (!string.IsNullOrEmpty(activePurgeStatus))
+                {
+                    <MudText Typo="Typo.body2">
+                        @L["PurgeStatus"]: 
+                        @if (activePurgeStatus == "active")
+                        {
+                            <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusActive"]</MudChip>
+                        }
+                        else if (activePurgeStatus == "complete")
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusComplete"]</MudChip>
+                        }
+                        else if (activePurgeStatus == "failed")
+                        {
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusFailed"]</MudChip>
+                        }
+                    </MudText>
+                }
+            </div>
+            @if (activePurgeStatus == "active")
+            {
+                <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Small" Class="ml-4" />
+            }
+        </MudAlert>
+    }
+
     <MudGrid>
         <MudItem xs="12" md="6">
             <MudCard Elevation="3">
@@ -92,7 +123,8 @@ else
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Class="mb-2 mr-2">@L["DeleteRoom"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Class="mb-2 mr-2">@L["DeleteAndBlockRoom"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Class="mb-2 mr-2">@L["BlockRoom"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Class="mb-2">@L["QuarantineMedia"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Class="mb-2 mr-2">@L["QuarantineMedia"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OpenPurgeHistoryDialog" Class="mb-2">@L["PurgeHistory"]</MudButton>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -124,6 +156,7 @@ else
                         <MudTh>@L["Time"]</MudTh>
                         <MudTh>@L["Sender"]</MudTh>
                         <MudTh>@L["Content"]</MudTh>
+                        <MudTh>@L["Actions"]</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="@L["Time"]">@context.OriginServerTs.ToString("g")</MudTd>
@@ -137,6 +170,13 @@ else
                             {
                                 <pre style="max-height: 100px; max-width: 600px; overflow: auto; font-size: 0.8em; white-space: pre-wrap; font-family: monospace; color: gray;">@context.Content</pre>
                             }
+                        </MudTd>
+                        <MudTd DataLabel="@L["Actions"]">
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" 
+                                           Color="Color.Warning" 
+                                           OnClick="@(() => OpenPurgeHistoryDialogForMessage(context.EventId))"
+                                           title="@L["PurgeHistoryUpToMessage"]" 
+                                           Size="Size.Small" />
                         </MudTd>
                     </RowTemplate>
                     <PagerContent>

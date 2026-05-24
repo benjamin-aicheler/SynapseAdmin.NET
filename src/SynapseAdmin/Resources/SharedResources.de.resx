@@ -928,4 +928,73 @@
   <data name="BackgroundUpdateJobStarted" xml:space="preserve">
     <value>Hintergrundaktualisierungs-Job erfolgreich gestartet.</value>
   </data>
+  <data name="PurgeHistory" xml:space="preserve">
+    <value>Verlauf bereinigen</value>
+  </data>
+  <data name="PurgeHistoryWarning" xml:space="preserve">
+    <value>Warnung: Das Bereinigen des Raumverlaufs ist eine destruktive Operation, die historische Ereignisse dauerhaft aus der Datenbank löscht. Das Freigeben von Festplattenspeicher kann einige Minuten dauern. Während dieser Zeit können Benutzer nicht weiter zurückblättern als bis zum Bereinigungspunkt. Synapse erfordert, dass mindestens eine Nachricht im Raum verbleibt.</value>
+  </data>
+  <data name="DeleteLocalEvents" xml:space="preserve">
+    <value>Lokale Ereignisse löschen</value>
+  </data>
+  <data name="DeleteLocalEventsHelp" xml:space="preserve">
+    <value>Standardmäßig bleiben von lokalen Benutzern gesendete Ereignisse erhalten. Aktivieren Sie diese Option, um auch von lokalen Benutzern gesendete Nachrichten zu löschen.</value>
+  </data>
+  <data name="PurgeUpToDate" xml:space="preserve">
+    <value>Bis zu einem bestimmten Datum/Uhrzeit bereinigen</value>
+  </data>
+  <data name="PurgeUpToEvent" xml:space="preserve">
+    <value>Bis zu einer bestimmten Ereignis-ID (Event-ID) bereinigen</value>
+  </data>
+  <data name="SelectPurgeTarget" xml:space="preserve">
+    <value>Bereinigungspunkt auswählen</value>
+  </data>
+  <data name="SelectDate" xml:space="preserve">
+    <value>Datum auswählen</value>
+  </data>
+  <data name="SelectTime" xml:space="preserve">
+    <value>Uhrzeit auswählen</value>
+  </data>
+  <data name="PurgeHistoryUpToMessage" xml:space="preserve">
+    <value>Verlauf bis zu dieser Nachricht bereinigen</value>
+  </data>
+  <data name="PurgeInProgress" xml:space="preserve">
+    <value>Bereinigung läuft</value>
+  </data>
+  <data name="PurgeInProgressDescription" xml:space="preserve">
+    <value>Für diesen Raum ist derzeit eine Bereinigung des Verlaufs active. Alte Verlaufsereignisse werden aus der Datenbank gelöscht.</value>
+  </data>
+  <data name="PurgeStarted" xml:space="preserve">
+    <value>Bereinigung des Verlaufs erfolgreich gestartet.</value>
+  </data>
+  <data name="PurgeCompleted" xml:space="preserve">
+    <value>Bereinigung des Verlaufs erfolgreich abgeschlossen.</value>
+  </data>
+  <data name="PurgeFailed" xml:space="preserve">
+    <value>Bereinigung des Verlaufs fehlgeschlagen: {0}</value>
+  </data>
+  <data name="ErrorPurgingHistory" xml:space="preserve">
+    <value>Fehler beim Starten der Bereinigung des Raumverlaufs.</value>
+  </data>
+  <data name="ErrorFetchingPurgeStatus" xml:space="preserve">
+    <value>Fehler beim Überprüfen des Bereinigungsstatus.</value>
+  </data>
+  <data name="PurgeStatusActive" xml:space="preserve">
+    <value>Aktiv</value>
+  </data>
+  <data name="PurgeStatusComplete" xml:space="preserve">
+    <value>Abgeschlossen</value>
+  </data>
+  <data name="PurgeStatusFailed" xml:space="preserve">
+    <value>Fehlgeschlagen</value>
+  </data>
+  <data name="PurgeStatus" xml:space="preserve">
+    <value>Bereinigungsstatus</value>
+  </data>
+  <data name="PurgeUpToRequired" xml:space="preserve">
+    <value>Bereinigungspunkt ist erforderlich.</value>
+  </data>
+  <data name="InvalidDateOrTime" xml:space="preserve">
+    <value>Bitte wählen Sie ein gültiges Datum und eine gültige Uhrzeit aus.</value>
+  </data>
 </root>

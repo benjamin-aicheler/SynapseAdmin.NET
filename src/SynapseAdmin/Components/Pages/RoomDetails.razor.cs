@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -30,10 +32,23 @@ namespace SynapseAdmin.Components.Pages
         private MudTable<RoomMediaItemViewModel>? remoteMediaTable;
         private readonly CancellationTokenSource _cts = new();
 
+        private string? activePurgeId;
+        private string? activePurgeStatus;
+        private CancellationTokenSource? _pollingCts;
+
         protected override async Task OnParametersSetAsync()
         {
+            StopPolling();
+            activePurgeId = RoomService.GetActivePurgeId(RoomId);
+            activePurgeStatus = null;
+
             await LoadRoomDetails();
             await LoadMessages();
+
+            if (!string.IsNullOrEmpty(activePurgeId))
+            {
+                StartPolling();
+            }
         }
 
         private async Task LoadRoomDetails()
@@ -244,8 +259,105 @@ namespace SynapseAdmin.Components.Pages
             await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
         }
 
+        private void StopPolling()
+        {
+            _pollingCts?.Cancel();
+            _pollingCts?.Dispose();
+            _pollingCts = null;
+        }
+
+        private void StartPolling()
+        {
+            if (string.IsNullOrEmpty(activePurgeId)) return;
+            
+            _pollingCts = new CancellationTokenSource();
+            var token = _pollingCts.Token;
+
+            // Start polling as a background task
+            Task.Run(async () =>
+            {
+                try
+                {
+                    while (!token.IsCancellationRequested)
+                    {
+                        var result = await RoomService.GetPurgeHistoryStatusAsync(activePurgeId, token);
+                        if (result.Success && result.Data != null)
+                        {
+                            activePurgeStatus = result.Data.Status;
+                            await InvokeAsync(StateHasChanged);
+
+                            if (activePurgeStatus == "complete")
+                            {
+                                RoomService.ClearActivePurgeId(RoomId);
+                                activePurgeId = null;
+                                activePurgeStatus = null;
+                                Snackbar.Add(L["PurgeCompleted"], Severity.Success);
+                                await InvokeAsync(StateHasChanged);
+                                break;
+                            }
+                            else if (activePurgeStatus == "failed")
+                            {
+                                RoomService.ClearActivePurgeId(RoomId);
+                                activePurgeId = null;
+                                activePurgeStatus = null;
+                                var errMsg = !string.IsNullOrEmpty(result.Data.Error) 
+                                    ? string.Format(L["PurgeFailed"], result.Data.Error)
+                                    : string.Format(L["PurgeFailed"], L["UnknownError"]);
+                                Snackbar.Add(errMsg, Severity.Error);
+                                await InvokeAsync(StateHasChanged);
+                                break;
+                            }
+                        }
+                        
+                        await Task.Delay(5000, token);
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    // Ignore cancellation
+                }
+                catch (Exception)
+                {
+                    // Ignore to prevent circuit crash
+                }
+            }, token);
+        }
+
+        private async Task OpenPurgeHistoryDialog()
+        {
+            await OpenPurgeHistoryDialogInternal(null, null);
+        }
+
+        private async Task OpenPurgeHistoryDialogForMessage(string eventId)
+        {
+            await OpenPurgeHistoryDialogInternal(eventId, null);
+        }
+
+        private async Task OpenPurgeHistoryDialogInternal(string? preselectedEventId, DateTimeOffset? preselectedTimestamp)
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var parameters = new DialogParameters
+            {
+                { "RoomId", RoomId },
+                { "PreselectedEventId", preselectedEventId },
+                { "PreselectedTimestamp", preselectedTimestamp }
+            };
+
+            var dialog = await DialogService.ShowAsync<PurgeHistoryDialog>(L["PurgeHistory"], parameters, options);
+            var result = await dialog.Result;
+
+            if (result != null && !result.Canceled && result.Data is string newPurgeId)
+            {
+                activePurgeId = newPurgeId;
+                activePurgeStatus = "active";
+                StartPolling();
+                StateHasChanged();
+            }
+        }
+
         public void Dispose()
         {
+            StopPolling();
             _cts.Cancel();
             _cts.Dispose();
         }

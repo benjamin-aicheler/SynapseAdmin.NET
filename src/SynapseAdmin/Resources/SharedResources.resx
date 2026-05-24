@@ -944,4 +944,73 @@
   <data name="BackgroundUpdateJobStarted" xml:space="preserve">
     <value>Background update job started successfully.</value>
   </data>
+  <data name="PurgeHistory" xml:space="preserve">
+    <value>Purge History</value>
+  </data>
+  <data name="PurgeHistoryWarning" xml:space="preserve">
+    <value>Warning: Purging room history is a destructive operation that permanently deletes historic events from the database. Reclaiming disk space may take several minutes. During this period, users cannot paginate further back than the purge point. Synapse requires retaining at least one message in the room.</value>
+  </data>
+  <data name="DeleteLocalEvents" xml:space="preserve">
+    <value>Delete Local Events</value>
+  </data>
+  <data name="DeleteLocalEventsHelp" xml:space="preserve">
+    <value>By default, events sent by local users are preserved. Toggle this option to delete messages sent by local users as well.</value>
+  </data>
+  <data name="PurgeUpToDate" xml:space="preserve">
+    <value>Purge up to specific Date and Time</value>
+  </data>
+  <data name="PurgeUpToEvent" xml:space="preserve">
+    <value>Purge up to specific Event ID</value>
+  </data>
+  <data name="SelectPurgeTarget" xml:space="preserve">
+    <value>Select Purge Target Point</value>
+  </data>
+  <data name="SelectDate" xml:space="preserve">
+    <value>Select Date</value>
+  </data>
+  <data name="SelectTime" xml:space="preserve">
+    <value>Select Time</value>
+  </data>
+  <data name="PurgeHistoryUpToMessage" xml:space="preserve">
+    <value>Purge history up to this message</value>
+  </data>
+  <data name="PurgeInProgress" xml:space="preserve">
+    <value>Purge In Progress</value>
+  </data>
+  <data name="PurgeInProgressDescription" xml:space="preserve">
+    <value>A history purge is currently active for this room. Old history events are being cleaned up from the database.</value>
+  </data>
+  <data name="PurgeStarted" xml:space="preserve">
+    <value>History purge started successfully.</value>
+  </data>
+  <data name="PurgeCompleted" xml:space="preserve">
+    <value>History purge completed successfully.</value>
+  </data>
+  <data name="PurgeFailed" xml:space="preserve">
+    <value>History purge failed: {0}</value>
+  </data>
+  <data name="ErrorPurgingHistory" xml:space="preserve">
+    <value>Error starting room history purge.</value>
+  </data>
+  <data name="ErrorFetchingPurgeStatus" xml:space="preserve">
+    <value>Error checking purge history status.</value>
+  </data>
+  <data name="PurgeStatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="PurgeStatusComplete" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="PurgeStatusFailed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="PurgeStatus" xml:space="preserve">
+    <value>Purge Status</value>
+  </data>
+  <data name="PurgeUpToRequired" xml:space="preserve">
+    <value>Purge target point is required.</value>
+  </data>
+  <data name="InvalidDateOrTime" xml:space="preserve">
+    <value>Please select a valid date and time.</value>
+  </data>
 </root>

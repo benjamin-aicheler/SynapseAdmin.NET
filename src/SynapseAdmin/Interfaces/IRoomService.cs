@@ -1,6 +1,8 @@
 using MudBlazor;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Interfaces;
 
@@ -14,4 +16,9 @@ public interface IRoomService
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);
     Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default);
     Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default);
+    Task<OperationResult<SynapseAdminPurgeHistoryResponse>> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken token = default);
+    Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken token = default);
+    string? GetActivePurgeId(string roomId);
+    void SetActivePurgeId(string roomId, string purgeId);
+    void ClearActivePurgeId(string roomId);
 }

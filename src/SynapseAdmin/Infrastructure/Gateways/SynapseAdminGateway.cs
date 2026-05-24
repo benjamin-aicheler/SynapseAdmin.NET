@@ -203,6 +203,20 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
         return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomMessagesResponse>(url, cancellationToken: cancellationToken);
     }
 
+    public override async Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/purge_history/{roomId.UrlEncode()}";
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminPurgeHistoryResponse>(cancellationToken: cancellationToken);
+    }
+
+    public override async Task<SynapseAdminPurgeHistoryStatusResponse?> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/purge_history_status/{purgeId.UrlEncode()}";
+        return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminPurgeHistoryStatusResponse>(url, cancellationToken: cancellationToken);
+    }
+
     // --- Federation ---
 
     public override async Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default)

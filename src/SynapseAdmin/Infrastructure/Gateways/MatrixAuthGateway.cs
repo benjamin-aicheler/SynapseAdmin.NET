@@ -70,6 +70,8 @@ internal class GenericMatrixGateway(AuthenticatedHomeserverGeneric homeserver) :
     public override Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public override Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public override Task<SynapseAdminPurgeHistoryStatusResponse?> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default) => throw new NotSupportedException();
