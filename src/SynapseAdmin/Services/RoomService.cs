@@ -124,6 +124,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         vm.MediaLength = meta.MediaLength;
                         vm.CreatedTimestamp = meta.CreatedTimestamp;
                         vm.QuarantinedBy = meta.QuarantinedBy;
+                        vm.SafeFromQuarantine = meta.SafeFromQuarantine ?? false;
                     }
                 }
                 catch (OperationCanceledException)

@@ -327,6 +327,36 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
         await _synapse.Admin.DeleteMediaById(serverName, mediaId);
     }
 
+    public override async Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/media/protect/{mediaId.UrlEncode()}";
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public override async Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/media/unprotect/{mediaId.UrlEncode()}";
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public override async Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/purge_media_cache?before_ts={beforeTs}";
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminPurgeMediaCacheResponse>(cancellationToken: cancellationToken);
+    }
+
+    public override async Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/media/delete?before_ts={beforeTs}&size_gt={sizeGt}&keep_profiles={keepProfiles.ToString().ToLower()}";
+        var resp = await _synapse.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminDeleteMediaResponse>(cancellationToken: cancellationToken);
+    }
+
     // --- Background Updates ---
 
     public override async Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default)

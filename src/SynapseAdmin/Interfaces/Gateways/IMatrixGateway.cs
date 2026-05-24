@@ -72,6 +72,12 @@ public interface IMatrixGateway
     Task UnquarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default);
     Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     Task DeleteMediaAsync(string mxcUri, CancellationToken cancellationToken = default);
+    Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    Task ProtectMediaAsync(string mxcUri, CancellationToken cancellationToken = default);
+    Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
+    Task UnprotectMediaAsync(string mxcUri, CancellationToken cancellationToken = default);
+    Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default);
+    Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default);
 
     // --- Background Updates ---
     Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default);

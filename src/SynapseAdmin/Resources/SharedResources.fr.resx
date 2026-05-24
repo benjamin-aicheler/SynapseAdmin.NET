@@ -997,4 +997,76 @@
   <data name="InvalidDateOrTime" xml:space="preserve">
     <value>Veuillez sélectionner une date et une heure valides.</value>
   </data>
+  <data name="MediaMaintenance" xml:space="preserve">
+    <value>Maintenance des médias</value>
+  </data>
+  <data name="PurgeRemoteCache" xml:space="preserve">
+    <value>Purger le cache distant</value>
+  </data>
+  <data name="PurgeRemoteCacheDescription" xml:space="preserve">
+    <value>Purger les fichiers médias mis en cache à partir de serveurs distants qui n'ont pas été consultés depuis un certain nombre de jours.</value>
+  </data>
+  <data name="LastAccessedBeforeDays" xml:space="preserve">
+    <value>Dernier accès il y a plus de (jours)</value>
+  </data>
+  <data name="PurgeCache" xml:space="preserve">
+    <value>Purger le cache</value>
+  </data>
+  <data name="PurgeCacheConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir purger les médias distants en cache non consultés au cours des {0} derniers jours ?</value>
+  </data>
+  <data name="PurgedCacheSuccess" xml:space="preserve">
+    <value>Cache des médias distants purgé avec succès ({0} fichiers supprimés).</value>
+  </data>
+  <data name="DeleteLocalMedia" xml:space="preserve">
+    <value>Supprimer les médias locaux</value>
+  </data>
+  <data name="DeleteLocalMediaDescription" xml:space="preserve">
+    <value>Suppression en masse des fichiers médias locaux téléchargés avant une date spécifique, dépassant une certaine taille ou non protégés. Cette action ne peut pas être annulée.</value>
+  </data>
+  <data name="SizeGreaterThanMb" xml:space="preserve">
+    <value>Taille supérieure à (Mo)</value>
+  </data>
+  <data name="KeepProfiles" xml:space="preserve">
+    <value>Conserver les médias de profil / avatars</value>
+  </data>
+  <data name="DeleteMedia" xml:space="preserve">
+    <value>Supprimer les médias</value>
+  </data>
+  <data name="DeleteLocalMediaConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer les fichiers médias locaux mis en ligne il y a plus de {0} jours et d'une taille supérieure à {1} Mo ? Cette action est irréversible !</value>
+  </data>
+  <data name="DeletedLocalMediaSuccess" xml:space="preserve">
+    <value>{0} fichiers médias locaux supprimés avec succès ({1} au total).</value>
+  </data>
+  <data name="Protect" xml:space="preserve">
+    <value>Protéger</value>
+  </data>
+  <data name="Unprotect" xml:space="preserve">
+    <value>Déprotéger</value>
+  </data>
+  <data name="Protected" xml:space="preserve">
+    <value>Protégé</value>
+  </data>
+  <data name="MediaProtectedSuccessfully" xml:space="preserve">
+    <value>Médias marqués comme protégés contre la quarantaine avec succès.</value>
+  </data>
+  <data name="MediaUnprotectedSuccessfully" xml:space="preserve">
+    <value>Les médias ne sont plus protégés contre la quarantaine.</value>
+  </data>
+  <data name="ErrorProtectingMedia" xml:space="preserve">
+    <value>Erreur lors de la protection des médias.</value>
+  </data>
+  <data name="ErrorUnprotectingMedia" xml:space="preserve">
+    <value>Erreur lors de la déprotection des médias.</value>
+  </data>
+  <data name="ErrorPurgingMediaCache" xml:space="preserve">
+    <value>Erreur lors de la purge du cache des médias distants.</value>
+  </data>
+  <data name="ErrorDeletingLocalMedia" xml:space="preserve">
+    <value>Erreur lors de la suppression des médias locaux.</value>
+  </data>
+  <data name="UploadedBeforeDays" xml:space="preserve">
+    <value>Mis en ligne il y a plus de (jours)</value>
+  </data>
 </root>

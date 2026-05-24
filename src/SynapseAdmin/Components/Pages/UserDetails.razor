@@ -155,6 +155,10 @@ else
                             <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Quarantined"]</MudChip>
                         </MudTooltip>
                     }
+                    @if (context.SafeFromQuarantine)
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Protected"]</MudChip>
+                    }
                     </div>
                     </MudTd>
                     <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
@@ -191,6 +195,11 @@ else
                                        OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
                                        title="@L["Unquarantine"]" />
                     }
+                    
+                    <MudIconButton Icon="@(context.SafeFromQuarantine ? Icons.Material.Filled.Shield : Icons.Material.Outlined.Shield)" 
+                                   Color="@(context.SafeFromQuarantine ? Color.Success : Color.Default)" 
+                                   OnClick="@(() => ToggleMediaProtection(context))"
+                                   title="@(context.SafeFromQuarantine ? L["Unprotect"] : L["Protect"])" />
 
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                    Color="Color.Error" 

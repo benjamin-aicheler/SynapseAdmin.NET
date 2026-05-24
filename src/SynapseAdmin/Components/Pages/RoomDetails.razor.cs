@@ -231,6 +231,21 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private async Task ToggleMediaProtection(RoomMediaItemViewModel media)
+        {
+            var result = media.SafeFromQuarantine
+                ? await MediaService.UnprotectMediaAsync(media.MediaId, _cts.Token)
+                : await MediaService.ProtectMediaAsync(media.MediaId, _cts.Token);
+
+            Snackbar.Add(result.Message, result.Severity);
+
+            if (result.Success)
+            {
+                media.SafeFromQuarantine = !media.SafeFromQuarantine;
+                await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+            }
+        }
+
         private bool IsPreviewable(string? mimeType)
         {
             if (string.IsNullOrEmpty(mimeType))

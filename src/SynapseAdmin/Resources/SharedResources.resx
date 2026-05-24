@@ -1013,4 +1013,76 @@
   <data name="InvalidDateOrTime" xml:space="preserve">
     <value>Please select a valid date and time.</value>
   </data>
+  <data name="MediaMaintenance" xml:space="preserve">
+    <value>Media Maintenance</value>
+  </data>
+  <data name="PurgeRemoteCache" xml:space="preserve">
+    <value>Purge Remote Cache</value>
+  </data>
+  <data name="PurgeRemoteCacheDescription" xml:space="preserve">
+    <value>Purge cached media files from remote homeservers that have not been accessed for a number of days.</value>
+  </data>
+  <data name="LastAccessedBeforeDays" xml:space="preserve">
+    <value>Last accessed before (days)</value>
+  </data>
+  <data name="PurgeCache" xml:space="preserve">
+    <value>Purge Cache</value>
+  </data>
+  <data name="PurgeCacheConfirmation" xml:space="preserve">
+    <value>Are you sure you want to purge remote cached media not accessed in the last {0} days?</value>
+  </data>
+  <data name="PurgedCacheSuccess" xml:space="preserve">
+    <value>Successfully purged remote media cache ({0} files deleted).</value>
+  </data>
+  <data name="DeleteLocalMedia" xml:space="preserve">
+    <value>Delete Local Media</value>
+  </data>
+  <data name="DeleteLocalMediaDescription" xml:space="preserve">
+    <value>Bulk delete local media files uploaded before a specific date, larger than a certain size, or not protected. This action cannot be undone.</value>
+  </data>
+  <data name="SizeGreaterThanMb" xml:space="preserve">
+    <value>Size greater than (MB)</value>
+  </data>
+  <data name="KeepProfiles" xml:space="preserve">
+    <value>Keep profiles / avatar media</value>
+  </data>
+  <data name="DeleteMedia" xml:space="preserve">
+    <value>Delete Media</value>
+  </data>
+  <data name="DeleteLocalMediaConfirmation" xml:space="preserve">
+    <value>Are you sure you want to delete local media files uploaded more than {0} days ago and larger than {1} MB? This action is irreversible!</value>
+  </data>
+  <data name="DeletedLocalMediaSuccess" xml:space="preserve">
+    <value>Successfully deleted {0} local media files ({1} total deleted).</value>
+  </data>
+  <data name="Protect" xml:space="preserve">
+    <value>Protect</value>
+  </data>
+  <data name="Unprotect" xml:space="preserve">
+    <value>Unprotect</value>
+  </data>
+  <data name="Protected" xml:space="preserve">
+    <value>Protected</value>
+  </data>
+  <data name="MediaProtectedSuccessfully" xml:space="preserve">
+    <value>Media marked as safe from quarantine successfully.</value>
+  </data>
+  <data name="MediaUnprotectedSuccessfully" xml:space="preserve">
+    <value>Media is no longer protected from quarantine.</value>
+  </data>
+  <data name="ErrorProtectingMedia" xml:space="preserve">
+    <value>Error protecting media.</value>
+  </data>
+  <data name="ErrorUnprotectingMedia" xml:space="preserve">
+    <value>Error unprotecting media.</value>
+  </data>
+  <data name="ErrorPurgingMediaCache" xml:space="preserve">
+    <value>Error purging remote media cache.</value>
+  </data>
+  <data name="ErrorDeletingLocalMedia" xml:space="preserve">
+    <value>Error deleting local media.</value>
+  </data>
+  <data name="UploadedBeforeDays" xml:space="preserve">
+    <value>Uploaded before (days)</value>
+  </data>
 </root>

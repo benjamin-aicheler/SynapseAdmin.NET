@@ -117,4 +117,86 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
             return OperationResult.Failure(L["ErrorDeletingMedia"]);
         }
     }
+
+    public async Task<OperationResult> ProtectMediaAsync(string mxc, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (string.IsNullOrWhiteSpace(mxc)) return OperationResult.Failure(L["ErrorProtectingMedia"]);
+        try
+        {
+            await Gateway.ProtectMediaAsync(mxc, token);
+            logger.LogInformation("Successfully protected media {Mxc}", mxc.SanitizeForLogging());
+            return OperationResult.Ok(L["MediaProtectedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error protecting media {Mxc}", mxc.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorProtectingMedia"]);
+        }
+    }
+
+    public async Task<OperationResult> UnprotectMediaAsync(string mxc, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
+        if (string.IsNullOrWhiteSpace(mxc)) return OperationResult.Failure(L["ErrorUnprotectingMedia"]);
+        try
+        {
+            await Gateway.UnprotectMediaAsync(mxc, token);
+            logger.LogInformation("Successfully unprotected media {Mxc}", mxc.SanitizeForLogging());
+            return OperationResult.Ok(L["MediaUnprotectedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error unprotecting media {Mxc}", mxc.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorUnprotectingMedia"]);
+        }
+    }
+
+    public async Task<OperationResult<SynapseAdminPurgeMediaCacheResponse>> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Failure(L["NotAuthenticated"]);
+        try
+        {
+            var result = await Gateway.PurgeRemoteMediaCacheAsync(beforeTs, token);
+            if (result == null) return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Failure(L["ErrorPurgingMediaCache"]);
+            return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Ok(result, L["PurgedCacheSuccess"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error purging remote media cache (beforeTs: {BeforeTs})", beforeTs);
+            return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Failure(L["ErrorPurgingMediaCache"]);
+        }
+    }
+
+    public async Task<OperationResult<SynapseAdminDeleteMediaResponse>> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<SynapseAdminDeleteMediaResponse>.Failure(L["NotAuthenticated"]);
+        try
+        {
+            var result = await Gateway.DeleteLocalMediaAsync(beforeTs, sizeGt, keepProfiles, token);
+            if (result == null) return OperationResult<SynapseAdminDeleteMediaResponse>.Failure(L["ErrorDeletingLocalMedia"]);
+            return OperationResult<SynapseAdminDeleteMediaResponse>.Ok(result, L["DeletedLocalMediaSuccess"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<SynapseAdminDeleteMediaResponse>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting local media (beforeTs: {BeforeTs}, sizeGt: {SizeGt}, keepProfiles: {KeepProfiles})", beforeTs, sizeGt, keepProfiles);
+            return OperationResult<SynapseAdminDeleteMediaResponse>.Failure(L["ErrorDeletingLocalMedia"]);
+        }
+    }
 }

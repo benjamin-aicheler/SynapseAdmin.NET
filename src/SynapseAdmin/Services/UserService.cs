@@ -70,7 +70,8 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                     MediaType = m.MediaType,
                     MediaLength = m.MediaLength,
                     CreatedTimestamp = m.CreatedTimestamp,
-                    QuarantinedBy = m.QuarantinedBy
+                    QuarantinedBy = m.QuarantinedBy,
+                    SafeFromQuarantine = m.SafeFromQuarantine
                 }).ToList()
             };
             vm.Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : [];

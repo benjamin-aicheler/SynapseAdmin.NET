@@ -86,6 +86,10 @@ internal class GenericMatrixGateway(AuthenticatedHomeserverGeneric homeserver) :
     public override Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public override Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public override Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public override Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public override Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException("Background updates are only supported for Synapse.");
     public override Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task StartBackgroundUpdatesJobAsync(string jobName, CancellationToken cancellationToken = default) => throw new NotSupportedException();
