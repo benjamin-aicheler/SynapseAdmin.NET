@@ -25,6 +25,7 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 - **Registration Tokens:** Generate and manage tokens to restrict server registration.
 - **Federation Destinations:** Check federation status and manage destination queues.
 - **Server Notices:** Broadcast important notices directly to users from the server.
+- **Background Updates:** Monitor and manage database background updates. Pause, resume, or manually trigger maintenance jobs (e.g., room statistics recalculation or user directory regeneration).
 - **Multi-Language Support:** Fully localized interface with support for English, German, and French (see [Localization Guide](./LOCALIZATION.md)).
 - **Multiple Themes:** Support for various themes (Matrix, Nord, Cyberpunk, etc.) with persistent user preferences (see [Theme Guide](./THEMING.md)).
 
