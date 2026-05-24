@@ -1085,4 +1085,7 @@
   <data name="UploadedBeforeDays" xml:space="preserve">
     <value>Uploaded before (days)</value>
   </data>
+  <data name="MustStartWithAt" xml:space="preserve">
+    <value>Must start with @</value>
+  </data>
 </root>

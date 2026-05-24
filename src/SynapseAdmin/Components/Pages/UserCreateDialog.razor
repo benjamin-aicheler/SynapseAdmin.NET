@@ -9,7 +9,7 @@
         <MudForm @ref="form" @bind-IsValid="@success">
             <MudTextField T="string" Label="@L["UserId"]" @bind-Value="model.UserId" Required="true" 
                           RequiredError="@L["UserIdRequired"]" HelperText="@L["UserIdFormatHelper"]" 
-                          Validation="@(new Func<string, string?>(v => !string.IsNullOrEmpty(v) && !v.StartsWith("@") ? "Must start with @" : null))" />
+                          Validation="@(new Func<string, string?>(v => !string.IsNullOrEmpty(v) && !v.StartsWith("@") ? L["MustStartWithAt"].Value : null))" />
             
             <MudTextField T="string" Label="@L["Password"]" @bind-Value="model.Password" Required="true" 
                           InputType="InputType.Password" RequiredError="@L["PasswordRequired"]" />

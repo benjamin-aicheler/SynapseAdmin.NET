@@ -5,7 +5,7 @@ using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class Rooms : IDisposable
+    public partial class Rooms
     {
         [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
@@ -18,7 +18,6 @@ namespace SynapseAdmin.Components.Pages
 
         private MudTable<RoomListViewModel>? table;
         private int? totalRooms;
-        private readonly CancellationTokenSource _cts = new();
 
         private async Task ReloadTable()
         {
@@ -50,10 +49,5 @@ namespace SynapseAdmin.Components.Pages
             return new TableData<RoomListViewModel>() { TotalItems = 0, Items = new List<RoomListViewModel>() };
         }
 
-        public void Dispose()
-        {
-            _cts.Cancel();
-            _cts.Dispose();
-        }
     }
 }
