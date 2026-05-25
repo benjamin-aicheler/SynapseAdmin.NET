@@ -58,9 +58,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Language" xml:space="preserve">
-    <value>Langue</value>
-  </data>
   <data name="Navigation" xml:space="preserve">
     <value>Navigation</value>
   </data>
@@ -283,12 +280,6 @@
   <data name="Homeserver" xml:space="preserve">
     <value>Serveur domestique</value>
   </data>
-  <data name="SynapseAdminInfo" xml:space="preserve">
-    <value>Infos administration Synapse</value>
-  </data>
-  <data name="ConnectedToSynapseWithAdmin" xml:space="preserve">
-    <value>Vous êtes connecté à un serveur Synapse avec des privilèges d'administrateur.</value>
-  </data>
   <data name="CreateToken" xml:space="preserve">
     <value>Créer un jeton</value>
   </data>
@@ -462,9 +453,6 @@
   </data>
   <data name="GoToReplacementRoom" xml:space="preserve">
     <value>Aller au salon de remplacement</value>
-  </data>
-  <data name="Tombstone" xml:space="preserve">
-    <value>Tombe</value>
   </data>
   <data name="EditRegistrationToken" xml:space="preserve">
     <value>Modifier le jeton d'enregistrement</value>
@@ -718,14 +706,8 @@
   <data name="CreateUser" xml:space="preserve">
     <value>Créer un utilisateur</value>
   </data>
-  <data name="RegisterUser" xml:space="preserve">
-    <value>Enregistrer l'utilisateur</value>
-  </data>
   <data name="ErrorFetchingRoomMessages" xml:space="preserve">
     <value>Erreur lors de la récupération des messages de la salle.</value>
-  </data>
-  <data name="RoomMessages" xml:space="preserve">
-    <value>Messages de la salle</value>
   </data>
   <data name="EventId" xml:space="preserve">
     <value>ID de l'événement</value>
@@ -910,12 +892,6 @@
   <data name="Trigger" xml:space="preserve">
     <value>Déclencher</value>
   </data>
-  <data name="Yes" xml:space="preserve">
-    <value>Oui</value>
-  </data>
-  <data name="No" xml:space="preserve">
-    <value>Non</value>
-  </data>
   <data name="ErrorFetchingBackgroundUpdatesStatus" xml:space="preserve">
     <value>Erreur lors de la récupération du statut des mises à jour en arrière-plan.</value>
   </data>
@@ -945,9 +921,6 @@
   </data>
   <data name="PurgeUpToEvent" xml:space="preserve">
     <value>Purger jusqu'à un ID d'événement (Event ID) spécifique</value>
-  </data>
-  <data name="SelectPurgeTarget" xml:space="preserve">
-    <value>Sélectionner le point de purge</value>
   </data>
   <data name="SelectDate" xml:space="preserve">
     <value>Sélectionner la date</value>
@@ -1071,5 +1044,32 @@
   </data>
   <data name="MustStartWithAt" xml:space="preserve">
     <value>Doit commencer par @</value>
+  </data>
+  <data name="AppserviceId" xml:space="preserve">
+    <value>ID Appservice</value>
+  </data>
+  <data name="ConsentSent" xml:space="preserve">
+    <value>Consentement envoyé</value>
+  </data>
+  <data name="ConsentVersion" xml:space="preserve">
+    <value>Version du consentement</value>
+  </data>
+  <data name="RoomType" xml:space="preserve">
+    <value>Type de salon</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
+  <data name="ErrorDeletingMedia" xml:space="preserve">
+    <value>Erreur lors de la suppression du média.</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Chargement...</value>
+  </data>
+  <data name="MediaMaintenanceDescription" xml:space="preserve">
+    <value>Effectuer la maintenance avancée du dépôt de médias, purger les caches distants et gérer les fichiers médias locaux.</value>
+  </data>
+  <data name="UnknownError" xml:space="preserve">
+    <value>Erreur inconnue</value>
   </data>
 </root>

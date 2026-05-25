@@ -58,9 +58,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Language" xml:space="preserve">
-    <value>Sprache</value>
-  </data>
   <data name="Navigation" xml:space="preserve">
     <value>Navigation</value>
   </data>
@@ -283,12 +280,6 @@
   <data name="Homeserver" xml:space="preserve">
     <value>Homeserver</value>
   </data>
-  <data name="SynapseAdminInfo" xml:space="preserve">
-    <value>Synapse Admin Info</value>
-  </data>
-  <data name="ConnectedToSynapseWithAdmin" xml:space="preserve">
-    <value>Sie sind mit einem Synapse-Homeserver mit Administratorrechten verbunden.</value>
-  </data>
   <data name="CreateToken" xml:space="preserve">
     <value>Token erstellen</value>
   </data>
@@ -462,9 +453,6 @@
   </data>
   <data name="GoToReplacementRoom" xml:space="preserve">
     <value>Gehe zum Ersatzraum</value>
-  </data>
-  <data name="Tombstone" xml:space="preserve">
-    <value>Grabstein</value>
   </data>
   <data name="EditRegistrationToken" xml:space="preserve">
     <value>Registrierungstoken bearbeiten</value>
@@ -718,14 +706,8 @@
   <data name="CreateUser" xml:space="preserve">
     <value>Benutzer erstellen</value>
   </data>
-  <data name="RegisterUser" xml:space="preserve">
-    <value>Benutzer registrieren</value>
-  </data>
   <data name="ErrorFetchingRoomMessages" xml:space="preserve">
     <value>Fehler beim Abrufen der Raumnachrichten.</value>
-  </data>
-  <data name="RoomMessages" xml:space="preserve">
-    <value>Raumnachrichten</value>
   </data>
   <data name="EventId" xml:space="preserve">
     <value>Ereignis-ID</value>
@@ -910,12 +892,6 @@
   <data name="Trigger" xml:space="preserve">
     <value>Auslösen</value>
   </data>
-  <data name="Yes" xml:space="preserve">
-    <value>Ja</value>
-  </data>
-  <data name="No" xml:space="preserve">
-    <value>Nein</value>
-  </data>
   <data name="ErrorFetchingBackgroundUpdatesStatus" xml:space="preserve">
     <value>Fehler beim Abrufen des Hintergrundaktualisierungsstatus.</value>
   </data>
@@ -945,9 +921,6 @@
   </data>
   <data name="PurgeUpToEvent" xml:space="preserve">
     <value>Bis zu einer bestimmten Ereignis-ID (Event-ID) bereinigen</value>
-  </data>
-  <data name="SelectPurgeTarget" xml:space="preserve">
-    <value>Bereinigungspunkt auswählen</value>
   </data>
   <data name="SelectDate" xml:space="preserve">
     <value>Datum auswählen</value>
@@ -1071,5 +1044,32 @@
   </data>
   <data name="MustStartWithAt" xml:space="preserve">
     <value>Muss mit @ beginnen</value>
+  </data>
+  <data name="AppserviceId" xml:space="preserve">
+    <value>Appservice-ID</value>
+  </data>
+  <data name="ConsentSent" xml:space="preserve">
+    <value>Einwilligung gesendet</value>
+  </data>
+  <data name="ConsentVersion" xml:space="preserve">
+    <value>Einwilligungsversion</value>
+  </data>
+  <data name="RoomType" xml:space="preserve">
+    <value>Raumtyp</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="ErrorDeletingMedia" xml:space="preserve">
+    <value>Fehler beim Löschen des Mediums.</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Laden...</value>
+  </data>
+  <data name="MediaMaintenanceDescription" xml:space="preserve">
+    <value>Führen Sie erweiterte Wartungsarbeiten am Medien-Repository durch, leeren Sie Remote-Caches und verwalten Sie lokale Medien-Assets.</value>
+  </data>
+  <data name="UnknownError" xml:space="preserve">
+    <value>Unbekannter Fehler</value>
   </data>
 </root>

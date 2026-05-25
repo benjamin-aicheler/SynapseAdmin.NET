@@ -214,7 +214,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         catch (Exception ex)
         {
             logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockedSuccessfully"]);
+            return OperationResult.Failure(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"]);
         }
     }
 
