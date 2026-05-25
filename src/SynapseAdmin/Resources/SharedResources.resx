@@ -58,9 +58,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Language" xml:space="preserve">
-    <value>Language</value>
-  </data>
   <data name="Navigation" xml:space="preserve">
     <value>Navigation</value>
   </data>
@@ -109,15 +106,9 @@
   <data name="CreateUser" xml:space="preserve">
     <value>Create User</value>
   </data>
-  <data name="RegisterUser" xml:space="preserve">
-    <value>Register User</value>
-  </data>
 
   <data name="ErrorFetchingRoomMessages" xml:space="preserve">
     <value>Error fetching room messages.</value>
-  </data>
-  <data name="RoomMessages" xml:space="preserve">
-    <value>Room Messages</value>
   </data>
   <data name="Messages" xml:space="preserve">
     <value>Messages</value>
@@ -320,12 +311,6 @@
   <data name="Homeserver" xml:space="preserve">
     <value>Homeserver</value>
   </data>
-  <data name="SynapseAdminInfo" xml:space="preserve">
-    <value>Synapse Admin Info</value>
-  </data>
-  <data name="ConnectedToSynapseWithAdmin" xml:space="preserve">
-    <value>You are connected to a Synapse homeserver with admin privileges.</value>
-  </data>
   <data name="CreateToken" xml:space="preserve">
     <value>Create Token</value>
   </data>
@@ -499,9 +484,6 @@
   </data>
   <data name="GoToReplacementRoom" xml:space="preserve">
     <value>Go to Replacement Room</value>
-  </data>
-  <data name="Tombstone" xml:space="preserve">
-    <value>Tombstone</value>
   </data>
   <data name="EditRegistrationToken" xml:space="preserve">
     <value>Edit Registration Token</value>
@@ -827,9 +809,6 @@
   <data name="ConsentSent" xml:space="preserve">
     <value>Consent Sent</value>
   </data>
-  <data name="Suspended" xml:space="preserve">
-    <value>Suspended</value>
-  </data>
   <data name="HomeserverUrlRequired" xml:space="preserve">
     <value>Homeserver URL is required!</value>
   </data>
@@ -926,12 +905,6 @@
   <data name="Trigger" xml:space="preserve">
     <value>Trigger</value>
   </data>
-  <data name="Yes" xml:space="preserve">
-    <value>Yes</value>
-  </data>
-  <data name="No" xml:space="preserve">
-    <value>No</value>
-  </data>
   <data name="ErrorFetchingBackgroundUpdatesStatus" xml:space="preserve">
     <value>Error fetching background updates status.</value>
   </data>
@@ -961,9 +934,6 @@
   </data>
   <data name="PurgeUpToEvent" xml:space="preserve">
     <value>Purge up to specific Event ID</value>
-  </data>
-  <data name="SelectPurgeTarget" xml:space="preserve">
-    <value>Select Purge Target Point</value>
   </data>
   <data name="SelectDate" xml:space="preserve">
     <value>Select Date</value>
@@ -1087,5 +1057,20 @@
   </data>
   <data name="MustStartWithAt" xml:space="preserve">
     <value>Must start with @</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="ErrorDeletingMedia" xml:space="preserve">
+    <value>Error deleting media.</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="MediaMaintenanceDescription" xml:space="preserve">
+    <value>Perform advanced media repository maintenance, clean up remote caches, and manage local media assets.</value>
+  </data>
+  <data name="UnknownError" xml:space="preserve">
+    <value>Unknown error</value>
   </data>
 </root>
