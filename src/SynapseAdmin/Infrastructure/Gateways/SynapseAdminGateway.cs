@@ -251,9 +251,20 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     // --- Event Reports ---
 
-    public override async Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/event_reports?from={offset}&limit={limit}&dir={direction.UrlEncode()}";
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            if (searchTerm.StartsWith("!"))
+            {
+                url += $"&room_id={searchTerm.UrlEncode()}";
+            }
+            else
+            {
+                url += $"&user_id={searchTerm.UrlEncode()}";
+            }
+        }
         var response = await _synapse.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);

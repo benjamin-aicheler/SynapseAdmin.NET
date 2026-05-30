@@ -53,7 +53,7 @@ namespace SynapseAdmin.Components.Pages
             {
                 var userTask = UserService.GetUserListAsync(0, 5, "creation_ts", SortDirection.Descending, token: _cts.Token);
                 var roomTask = RoomService.GetRoomListAsync(0, 1, "room_id", SortDirection.Ascending, token: _cts.Token);
-                var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending, _cts.Token);
+                var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending, token: _cts.Token);
                 var largestRoomsTask = RoomService.GetLargestRoomsAsync(_cts.Token);
                 var topMediaUsersTask = UserService.GetTopMediaUsersAsync(10, _cts.Token);
                 var versionTask = MatrixSession.Gateway?.GetSynapseVersionAsync(_cts.Token) ?? Task.FromResult<SynapseAdmin.Models.Responses.SynapseVersionResponse?>(null);

@@ -49,7 +49,7 @@ public interface IMatrixGateway
     Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default);
 
     // --- Event Reports (Admin/Synapse) ---
-    Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default);
+    Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);
     Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default);
 
     // --- Registration Tokens (Admin/Synapse) ---

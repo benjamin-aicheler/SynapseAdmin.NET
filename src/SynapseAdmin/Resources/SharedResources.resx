@@ -1085,4 +1085,10 @@
   <data name="MatchingRoomsCount" xml:space="preserve">
     <value>Found {0} matching rooms</value>
   </data>
+  <data name="SearchUserIdOrRoomId" xml:space="preserve">
+    <value>Search User ID or Room ID</value>
+  </data>
+  <data name="MatchingEventReportsCount" xml:space="preserve">
+    <value>Found {0} matching event reports</value>
+  </data>
 </root>
