@@ -1077,6 +1077,7 @@
   </data>
   <data name="MatchingUsersCount" xml:space="preserve">
     <value>{0} übereinstimmende Benutzer gefunden</value>
+  </data>
   <data name="SearchNameOrRoomId" xml:space="preserve">
     <value>Name oder Raum-ID suchen</value>
   </data>
