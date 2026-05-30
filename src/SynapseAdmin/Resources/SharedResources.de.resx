@@ -1090,4 +1090,10 @@
   <data name="MatchingEventReportsCount" xml:space="preserve">
     <value>{0} übereinstimmende Ereignisberichte gefunden</value>
   </data>
+  <data name="SearchDestination" xml:space="preserve">
+    <value>Zielort suchen</value>
+  </data>
+  <data name="MatchingDestinationsCount" xml:space="preserve">
+    <value>{0} übereinstimmende Zielorte gefunden</value>
+  </data>
 </root>
