@@ -1090,4 +1090,10 @@
   <data name="MatchingEventReportsCount" xml:space="preserve">
     <value>{0} rapports de signalement correspondants trouvés</value>
   </data>
+  <data name="SearchDestination" xml:space="preserve">
+    <value>Rechercher une destination</value>
+  </data>
+  <data name="MatchingDestinationsCount" xml:space="preserve">
+    <value>{0} destinations correspondantes trouvées</value>
+  </data>
 </root>

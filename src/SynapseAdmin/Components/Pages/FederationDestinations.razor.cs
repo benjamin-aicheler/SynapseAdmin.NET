@@ -20,10 +20,22 @@ namespace SynapseAdmin.Components.Pages
 
         private MudTable<FederationDestinationListViewModel>? table;
         private int? totalDestinations;
+        private List<FederationDestinationListViewModel>? _allDestinations;
+        private string? _searchTerm;
         private readonly CancellationTokenSource _cts = new();
 
         private async Task ReloadTable()
         {
+            _allDestinations = null;
+            if (table != null)
+            {
+                await table.ReloadServerData();
+            }
+        }
+
+        private async Task OnSearchChanged(string text)
+        {
+            _searchTerm = text;
             if (table != null)
             {
                 await table.ReloadServerData();
@@ -32,23 +44,52 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task<TableData<FederationDestinationListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
-            var offset = state.Page * state.PageSize;
-
-            var result = await FederationService.GetDestinationsAsync(offset, state.PageSize, state.SortDirection, token: token);
-
-            if (result.Success && result.Data != default)
+            if (_allDestinations == null)
             {
-                totalDestinations = result.Data.Total;
-                StateHasChanged();
-                return new TableData<FederationDestinationListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Destinations };
-            }
-            
-            if (!result.Success && result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
+                var result = await FederationService.GetDestinationsAsync(0, 10000, SortDirection.Ascending, token: token);
+
+                if (result.Success && result.Data != default)
+                {
+                    _allDestinations = result.Data.Destinations;
+                }
+                else
+                {
+                    if (!result.Success && result.Severity != Severity.Normal)
+                    {
+                        Snackbar.Add(result.Message, result.Severity);
+                    }
+                    totalDestinations = 0;
+                    return new TableData<FederationDestinationListViewModel>() { TotalItems = 0, Items = new List<FederationDestinationListViewModel>() };
+                }
             }
 
-            return new TableData<FederationDestinationListViewModel>() { TotalItems = 0, Items = new List<FederationDestinationListViewModel>() };
+            var filtered = _allDestinations.AsEnumerable();
+            if (!string.IsNullOrEmpty(_searchTerm))
+            {
+                filtered = filtered.Where(x => x.Destination.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var isDescending = state.SortDirection == SortDirection.Descending;
+            var orderBy = state.SortLabel ?? "destination";
+
+            filtered = orderBy switch
+            {
+                "retry_last_ts" => isDescending ? filtered.OrderByDescending(x => x.RetryLastTsDateTime) : filtered.OrderBy(x => x.RetryLastTsDateTime),
+                "retry_interval" => isDescending ? filtered.OrderByDescending(x => x.RetryInterval) : filtered.OrderBy(x => x.RetryInterval),
+                "failure_ts" => isDescending ? filtered.OrderByDescending(x => x.FailureTsDateTime) : filtered.OrderBy(x => x.FailureTsDateTime),
+                _ => isDescending ? filtered.OrderByDescending(x => x.Destination) : filtered.OrderBy(x => x.Destination)
+            };
+
+            var filteredList = filtered.ToList();
+            totalDestinations = filteredList.Count;
+
+            var pageItems = filteredList
+                .Skip(state.Page * state.PageSize)
+                .Take(state.PageSize)
+                .ToList();
+
+            StateHasChanged();
+            return new TableData<FederationDestinationListViewModel>() { TotalItems = filteredList.Count, Items = pageItems };
         }
 
         private async Task ResetConnection(string destination)

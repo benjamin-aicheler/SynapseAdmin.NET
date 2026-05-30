@@ -1091,4 +1091,10 @@
   <data name="MatchingEventReportsCount" xml:space="preserve">
     <value>Found {0} matching event reports</value>
   </data>
+  <data name="SearchDestination" xml:space="preserve">
+    <value>Search Destination</value>
+  </data>
+  <data name="MatchingDestinationsCount" xml:space="preserve">
+    <value>Found {0} matching destinations</value>
+  </data>
 </root>
