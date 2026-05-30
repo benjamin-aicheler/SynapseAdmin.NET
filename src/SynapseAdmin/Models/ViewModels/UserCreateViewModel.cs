@@ -6,7 +6,7 @@ namespace SynapseAdmin.Models.ViewModels;
 public class UserCreateViewModel
 {
     [Required(ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "UserIdRequired")]
-    [RegularExpression(@"^@[a-z0-9._=\-/]+:[a-z0-9.-]+\.[a-z]{2,}$", ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "InvalidMxidFormat")]
+    [RegularExpression(@"^@[a-z0-9._=\-/]+:[a-zA-Z0-9.-]+(?::\d+)?$", ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "InvalidMxidFormat")]
     public string UserId { get; set; } = string.Empty;
 
     [Required(ErrorMessageResourceType = typeof(SharedResources), ErrorMessageResourceName = "PasswordRequired")]
