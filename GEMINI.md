@@ -8,7 +8,7 @@ SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (M
 - **Logging:** Serilog (Console and rolling File logging to `logs/` directory)
 - **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Active Development; basic auth, dashboard, room/user management (including creation, memberships, search/filtering, and media), room message history, event reports, registration tokens, federation destinations, server notices, background updates management, advanced media maintenance (cache purging, bulk local deletion, and quarantine protection), multi-language support (EN, DE, FR), and MudBlazor UI are implemented.
+- **Status:** Active Development; basic auth, dashboard, room/user management (including creation, memberships, search/filtering, and media), room message history, event reports (with search/filtering), registration tokens, federation destinations (with search/filtering), server notices, background updates management, advanced media maintenance (cache purging, bulk local deletion, and quarantine protection), multi-language support (EN, DE, FR), and MudBlazor UI are implemented.
 
 ## Building and Running
 The project uses the standard .NET 10 CLI and Docker:
