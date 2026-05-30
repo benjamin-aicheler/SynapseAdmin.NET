@@ -51,6 +51,19 @@ namespace SynapseAdmin.Components.Pages
                 if (result.Success && result.Data != default)
                 {
                     _allDestinations = result.Data.Destinations;
+                    var totalCount = result.Data.Total;
+                    while (_allDestinations.Count < totalCount)
+                    {
+                        var chunkResult = await FederationService.GetDestinationsAsync(_allDestinations.Count, 10000, SortDirection.Ascending, token: token);
+                        if (chunkResult.Success && chunkResult.Data != default && chunkResult.Data.Destinations.Count > 0)
+                        {
+                            _allDestinations.AddRange(chunkResult.Data.Destinations);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                 }
                 else
                 {
