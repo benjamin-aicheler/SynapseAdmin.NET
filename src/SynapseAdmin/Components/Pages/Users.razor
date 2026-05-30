@@ -18,13 +18,21 @@ else
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh" Class="mr-2">
             @L["Refresh"]
         </MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="OpenCreateUserDialog" StartIcon="@Icons.Material.Filled.PersonAdd">
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="OpenCreateUserDialog" StartIcon="@Icons.Material.Filled.PersonAdd" Class="mr-4">
             @L["CreateUser"]
         </MudButton>
+        <MudTextField T="string" Value="@_searchTerm" ValueChanged="@OnSearchChanged" Placeholder="@L["SearchUserIdOrDisplayName"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" DebounceInterval="500" Style="max-width: 300px;" />
         <MudSpacer />
         @if (totalUsers.HasValue)
         {
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["TotalUsersOnServer"], totalUsers)</MudText>
+            if (string.IsNullOrEmpty(_searchTerm))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["TotalUsersOnServer"], totalUsers)</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["MatchingUsersCount"], totalUsers)</MudText>
+            }
         }
     </MudToolBar>
 

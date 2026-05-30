@@ -6,7 +6,7 @@ namespace SynapseAdmin.Interfaces;
 
 public interface IUserService
 {
-    Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, CancellationToken token = default);
+    Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default);
     Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId, CancellationToken token = default);
     Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false, CancellationToken token = default);
     Task<OperationResult> QuarantineMediaAsync(string userId, CancellationToken token = default);

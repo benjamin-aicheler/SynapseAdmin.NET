@@ -1073,4 +1073,10 @@
   <data name="UnknownError" xml:space="preserve">
     <value>Unknown error</value>
   </data>
+  <data name="SearchUserIdOrDisplayName" xml:space="preserve">
+    <value>Search User ID or Display Name</value>
+  </data>
+  <data name="MatchingUsersCount" xml:space="preserve">
+    <value>Found {0} matching users</value>
+  </data>
 </root>

@@ -32,9 +32,20 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
 
     // --- User Management ---
 
-    public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v3/users?from={offset}&limit={limit}&dir={direction.UrlEncode()}&order_by={orderBy.UrlEncode()}";
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            if (searchTerm.StartsWith("@"))
+            {
+                url += $"&user_id={searchTerm.UrlEncode()}";
+            }
+            else
+            {
+                url += $"&name={searchTerm.UrlEncode()}";
+            }
+        }
         var response = await _synapse.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);

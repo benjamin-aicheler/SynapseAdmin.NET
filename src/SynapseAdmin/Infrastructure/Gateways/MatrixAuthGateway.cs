@@ -50,7 +50,7 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider) : IMatrixAu
 /// </summary>
 internal class GenericMatrixGateway(AuthenticatedHomeserverGeneric homeserver) : MatrixGatewayBase(homeserver)
 {
-    public override Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, CancellationToken cancellationToken = default) => throw new NotSupportedException("Admin APIs are only supported for Synapse.");
+    public override Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotSupportedException("Admin APIs are only supported for Synapse.");
     public override Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task DeactivateUserAsync(string userId, bool erase, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public override Task QuarantineMediaByUserIdAsync(string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();

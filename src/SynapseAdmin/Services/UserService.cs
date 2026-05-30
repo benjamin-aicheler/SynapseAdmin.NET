@@ -15,14 +15,14 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 {
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
-    public async Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, CancellationToken token = default)
+    public async Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var dir = direction == SortDirection.Descending ? "b" : "f";
-            var result = await Gateway.GetUserListAsync(offset, limit, orderBy, dir, token);
+            var result = await Gateway.GetUserListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
             
             var vms = result.Users.ToViewModels();
@@ -35,7 +35,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit})", offset, limit);
+            logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging());
             return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["ErrorFetchingUserList"]);
         }
     }
