@@ -1072,6 +1072,11 @@
   <data name="UnknownError" xml:space="preserve">
     <value>Unbekannter Fehler</value>
   </data>
+  <data name="SearchUserIdOrDisplayName" xml:space="preserve">
+    <value>Benutzer-ID oder Anzeigenamen suchen</value>
+  </data>
+  <data name="MatchingUsersCount" xml:space="preserve">
+    <value>{0} übereinstimmende Benutzer gefunden</value>
   <data name="SearchNameOrRoomId" xml:space="preserve">
     <value>Name oder Raum-ID suchen</value>
   </data>

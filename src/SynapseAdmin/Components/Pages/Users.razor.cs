@@ -20,6 +20,7 @@ namespace SynapseAdmin.Components.Pages
 
         private MudTable<UserListViewModel>? table;
         private int? totalUsers;
+        private string? _searchTerm;
 
         private async Task ReloadTable()
         {
@@ -27,6 +28,12 @@ namespace SynapseAdmin.Components.Pages
             {
                 await table.ReloadServerData();
             }
+        }
+
+        private async Task OnSearchChanged(string text)
+        {
+            _searchTerm = text;
+            await ReloadTable();
         }
 
         private async Task OpenCreateUserDialog()
@@ -46,7 +53,7 @@ namespace SynapseAdmin.Components.Pages
             var offset = state.Page * state.PageSize;
             var orderBy = state.SortLabel ?? "name";
 
-            var result = await UserService.GetUserListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
+            var result = await UserService.GetUserListAsync(offset, state.PageSize, orderBy, state.SortDirection, _searchTerm, token: token);
             
             if (result.Success && result.Data != default)
             {

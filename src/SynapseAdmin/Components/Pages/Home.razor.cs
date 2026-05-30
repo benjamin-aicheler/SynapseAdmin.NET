@@ -51,7 +51,7 @@ namespace SynapseAdmin.Components.Pages
             loading = true;
             try
             {
-                var userTask = UserService.GetUserListAsync(0, 5, "creation_ts", SortDirection.Descending, _cts.Token);
+                var userTask = UserService.GetUserListAsync(0, 5, "creation_ts", SortDirection.Descending, token: _cts.Token);
                 var roomTask = RoomService.GetRoomListAsync(0, 1, "room_id", SortDirection.Ascending, token: _cts.Token);
                 var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending, _cts.Token);
                 var largestRoomsTask = RoomService.GetLargestRoomsAsync(_cts.Token);

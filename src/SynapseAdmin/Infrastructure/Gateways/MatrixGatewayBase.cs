@@ -57,7 +57,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     // --- Abstract Admin Methods (Must be implemented by server-specific gateways) ---
 
     // User Management
-    public abstract Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default);
     public abstract Task DeactivateUserAsync(string userId, bool erase, CancellationToken cancellationToken = default);
     public abstract Task QuarantineMediaByUserIdAsync(string userId, CancellationToken cancellationToken = default);
