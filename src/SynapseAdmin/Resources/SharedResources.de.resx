@@ -1084,4 +1084,10 @@
   <data name="MatchingRoomsCount" xml:space="preserve">
     <value>{0} übereinstimmende Räume gefunden</value>
   </data>
+  <data name="SearchUserIdOrRoomId" xml:space="preserve">
+    <value>Benutzer-ID oder Raum-ID suchen</value>
+  </data>
+  <data name="MatchingEventReportsCount" xml:space="preserve">
+    <value>{0} übereinstimmende Ereignisberichte gefunden</value>
+  </data>
 </root>

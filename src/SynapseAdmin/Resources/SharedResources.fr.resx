@@ -1084,4 +1084,10 @@
   <data name="MatchingRoomsCount" xml:space="preserve">
     <value>{0} salons correspondants trouvés</value>
   </data>
+  <data name="SearchUserIdOrRoomId" xml:space="preserve">
+    <value>Rechercher par identifiant ou ID de salon</value>
+  </data>
+  <data name="MatchingEventReportsCount" xml:space="preserve">
+    <value>{0} rapports de signalement correspondants trouvés</value>
+  </data>
 </root>

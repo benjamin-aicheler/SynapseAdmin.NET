@@ -14,14 +14,14 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
 {
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
-    public async Task<OperationResult<(int Total, List<EventReportListViewModel> Reports)>> GetEventReportsAsync(int offset, int limit, SortDirection direction, CancellationToken token = default)
+    public async Task<OperationResult<(int Total, List<EventReportListViewModel> Reports)>> GetEventReportsAsync(int offset, int limit, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var dir = direction == SortDirection.Ascending ? "f" : "b";
-            var result = await Gateway.GetEventReportListAsync(offset, limit, dir, token);
+            var result = await Gateway.GetEventReportListAsync(offset, limit, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((0, []));
             
             var vms = result.Reports.ToViewModels();
@@ -34,7 +34,7 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching event reports (offset: {Offset}, limit: {Limit})", offset, limit);
+            logger.LogError(ex, "Error fetching event reports (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging());
             return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Failure(L["ErrorFetchingEventReports"]);
         }
     }

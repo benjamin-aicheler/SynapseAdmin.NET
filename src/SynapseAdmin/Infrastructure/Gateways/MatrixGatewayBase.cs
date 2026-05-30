@@ -87,7 +87,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default);
 
     // Event Reports
-    public abstract Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);
     public abstract Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default);
 
     // Registration Tokens

@@ -24,6 +24,7 @@ namespace SynapseAdmin.Components.Pages
 
         private MudTable<EventReportListViewModel>? table;
         private int? totalReports;
+        private string? _searchTerm;
         private readonly CancellationTokenSource _cts = new();
 
         private async Task ReloadTable()
@@ -34,11 +35,17 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private async Task OnSearchChanged(string text)
+        {
+            _searchTerm = text;
+            await ReloadTable();
+        }
+
         private async Task<TableData<EventReportListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
             var offset = state.Page * state.PageSize;
 
-            var result = await EventReportService.GetEventReportsAsync(offset, state.PageSize, state.SortDirection, token: token);
+            var result = await EventReportService.GetEventReportsAsync(offset, state.PageSize, state.SortDirection, _searchTerm, token: token);
             
             if (result.Success && result.Data != default)
             {
