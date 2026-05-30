@@ -18,6 +18,7 @@ namespace SynapseAdmin.Components.Pages
 
         private MudTable<RoomListViewModel>? table;
         private int? totalRooms;
+        private string? _searchTerm;
 
         private async Task ReloadTable()
         {
@@ -27,12 +28,18 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private async Task OnSearchChanged(string text)
+        {
+            _searchTerm = text;
+            await ReloadTable();
+        }
+
         private async Task<TableData<RoomListViewModel>> ServerReload(TableState state, CancellationToken token)
         {
             var offset = state.Page * state.PageSize;
             var orderBy = state.SortLabel ?? "name";
 
-            var result = await RoomService.GetRoomListAsync(offset, state.PageSize, orderBy, state.SortDirection, token: token);
+            var result = await RoomService.GetRoomListAsync(offset, state.PageSize, orderBy, state.SortDirection, _searchTerm, token: token);
             
             if (result.Success && result.Data != default)
             {

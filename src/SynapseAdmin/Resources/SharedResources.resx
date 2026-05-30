@@ -1073,4 +1073,10 @@
   <data name="UnknownError" xml:space="preserve">
     <value>Unknown error</value>
   </data>
+  <data name="SearchNameOrRoomId" xml:space="preserve">
+    <value>Search Name or Room ID</value>
+  </data>
+  <data name="MatchingRoomsCount" xml:space="preserve">
+    <value>Found {0} matching rooms</value>
+  </data>
 </root>

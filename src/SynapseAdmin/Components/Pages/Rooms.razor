@@ -15,13 +15,21 @@
 else
 {
     <MudToolBar Class="mb-4">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh" Class="mr-4">
             @L["Refresh"]
         </MudButton>
+        <MudTextField T="string" Value="@_searchTerm" ValueChanged="@OnSearchChanged" Placeholder="@L["SearchNameOrRoomId"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" DebounceInterval="500" Style="max-width: 300px;" />
         <MudSpacer />
         @if (totalRooms.HasValue)
         {
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["TotalRoomsOnServer"], totalRooms)</MudText>
+            if (string.IsNullOrEmpty(_searchTerm))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["TotalRoomsOnServer"], totalRooms)</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["MatchingRoomsCount"], totalRooms)</MudText>
+            }
         }
     </MudToolBar>
 
