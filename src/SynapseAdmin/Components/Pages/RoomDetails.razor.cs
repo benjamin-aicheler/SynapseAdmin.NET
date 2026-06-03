@@ -136,6 +136,10 @@ namespace SynapseAdmin.Components.Pages
             {
                 var result = await RoomService.DeleteRoomAsync(RoomId, block: false, purge: true, token: _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    Navigation.NavigateTo("/rooms");
+                }
             }
         }
 
@@ -150,6 +154,10 @@ namespace SynapseAdmin.Components.Pages
             {
                 var result = await RoomService.DeleteRoomAsync(RoomId, block: true, purge: true, token: _cts.Token);
                 Snackbar.Add(result.Message, result.Severity);
+                if (result.Success)
+                {
+                    Navigation.NavigateTo("/rooms");
+                }
             }
         }
 
