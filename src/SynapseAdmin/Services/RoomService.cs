@@ -78,7 +78,34 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     }
                 }
             }
-            vm.Members = members?.Members ?? [];
+            var memberStateEvents = stateEvents?.Events
+                .Where(e => e.Type == "m.room.member" && !string.IsNullOrEmpty(e.StateKey))
+                .GroupBy(e => e.StateKey!)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            vm.Members = members?.Members.Select(userId =>
+            {
+                var memberVm = new RoomMemberViewModel { UserId = userId };
+                if (memberStateEvents != null && memberStateEvents.TryGetValue(userId, out var memberEvent))
+                {
+                    if (memberEvent.RawContent != null)
+                    {
+                        if (memberEvent.RawContent.TryGetPropertyValue("displayname", out var dnNode))
+                        {
+                            memberVm.DisplayName = dnNode?.GetValue<string>();
+                        }
+                        if (memberEvent.RawContent.TryGetPropertyValue("avatar_url", out var avNode))
+                        {
+                            memberVm.AvatarUrl = avNode?.GetValue<string>();
+                        }
+                        if (memberEvent.RawContent.TryGetPropertyValue("membership", out var msNode))
+                        {
+                            memberVm.Membership = msNode?.GetValue<string>();
+                        }
+                    }
+                }
+                return memberVm;
+            }).ToList() ?? [];
             vm.StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
             {
                 Type = e.Type,
