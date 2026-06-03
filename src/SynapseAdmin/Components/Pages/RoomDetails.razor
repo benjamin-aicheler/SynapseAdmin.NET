@@ -187,12 +187,41 @@ else
         </MudTabPanel>
 
         <MudTabPanel Text="@L["Members"]" Icon="@Icons.Material.Filled.People">
-            <MudTable Items="room.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+            <MudTable Items="room.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" RowsPerPage="10">
                 <HeaderContent>
+                    <MudTh Style="width: 50px;"></MudTh>
+                    <MudTh>@L["DisplayName"]</MudTh>
                     <MudTh>@L["UserId"]</MudTh>
+                    <MudTh Style="width: 100px; text-align: right;">@L["Actions"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="@L["UserId"]">@context</MudTd>
+                    <MudTd>
+                        @if (!string.IsNullOrEmpty(context.AvatarUrl))
+                        {
+                            <MudAvatar Size="Size.Small">
+                                <MudImage Src="@(context.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(context.AvatarUrl)}" : context.AvatarUrl)" />
+                            </MudAvatar>
+                        }
+                        else
+                        {
+                            <MudAvatar Color="Color.Primary" Size="Size.Small">
+                                @(context.DisplayName?.FirstOrDefault() ?? context.UserId.FirstOrDefault())
+                            </MudAvatar>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="@L["DisplayName"]">
+                        <MudText Typo="Typo.body2">@(string.IsNullOrEmpty(context.DisplayName) ? L["NoName"] : context.DisplayName)</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="@L["UserId"]">
+                        <MudLink Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Underline="Underline.Hover">@context.UserId</MudLink>
+                    </MudTd>
+                    <MudTd DataLabel="@L["Actions"]" Style="text-align: right;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Person" 
+                                       Color="Color.Primary" 
+                                       Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")"
+                                       title="@L["UserDetails"]" 
+                                       Size="Size.Small" />
+                    </MudTd>
                 </RowTemplate>
                 <PagerContent>
                     <MudTablePager />

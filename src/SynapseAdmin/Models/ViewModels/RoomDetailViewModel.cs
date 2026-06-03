@@ -23,9 +23,17 @@ public class RoomDetailViewModel
     public bool IsTombstoned { get; set; }
     public string? ReplacementRoom { get; set; }
     
-    public List<string> Members { get; set; } = [];
+    public List<RoomMemberViewModel> Members { get; set; } = [];
     public List<RoomStateEventViewModel> StateEvents { get; set; } = [];
     public RoomMediaViewModel? Media { get; set; }
+}
+
+public class RoomMemberViewModel
+{
+    public string UserId { get; set; } = string.Empty;
+    public string? DisplayName { get; set; }
+    public string? AvatarUrl { get; set; }
+    public string? Membership { get; set; }
 }
 
 public class RoomStateEventViewModel
