@@ -254,6 +254,14 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private bool IsLocalUser(string userId)
+        {
+            if (string.IsNullOrEmpty(userId)) return false;
+            var serverName = MatrixSession.Gateway?.ServerName;
+            if (string.IsNullOrEmpty(serverName)) return false;
+            return userId.EndsWith($":{serverName}", StringComparison.OrdinalIgnoreCase);
+        }
+
         private bool IsPreviewable(string? mimeType)
         {
             if (string.IsNullOrEmpty(mimeType))

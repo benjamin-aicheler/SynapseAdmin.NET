@@ -213,14 +213,24 @@ else
                         <MudText Typo="Typo.body2">@(string.IsNullOrEmpty(context.DisplayName) ? L["NoName"] : context.DisplayName)</MudText>
                     </MudTd>
                     <MudTd DataLabel="@L["UserId"]">
-                        <MudLink Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Underline="Underline.Hover">@context.UserId</MudLink>
+                        @if (IsLocalUser(context.UserId))
+                        {
+                            <MudLink Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Underline="Underline.Hover">@context.UserId</MudLink>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2">@context.UserId</MudText>
+                        }
                     </MudTd>
                     <MudTd DataLabel="@L["Actions"]" Style="text-align: right;">
-                        <MudIconButton Icon="@Icons.Material.Filled.Person" 
-                                       Color="Color.Primary" 
-                                       Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")"
-                                       title="@L["UserDetails"]" 
-                                       Size="Size.Small" />
+                        @if (IsLocalUser(context.UserId))
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Person" 
+                                           Color="Color.Primary" 
+                                           Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")"
+                                           title="@L["UserDetails"]" 
+                                           Size="Size.Small" />
+                        }
                     </MudTd>
                 </RowTemplate>
                 <PagerContent>
