@@ -14,7 +14,7 @@ RUN dotnet restore SynapseAdmin.NET.slnx -a $TARGETARCH
 # Copy everything else and build
 COPY . .
 WORKDIR /source/src/SynapseAdmin
-RUN dotnet publish -c Release -o /app -a $TARGETARCH --no-restore
+RUN dotnet publish -c Release -o /app -a $TARGETARCH
 
 # Runtime Stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
