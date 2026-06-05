@@ -31,6 +31,7 @@ namespace SynapseAdmin.Components.Pages
         private MudTable<RoomMediaItemViewModel>? localMediaTable;
         private MudTable<RoomMediaItemViewModel>? remoteMediaTable;
         private readonly CancellationTokenSource _cts = new();
+        private string _searchTerm = string.Empty;
 
         private string? activePurgeId;
         private string? activePurgeStatus;
@@ -384,6 +385,22 @@ namespace SynapseAdmin.Components.Pages
                 StartPolling();
                 StateHasChanged();
             }
+        }
+
+        private void OnSearchChanged(string text)
+        {
+            _searchTerm = text;
+        }
+
+        private bool FilterFunc(RoomMemberViewModel member)
+        {
+            if (string.IsNullOrWhiteSpace(_searchTerm))
+                return true;
+            if (member.UserId?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) == true)
+                return true;
+            if (member.DisplayName?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) == true)
+                return true;
+            return false;
         }
 
         public void Dispose()

@@ -187,7 +187,10 @@ else
         </MudTabPanel>
 
         <MudTabPanel Text="@L["Members"]" Icon="@Icons.Material.Filled.People">
-            <MudTable T="RoomMemberViewModel" Items="room.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" RowsPerPage="10">
+            <MudToolBar Dense="true" Class="px-2 mb-2">
+                <MudTextField T="string" Value="@_searchTerm" ValueChanged="@OnSearchChanged" Placeholder="@L["SearchUserIdOrDisplayName"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" DebounceInterval="300" Style="max-width: 300px;" Class="mt-0" Margin="Margin.Dense" />
+            </MudToolBar>
+            <MudTable T="RoomMemberViewModel" Items="room.Members" Filter="new Func<RoomMemberViewModel, bool>(FilterFunc)" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" RowsPerPage="10">
                 <HeaderContent>
                     <MudTh Style="width: 50px;"></MudTh>
                     <MudTh><MudTableSortLabel SortBy="new Func<RoomMemberViewModel, object>(x => x.DisplayName ?? string.Empty)">@L["DisplayName"]</MudTableSortLabel></MudTh>
