@@ -101,10 +101,10 @@ else
 
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
         <MudTabPanel Text="@L["Rooms"]" Icon="@Icons.Material.Filled.MeetingRoom">
-            <MudTable Items="user.Memberships" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+            <MudTable T="UserMembershipViewModel" Items="user.Memberships" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                 <HeaderContent>
-                    <MudTh>@L["RoomId"]</MudTh>
-                    <MudTh>@L["Membership"]</MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<UserMembershipViewModel, object>(x => x.RoomId)">@L["RoomId"]</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<UserMembershipViewModel, object>(x => x.Membership)">@L["Membership"]</MudTableSortLabel></MudTh>
                     <MudTh>@L["Actions"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
