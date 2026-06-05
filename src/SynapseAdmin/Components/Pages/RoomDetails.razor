@@ -187,11 +187,11 @@ else
         </MudTabPanel>
 
         <MudTabPanel Text="@L["Members"]" Icon="@Icons.Material.Filled.People">
-            <MudTable Items="room.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" RowsPerPage="10">
+            <MudTable T="RoomMemberViewModel" Items="room.Members" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" RowsPerPage="10">
                 <HeaderContent>
                     <MudTh Style="width: 50px;"></MudTh>
-                    <MudTh>@L["DisplayName"]</MudTh>
-                    <MudTh>@L["UserId"]</MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<RoomMemberViewModel, object>(x => x.DisplayName ?? string.Empty)">@L["DisplayName"]</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<RoomMemberViewModel, object>(x => x.UserId)">@L["UserId"]</MudTableSortLabel></MudTh>
                     <MudTh Style="width: 100px; text-align: right;">@L["Actions"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
