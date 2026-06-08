@@ -138,31 +138,40 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
         try
         {
+            using var semaphore = new SemaphoreSlim(10, 10);
             var tasks = mxcUris.Select(async m =>
             {
-                var vm = new RoomMediaItemViewModel { MediaId = m };
+                await semaphore.WaitAsync(token);
                 try
                 {
-                    var meta = await Gateway.GetMediaMetadataAsync(m, token);
-                    if (meta != null)
+                    var vm = new RoomMediaItemViewModel { MediaId = m };
+                    try
                     {
-                        vm.UploadName = meta.UploadName;
-                        vm.MediaType = meta.MediaType;
-                        vm.MediaLength = meta.MediaLength;
-                        vm.CreatedTimestamp = meta.CreatedTimestamp;
-                        vm.QuarantinedBy = meta.QuarantinedBy;
-                        vm.SafeFromQuarantine = meta.SafeFromQuarantine ?? false;
+                        var meta = await Gateway.GetMediaMetadataAsync(m, token);
+                        if (meta != null)
+                        {
+                            vm.UploadName = meta.UploadName;
+                            vm.MediaType = meta.MediaType;
+                            vm.MediaLength = meta.MediaLength;
+                            vm.CreatedTimestamp = meta.CreatedTimestamp;
+                            vm.QuarantinedBy = meta.QuarantinedBy;
+                            vm.SafeFromQuarantine = meta.SafeFromQuarantine ?? false;
+                        }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        // Silent cancellation for inner task
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug(ex, "Failed to fetch metadata for media {Mxc}", m);
+                    }
+                    return vm;
                 }
-                catch (OperationCanceledException)
+                finally
                 {
-                    // Silent cancellation for inner task
+                    semaphore.Release();
                 }
-                catch (Exception ex)
-                {
-                    logger.LogDebug(ex, "Failed to fetch metadata for media {Mxc}", m);
-                }
-                return vm;
             });
 
             var results = (await Task.WhenAll(tasks)).ToList();
