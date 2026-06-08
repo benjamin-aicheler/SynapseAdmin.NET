@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -347,7 +348,7 @@ namespace SynapseAdmin.Components.Pages
                         {
                             consecutiveFailures++;
                             var errMsg = result.Message ?? "Unknown error";
-                            Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", RoomId, purgeId, consecutiveFailures, errMsg);
+                            Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", RoomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, errMsg.SanitizeForLogging());
                             
                             if (consecutiveFailures >= 5)
                             {
@@ -369,7 +370,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", RoomId, purgeId);
+                    Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", RoomId.SanitizeForLogging(), purgeId.SanitizeForLogging());
                     try
                     {
                         RoomService.ClearActivePurgeId(RoomId);
