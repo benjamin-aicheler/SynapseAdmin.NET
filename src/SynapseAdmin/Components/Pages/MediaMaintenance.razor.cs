@@ -1,11 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
-using SynapseAdmin.Resources;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SynapseAdmin.Components.Pages;
 

@@ -6,7 +6,6 @@ using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Requests;
-using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Services;
 
