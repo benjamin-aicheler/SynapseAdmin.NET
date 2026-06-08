@@ -39,6 +39,10 @@ if (!string.IsNullOrEmpty(passphrase))
 {
     dpBuilder.AddKeyManagementOptions(options => options.XmlEncryptor = new AesXmlEncryptor(passphrase));
 }
+else
+{
+    Log.Warning("DP_PASSPHRASE is not configured or empty. Data Protection keys will be stored UNENCRYPTED on disk.");
+}
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
