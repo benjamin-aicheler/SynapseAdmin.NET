@@ -26,6 +26,10 @@ public class MatrixSessionService(IMatrixAuthGateway authGateway, ILogger<Matrix
             logger.LogInformation("User {Username} successfully logged into {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"]);
         }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Login failed for user {Username} on {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
@@ -44,6 +48,11 @@ public class MatrixSessionService(IMatrixAuthGateway authGateway, ILogger<Matrix
             
             logger.LogInformation("Session successfully logged in via token for user {UserId} on {Homeserver}", Gateway.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"]);
+        }
+        catch (OperationCanceledException)
+        {
+            Gateway = null;
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {
@@ -71,6 +80,11 @@ public class MatrixSessionService(IMatrixAuthGateway authGateway, ILogger<Matrix
             
             logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", Gateway.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            Gateway = null;
+            return OperationResult.Cancelled();
         }
         catch (Exception ex)
         {
