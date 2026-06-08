@@ -86,7 +86,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task QuarantineSingleMedia(string mediaIdPart)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+            var mxc = mediaIdPart.StartsWith("mxc://") ? mediaIdPart : $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
             
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["QuarantineMediaTitle"],
@@ -107,7 +107,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task UnquarantineSingleMedia(string mediaIdPart)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+            var mxc = mediaIdPart.StartsWith("mxc://") ? mediaIdPart : $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["UnquarantineMediaTitle"],
@@ -128,7 +128,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task DeleteSingleMedia(string mediaIdPart)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+            var mxc = mediaIdPart.StartsWith("mxc://") ? mediaIdPart : $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["DeleteMediaTitle"],
@@ -149,7 +149,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task ToggleMediaProtection(UserMediaItemViewModel media)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{media.MediaId}";
+            var mxc = media.MediaId.StartsWith("mxc://") ? media.MediaId : $"mxc://{MatrixSession.Gateway.ServerName}/{media.MediaId}";
 
             var result = media.SafeFromQuarantine
                 ? await MediaService.UnprotectMediaAsync(mxc, _cts.Token)
