@@ -21,6 +21,8 @@ namespace SynapseAdmin.Components.Pages
         public ISnackbar Snackbar { get; set; } = null!;
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
+        [Inject]
+        public Microsoft.Extensions.Logging.ILogger<RoomDetails> Logger { get; set; } = null!;
 
         [Parameter]
         public string RoomId { get; set; } = string.Empty;
@@ -304,17 +306,20 @@ namespace SynapseAdmin.Components.Pages
             
             _pollingCts = new CancellationTokenSource();
             var token = _pollingCts.Token;
+            var purgeId = activePurgeId;
 
             // Start polling as a background task
             Task.Run(async () =>
             {
+                int consecutiveFailures = 0;
                 try
                 {
                     while (!token.IsCancellationRequested)
                     {
-                        var result = await RoomService.GetPurgeHistoryStatusAsync(activePurgeId, token);
+                        var result = await RoomService.GetPurgeHistoryStatusAsync(purgeId, token);
                         if (result.Success && result.Data != null)
                         {
+                            consecutiveFailures = 0;
                             activePurgeStatus = result.Data.Status;
                             await InvokeAsync(StateHasChanged);
 
@@ -340,6 +345,22 @@ namespace SynapseAdmin.Components.Pages
                                 break;
                             }
                         }
+                        else
+                        {
+                            consecutiveFailures++;
+                            var errMsg = result.Message ?? "Unknown error";
+                            Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", RoomId, purgeId, consecutiveFailures, errMsg);
+                            
+                            if (consecutiveFailures >= 5)
+                            {
+                                RoomService.ClearActivePurgeId(RoomId);
+                                activePurgeId = null;
+                                activePurgeStatus = null;
+                                Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
+                                await InvokeAsync(StateHasChanged);
+                                break;
+                            }
+                        }
                         
                         await Task.Delay(5000, token);
                     }
@@ -348,9 +369,21 @@ namespace SynapseAdmin.Components.Pages
                 {
                     // Ignore cancellation
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Ignore to prevent circuit crash
+                    Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", RoomId, purgeId);
+                    try
+                    {
+                        RoomService.ClearActivePurgeId(RoomId);
+                        activePurgeId = null;
+                        activePurgeStatus = null;
+                        Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
+                        await InvokeAsync(StateHasChanged);
+                    }
+                    catch (Exception)
+                    {
+                        // Prevent secondary crash during cleanup
+                    }
                 }
             }, token);
         }
