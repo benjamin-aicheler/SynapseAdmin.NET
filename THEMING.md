@@ -64,6 +64,9 @@ To add a new custom theme (e.g., "Deep Sea"):
 *   **Asuka (Unit-02)**: Neon Genesis Evangelion Unit-02 theme (red and orange).
 *   **Rei (Unit-00)**: Neon Genesis Evangelion Unit-00 theme (ice blue and orange).
 *   **Mari (Unit-08)**: Neon Genesis Evangelion Unit-08 theme (pink and olive green).
+*   **Batman (Dark Knight)**: DC Batman theme (graphite and bat-yellow).
+*   **The Flash (Speed Force)**: DC The Flash theme (scarlet red and electric yellow).
+*   **Superman (Metropolis)**: DC Superman theme (navy blue and cherry red).
 
 ## Contributing
 
