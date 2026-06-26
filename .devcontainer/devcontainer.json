@@ -1,5 +1,5 @@
 {
-  "name": "Dotnet 10 & Gemini CLI Dev",
+  "name": "Dotnet 10 & Antigravity CLI Dev",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/dotnet:1": {
@@ -10,7 +10,7 @@
     },
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "postCreateCommand": "npm install -g @google/gemini-cli",
+  "postCreateCommand": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -22,6 +22,6 @@
     }
   },
   "remoteEnv": {
-    "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}"
+    "ANTIGRAVITY_API_KEY": "${localEnv:ANTIGRAVITY_API_KEY}"
   }
 }
