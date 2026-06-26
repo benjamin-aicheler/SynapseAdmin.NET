@@ -60,6 +60,10 @@ To add a new custom theme (e.g., "Deep Sea"):
 *   **Nord (Arctic)**: A clean, muted blue/grey theme for reduced eye strain.
 *   **Cyberpunk (Synthwave)**: High-contrast neon colors for a futuristic feel.
 *   **Solarized (Professional)**: A precision-balanced palette optimized for readability.
+*   **Shinji (Unit-01)**: Neon Genesis Evangelion Unit-01 theme (purple and neon green).
+*   **Asuka (Unit-02)**: Neon Genesis Evangelion Unit-02 theme (red and orange).
+*   **Rei (Unit-00)**: Neon Genesis Evangelion Unit-00 theme (ice blue and orange).
+*   **Mari (Unit-08)**: Neon Genesis Evangelion Unit-08 theme (pink and olive green).
 
 ## Contributing
 
