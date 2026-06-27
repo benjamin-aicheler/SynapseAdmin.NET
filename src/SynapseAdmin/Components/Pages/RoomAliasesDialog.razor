@@ -1,0 +1,67 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Label" Class="mr-3 mb-n1" />
+            @L["ManageAliasesForRoom"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center my-4">
+                <MudProgressCircular Color="Color.Info" Indeterminate="true" />
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@L["CanonicalAlias"]: @(string.IsNullOrEmpty(CanonicalAlias) ? L["None"] : CanonicalAlias)</MudText>
+            
+            <MudDivider Class="my-4" />
+
+            <MudText Typo="Typo.subtitle1" Class="mb-2">@L["LocalAliases"]</MudText>
+            @if (_aliases == null || _aliases.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">@L["NoAliasesConfigured"]</MudText>
+            }
+            else
+            {
+                <MudList T="string" Class="mb-4">
+                    @foreach (var alias in _aliases)
+                    {
+                        <MudListItem T="string">
+                            <div class="d-flex align-center justify-space-between w-100">
+                                <MudText Typo="Typo.body2">@alias</MudText>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Color="Color.Error" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => DeleteAliasAsync(alias))" 
+                                               Disabled="@_isSaving" />
+                            </div>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
+            <MudForm @ref="form" @bind-IsValid="@success" Class="d-flex align-end gap-2 mt-4">
+                <MudTextField T="string" 
+                              Label="@L["AddAlias"]" 
+                              @bind-Value="_newAlias" 
+                              Required="true" 
+                              RequiredError="@L["AliasRequired"]" 
+                              HelperText="@string.Format(L["AliasFormatHelper"], MatrixSession.Gateway?.ServerName)" 
+                              Validation="@(new Func<string, string?>(ValidateAliasFormat))" />
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddAliasAsync" 
+                           Disabled="@(!success || _isSaving)"
+                           Style="height: 56px;">
+                    @L["Add"]
+                </MudButton>
+            </MudForm>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Default">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>

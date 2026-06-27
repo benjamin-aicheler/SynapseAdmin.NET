@@ -1096,4 +1096,109 @@
   <data name="MatchingDestinationsCount" xml:space="preserve">
     <value>{0} übereinstimmende Zielorte gefunden</value>
   </data>
+  <data name="RoomDirectory" xml:space="preserve">
+    <value>Raumverzeichnis</value>
+  </data>
+  <data name="PublishRoom" xml:space="preserve">
+    <value>Raum veröffentlichen</value>
+  </data>
+  <data name="PublishRoomToDirectory" xml:space="preserve">
+    <value>Raum im Verzeichnis veröffentlichen</value>
+  </data>
+  <data name="SearchDirectory" xml:space="preserve">
+    <value>Verzeichnis durchsuchen...</value>
+  </data>
+  <data name="NoPublicRoomsFound" xml:space="preserve">
+    <value>Keine öffentlichen Räume im Verzeichnis gefunden.</value>
+  </data>
+  <data name="CanonicalAlias" xml:space="preserve">
+    <value>Kanonischer Alias</value>
+  </data>
+  <data name="ViewDetails" xml:space="preserve">
+    <value>Details anzeigen</value>
+  </data>
+  <data name="EstimatedTotalRooms" xml:space="preserve">
+    <value>Geschätzte Gesamtzahl öffentlicher Räume: {0}</value>
+  </data>
+  <data name="RoomDirectoryVisibilityUpdated" xml:space="preserve">
+    <value>Sichtbarkeit des Raums im Verzeichnis erfolgreich aktualisiert.</value>
+  </data>
+  <data name="RemoveFromDirectory" xml:space="preserve">
+    <value>Aus dem Verzeichnis entfernen</value>
+  </data>
+  <data name="RemoveFromDirectoryConfirmText" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diesen Raum aus dem öffentlichen Verzeichnis entfernen möchten?</value>
+  </data>
+  <data name="RoomRemovedFromDirectory" xml:space="preserve">
+    <value>Raum erfolgreich aus dem Verzeichnis entfernt.</value>
+  </data>
+  <data name="ManageAliases" xml:space="preserve">
+    <value>Aliase verwalten</value>
+  </data>
+  <data name="ManageAliasesForRoom" xml:space="preserve">
+    <value>Aliase für Raum verwalten</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="LocalAliases" xml:space="preserve">
+    <value>Lokale Aliase</value>
+  </data>
+  <data name="NoAliasesConfigured" xml:space="preserve">
+    <value>Keine Aliase für diesen Raum konfiguriert.</value>
+  </data>
+  <data name="AddAlias" xml:space="preserve">
+    <value>Neuen Alias hinzufügen</value>
+  </data>
+  <data name="AliasRequired" xml:space="preserve">
+    <value>Alias ist erforderlich</value>
+  </data>
+  <data name="AliasFormatHelper" xml:space="preserve">
+    <value>Muss mit # beginnen und mit :{0} enden</value>
+  </data>
+  <data name="MustStartWithHash" xml:space="preserve">
+    <value>Alias muss mit # beginnen</value>
+  </data>
+  <data name="MustEndWithServerName" xml:space="preserve">
+    <value>Alias muss mit :{0} enden</value>
+  </data>
+  <data name="AliasAddedSuccessfully" xml:space="preserve">
+    <value>Alias erfolgreich hinzugefügt.</value>
+  </data>
+  <data name="AliasDeletedSuccessfully" xml:space="preserve">
+    <value>Alias erfolgreich gelöscht.</value>
+  </data>
+  <data name="DeleteAlias" xml:space="preserve">
+    <value>Alias löschen</value>
+  </data>
+  <data name="DeleteAliasConfirmText" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Alias "{0}" löschen möchten?</value>
+  </data>
+  <data name="ErrorFetchingRoomDirectory" xml:space="preserve">
+    <value>Fehler beim Abrufen des öffentlichen Raumverzeichnisses.</value>
+  </data>
+  <data name="ErrorFetchingRoomDirectoryVisibility" xml:space="preserve">
+    <value>Fehler beim Abrufen der Sichtbarkeit des Raumverzeichnisses.</value>
+  </data>
+  <data name="ErrorSettingRoomDirectoryVisibility" xml:space="preserve">
+    <value>Fehler beim Festlegen der Sichtbarkeit des Raumverzeichnisses.</value>
+  </data>
+  <data name="ErrorSettingRoomAlias" xml:space="preserve">
+    <value>Fehler beim Festlegen des Raum-Alias.</value>
+  </data>
+  <data name="ErrorDeletingRoomAlias" xml:space="preserve">
+    <value>Fehler beim Löschen des Raum-Alias.</value>
+  </data>
+  <data name="ErrorFetchingRoomAliases" xml:space="preserve">
+    <value>Fehler beim Abrufen der Raum-Aliase.</value>
+  </data>
+  <data name="RoomIdRequired" xml:space="preserve">
+    <value>Raum-ID ist erforderlich</value>
+  </data>
+  <data name="RoomIdFormatHelper" xml:space="preserve">
+    <value>Muss mit ! beginnen und eine Domain enthalten (z. B. !abc:beispiel.de)</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Veröffentlichen</value>
+  </data>
 </root>

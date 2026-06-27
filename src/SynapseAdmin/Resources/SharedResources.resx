@@ -1097,4 +1097,109 @@
   <data name="MatchingDestinationsCount" xml:space="preserve">
     <value>Found {0} matching destinations</value>
   </data>
+  <data name="RoomDirectory" xml:space="preserve">
+    <value>Room Directory</value>
+  </data>
+  <data name="PublishRoom" xml:space="preserve">
+    <value>Publish Room</value>
+  </data>
+  <data name="PublishRoomToDirectory" xml:space="preserve">
+    <value>Publish Room to Directory</value>
+  </data>
+  <data name="SearchDirectory" xml:space="preserve">
+    <value>Search directory...</value>
+  </data>
+  <data name="NoPublicRoomsFound" xml:space="preserve">
+    <value>No public rooms found in the directory.</value>
+  </data>
+  <data name="CanonicalAlias" xml:space="preserve">
+    <value>Canonical Alias</value>
+  </data>
+  <data name="ViewDetails" xml:space="preserve">
+    <value>View Details</value>
+  </data>
+  <data name="EstimatedTotalRooms" xml:space="preserve">
+    <value>Estimated total public rooms: {0}</value>
+  </data>
+  <data name="RoomDirectoryVisibilityUpdated" xml:space="preserve">
+    <value>Room directory visibility updated successfully.</value>
+  </data>
+  <data name="RemoveFromDirectory" xml:space="preserve">
+    <value>Remove from Directory</value>
+  </data>
+  <data name="RemoveFromDirectoryConfirmText" xml:space="preserve">
+    <value>Are you sure you want to remove this room from the public directory?</value>
+  </data>
+  <data name="RoomRemovedFromDirectory" xml:space="preserve">
+    <value>Room successfully removed from directory.</value>
+  </data>
+  <data name="ManageAliases" xml:space="preserve">
+    <value>Manage Aliases</value>
+  </data>
+  <data name="ManageAliasesForRoom" xml:space="preserve">
+    <value>Manage Aliases for Room</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="LocalAliases" xml:space="preserve">
+    <value>Local Aliases</value>
+  </data>
+  <data name="NoAliasesConfigured" xml:space="preserve">
+    <value>No aliases configured for this room.</value>
+  </data>
+  <data name="AddAlias" xml:space="preserve">
+    <value>Add New Alias</value>
+  </data>
+  <data name="AliasRequired" xml:space="preserve">
+    <value>Alias is required</value>
+  </data>
+  <data name="AliasFormatHelper" xml:space="preserve">
+    <value>Must start with # and end with :{0}</value>
+  </data>
+  <data name="MustStartWithHash" xml:space="preserve">
+    <value>Alias must start with #</value>
+  </data>
+  <data name="MustEndWithServerName" xml:space="preserve">
+    <value>Alias must end with :{0}</value>
+  </data>
+  <data name="AliasAddedSuccessfully" xml:space="preserve">
+    <value>Alias added successfully.</value>
+  </data>
+  <data name="AliasDeletedSuccessfully" xml:space="preserve">
+    <value>Alias deleted successfully.</value>
+  </data>
+  <data name="DeleteAlias" xml:space="preserve">
+    <value>Delete Alias</value>
+  </data>
+  <data name="DeleteAliasConfirmText" xml:space="preserve">
+    <value>Are you sure you want to delete alias "{0}"?</value>
+  </data>
+  <data name="ErrorFetchingRoomDirectory" xml:space="preserve">
+    <value>Error fetching public room directory.</value>
+  </data>
+  <data name="ErrorFetchingRoomDirectoryVisibility" xml:space="preserve">
+    <value>Error fetching room directory visibility.</value>
+  </data>
+  <data name="ErrorSettingRoomDirectoryVisibility" xml:space="preserve">
+    <value>Error setting room directory visibility.</value>
+  </data>
+  <data name="ErrorSettingRoomAlias" xml:space="preserve">
+    <value>Error setting room alias.</value>
+  </data>
+  <data name="ErrorDeletingRoomAlias" xml:space="preserve">
+    <value>Error deleting room alias.</value>
+  </data>
+  <data name="ErrorFetchingRoomAliases" xml:space="preserve">
+    <value>Error fetching room aliases.</value>
+  </data>
+  <data name="RoomIdRequired" xml:space="preserve">
+    <value>Room ID is required</value>
+  </data>
+  <data name="RoomIdFormatHelper" xml:space="preserve">
+    <value>Must start with ! and contain a domain (e.g. !abc:example.com)</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Publish</value>
+  </data>
 </root>

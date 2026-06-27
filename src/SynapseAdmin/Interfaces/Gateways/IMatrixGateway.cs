@@ -44,6 +44,14 @@ public interface IMatrixGateway
     Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default);
     Task<SynapseAdminPurgeHistoryStatusResponse?> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken cancellationToken = default);
 
+    // --- Room Directory (Standard CS API) ---
+    Task<MatrixPublicRoomDirectoryResult?> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken cancellationToken = default);
+    Task<string?> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken cancellationToken = default);
+    Task SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken cancellationToken = default);
+    Task PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken cancellationToken = default);
+    Task DeleteRoomAliasAsync(string roomAlias, CancellationToken cancellationToken = default);
+    Task<List<string>?> GetLocalRoomAliasesAsync(string roomId, CancellationToken cancellationToken = default);
+
     // --- Federation (Admin/Synapse) ---
     Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default);
     Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default);
