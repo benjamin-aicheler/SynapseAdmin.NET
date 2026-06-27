@@ -269,156 +269,172 @@ else
             }
             else
             {
-                <MudText Typo="Typo.h6" Class="mt-4 mb-2">@L["LocalMedia"]</MudText>
-                @if (room.Media.Local.Count == 0)
+                <div class="d-flex align-center justify-space-between mt-4 mb-4">
+                    <MudText Typo="Typo.h6">@L["Media"]</MudText>
+                    <div class="d-flex align-center gap-2">
+                        <MudButton Variant="@(_mediaViewMode == "table" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.TableChart" OnClick="@(() => _mediaViewMode = "table")">@L["TableView"]</MudButton>
+                        <MudButton Variant="@(_mediaViewMode == "gallery" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.GridView" OnClick="@(() => _mediaViewMode = "gallery")">@L["GalleryView"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" StartIcon="@Icons.Material.Filled.OpenInNew" Href="@($"/rooms/{Uri.EscapeDataString(RoomId)}/gallery")" Target="_blank">@L["RoomGallery"]</MudButton>
+                    </div>
+                </div>
+
+                @if (_mediaViewMode == "gallery")
                 {
-                    <MudText Typo="Typo.body2" Class="mb-4">@L["NoLocalMedia"]</MudText>
+                    <RoomGalleryGrid RoomId="@RoomId" Media="@room.Media" />
                 }
                 else
                 {
-                    <MudTable T="RoomMediaItemViewModel" @ref="localMediaTable" ServerData="LoadLocalMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6" RowsPerPage="10">
-                        <HeaderContent>
-                            <MudTh>@L["MediaId"]</MudTh>
-                            <MudTh>@L["FileName"]</MudTh>
-                            <MudTh>@L["Type"]</MudTh>
-                            <MudTh>@L["Size"]</MudTh>
-                            <MudTh>@L["Actions"]</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="@L["MediaId"]">
-                                <div class="d-flex flex-column">
-                                    @context.MediaId
-                                    @if (context.IsQuarantined)
-                                    {
-                                        <MudTooltip Text="@($"{L["QuarantinedBy"]}: {context.QuarantinedBy}")">
-                                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Quarantined"]</MudChip>
-                                        </MudTooltip>
-                                    }
-                                    @if (context.SafeFromQuarantine)
-                                    {
-                                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Protected"]</MudChip>
-                                    }
-                                </div>
-                            </MudTd>
-                            <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
-                            <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
-                            <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
-                            <MudTd DataLabel="@L["Actions"]">
-                                <div class="d-flex">
-                                    @if (!context.IsQuarantined)
-                                    {
-                                        <MudIconButton Icon="@Icons.Material.Filled.Download" 
-                                                       Color="Color.Primary" 
-                                                       Href="@($"/Media/Download?mxc={Uri.EscapeDataString(context.MediaId)}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
-                                                       Target="_blank"
-                                                       title="@L["Download"]" />
-                                        
-                                        @if (IsPreviewable(context.MediaType))
+                    <MudText Typo="Typo.h6" Class="mt-2 mb-2">@L["LocalMedia"]</MudText>
+                    @if (room.Media.Local.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="mb-4">@L["NoLocalMedia"]</MudText>
+                    }
+                    else
+                    {
+                        <MudTable T="RoomMediaItemViewModel" @ref="localMediaTable" ServerData="LoadLocalMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Class="mb-6" RowsPerPage="10">
+                            <HeaderContent>
+                                <MudTh>@L["MediaId"]</MudTh>
+                                <MudTh>@L["FileName"]</MudTh>
+                                <MudTh>@L["Type"]</MudTh>
+                                <MudTh>@L["Size"]</MudTh>
+                                <MudTh>@L["Actions"]</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="@L["MediaId"]">
+                                    <div class="d-flex flex-column">
+                                        @context.MediaId
+                                        @if (context.IsQuarantined)
                                         {
-                                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
-                                                           Color="Color.Secondary" 
-                                                           OnClick="@(() => ShowPreview(context))"
-                                                           title="@L["Preview"]" />
+                                            <MudTooltip Text="@($"{L["QuarantinedBy"]}: {context.QuarantinedBy}")">
+                                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Quarantined"]</MudChip>
+                                            </MudTooltip>
                                         }
-
-                                        <MudIconButton Icon="@Icons.Material.Filled.Block" 
-                                                       Color="Color.Warning" 
-                                                       OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
-                                                       title="@L["Quarantine"]" />
-                                    }
-                                    else
-                                    {
-                                        <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
-                                                       Color="Color.Success" 
-                                                       OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
-                                                       title="@L["Unquarantine"]" />
-                                    }
-                                    
-                                    <MudIconButton Icon="@(context.SafeFromQuarantine ? Icons.Material.Filled.Shield : Icons.Material.Outlined.Shield)" 
-                                                   Color="@(context.SafeFromQuarantine ? Color.Success : Color.Default)" 
-                                                   OnClick="@(() => ToggleMediaProtection(context))"
-                                                   title="@(context.SafeFromQuarantine ? L["Unprotect"] : L["Protect"])" />
-                                    
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                                                   Color="Color.Error" 
-                                                   OnClick="@(() => DeleteSingleMedia(context.MediaId))"
-                                                   title="@L["Delete"]" />
-                                </div>
-                            </MudTd>
-                        </RowTemplate>
-                        <PagerContent>
-                            <MudTablePager />
-                        </PagerContent>
-                    </MudTable>
-                }
-
-                <MudText Typo="Typo.h6" Class="mt-4 mb-2">@L["RemoteMedia"]</MudText>
-                @if (room.Media.Remote.Count == 0)
-                {
-                    <MudText Typo="Typo.body2">@L["NoRemoteMedia"]</MudText>
-                }
-                else
-                {
-                    <MudTable T="RoomMediaItemViewModel" @ref="remoteMediaTable" ServerData="LoadRemoteMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" RowsPerPage="10">
-                        <HeaderContent>
-                            <MudTh>@L["MediaId"]</MudTh>
-                            <MudTh>@L["FileName"]</MudTh>
-                            <MudTh>@L["Type"]</MudTh>
-                            <MudTh>@L["Size"]</MudTh>
-                            <MudTh>@L["Actions"]</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="@L["MediaId"]">
-                                <div class="d-flex flex-column">
-                                    @context.MediaId
-                                    @if (context.IsQuarantined)
-                                    {
-                                        <MudTooltip Text="@($"{L["QuarantinedBy"]}: {context.QuarantinedBy}")">
-                                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Quarantined"]</MudChip>
-                                        </MudTooltip>
-                                    }
-                                </div>
-                            </MudTd>
-                            <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
-                            <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
-                            <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
-                            <MudTd DataLabel="@L["Actions"]">
-                                <div class="d-flex">
-                                    @if (!context.IsQuarantined)
-                                    {
-                                        <MudIconButton Icon="@Icons.Material.Filled.Download" 
-                                                       Color="Color.Primary" 
-                                                       Href="@($"/Media/Download?mxc={Uri.EscapeDataString(context.MediaId)}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
-                                                       Target="_blank"
-                                                       title="@L["Download"]" />
-                                        
-                                        @if (IsPreviewable(context.MediaType))
+                                        @if (context.SafeFromQuarantine)
                                         {
-                                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
-                                                           Color="Color.Secondary" 
-                                                           OnClick="@(() => ShowPreview(context))"
-                                                           title="@L["Preview"]" />
+                                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Protected"]</MudChip>
                                         }
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
+                                <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
+                                <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
+                                <MudTd DataLabel="@L["Actions"]">
+                                    <div class="d-flex">
+                                        @if (!context.IsQuarantined)
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                                           Color="Color.Primary" 
+                                                           Href="@($"/Media/Download?mxc={Uri.EscapeDataString(context.MediaId)}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
+                                                           Target="_blank"
+                                                           title="@L["Download"]" />
+                                            
+                                            @if (IsPreviewable(context.MediaType))
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                                               Color="Color.Secondary" 
+                                                               OnClick="@(() => ShowPreview(context))"
+                                                               title="@L["Preview"]" />
+                                            }
 
-                                        <MudIconButton Icon="@Icons.Material.Filled.Block" 
-                                                       Color="Color.Warning" 
-                                                       OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
-                                                       title="@L["Quarantine"]" />
-                                    }
-                                    else
-                                    {
-                                        <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
-                                                       Color="Color.Success" 
-                                                       OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
-                                                       title="@L["Unquarantine"]" />
-                                    }
-                                </div>
-                            </MudTd>
-                        </RowTemplate>
-                        <PagerContent>
-                            <MudTablePager />
-                        </PagerContent>
-                    </MudTable>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Block" 
+                                                           Color="Color.Warning" 
+                                                           OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
+                                                           title="@L["Quarantine"]" />
+                                        }
+                                        else
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
+                                                           Color="Color.Success" 
+                                                           OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
+                                                           title="@L["Unquarantine"]" />
+                                        }
+                                        
+                                        <MudIconButton Icon="@(context.SafeFromQuarantine ? Icons.Material.Filled.Shield : Icons.Material.Outlined.Shield)" 
+                                                       Color="@(context.SafeFromQuarantine ? Color.Success : Color.Default)" 
+                                                       OnClick="@(() => ToggleMediaProtection(context))"
+                                                       title="@(context.SafeFromQuarantine ? L["Unprotect"] : L["Protect"])" />
+                                        
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                       Color="Color.Error" 
+                                                       OnClick="@(() => DeleteSingleMedia(context.MediaId))"
+                                                       title="@L["Delete"]" />
+                                    </div>
+                                </MudTd>
+                            </RowTemplate>
+                            <PagerContent>
+                                <MudTablePager />
+                            </PagerContent>
+                        </MudTable>
+                    }
+
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2">@L["RemoteMedia"]</MudText>
+                    @if (room.Media.Remote.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2">@L["NoRemoteMedia"]</MudText>
+                    }
+                    else
+                    {
+                        <MudTable T="RoomMediaItemViewModel" @ref="remoteMediaTable" ServerData="LoadRemoteMedia" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" RowsPerPage="10">
+                            <HeaderContent>
+                                <MudTh>@L["MediaId"]</MudTh>
+                                <MudTh>@L["FileName"]</MudTh>
+                                <MudTh>@L["Type"]</MudTh>
+                                <MudTh>@L["Size"]</MudTh>
+                                <MudTh>@L["Actions"]</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="@L["MediaId"]">
+                                    <div class="d-flex flex-column">
+                                        @context.MediaId
+                                        @if (context.IsQuarantined)
+                                        {
+                                            <MudTooltip Text="@($"{L["QuarantinedBy"]}: {context.QuarantinedBy}")">
+                                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="mt-1">@L["Quarantined"]</MudChip>
+                                            </MudTooltip>
+                                        }
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
+                                <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
+                                <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
+                                <MudTd DataLabel="@L["Actions"]">
+                                    <div class="d-flex">
+                                        @if (!context.IsQuarantined)
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                                           Color="Color.Primary" 
+                                                           Href="@($"/Media/Download?mxc={Uri.EscapeDataString(context.MediaId)}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
+                                                           Target="_blank"
+                                                           title="@L["Download"]" />
+                                            
+                                            @if (IsPreviewable(context.MediaType))
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                                               Color="Color.Secondary" 
+                                                               OnClick="@(() => ShowPreview(context))"
+                                                               title="@L["Preview"]" />
+                                            }
+
+                                            <MudIconButton Icon="@Icons.Material.Filled.Block" 
+                                                           Color="Color.Warning" 
+                                                           OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
+                                                           title="@L["Quarantine"]" />
+                                        }
+                                        else
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
+                                                           Color="Color.Success" 
+                                                           OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
+                                                           title="@L["Unquarantine"]" />
+                                        }
+                                    </div>
+                                </MudTd>
+                            </RowTemplate>
+                            <PagerContent>
+                                <MudTablePager />
+                            </PagerContent>
+                        </MudTable>
+                    }
                 }
             }
         </MudTabPanel>

@@ -60,6 +60,7 @@ public class RoomMediaItemViewModel
     public string? QuarantinedBy { get; set; }
     public bool IsQuarantined => !string.IsNullOrEmpty(QuarantinedBy);
     public bool SafeFromQuarantine { get; set; }
+    public bool IsLocal { get; set; }
 
     public string DownloadName
     {

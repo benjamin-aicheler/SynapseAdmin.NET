@@ -33,6 +33,7 @@ namespace SynapseAdmin.Components.Pages
         private MudTable<RoomMediaItemViewModel>? remoteMediaTable;
         private readonly CancellationTokenSource _cts = new();
         private string _searchTerm = string.Empty;
+        private string _mediaViewMode = "table";
 
         private string? activePurgeId;
         private string? activePurgeStatus;
