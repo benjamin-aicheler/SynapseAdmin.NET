@@ -1,0 +1,142 @@
+@page "/room-directory"
+
+@attribute [Authorize]
+
+<PageTitle>@L["RoomDirectory"] - SynapseAdmin.NET</PageTitle>
+
+<MudText Typo="Typo.h3" Class="mb-6">@L["RoomDirectory"]</MudText>
+
+<MudPaper Class="pa-4 mb-6" Elevation="3">
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MudTextField T="string" 
+                          Value="@_searchTerm" 
+                          ValueChanged="@OnSearchChanged" 
+                          Placeholder="@L["SearchDirectory"]" 
+                          Adornment="Adornment.Start" 
+                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                          Clearable="true" 
+                          Immediate="true" 
+                          DebounceInterval="500" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="8" Class="d-flex justify-end">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.Add" 
+                       OnClick="OpenPublishRoomDialog"
+                       Class="mr-2">
+                @L["PublishRoom"]
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" 
+                       StartIcon="@Icons.Material.Filled.Refresh" 
+                       OnClick="LoadDataAsync">
+                @L["Refresh"]
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_isLoading)
+{
+    <div class="d-flex justify-center my-8">
+        <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else if (_directoryResult == null || _directoryResult.Chunk.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Elevation="2">@L["NoPublicRoomsFound"]</MudAlert>
+}
+else
+{
+    <MudTable Items="@_directoryResult.Chunk" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3">
+        <HeaderContent>
+            <MudTh Style="width: 60px;">@L["Avatar"]</MudTh>
+            <MudTh>@L["Name"]</MudTh>
+            <MudTh>@L["CanonicalAlias"]</MudTh>
+            <MudTh>@L["RoomId"]</MudTh>
+            <MudTh>@L["Members"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@L["Avatar"]">
+                <MudAvatar Color="Color.Primary" Size="Size.Medium">
+                    @if (!string.IsNullOrEmpty(context.Name))
+                    {
+                        @context.Name[0].ToString().ToUpper()
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Chat" />
+                    }
+                </MudAvatar>
+            </MudTd>
+            <MudTd DataLabel="@L["Name"]">
+                <MudText Typo="Typo.body1" Class="mud-text-bold">
+                    @(string.IsNullOrEmpty(context.Name) ? L["NoName"] : context.Name)
+                </MudText>
+                @if (!string.IsNullOrEmpty(context.Topic))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-truncate" Style="max-width: 300px;">
+                        @context.Topic
+                    </MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="@L["CanonicalAlias"]">
+                <MudText Typo="Typo.body2">
+                    @(string.IsNullOrEmpty(context.CanonicalAlias) ? "-" : context.CanonicalAlias)
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="@L["RoomId"]">
+                <MudText Typo="Typo.caption">@context.RoomId</MudText>
+            </MudTd>
+            <MudTd DataLabel="@L["Members"]">
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.People">
+                    @context.NumJoinedMembers
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="@L["Actions"]">
+                <div class="d-flex gap-2">
+                    <MudButton Variant="Variant.Outlined" 
+                               Size="Size.Small" 
+                               Color="Color.Info" 
+                               Href="@($"/rooms/{Uri.EscapeDataString(context.RoomId)}")">
+                        @L["ViewDetails"]
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" 
+                               Size="Size.Small" 
+                               Color="Color.Warning" 
+                               OnClick="@(() => OpenManageAliasesDialog(context.RoomId, context.CanonicalAlias))">
+                        @L["Aliases"]
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" 
+                               Size="Size.Small" 
+                               Color="Color.Error" 
+                               OnClick="@(() => RemoveFromDirectoryAsync(context.RoomId))">
+                        @L["Remove"]
+                    </MudButton>
+                </div>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <div class="d-flex justify-space-between align-center mt-4">
+        <MudButton Variant="Variant.Filled" 
+                   Disabled="@(!CanGoBack)" 
+                   OnClick="GoBackPage" 
+                   StartIcon="@Icons.Material.Filled.ArrowBack">
+            @L["Previous"]
+        </MudButton>
+        <MudText Typo="Typo.body2">
+            @if (_directoryResult.TotalRoomCountEstimate.HasValue)
+            {
+                <span>@string.Format(L["EstimatedTotalRooms"], _directoryResult.TotalRoomCountEstimate)</span>
+            }
+        </MudText>
+        <MudButton Variant="Variant.Filled" 
+                   Disabled="@(!CanGoForward)" 
+                   OnClick="GoForwardPage" 
+                   EndIcon="@Icons.Material.Filled.ArrowForward">
+            @L["Next"]
+        </MudButton>
+    </div>
+}

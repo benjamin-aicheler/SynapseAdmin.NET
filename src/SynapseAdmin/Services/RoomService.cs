@@ -429,4 +429,127 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["ErrorFetchingPurgeStatus"]);
         }
     }
+
+    public async Task<OperationResult<MatrixPublicRoomDirectoryResult>> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<MatrixPublicRoomDirectoryResult>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var result = await Gateway.GetPublicRoomsAsync(limit, since, searchTerm, token);
+            if (result == null) return OperationResult<MatrixPublicRoomDirectoryResult>.Failure(L["ErrorFetchingRoomDirectory"]);
+            return OperationResult<MatrixPublicRoomDirectoryResult>.Ok(result);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<MatrixPublicRoomDirectoryResult>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching public room directory");
+            return OperationResult<MatrixPublicRoomDirectoryResult>.Failure(L["ErrorFetchingRoomDirectory"]);
+        }
+    }
+
+    public async Task<OperationResult<string>> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var result = await Gateway.GetRoomDirectoryVisibilityAsync(roomId, token);
+            if (result == null) return OperationResult<string>.Failure(L["ErrorFetchingRoomDirectoryVisibility"]);
+            return OperationResult<string>.Ok(result);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<string>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching directory visibility for room {RoomId}", roomId.SanitizeForLogging());
+            return OperationResult<string>.Failure(L["ErrorFetchingRoomDirectoryVisibility"]);
+        }
+    }
+
+    public async Task<OperationResult> SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            await Gateway.SetRoomDirectoryVisibilityAsync(roomId, visibility, token);
+            return OperationResult.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error setting directory visibility for room {RoomId} to {Visibility}", roomId.SanitizeForLogging(), visibility.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorSettingRoomDirectoryVisibility"]);
+        }
+    }
+
+    public async Task<OperationResult> PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            await Gateway.PutRoomAliasAsync(roomAlias, roomId, token);
+            return OperationResult.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error setting alias {Alias} for room {RoomId}", roomAlias.SanitizeForLogging(), roomId.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorSettingRoomAlias"]);
+        }
+    }
+
+    public async Task<OperationResult> DeleteRoomAliasAsync(string roomAlias, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            await Gateway.DeleteRoomAliasAsync(roomAlias, token);
+            return OperationResult.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting alias {Alias}", roomAlias.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorDeletingRoomAlias"]);
+        }
+    }
+
+    public async Task<OperationResult<List<string>>> GetLocalRoomAliasesAsync(string roomId, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<List<string>>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var result = await Gateway.GetLocalRoomAliasesAsync(roomId, token);
+            if (result == null) return OperationResult<List<string>>.Failure(L["ErrorFetchingRoomAliases"]);
+            return OperationResult<List<string>>.Ok(result);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<List<string>>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching aliases for room {RoomId}", roomId.SanitizeForLogging());
+            return OperationResult<List<string>>.Failure(L["ErrorFetchingRoomAliases"]);
+        }
+    }
 }

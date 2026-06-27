@@ -18,6 +18,12 @@ public interface IRoomService
     Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default);
     Task<OperationResult<SynapseAdminPurgeHistoryResponse>> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken token = default);
     Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken token = default);
+    Task<OperationResult<MatrixPublicRoomDirectoryResult>> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken token = default);
+    Task<OperationResult<string>> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken token = default);
+    Task<OperationResult> SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken token = default);
+    Task<OperationResult> PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken token = default);
+    Task<OperationResult> DeleteRoomAliasAsync(string roomAlias, CancellationToken token = default);
+    Task<OperationResult<List<string>>> GetLocalRoomAliasesAsync(string roomId, CancellationToken token = default);
     string? GetActivePurgeId(string roomId);
     void SetActivePurgeId(string roomId, string purgeId);
     void ClearActivePurgeId(string roomId);

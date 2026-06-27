@@ -143,6 +143,71 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default);
 
+    // --- Room Directory (Standard CS API) ---
+    public virtual async Task<MatrixPublicRoomDirectoryResult?> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken cancellationToken = default)
+    {
+        LibMatrix.Homeservers.RoomDirectoryFilter? filter = null;
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filter = new LibMatrix.Homeservers.RoomDirectoryFilter
+            {
+                GenericSearchTerm = searchTerm
+            };
+        }
+
+        var result = await Homeserver.GetPublicRoomsAsync(limit, since: since, filter: filter);
+        if (result == null) return null;
+
+        return new MatrixPublicRoomDirectoryResult
+        {
+            NextBatch = result.NextBatch,
+            PrevBatch = result.PrevBatch,
+            TotalRoomCountEstimate = result.TotalRoomCountEstimate,
+            Chunk = result.Chunk.Select(c => new MatrixPublicRoomDirectoryResult.PublicRoomListItem
+            {
+                AvatarUrl = c.AvatarUrl,
+                CanonicalAlias = c.CanonicalAlias,
+                GuestCanJoin = c.GuestCanJoin,
+                JoinRule = c.JoinRule,
+                Name = c.Name,
+                NumJoinedMembers = c.NumJoinedMembers,
+                RoomId = c.RoomId,
+                Topic = c.Topic,
+                WorldReadable = c.WorldReadable
+            }).ToList()
+        };
+    }
+
+    public virtual async Task<string?> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken cancellationToken = default)
+    {
+        var result = await Homeserver.GetRoomDirectoryVisibilityAsync(roomId);
+        return result?.Visibility.ToString().ToLowerInvariant();
+    }
+
+    public virtual async Task SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken cancellationToken = default)
+    {
+        var vis = visibility.ToLowerInvariant() == "public"
+            ? LibMatrix.Homeservers.RoomDirectoryVisibilityResponse.VisibilityValue.Public
+            : LibMatrix.Homeservers.RoomDirectoryVisibilityResponse.VisibilityValue.Private;
+        await Homeserver.SetRoomDirectoryVisibilityAsync(roomId, vis);
+    }
+
+    public virtual async Task PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken cancellationToken = default)
+    {
+        await Homeserver.SetRoomAliasAsync(roomAlias, roomId);
+    }
+
+    public virtual async Task DeleteRoomAliasAsync(string roomAlias, CancellationToken cancellationToken = default)
+    {
+        await Homeserver.DeleteRoomAliasAsync(roomAlias);
+    }
+
+    public virtual async Task<List<string>?> GetLocalRoomAliasesAsync(string roomId, CancellationToken cancellationToken = default)
+    {
+        var result = await Homeserver.GetLocalRoomAliasesAsync(roomId);
+        return result?.Aliases;
+    }
+
     // --- Background Updates ---
     public abstract Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default);

@@ -1096,4 +1096,109 @@
   <data name="MatchingDestinationsCount" xml:space="preserve">
     <value>{0} destinations correspondantes trouvées</value>
   </data>
+  <data name="RoomDirectory" xml:space="preserve">
+    <value>Annuaire des salons</value>
+  </data>
+  <data name="PublishRoom" xml:space="preserve">
+    <value>Publier le salon</value>
+  </data>
+  <data name="PublishRoomToDirectory" xml:space="preserve">
+    <value>Publier le salon dans l'annuaire</value>
+  </data>
+  <data name="SearchDirectory" xml:space="preserve">
+    <value>Rechercher dans l'annuaire...</value>
+  </data>
+  <data name="NoPublicRoomsFound" xml:space="preserve">
+    <value>Aucun salon public trouvé dans l'annuaire.</value>
+  </data>
+  <data name="CanonicalAlias" xml:space="preserve">
+    <value>Alias canonique</value>
+  </data>
+  <data name="ViewDetails" xml:space="preserve">
+    <value>Voir les détails</value>
+  </data>
+  <data name="EstimatedTotalRooms" xml:space="preserve">
+    <value>Nombre total estimé de salons publics : {0}</value>
+  </data>
+  <data name="RoomDirectoryVisibilityUpdated" xml:space="preserve">
+    <value>Visibilité du salon dans l'annuaire mise à jour avec succès.</value>
+  </data>
+  <data name="RemoveFromDirectory" xml:space="preserve">
+    <value>Retirer de l'annuaire</value>
+  </data>
+  <data name="RemoveFromDirectoryConfirmText" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir retirer ce salon de l'annuaire public ?</value>
+  </data>
+  <data name="RoomRemovedFromDirectory" xml:space="preserve">
+    <value>Salon retiré avec succès de l'annuaire.</value>
+  </data>
+  <data name="ManageAliases" xml:space="preserve">
+    <value>Gérer les alias</value>
+  </data>
+  <data name="ManageAliasesForRoom" xml:space="preserve">
+    <value>Gérer les alias pour le salon</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>Aucun</value>
+  </data>
+  <data name="LocalAliases" xml:space="preserve">
+    <value>Alias locaux</value>
+  </data>
+  <data name="NoAliasesConfigured" xml:space="preserve">
+    <value>Aucun alias configuré pour ce salon.</value>
+  </data>
+  <data name="AddAlias" xml:space="preserve">
+    <value>Ajouter un nouvel alias</value>
+  </data>
+  <data name="AliasRequired" xml:space="preserve">
+    <value>L'alias est requis</value>
+  </data>
+  <data name="AliasFormatHelper" xml:space="preserve">
+    <value>Doit commencer par # et se terminer par :{0}</value>
+  </data>
+  <data name="MustStartWithHash" xml:space="preserve">
+    <value>L'alias doit commencer par #</value>
+  </data>
+  <data name="MustEndWithServerName" xml:space="preserve">
+    <value>L'alias doit se terminer par :{0}</value>
+  </data>
+  <data name="AliasAddedSuccessfully" xml:space="preserve">
+    <value>Alias ajouté avec succès.</value>
+  </data>
+  <data name="AliasDeletedSuccessfully" xml:space="preserve">
+    <value>Alias supprimé avec succès.</value>
+  </data>
+  <data name="DeleteAlias" xml:space="preserve">
+    <value>Supprimer l'alias</value>
+  </data>
+  <data name="DeleteAliasConfirmText" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer l'alias "{0}" ?</value>
+  </data>
+  <data name="ErrorFetchingRoomDirectory" xml:space="preserve">
+    <value>Erreur lors de la récupération de l'annuaire des salons publics.</value>
+  </data>
+  <data name="ErrorFetchingRoomDirectoryVisibility" xml:space="preserve">
+    <value>Erreur lors de la récupération de la visibilité du salon dans l'annuaire.</value>
+  </data>
+  <data name="ErrorSettingRoomDirectoryVisibility" xml:space="preserve">
+    <value>Erreur lors de la définition de la visibilité du salon dans l'annuaire.</value>
+  </data>
+  <data name="ErrorSettingRoomAlias" xml:space="preserve">
+    <value>Erreur lors de la définition de l'alias du salon.</value>
+  </data>
+  <data name="ErrorDeletingRoomAlias" xml:space="preserve">
+    <value>Erreur lors de la suppression de l'alias du salon.</value>
+  </data>
+  <data name="ErrorFetchingRoomAliases" xml:space="preserve">
+    <value>Erreur lors de la récupération des alias du salon.</value>
+  </data>
+  <data name="RoomIdRequired" xml:space="preserve">
+    <value>L'ID du salon est requis</value>
+  </data>
+  <data name="RoomIdFormatHelper" xml:space="preserve">
+    <value>Doit commencer par ! et contenir un domaine (ex. !abc:exemple.com)</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Publier</value>
+  </data>
 </root>
