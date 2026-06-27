@@ -1,0 +1,17 @@
+@page "/rooms/{RoomId}/gallery"
+@using SynapseAdmin.Components.Shared
+@inject IStringLocalizer<SharedResources> L
+
+<PageTitle>@L["RoomGallery"] - SynapseAdmin.NET</PageTitle>
+
+<div class="d-flex align-center mb-4">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBackToRoom" Class="mr-2" title="@L["Back"]" />
+    <div>
+        <MudText Typo="Typo.h4">@L["RoomGallery"]</MudText>
+        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+            @(string.IsNullOrEmpty(roomName) ? RoomId : roomName)
+        </MudText>
+    </div>
+</div>
+
+<RoomGalleryGrid RoomId="@RoomId" Media="@roomMedia" />

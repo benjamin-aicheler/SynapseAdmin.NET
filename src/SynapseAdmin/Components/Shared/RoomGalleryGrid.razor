@@ -1,0 +1,240 @@
+@using SynapseAdmin.Models.ViewModels
+@inject IStringLocalizer<SharedResources> L
+@implements IAsyncDisposable
+
+<div class="room-gallery-container">
+    <!-- Filter Header -->
+    <MudPaper Elevation="1" Class="pa-4 mb-4">
+        <MudGrid Class="align-center">
+            <MudItem xs="12" sm="4" md="4">
+                <MudTextField T="string" Value="@_searchTerm" ValueChanged="@OnSearchTermChanged" Placeholder="@L["Search"]"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                              Clearable="true" Immediate="true" DebounceInterval="300" Margin="Margin.Dense" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4" md="4">
+                <div class="d-flex align-center gap-2">
+                    <MudText Typo="Typo.subtitle2" Class="mr-1">@L["FilterSource"]:</MudText>
+                    <MudChipSet T="string" SelectedValue="@_sourceFilter" SelectedValueChanged="@OnSourceFilterChanged" CheckMark="true" SelectionMode="SelectionMode.SingleSelection">
+                        <MudChip Value="@("all")" Text="@L["AllMedia"]" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@("local")" Text="@L["LocalMedia"]" Color="Color.Info" Variant="Variant.Filled" Default="true" Size="Size.Small" />
+                        <MudChip Value="@("remote")" Text="@L["RemoteMedia"]" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small" />
+                    </MudChipSet>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="4" md="4">
+                <div class="d-flex align-center gap-2">
+                    <MudText Typo="Typo.subtitle2" Class="mr-1">@L["FilterType"]:</MudText>
+                    <MudChipSet T="string" SelectedValue="@_typeFilter" SelectedValueChanged="@OnTypeFilterChanged" CheckMark="true" SelectionMode="SelectionMode.SingleSelection">
+                        <MudChip Value="@("all")" Text="@L["AllMedia"]" Color="Color.Primary" Variant="Variant.Filled" Default="true" Size="Size.Small" />
+                        <MudChip Value="@("image")" Text="@L["Images"]" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@("video")" Text="@L["Videos"]" Color="Color.Warning" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@("audio")" Text="@L["Audio"]" Color="Color.Tertiary" Variant="Variant.Filled" Size="Size.Small" />
+                    </MudChipSet>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Initial Loading State -->
+    @if (_isLoadingInitial)
+    {
+        <div class="d-flex flex-column align-center justify-center py-12">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" Class="mb-3" />
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@L["Loading"]</MudText>
+        </div>
+    }
+    else if (!_filteredMedia.Any())
+    {
+        <MudAlert Severity="Severity.Info" Class="my-4">@L["NoMediaFound"]</MudAlert>
+    }
+    else
+    {
+        <!-- Responsive Grid -->
+        <div class="gallery-grid">
+            @foreach (var item in _displayedMedia)
+            {
+                <MudCard Elevation="3" Class="gallery-card d-flex flex-column">
+                    <!-- Thumbnail / Preview Box -->
+                    <div class="gallery-card-preview d-flex align-center justify-center">
+                        <!-- Badges -->
+                        <div class="gallery-card-badges d-flex gap-1">
+                            @if (item.IsQuarantined)
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled" Class="ma-0">@L["Quarantined"]</MudChip>
+                            }
+                            @if (item.SafeFromQuarantine)
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled" Class="ma-0">@L["Protected"]</MudChip>
+                            }
+                            <MudChip T="string" Color="@(item.IsLocal ? Color.Info : Color.Secondary)" Size="Size.Small" Variant="Variant.Text" Class="ma-0 bg-dark-alpha">
+                                @(item.IsLocal ? L["LocalMedia"] : L["RemoteMedia"])
+                            </MudChip>
+                        </div>
+
+                        <!-- Content Render based on mime type -->
+                        @if (IsImageType(item.MediaType))
+                        {
+                            <img src="@GetPreviewUrl(item)" alt="@(item.UploadName ?? item.MediaId)" class="gallery-img-preview" loading="lazy" @onclick="() => ShowPreview(item)" />
+                        }
+                        else if (IsVideoType(item.MediaType))
+                        {
+                            <video controls preload="metadata" class="gallery-video-preview">
+                                <source src="@GetPreviewUrl(item)" type="@item.MediaType">
+                            </video>
+                        }
+                        else if (IsAudioType(item.MediaType))
+                        {
+                            <div class="w-100 pa-4 text-center">
+                                <MudIcon Icon="@Icons.Material.Filled.AudioFile" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                                <audio controls style="width: 100%; max-height: 40px;">
+                                    <source src="@GetPreviewUrl(item)" type="@item.MediaType">
+                                </audio>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center cursor-pointer" @onclick="() => ShowPreview(item)">
+                                <MudIcon Icon="@GetFileIcon(item.MediaType)" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                                <MudText Typo="Typo.caption" Class="px-2 text-truncate" Style="max-width: 180px;">@(item.UploadName ?? item.MediaId)</MudText>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Card Body -->
+                    <MudCardContent Class="pa-3 flex-grow-1 d-flex flex-column justify-space-between">
+                        <div>
+                            <MudTooltip Text="@(item.UploadName ?? item.MediaId)">
+                                <MudText Typo="Typo.subtitle2" Class="text-truncate font-weight-bold" Style="max-width: 100%;">
+                                    @(item.UploadName ?? item.MediaId)
+                                </MudText>
+                            </MudTooltip>
+                            <div class="d-flex align-center justify-space-between mt-1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @(string.IsNullOrEmpty(item.MediaType) ? "Unknown" : item.MediaType.Split(';')[0])
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @(item.MediaLength > 0 ? FormatFileSize(item.MediaLength) : "")
+                                </MudText>
+                            </div>
+                        </div>
+                    </MudCardContent>
+
+                    <!-- Card Actions -->
+                    <MudCardActions Class="pa-2 d-flex justify-space-between align-center border-top">
+                        <div class="d-flex">
+                            @if (!item.IsQuarantined)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                               Color="Color.Primary" Size="Size.Small"
+                                               Href="@($"/Media/Download?mxc={Uri.EscapeDataString(item.MediaId)}&filename={Uri.EscapeDataString(item.DownloadName)}&mimeType={Uri.EscapeDataString(item.MediaType ?? "application/octet-stream")}")"
+                                               Target="_blank" title="@L["Download"]" />
+
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                               Color="Color.Secondary" Size="Size.Small"
+                                               OnClick="() => ShowPreview(item)" title="@L["Preview"]" />
+
+                                <MudIconButton Icon="@Icons.Material.Filled.Block" 
+                                               Color="Color.Warning" Size="Size.Small"
+                                               OnClick="() => QuarantineSingleMedia(item)" title="@L["Quarantine"]" />
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
+                                               Color="Color.Success" Size="Size.Small"
+                                               OnClick="() => UnquarantineSingleMedia(item)" title="@L["Unquarantine"]" />
+                            }
+
+                            @if (item.IsLocal)
+                            {
+                                <MudIconButton Icon="@(item.SafeFromQuarantine ? Icons.Material.Filled.Shield : Icons.Material.Outlined.Shield)" 
+                                               Color="@(item.SafeFromQuarantine ? Color.Success : Color.Default)" Size="Size.Small"
+                                               OnClick="() => ToggleMediaProtection(item)" title="@(item.SafeFromQuarantine ? L["Unprotect"] : L["Protect"])" />
+                            }
+                        </div>
+
+                        @if (item.IsLocal)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                           Color="Color.Error" Size="Size.Small"
+                                           OnClick="() => DeleteSingleMedia(item)" title="@L["Delete"]" />
+                        }
+                    </MudCardActions>
+                </MudCard>
+            }
+        </div>
+
+        <!-- Infinite Scroll Sentinel & Loader -->
+        <div @ref="_sentinelElement" class="d-flex align-center justify-center py-6">
+            @if (_hasMoreToLoad)
+            {
+                <div class="d-flex align-center gap-2">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Loading"]</MudText>
+                </div>
+            }
+            else if (_displayedMedia.Any())
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@L["AllLoaded"] (@_displayedMedia.Count / @_filteredMedia.Count)</MudText>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+
+    .gallery-card {
+        height: 100%;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+
+    .gallery-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+    }
+
+    .gallery-card-preview {
+        position: relative;
+        height: 200px;
+        background-color: var(--mud-palette-background-grey);
+        overflow: hidden;
+    }
+
+    .gallery-card-badges {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 2;
+        flex-wrap: wrap;
+    }
+
+    .bg-dark-alpha {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        color: #fff !important;
+    }
+
+    .gallery-img-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .gallery-img-preview:hover {
+        transform: scale(1.05);
+    }
+
+    .gallery-video-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+    }
+</style>

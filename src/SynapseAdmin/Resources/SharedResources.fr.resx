@@ -1201,4 +1201,40 @@
   <data name="Publish" xml:space="preserve">
     <value>Publier</value>
   </data>
+  <data name="RoomGallery" xml:space="preserve">
+    <value>Galerie du salon</value>
+  </data>
+  <data name="GalleryView" xml:space="preserve">
+    <value>Vue galerie</value>
+  </data>
+  <data name="TableView" xml:space="preserve">
+    <value>Vue tableau</value>
+  </data>
+  <data name="AllMedia" xml:space="preserve">
+    <value>Tous les médias</value>
+  </data>
+  <data name="Images" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="Videos" xml:space="preserve">
+    <value>Vidéos</value>
+  </data>
+  <data name="Audio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>Fichiers</value>
+  </data>
+  <data name="NoMediaFound" xml:space="preserve">
+    <value>Aucun média ne correspond à vos critères.</value>
+  </data>
+  <data name="AllLoaded" xml:space="preserve">
+    <value>Tous les médias ont été chargés</value>
+  </data>
+  <data name="FilterSource" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="FilterType" xml:space="preserve">
+    <value>Type</value>
+  </data>
 </root>

@@ -115,8 +115,8 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             }).ToList() ?? [];
             vm.Media = media == null ? null : new RoomMediaViewModel
             {
-                Local = media.Local.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList(),
-                Remote = media.Remote.Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList()
+                Local = media.Local.Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
+                Remote = media.Remote.Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
             };
             
             return OperationResult<RoomDetailViewModel>.Ok(vm);
