@@ -8,7 +8,7 @@ SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (M
 - **Logging:** Serilog (Console and rolling File logging to `logs/` directory)
 - **Deployment:** Docker & Docker Compose
 - **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Active Development; basic auth, dashboard, room/user management (including creation, memberships, search/filtering, room media, and interactive room gallery view), room message history, event reports (with search/filtering), registration tokens, federation destinations (with search/filtering), server notices, background updates management, advanced media maintenance (cache purging, bulk local deletion, and quarantine protection), multi-language support (EN, DE, FR), and MudBlazor UI are implemented.
+- **Status:** Active Development; basic auth, dashboard, room/user management (including creation, memberships, search/filtering, room media, and interactive room gallery view), room message history, event reports (with search/filtering), registration tokens, federation destinations (with search/filtering), server notices, background updates management, advanced media maintenance (cache purging, bulk local deletion, and quarantine protection), multi-language support (EN, DE, FR), Tuwunel homeserver support (v1.8.1+), and MudBlazor UI are implemented.
 
 ## Building and Running
 The project uses the standard .NET 10 CLI and Docker:
@@ -54,12 +54,13 @@ The project uses the standard .NET 10 CLI and Docker:
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
     - **Themes:** Support multiple themes by implementing the `IAppTheme` interface in `src/SynapseAdmin/Infrastructure/Themes/`. Themes are automatically discovered via reflection. User preferences are persisted using `ProtectedLocalStorage`. See [Theme Guide](./THEMING.md).
 
-## Synapse API Compatibility
+## Synapse API Compatibility & Brand Support
 - **Inconsistent Types:** Some Synapse Admin APIs (e.g., User Media) return pagination tokens (`next_token`) as JSON Numbers, while the SDK/DTOs expect Strings.
 - **Field Naming Inconsistency:** The Synapse Room Admin API uses the key **`avatar`** for room avatars in its responses, whereas the User Admin API (and most other Matrix APIs) uses **`avatar_url`**.
-- **Handling Strategy:** To avoid modifying the `LibMatrix` submodule, use `SynapseCompatibilityJsonOptions` (defined in `SynapseAdminGateway`) for type coercion. For field naming, ensure local DTOs map the correct keys.
+- **Handling Strategy:** To avoid modifying the `LibMatrix` submodule, use `SynapseCompatibilityJsonOptions` (defined in `SynapseAdminGateway` and `SynapseCompatibleAdminGateway`) for type coercion. For field naming, ensure local DTOs map the correct keys.
 - **Implementation:** This utilizes `JsonStringConverter` to safely coerce Numbers into Strings during deserialization.
 - **Guideline:** Apply these options to any `GetFromJsonAsync` calls where Synapse returns inconsistent types to prevent `JsonException` crashes.
+- **Brand Compatibility (Tuwunel & Compatible Homeservers):** Homeservers such as Tuwunel >= 1.8.1 support Synapse Admin APIs but return `AuthenticatedHomeserverGeneric` instead of `AuthenticatedHomeserverSynapse`. To accommodate them, we use `SynapseCompatibleAdminGateway`, which executes direct `ClientHttpClient` calls rather than relying on LibMatrix's `.Admin` properties. We safely probe and identify brand versions in `MatrixAuthGateway` with automated fallback capabilities.
 
 ## Security
 - **Data Protection:** The application uses ASP.NET Core Data Protection to encrypt sensitive session data (Matrix access tokens). 

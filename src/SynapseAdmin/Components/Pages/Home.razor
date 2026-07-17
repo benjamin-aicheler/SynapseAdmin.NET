@@ -19,7 +19,7 @@
                 <MudText Typo="Typo.body2">@MatrixSession.Gateway?.HomeserverUrl</MudText>
                 @if (!string.IsNullOrEmpty(serverVersion))
                 {
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Synapse @serverVersion</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(MatrixSession.Gateway?.ServerBrand ?? "Synapse") @serverVersion</MudText>
                 }
             </MudCardContent>
         </MudCard>
