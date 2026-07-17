@@ -17,6 +17,8 @@ public interface IMatrixGateway
     string AccessToken { get; }
 
     bool SupportsAdminApi { get; }
+    string ServerBrand { get; }
+    string ServerVersion { get; }
 
     // --- User Management (Admin/Synapse) ---
     Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);
