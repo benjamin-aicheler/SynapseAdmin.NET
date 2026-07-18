@@ -166,7 +166,11 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v2/rooms/{roomId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.DeleteAsJsonAsync(url, request);
+        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(request), System.Text.Encoding.UTF8, "application/json")
+        };
+        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -260,7 +264,8 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/event_reports/{reportId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.DeleteAsync(url);
+        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
+        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -291,7 +296,8 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/registration_tokens/{token.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.DeleteAsync(url);
+        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
+        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -334,7 +340,8 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.DeleteAsync(url);
+        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
+        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
