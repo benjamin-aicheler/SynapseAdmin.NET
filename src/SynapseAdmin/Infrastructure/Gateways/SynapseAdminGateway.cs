@@ -9,11 +9,7 @@ using System.Net.Http.Json;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 
-/// <summary>
-/// Synapse-specific implementation of the Matrix gateway.
-/// Encapsulates communication by following the service's lead: 
-/// uses .Admin for SDK features and ClientHttpClient for project extensions.
-/// </summary>
+[System.Obsolete("Use SynapseCompatibleAdminGateway instead. This implementation is retained solely as an emergency fallback.")]
 public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : MatrixGatewayBase(synapse)
 {
     private readonly AuthenticatedHomeserverSynapse _synapse = synapse;
