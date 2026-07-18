@@ -61,6 +61,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Implementation:** This utilizes `JsonStringConverter` to safely coerce Numbers into Strings during deserialization.
 - **Guideline:** Apply these options to any `GetFromJsonAsync` calls where Synapse returns inconsistent types to prevent `JsonException` crashes.
 - **Brand Compatibility (Tuwunel & Compatible Homeservers):** Homeservers such as Tuwunel >= 1.8.1 support Synapse Admin APIs but return `AuthenticatedHomeserverGeneric` instead of `AuthenticatedHomeserverSynapse`. To accommodate them, we use `SynapseCompatibleAdminGateway`, which executes direct `ClientHttpClient` calls rather than relying on LibMatrix's `.Admin` properties. We safely probe and identify brand versions in `MatrixAuthGateway` with automated fallback capabilities.
+- **CancellationToken Support in HTTP DELETE Calls:** The custom `MatrixHttpClient` in `LibMatrix` lacks cancellation token overloads on high-level helper methods like `DeleteAsync` or `DeleteAsJsonAsync`. When implementing raw HTTP DELETE requests in custom gateways, instantiate an `HttpRequestMessage(HttpMethod.Delete, url)` with any required payload and invoke the client's public `SendAsync(reqMessage, cancellationToken)` to propagate cancellation cleanly.
 
 ## Security
 - **Data Protection:** The application uses ASP.NET Core Data Protection to encrypt sensitive session data (Matrix access tokens). 
