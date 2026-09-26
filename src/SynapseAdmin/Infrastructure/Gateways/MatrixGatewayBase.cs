@@ -45,6 +45,10 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
             return ms.ToArray();
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch
         {
             return null;

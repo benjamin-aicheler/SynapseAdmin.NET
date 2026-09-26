@@ -93,7 +93,7 @@ namespace SynapseAdmin.Components.Pages
             _isSaving = false;
             if (result.Success)
             {
-                Snackbar.Add(L["AliasAddedSuccessfully"], Severity.Success);
+                Snackbar.Add(result.Message, Severity.Success);
                 _newAlias = string.Empty;
                 if (form != null)
                 {
@@ -124,7 +124,7 @@ namespace SynapseAdmin.Components.Pages
                 _isSaving = false;
                 if (result.Success)
                 {
-                    Snackbar.Add(L["AliasDeletedSuccessfully"], Severity.Success);
+                    Snackbar.Add(result.Message, Severity.Success);
                     await LoadAliasesAsync();
                 }
                 else

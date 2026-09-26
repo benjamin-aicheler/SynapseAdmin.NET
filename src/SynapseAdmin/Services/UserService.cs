@@ -1,4 +1,5 @@
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Extensions.Mapping;
@@ -50,8 +51,42 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
 
 
-            var mediaTask = Gateway.GetUserMediaAsync(userId, token);
-            var membershipsTask = GetUserMembershipsAsync(userId, token);
+            async Task<SynapseAdminUserMediaResult?> FetchMediaSafeAsync()
+            {
+                try
+                {
+                    return await Gateway.GetUserMediaAsync(userId, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to fetch user media for user {UserId}. Continuing without media.", userId.SanitizeForLogging());
+                    return null;
+                }
+            }
+
+            async Task<OperationResult<List<UserMembershipViewModel>>> FetchMembershipsSafeAsync()
+            {
+                try
+                {
+                    return await GetUserMembershipsAsync(userId, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to fetch memberships for user {UserId}. Continuing without memberships.", userId.SanitizeForLogging());
+                    return OperationResult<List<UserMembershipViewModel>>.Ok([]);
+                }
+            }
+
+            var mediaTask = FetchMediaSafeAsync();
+            var membershipsTask = FetchMembershipsSafeAsync();
 
             await Task.WhenAll(mediaTask, membershipsTask);
 
