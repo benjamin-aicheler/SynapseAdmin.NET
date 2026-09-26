@@ -1237,4 +1237,31 @@
   <data name="FilterType" xml:space="preserve">
     <value>Type</value>
   </data>
+  <data name="NotFound" xml:space="preserve">
+    <value>Non trouvé</value>
+  </data>
+  <data name="PageNotFoundMessage" xml:space="preserve">
+    <value>Désolé, le contenu que vous recherchez n'existe pas.</value>
+  </data>
+  <data name="BackToHome" xml:space="preserve">
+    <value>Retour à l'accueil</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="AnErrorOccurredProcessingRequest" xml:space="preserve">
+    <value>Une erreur s'est produite lors du traitement de votre demande.</value>
+  </data>
+  <data name="RequestId" xml:space="preserve">
+    <value>ID de requête</value>
+  </data>
+  <data name="DevelopmentMode" xml:space="preserve">
+    <value>Mode de développement</value>
+  </data>
+  <data name="DevelopmentModeNotice" xml:space="preserve">
+    <value>Passer à l'environnement de développement affichera des informations plus détaillées sur l'erreur survenue.</value>
+  </data>
+  <data name="DevelopmentModeWarning" xml:space="preserve">
+    <value>L'environnement de développement ne doit pas être activé pour les applications déployées car il peut divulguer des informations sensibles.</value>
+  </data>
 </root>

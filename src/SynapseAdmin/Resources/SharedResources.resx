@@ -1238,4 +1238,31 @@
   <data name="FilterType" xml:space="preserve">
     <value>Type</value>
   </data>
+  <data name="NotFound" xml:space="preserve">
+    <value>Not Found</value>
+  </data>
+  <data name="PageNotFoundMessage" xml:space="preserve">
+    <value>Sorry, the content you are looking for does not exist.</value>
+  </data>
+  <data name="BackToHome" xml:space="preserve">
+    <value>Back to Home</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="AnErrorOccurredProcessingRequest" xml:space="preserve">
+    <value>An error occurred while processing your request.</value>
+  </data>
+  <data name="RequestId" xml:space="preserve">
+    <value>Request ID</value>
+  </data>
+  <data name="DevelopmentMode" xml:space="preserve">
+    <value>Development Mode</value>
+  </data>
+  <data name="DevelopmentModeNotice" xml:space="preserve">
+    <value>Swapping to the Development environment will display more detailed information about the error that occurred.</value>
+  </data>
+  <data name="DevelopmentModeWarning" xml:space="preserve">
+    <value>The Development environment shouldn't be enabled for deployed applications as it can leak sensitive information.</value>
+  </data>
 </root>
