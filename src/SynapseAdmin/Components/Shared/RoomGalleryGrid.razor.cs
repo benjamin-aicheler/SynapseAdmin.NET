@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Components.Pages;
@@ -14,6 +15,7 @@ namespace SynapseAdmin.Components.Shared
         [Inject] public ISnackbar Snackbar { get; set; } = null!;
         [Inject] public IDialogService DialogService { get; set; } = null!;
         [Inject] public IJSRuntime JSRuntime { get; set; } = null!;
+        [Inject] public ILogger<RoomGalleryGrid> Logger { get; set; } = null!;
 
         [Parameter] public string RoomId { get; set; } = string.Empty;
         [Parameter] public RoomMediaViewModel? Media { get; set; }
@@ -64,7 +66,7 @@ namespace SynapseAdmin.Components.Shared
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error setting up infinite scroll JS interop: {ex.Message}");
+                Logger.LogError(ex, "Error setting up infinite scroll JS interop");
             }
         }
 
