@@ -77,12 +77,10 @@ public class SynapseCompatibleAdminGateway(
         var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/login?valid_until_ms={DateTimeOffset.UtcNow.Add(expireIn).ToUnixTimeMilliseconds()}";
         var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
-        var loginResp = await resp.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken: cancellationToken);
-        if (loginResp != null)
-        {
-            loginResp.UserId = userId; // Synapse only returns the access token
-        }
-        return loginResp!;
+        var loginResp = await resp.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken: cancellationToken)
+            ?? throw new InvalidOperationException($"Failed to deserialize shadow login response for user {userId}.");
+        loginResp.UserId = userId; // Synapse only returns the access token
+        return loginResp;
     }
 
     public override async Task<SendServerNoticeResponse?> SendServerNoticeAsync(string userId, object content, string? type = null, string? stateKey = null, CancellationToken cancellationToken = default)
