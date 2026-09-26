@@ -94,6 +94,33 @@ public class MatrixSessionService(IMatrixAuthGateway authGateway, ILogger<Matrix
         }
     }
 
+    public async Task<string?> GetServerVersionAsync(CancellationToken cancellationToken = default)
+    {
+        if (Gateway == null) return null;
+
+        if (Gateway.SupportsAdminApi)
+        {
+            try
+            {
+                var synapseVer = await Gateway.GetSynapseVersionAsync(cancellationToken);
+                if (!string.IsNullOrEmpty(synapseVer?.ServerVersion))
+                {
+                    return synapseVer.ServerVersion;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to retrieve Synapse server version via admin API");
+            }
+        }
+
+        return Gateway.ServerVersion != "Unknown" ? Gateway.ServerVersion : null;
+    }
+
     public void Logout()
     {
         if (Gateway != null)
