@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Infrastructure.Helpers;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -109,7 +110,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task QuarantineSingleMedia(string mediaIdPart)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = mediaIdPart.StartsWith("mxc://") ? mediaIdPart : $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+            var mxc = MediaHelper.ToMxcUri(mediaIdPart, MatrixSession.Gateway.ServerName);
             
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["QuarantineMediaTitle"],
@@ -130,7 +131,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task UnquarantineSingleMedia(string mediaIdPart)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = mediaIdPart.StartsWith("mxc://") ? mediaIdPart : $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+            var mxc = MediaHelper.ToMxcUri(mediaIdPart, MatrixSession.Gateway.ServerName);
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["UnquarantineMediaTitle"],
@@ -151,7 +152,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task DeleteSingleMedia(string mediaIdPart)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = mediaIdPart.StartsWith("mxc://") ? mediaIdPart : $"mxc://{MatrixSession.Gateway.ServerName}/{mediaIdPart}";
+            var mxc = MediaHelper.ToMxcUri(mediaIdPart, MatrixSession.Gateway.ServerName);
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["DeleteMediaTitle"],
@@ -172,7 +173,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task ToggleMediaProtection(UserMediaItemViewModel media)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = media.MediaId.StartsWith("mxc://") ? media.MediaId : $"mxc://{MatrixSession.Gateway.ServerName}/{media.MediaId}";
+            var mxc = MediaHelper.ToMxcUri(media.MediaId, MatrixSession.Gateway.ServerName);
 
             var result = media.SafeFromQuarantine
                 ? await MediaService.UnprotectMediaAsync(mxc, _cts.Token)
@@ -196,7 +197,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task ShowPreview(UserMediaItemViewModel media)
         {
             if (MatrixSession.Gateway == null) return;
-            var mxc = $"mxc://{MatrixSession.Gateway.ServerName}/{media.MediaId}";
+            var mxc = MediaHelper.ToMxcUri(media.MediaId, MatrixSession.Gateway.ServerName);
             var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
 
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };

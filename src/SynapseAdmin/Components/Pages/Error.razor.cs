@@ -13,5 +13,5 @@ namespace SynapseAdmin.Components.Pages
 
         protected override void OnInitialized() =>
             RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
-        }
+    }
 }
