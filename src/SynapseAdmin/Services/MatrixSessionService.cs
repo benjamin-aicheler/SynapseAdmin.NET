@@ -90,7 +90,7 @@ public class MatrixSessionService(IMatrixAuthGateway authGateway, ILogger<Matrix
         {
             logger.LogWarning(ex, "Failed to restore session for {Homeserver}", homeserver.SanitizeForLogging());
             Gateway = null;
-            return OperationResult.Failure(L["ErrorLoadingTokens"]);
+            return OperationResult.Failure(L["LoginFailed"]);
         }
     }
 
