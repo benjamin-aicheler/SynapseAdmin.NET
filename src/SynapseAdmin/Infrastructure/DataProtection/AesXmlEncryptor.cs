@@ -21,8 +21,16 @@ public class AesXmlEncryptor(string passphrase) : IXmlEncryptor
         var ciphertext = new byte[plaintext.Length];
 
         var key = Rfc2898DeriveBytes.Pbkdf2(passphrase, salt, Iterations, HashAlgorithmName.SHA256, KeySize);
-        using var aesGcm = new AesGcm(key, TagSize);
-        aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+        try
+        {
+            using var aesGcm = new AesGcm(key, TagSize);
+            aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+            CryptographicOperations.ZeroMemory(plaintext);
+        }
 
         var element = new XElement("encryptedKey",
             new XAttribute("v", "1"),

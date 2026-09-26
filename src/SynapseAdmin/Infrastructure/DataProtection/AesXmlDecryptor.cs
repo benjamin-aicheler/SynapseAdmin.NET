@@ -31,9 +31,17 @@ public class AesXmlDecryptor(IServiceProvider services) : IXmlDecryptor
         var plaintext = new byte[ciphertext.Length];
 
         var key = Rfc2898DeriveBytes.Pbkdf2(passphrase, salt, Iterations, HashAlgorithmName.SHA256, KeySize);
-        using var aesGcm = new AesGcm(key, tag.Length);
-        aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
+        try
+        {
+            using var aesGcm = new AesGcm(key, tag.Length);
+            aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
 
-        return XElement.Parse(Encoding.UTF8.GetString(plaintext));
+            return XElement.Parse(Encoding.UTF8.GetString(plaintext));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+            CryptographicOperations.ZeroMemory(plaintext);
+        }
     }
 }
