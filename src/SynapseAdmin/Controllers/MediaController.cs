@@ -15,13 +15,13 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     private string? UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
     [HttpGet]
-    public async Task<IActionResult> Avatar(string mxc)
+    public async Task<IActionResult> Avatar(string mxc, CancellationToken cancellationToken = default)
     {
-        return await Preview(mxc);
+        return await Preview(mxc, cancellationToken: cancellationToken);
     }
 
     [HttpGet]
-    public async Task<IActionResult> Download(string mxc, string? filename = null, string? mimeType = null)
+    public async Task<IActionResult> Download(string mxc, string? filename = null, string? mimeType = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(mxc)) return BadRequest();
         
@@ -47,7 +47,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return Unauthorized();
         }
 
-        var result = await mediaService.GetMediaStreamAsync(mxc);
+        var result = await mediaService.GetMediaStreamAsync(mxc, cancellationToken);
         if (!result.Success || result.Data == null)
         {
             logger.LogWarning("Media download not found for MXC {Mxc}", mxc.SanitizeForLogging());
@@ -59,7 +59,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         // If no MIME type was provided, try to get it from metadata
         if (string.IsNullOrEmpty(safeMimeType))
         {
-            var metaResult = await mediaService.GetMediaMetadataAsync(mxc);
+            var metaResult = await mediaService.GetMediaMetadataAsync(mxc, cancellationToken);
             if (metaResult.Success && metaResult.Data != null)
             {
                 safeMimeType = metaResult.Data.MediaType;
@@ -75,7 +75,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     }
 
     [HttpGet]
-    public async Task<IActionResult> Preview(string mxc, string? mimeType = null)
+    public async Task<IActionResult> Preview(string mxc, string? mimeType = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(mxc)) return BadRequest();
 
@@ -100,7 +100,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return Unauthorized();
         }
 
-        var result = await mediaService.GetMediaStreamAsync(mxc);
+        var result = await mediaService.GetMediaStreamAsync(mxc, cancellationToken);
         if (!result.Success || result.Data == null)
         {
             logger.LogWarning("Media preview not found for MXC {Mxc}", mxc.SanitizeForLogging());
@@ -110,7 +110,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         // If no MIME type was provided, try to get it from metadata
         if (string.IsNullOrEmpty(safeMimeType))
         {
-            var metaResult = await mediaService.GetMediaMetadataAsync(mxc);
+            var metaResult = await mediaService.GetMediaMetadataAsync(mxc, cancellationToken);
             if (metaResult.Success && metaResult.Data != null && !string.IsNullOrEmpty(metaResult.Data.MediaType))
             {
                 safeMimeType = metaResult.Data.MediaType.Split(';')[0].Trim().ToLowerInvariant();
