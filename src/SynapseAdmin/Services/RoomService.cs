@@ -479,7 +479,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             await Gateway.SetRoomDirectoryVisibilityAsync(roomId, visibility, token);
-            return OperationResult.Ok();
+            return OperationResult.Ok(L["RoomDirectoryVisibilityUpdated"]);
         }
         catch (OperationCanceledException)
         {
@@ -499,7 +499,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             await Gateway.PutRoomAliasAsync(roomAlias, roomId, token);
-            return OperationResult.Ok();
+            return OperationResult.Ok(L["AliasAddedSuccessfully"]);
         }
         catch (OperationCanceledException)
         {
@@ -519,7 +519,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             await Gateway.DeleteRoomAliasAsync(roomAlias, token);
-            return OperationResult.Ok();
+            return OperationResult.Ok(L["AliasDeletedSuccessfully"]);
         }
         catch (OperationCanceledException)
         {

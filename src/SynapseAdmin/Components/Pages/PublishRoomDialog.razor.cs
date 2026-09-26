@@ -42,7 +42,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (result.Success)
             {
-                Snackbar.Add(L["RoomDirectoryVisibilityUpdated"], Severity.Success);
+                Snackbar.Add(result.Message, Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else
