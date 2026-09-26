@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
@@ -19,6 +20,8 @@ namespace SynapseAdmin.Components.Pages
         public IDialogService DialogService { get; set; } = null!;
         [Inject]
         public IMediaService MediaService { get; set; } = null!;
+        [Inject]
+        public IJSRuntime JSRuntime { get; set; } = null!;
 
         [Parameter]
         public string UserId { get; set; } = string.Empty;
@@ -80,7 +83,27 @@ namespace SynapseAdmin.Components.Pages
         private async Task LoginAsUser()
         {
             var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1), _cts.Token);
-            Snackbar.Add(result.Message, result.Severity);
+            if (result.Success && !string.IsNullOrEmpty(result.Data))
+            {
+                try
+                {
+                    await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", result.Data);
+                    Snackbar.Add(result.Message + " " + L["TokenCopiedToClipboard"], result.Severity);
+                }
+                catch
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
+
+                await DialogService.ShowMessageBoxAsync(
+                    L["LoginAsUserShadow"],
+                    (MarkupString)$"<b>{L["AccessToken"]}:</b><br/><code style='word-break: break-all;'>{result.Data}</code>",
+                    yesText: L["Close"]);
+            }
+            else
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
         }
 
         private async Task QuarantineSingleMedia(string mediaIdPart)
