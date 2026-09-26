@@ -171,7 +171,7 @@ else
                     {
                         <MudIconButton Icon="@Icons.Material.Filled.Download" 
                                        Color="Color.Primary" 
-                                       Href="@($"/Media/Download?mxc={Uri.EscapeDataString($"mxc://{MatrixSession.Gateway!.ServerName}/{context.MediaId}")}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
+                                       Href="@($"/Media/Download?mxc={Uri.EscapeDataString(MediaHelper.ToMxcUri(context.MediaId, MatrixSession.Gateway?.ServerName))}&filename={Uri.EscapeDataString(context.DownloadName)}&mimeType={Uri.EscapeDataString(context.MediaType ?? "application/octet-stream")}")"
                                        Target="_blank"
                                        title="@L["Download"]" />
 

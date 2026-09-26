@@ -77,4 +77,11 @@ public static class MediaHelper
         var parts = mxc.Split('/');
         return parts.Last();
     }
+
+    public static string ToMxcUri(string? mediaId, string? serverName)
+    {
+        if (string.IsNullOrEmpty(mediaId)) return string.Empty;
+        if (mediaId.StartsWith("mxc://", StringComparison.OrdinalIgnoreCase)) return mediaId;
+        return string.IsNullOrEmpty(serverName) ? mediaId : $"mxc://{serverName}/{mediaId}";
+    }
 }
