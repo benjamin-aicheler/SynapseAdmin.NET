@@ -39,7 +39,13 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return Unauthorized();
         }
 
-        await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
+        var restoreResult = await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
+        if (!restoreResult.Success)
+        {
+            logger.LogWarning("Download failed for MXC {Mxc}: Failed to restore session for user {UserId}", 
+                mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
+            return Unauthorized();
+        }
 
         var result = await mediaService.GetMediaStreamAsync(mxc);
         if (!result.Success || result.Data == null)
@@ -62,6 +68,8 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
 
         var finalFileName = safeFilename ?? mediaId;
         var finalMimeType = safeMimeType ?? "application/octet-stream";
+
+        Response.Headers.Append("X-Content-Type-Options", "nosniff");
         
         return File(result.Data, finalMimeType, finalFileName);
     }
@@ -71,8 +79,11 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     {
         if (string.IsNullOrWhiteSpace(mxc)) return BadRequest();
 
+        // Sanitize parameters
+        var safeMimeType = mimeType?.Split(';')[0].Trim().ToLowerInvariant();
+
         logger.LogDebug("Preview request for MXC {Mxc} (mime: {MimeType}) from user {UserId}", 
-            mxc.SanitizeForLogging(), mimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
+            mxc.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
         if (string.IsNullOrEmpty(Homeserver) || string.IsNullOrEmpty(AccessToken))
         {
@@ -81,7 +92,13 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return Unauthorized();
         }
 
-        await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
+        var restoreResult = await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
+        if (!restoreResult.Success)
+        {
+            logger.LogWarning("Preview failed for MXC {Mxc}: Failed to restore session for user {UserId}", 
+                mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
+            return Unauthorized();
+        }
 
         var result = await mediaService.GetMediaStreamAsync(mxc);
         if (!result.Success || result.Data == null)
@@ -91,16 +108,32 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         }
 
         // If no MIME type was provided, try to get it from metadata
-        if (string.IsNullOrEmpty(mimeType))
+        if (string.IsNullOrEmpty(safeMimeType))
         {
             var metaResult = await mediaService.GetMediaMetadataAsync(mxc);
-            if (metaResult.Success && metaResult.Data != null)
+            if (metaResult.Success && metaResult.Data != null && !string.IsNullOrEmpty(metaResult.Data.MediaType))
             {
-                mimeType = metaResult.Data.MediaType;
+                safeMimeType = metaResult.Data.MediaType.Split(';')[0].Trim().ToLowerInvariant();
             }
         }
 
-        // Default to image/jpeg if still unknown, but browser usually auto-detects from stream
-        return File(result.Data, mimeType ?? "image/jpeg");
+        // Add defensive headers for content-sniffing prevention
+        Response.Headers.Append("X-Content-Type-Options", "nosniff");
+
+        var finalMimeType = safeMimeType ?? "image/jpeg";
+
+        // Validate previewable MIME types (images, videos, audio).
+        // Disallow active web content (HTML, SVG, Javascript) from unconfined inline execution.
+        bool isSafeInlineType = finalMimeType.StartsWith("image/") ||
+                                finalMimeType.StartsWith("video/") ||
+                                finalMimeType.StartsWith("audio/");
+
+        if (finalMimeType == "image/svg+xml" || finalMimeType == "text/html" || !isSafeInlineType)
+        {
+            // For SVG or any non-standard preview type, enforce an isolated sandbox CSP
+            Response.Headers.Append("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+        }
+
+        return File(result.Data, finalMimeType);
     }
 }
