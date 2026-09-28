@@ -28,6 +28,8 @@ namespace SynapseAdmin.Components.Pages
         public string UserId { get; set; } = string.Empty;
 
         private UserDetailViewModel? user;
+        private bool isLoading = true;
+        private string? errorMessage;
         private MudTable<UserMediaItemViewModel>? mediaTable;
         private readonly CancellationTokenSource _cts = new();
 
@@ -38,15 +40,22 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task LoadUserDetails()
         {
+            isLoading = true;
+            errorMessage = null;
             var result = await UserService.GetUserDetailsAsync(UserId, _cts.Token);
             if (result.Success)
             {
                 user = result.Data;
             }
-            else if (result.Severity != Severity.Normal) // Don't show snackbar if cancelled
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                errorMessage = result.Message;
+                if (result.Severity != Severity.Normal) // Don't show snackbar if cancelled
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
             }
+            isLoading = false;
         }
 
         private async Task DeactivateUser()

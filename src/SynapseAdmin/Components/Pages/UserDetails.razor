@@ -12,9 +12,18 @@
         @L["SynapseAdminApiRequired"]
     </MudAlert>
 }
-else if (user == null)
+else if (isLoading)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (user == null)
+{
+    <MudAlert Severity="Severity.Warning" Elevation="2" Class="mb-4">
+        @(errorMessage ?? L["UserNotFound"])
+    </MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="users" StartIcon="@Icons.Material.Filled.ArrowBack">
+        @L["Users"]
+    </MudButton>
 }
 else
 {

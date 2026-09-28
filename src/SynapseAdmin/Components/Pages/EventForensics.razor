@@ -1,0 +1,155 @@
+@page "/event-forensics"
+
+@attribute [Authorize]
+
+<PageTitle>@L["EventForensics"] - SynapseAdmin.NET</PageTitle>
+
+<div class="d-flex align-center mb-6">
+    <MudIcon Icon="@Icons.Material.Filled.Troubleshoot" Size="Size.Large" Class="mr-3" Color="Color.Primary" />
+    <div>
+        <MudText Typo="Typo.h3">@L["EventForensics"]</MudText>
+        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@L["EventForensicsDescription"]</MudText>
+    </div>
+</div>
+
+@if (MatrixSession.Gateway is not { SupportsAdminApi: true })
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        @L["EventForensicsApiRequired"]
+    </MudAlert>
+}
+else
+{
+    <MudCard Elevation="3" Class="mb-6">
+        <MudCardContent>
+            <form @onsubmit="FetchEvent" @onsubmit:preventDefault>
+                <div class="d-flex flex-grow-1 gap-4 align-center">
+                    <MudTextField @bind-Value="eventId" 
+                                  Label="@L["EventId"]" 
+                                  Placeholder="$..." 
+                                  Variant="Variant.Outlined" 
+                                  Adornment="Adornment.Start" 
+                                  AdornmentIcon="@Icons.Material.Filled.Key" 
+                                  Clearable="true" 
+                                  Immediate="true" 
+                                  Disabled="isLoading" 
+                                  Class="flex-grow-1" />
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               StartIcon="@Icons.Material.Filled.Search" 
+                               OnClick="FetchEvent" 
+                               Disabled="@(isLoading || string.IsNullOrWhiteSpace(eventId))"
+                               Size="Size.Large">
+                        @if (isLoading)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">@L["Loading"]</MudText>
+                        }
+                        else
+                        {
+                            <MudText>@L["FetchEvent"]</MudText>
+                        }
+                    </MudButton>
+                </div>
+            </form>
+        </MudCardContent>
+    </MudCard>
+
+    @if (eventData != null)
+    {
+        <!-- Event Overview Metadata -->
+        <MudCard Elevation="3" Class="mb-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@L["EventDetails"]</MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                                   Color="Color.Default" 
+                                   OnClick="CopyRawJsonToClipboard" 
+                                   title="@L["CopyJson"]" />
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["EventType"]</MudText>
+                        <div class="mt-1">
+                            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">
+                                @(eventData.Type ?? "-")
+                            </MudChip>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Sender"]</MudText>
+                        <div class="mt-1">
+                            @if (!string.IsNullOrEmpty(eventData.Sender))
+                            {
+                                @if (IsLocalUser(eventData.Sender))
+                                {
+                                    <MudLink Href="@($"/users/{Uri.EscapeDataString(eventData.Sender)}")" Color="Color.Info" Underline="Underline.Hover">
+                                        @eventData.Sender
+                                    </MudLink>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2">@eventData.Sender</MudText>
+                                }
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">-</MudText>
+                            }
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Room"]</MudText>
+                        <div class="mt-1">
+                            @if (!string.IsNullOrEmpty(eventData.RoomId))
+                            {
+                                <MudLink Href="@($"/rooms/{Uri.EscapeDataString(eventData.RoomId)}")" Color="Color.Info" Underline="Underline.Hover">
+                                    @eventData.RoomId
+                                </MudLink>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">-</MudText>
+                            }
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Timestamp"]</MudText>
+                        <div class="mt-1">
+                            <MudText Typo="Typo.body2">
+                                @(eventData.Timestamp?.ToString("g") ?? "-")
+                            </MudText>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+
+        <!-- Raw JSON Viewer -->
+        <MudCard Elevation="3">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@L["RawJsonPayload"]</MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Primary" 
+                               StartIcon="@Icons.Material.Filled.ContentCopy" 
+                               OnClick="CopyRawJsonToClipboard" 
+                               Size="Size.Small">
+                        @L["CopyJson"]
+                    </MudButton>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudPaper Class="pa-4" Outlined="true" Style="background-color: var(--mud-palette-background-grey); overflow: auto; max-height: 600px;">
+                    <pre style="margin: 0; font-family: monospace; font-size: 0.875rem; white-space: pre-wrap; word-break: break-all;">@eventData.RawJson</pre>
+                </MudPaper>
+            </MudCardContent>
+        </MudCard>
+    }
+}

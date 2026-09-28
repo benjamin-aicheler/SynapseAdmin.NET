@@ -1265,4 +1265,49 @@
   <data name="DevelopmentModeWarning" xml:space="preserve">
     <value>The Development environment shouldn't be enabled for deployed applications as it can leak sensitive information.</value>
   </data>
+  <data name="EventForensics" xml:space="preserve">
+    <value>Event Forensics</value>
+  </data>
+  <data name="EventForensicsDescription" xml:space="preserve">
+    <value>Inspect the raw JSON payload of any event by its Event ID.</value>
+  </data>
+  <data name="EventForensicsApiRequired" xml:space="preserve">
+    <value>The Synapse Admin API is required to fetch raw event data. This feature is not available on generic homeservers.</value>
+  </data>
+  <data name="FetchEvent" xml:space="preserve">
+    <value>Fetch Event</value>
+  </data>
+  <data name="InspectEvent" xml:space="preserve">
+    <value>Inspect Event</value>
+  </data>
+  <data name="EventDetails" xml:space="preserve">
+    <value>Event Details</value>
+  </data>
+  <data name="EventType" xml:space="preserve">
+    <value>Event Type</value>
+  </data>
+  <data name="RawJsonPayload" xml:space="preserve">
+    <value>Raw JSON Payload</value>
+  </data>
+  <data name="CopyJson" xml:space="preserve">
+    <value>Copy JSON</value>
+  </data>
+  <data name="JsonCopiedToClipboard" xml:space="preserve">
+    <value>Event JSON copied to clipboard!</value>
+  </data>
+  <data name="EventNotFound" xml:space="preserve">
+    <value>The specified event could not be found on the homeserver.</value>
+  </data>
+  <data name="ErrorFetchingEvent" xml:space="preserve">
+    <value>An error occurred while fetching the event.</value>
+  </data>
+  <data name="EventIdRequired" xml:space="preserve">
+    <value>Please provide a valid Event ID.</value>
+  </data>
+  <data name="EventFetchedSuccessfully" xml:space="preserve">
+    <value>Event fetched successfully.</value>
+  </data>
+  <data name="CannotQueryRemoteUser" xml:space="preserve">
+    <value>Cannot query remote users. The Synapse Admin API only supports local accounts.</value>
+  </data>
 </root>

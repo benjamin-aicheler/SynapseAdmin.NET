@@ -53,7 +53,17 @@ else
             <MudTd DataLabel="@L["Score"]">@context.Score</MudTd>
             <MudTd DataLabel="@L["ReportedAt"]">@context.ReceivedTsDateTime.ToString("g")</MudTd>
             <MudTd DataLabel="@L["Actions"]">
-                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteReport(context.Id))">@L["Dismiss"]</MudButton>
+                <div class="d-flex align-center gap-1">
+                    @if (!string.IsNullOrEmpty(context.EventId))
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Troubleshoot" 
+                                       Size="Size.Small" 
+                                       Color="Color.Primary" 
+                                       Href="@($"/event-forensics?eventId={Uri.EscapeDataString(context.EventId)}")" 
+                                       title="@L["InspectEvent"]" />
+                    }
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteReport(context.Id))">@L["Dismiss"]</MudButton>
+                </div>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>

@@ -172,11 +172,18 @@ else
                             }
                         </MudTd>
                         <MudTd DataLabel="@L["Actions"]">
-                            <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" 
-                                           Color="Color.Warning" 
-                                           OnClick="@(() => OpenPurgeHistoryDialogForMessage(context.EventId))"
-                                           title="@L["PurgeHistoryUpToMessage"]" 
-                                           Size="Size.Small" />
+                            <div class="d-flex align-center gap-1">
+                                <MudIconButton Icon="@Icons.Material.Filled.Troubleshoot" 
+                                               Color="Color.Primary" 
+                                               Href="@($"/event-forensics?eventId={Uri.EscapeDataString(context.EventId)}")" 
+                                               title="@L["InspectEvent"]" 
+                                               Size="Size.Small" />
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" 
+                                               Color="Color.Warning" 
+                                               OnClick="@(() => OpenPurgeHistoryDialogForMessage(context.EventId))"
+                                               title="@L["PurgeHistoryUpToMessage"]" 
+                                               Size="Size.Small" />
+                            </div>
                         </MudTd>
                     </RowTemplate>
                     <PagerContent>

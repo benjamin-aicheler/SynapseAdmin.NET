@@ -1264,4 +1264,49 @@
   <data name="DevelopmentModeWarning" xml:space="preserve">
     <value>L'environnement de développement ne doit pas être activé pour les applications déployées car il peut divulguer des informations sensibles.</value>
   </data>
+  <data name="EventForensics" xml:space="preserve">
+    <value>Investigation d'événements</value>
+  </data>
+  <data name="EventForensicsDescription" xml:space="preserve">
+    <value>Inspectez la charge utile JSON brute de n'importe quel événement par son ID d'événement.</value>
+  </data>
+  <data name="EventForensicsApiRequired" xml:space="preserve">
+    <value>L'API d'administration Synapse est requise pour récupérer les données brutes des événements. Cette fonctionnalité n'est pas disponible sur les homeservers génériques.</value>
+  </data>
+  <data name="FetchEvent" xml:space="preserve">
+    <value>Récupérer l'événement</value>
+  </data>
+  <data name="InspectEvent" xml:space="preserve">
+    <value>Inspecter l'événement</value>
+  </data>
+  <data name="EventDetails" xml:space="preserve">
+    <value>Détails de l'événement</value>
+  </data>
+  <data name="EventType" xml:space="preserve">
+    <value>Type d'événement</value>
+  </data>
+  <data name="RawJsonPayload" xml:space="preserve">
+    <value>Charge utile JSON brute</value>
+  </data>
+  <data name="CopyJson" xml:space="preserve">
+    <value>Copier le JSON</value>
+  </data>
+  <data name="JsonCopiedToClipboard" xml:space="preserve">
+    <value>JSON de l'événement copié dans le presse-papiers !</value>
+  </data>
+  <data name="EventNotFound" xml:space="preserve">
+    <value>L'événement spécifié est introuvable sur le homeserver.</value>
+  </data>
+  <data name="ErrorFetchingEvent" xml:space="preserve">
+    <value>Une erreur est survenue lors de la récupération de l'événement.</value>
+  </data>
+  <data name="EventIdRequired" xml:space="preserve">
+    <value>Veuillez fournir un ID d'événement valide.</value>
+  </data>
+  <data name="EventFetchedSuccessfully" xml:space="preserve">
+    <value>Événement récupéré avec succès.</value>
+  </data>
+  <data name="CannotQueryRemoteUser" xml:space="preserve">
+    <value>Impossible d'interroger les utilisateurs distants. L'API d'administration Synapse ne prend en charge que les comptes locaux.</value>
+  </data>
 </root>

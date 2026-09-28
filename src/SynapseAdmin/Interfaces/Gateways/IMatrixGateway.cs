@@ -62,6 +62,9 @@ public interface IMatrixGateway
     Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);
     Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default);
 
+    // --- Event Forensics (Admin/Synapse) ---
+    Task<SynapseAdminFetchEventResponse?> FetchEventAsync(string eventId, CancellationToken cancellationToken = default);
+
     // --- Registration Tokens (Admin/Synapse) ---
     Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default);
     Task<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken?> CreateRegistrationTokenAsync(SynapseAdminRegistrationTokenCreateRequest request, CancellationToken cancellationToken = default);

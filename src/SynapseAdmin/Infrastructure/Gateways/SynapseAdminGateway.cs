@@ -274,6 +274,14 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
         await _synapse.Admin.DeleteEventReportAsync(reportId);
     }
 
+    // --- Event Forensics ---
+
+    public override async Task<SynapseAdminFetchEventResponse?> FetchEventAsync(string eventId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/fetch_event/{eventId.UrlEncode()}";
+        return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminFetchEventResponse>(url, cancellationToken: cancellationToken);
+    }
+
     // --- Registration Tokens ---
 
     public override async Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default)

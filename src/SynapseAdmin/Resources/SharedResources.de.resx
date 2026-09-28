@@ -1264,4 +1264,49 @@
   <data name="DevelopmentModeWarning" xml:space="preserve">
     <value>Die Entwicklungsumgebung sollte für produktive Anwendungen nicht aktiviert sein, da sensible Daten preisgegeben werden können.</value>
   </data>
+  <data name="EventForensics" xml:space="preserve">
+    <value>Ereignisforensik</value>
+  </data>
+  <data name="EventForensicsDescription" xml:space="preserve">
+    <value>Untersuchen Sie die unformatierte JSON-Nutzlast eines beliebigen Ereignisses anhand seiner Ereignis-ID.</value>
+  </data>
+  <data name="EventForensicsApiRequired" xml:space="preserve">
+    <value>Die Synapse Admin API ist erforderlich, um Ereignis-Rohdaten abzurufen. Diese Funktion ist auf generischen Homeservern nicht verfügbar.</value>
+  </data>
+  <data name="FetchEvent" xml:space="preserve">
+    <value>Ereignis abrufen</value>
+  </data>
+  <data name="InspectEvent" xml:space="preserve">
+    <value>Ereignis untersuchen</value>
+  </data>
+  <data name="EventDetails" xml:space="preserve">
+    <value>Ereignisdetails</value>
+  </data>
+  <data name="EventType" xml:space="preserve">
+    <value>Ereignistyp</value>
+  </data>
+  <data name="RawJsonPayload" xml:space="preserve">
+    <value>Unformatierte JSON-Nutzlast</value>
+  </data>
+  <data name="CopyJson" xml:space="preserve">
+    <value>JSON kopieren</value>
+  </data>
+  <data name="JsonCopiedToClipboard" xml:space="preserve">
+    <value>Ereignis-JSON in die Zwischenablage kopiert!</value>
+  </data>
+  <data name="EventNotFound" xml:space="preserve">
+    <value>Das angegebene Ereignis wurde auf dem Homeserver nicht gefunden.</value>
+  </data>
+  <data name="ErrorFetchingEvent" xml:space="preserve">
+    <value>Beim Abrufen des Ereignisses ist ein Fehler aufgetreten.</value>
+  </data>
+  <data name="EventIdRequired" xml:space="preserve">
+    <value>Bitte geben Sie eine gültige Ereignis-ID an.</value>
+  </data>
+  <data name="EventFetchedSuccessfully" xml:space="preserve">
+    <value>Ereignis erfolgreich abgerufen.</value>
+  </data>
+  <data name="CannotQueryRemoteUser" xml:space="preserve">
+    <value>Details entfernter Benutzer können nicht abgefragt werden. Die Synapse Admin API unterstützt nur lokale Benutzerkonten.</value>
+  </data>
 </root>
