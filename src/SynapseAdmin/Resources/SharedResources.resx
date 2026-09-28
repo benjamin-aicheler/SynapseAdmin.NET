@@ -1307,4 +1307,7 @@
   <data name="EventFetchedSuccessfully" xml:space="preserve">
     <value>Event fetched successfully.</value>
   </data>
+  <data name="CannotQueryRemoteUser" xml:space="preserve">
+    <value>Cannot query remote users. The Synapse Admin API only supports local accounts.</value>
+  </data>
 </root>

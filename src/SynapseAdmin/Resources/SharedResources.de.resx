@@ -1306,4 +1306,7 @@
   <data name="EventFetchedSuccessfully" xml:space="preserve">
     <value>Ereignis erfolgreich abgerufen.</value>
   </data>
+  <data name="CannotQueryRemoteUser" xml:space="preserve">
+    <value>Details entfernter Benutzer können nicht abgefragt werden. Die Synapse Admin API unterstützt nur lokale Benutzerkonten.</value>
+  </data>
 </root>

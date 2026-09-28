@@ -1306,4 +1306,7 @@
   <data name="EventFetchedSuccessfully" xml:space="preserve">
     <value>Événement récupéré avec succès.</value>
   </data>
+  <data name="CannotQueryRemoteUser" xml:space="preserve">
+    <value>Impossible d'interroger les utilisateurs distants. L'API d'administration Synapse ne prend en charge que les comptes locaux.</value>
+  </data>
 </root>

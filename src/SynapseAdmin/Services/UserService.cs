@@ -45,6 +45,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
     {
         if (Gateway == null) return OperationResult<UserDetailViewModel>.Failure(L["NotAuthenticated"]);
 
+        var serverName = Gateway.ServerName;
+        if (!string.IsNullOrEmpty(serverName) && !userId.EndsWith($":{serverName}", StringComparison.OrdinalIgnoreCase))
+        {
+            return OperationResult<UserDetailViewModel>.Failure(L["CannotQueryRemoteUser"], Severity.Warning);
+        }
+
         try
         {
             var u = await Gateway.GetUserDetailsAsync(userId, token);

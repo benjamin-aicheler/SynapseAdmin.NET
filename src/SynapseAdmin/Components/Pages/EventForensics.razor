@@ -85,9 +85,16 @@ else
                         <div class="mt-1">
                             @if (!string.IsNullOrEmpty(eventData.Sender))
                             {
-                                <MudLink Href="@($"/users/{eventData.Sender}")" Color="Color.Info" Underline="Underline.Hover">
-                                    @eventData.Sender
-                                </MudLink>
+                                @if (IsLocalUser(eventData.Sender))
+                                {
+                                    <MudLink Href="@($"/users/{Uri.EscapeDataString(eventData.Sender)}")" Color="Color.Info" Underline="Underline.Hover">
+                                        @eventData.Sender
+                                    </MudLink>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2">@eventData.Sender</MudText>
+                                }
                             }
                             else
                             {
@@ -100,7 +107,7 @@ else
                         <div class="mt-1">
                             @if (!string.IsNullOrEmpty(eventData.RoomId))
                             {
-                                <MudLink Href="@($"/rooms/{eventData.RoomId}")" Color="Color.Info" Underline="Underline.Hover">
+                                <MudLink Href="@($"/rooms/{Uri.EscapeDataString(eventData.RoomId)}")" Color="Color.Info" Underline="Underline.Hover">
                                     @eventData.RoomId
                                 </MudLink>
                             }
