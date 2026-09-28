@@ -22,6 +22,7 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 - **Media Management:** Directly download or preview user-uploaded media (images, video, audio) with native browser streaming support. Includes capabilities to quarantine/unquarantine media, toggle quarantine protection for individual files, and perform advanced bulk maintenance operations (remote cache purging and local media cleanup by age/size).
 - **Room Management:** Search and inspect server rooms and their details, including room avatars, message history, Room Type/Spaces identification, room-specific media auditing with download/preview support, and an interactive room gallery view with infinite scrolling.
 - **Event Reports:** Search, review, and manage reported events/messages from users.
+- **Event Forensics:** Inspect raw, unredacted JSON event payloads by Event ID for moderation, auditing, and debugging without requiring room membership.
 - **Registration Tokens:** Generate and manage tokens to restrict server registration.
 - **Federation Destinations:** Search, check federation status, and manage destination queues.
 - **Server Notices:** Broadcast important notices directly to users from the server.
