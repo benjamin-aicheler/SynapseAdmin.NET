@@ -67,6 +67,7 @@ builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFederationService, FederationService>();
 builder.Services.AddScoped<IEventReportService, EventReportService>();
+builder.Services.AddScoped<IEventForensicsService, EventForensicsService>();
 builder.Services.AddScoped<IRegistrationTokenService, RegistrationTokenService>();
 builder.Services.AddScoped<IBackgroundUpdatesService, BackgroundUpdatesService>();
 builder.Services.AddScoped<IThemeService, ThemeService>();
