@@ -4,6 +4,7 @@ description: Senior System Architect & Deep Debugger (Gemini 4 Argon). Invoke th
 subagent: true
 mainAgent: false
 model: pro
+thinkingLevel: high
 tools:
   - view_file
   - grep_search

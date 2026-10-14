@@ -4,6 +4,7 @@ description: Focused software engineer for implementing code changes, refactorin
 subagent: true
 mainAgent: false
 model: flash
+thinkingLevel: high
 commandExecutionPolicy: sandbox
 tools:
   - view_file
