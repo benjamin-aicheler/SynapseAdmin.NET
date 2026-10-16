@@ -4,7 +4,6 @@ description: Fast codebase scout. ALWAYS invoke this agent first to locate relev
 subagent: true
 mainAgent: false
 model: flash
-thinkingLevel: high
 tools:
   - view_file
   - grep_search
