@@ -84,7 +84,7 @@ public partial class PurgeHistoryDialog
                 Snackbar.Add(result.Message, result.Severity);
                 MudDialog.Close(DialogResult.Ok(result.Data.PurgeId));
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }

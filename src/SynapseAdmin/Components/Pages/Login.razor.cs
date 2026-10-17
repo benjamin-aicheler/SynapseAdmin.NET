@@ -73,7 +73,7 @@ namespace SynapseAdmin.Components.Pages
                 var url = $"/Auth/SignIn?key={Uri.EscapeDataString(key)}&redirectUri={Uri.EscapeDataString("/")}";
                 Navigation.NavigateTo(url, forceLoad: true);
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 errorMessage = result.Message;
                 errorSeverity = result.Severity;

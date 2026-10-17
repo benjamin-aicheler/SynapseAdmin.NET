@@ -54,7 +54,7 @@ namespace SynapseAdmin.Components.Pages
             {
                 _aliases = result.Data;
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -101,7 +101,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 await LoadAliasesAsync();
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -127,7 +127,7 @@ namespace SynapseAdmin.Components.Pages
                     Snackbar.Add(result.Message, Severity.Success);
                     await LoadAliasesAsync();
                 }
-                else
+                else if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }

@@ -6,6 +6,8 @@ namespace SynapseAdmin.Components.Pages
 {
     public partial class RoomGallery : IDisposable
     {
+        [Inject]
+        public IMatrixSessionService MatrixSession { get; set; } = null!;
         [Inject] public IRoomService RoomService { get; set; } = null!;
         [Inject] public NavigationManager Navigation { get; set; } = null!;
 

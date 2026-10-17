@@ -25,10 +25,10 @@ public class SynapseAdminUserMediaResult
         public string MediaId { get; set; } = null!;
 
         [JsonPropertyName("media_length")]
-        public int MediaLength { get; set; }
+        public long MediaLength { get; set; }
 
         [JsonPropertyName("media_type")]
-        public string MediaType { get; set; } = null!;
+        public string? MediaType { get; set; }
 
         [JsonPropertyName("quarantined_by")]
         public string? QuarantinedBy { get; set; }
@@ -37,6 +37,6 @@ public class SynapseAdminUserMediaResult
         public bool SafeFromQuarantine { get; set; }
 
         [JsonPropertyName("upload_name")]
-        public string UploadName { get; set; } = null!;
+        public string? UploadName { get; set; }
     }
 }

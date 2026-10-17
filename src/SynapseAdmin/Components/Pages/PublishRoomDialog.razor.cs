@@ -45,7 +45,7 @@ namespace SynapseAdmin.Components.Pages
                 Snackbar.Add(result.Message, Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }

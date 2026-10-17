@@ -32,7 +32,7 @@ public partial class UserCreateDialog
                 Snackbar.Add(result.Message, result.Severity);
                 MudDialog.Close(DialogResult.Ok(true));
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
