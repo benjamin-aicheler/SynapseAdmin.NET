@@ -65,6 +65,10 @@ namespace SynapseAdmin.Components.Shared
                     _scrollObserver = await _jsModule.InvokeAsync<IJSObjectReference>("initInfiniteScroll", _sentinelElement, _dotnetRef);
                 }
             }
+            catch (Exception ex) when (ex is JSDisconnectedException or OperationCanceledException)
+            {
+                Logger.LogDebug(ex, "Infinite scroll JS interop setup cancelled or circuit disconnected");
+            }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error setting up infinite scroll JS interop");

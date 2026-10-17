@@ -11,8 +11,6 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IUserService UserService { get; set; } = null!;
         [Inject]
-        public NavigationManager Navigation { get; set; } = null!;
-        [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
 
         private MudForm? form;

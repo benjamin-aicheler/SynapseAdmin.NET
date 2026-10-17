@@ -1,0 +1,56 @@
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.gallery-grid ::deep .gallery-card {
+    height: 100%;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.gallery-grid ::deep .gallery-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.gallery-card-preview {
+    position: relative;
+    height: 200px;
+    background-color: var(--mud-palette-background-grey);
+    overflow: hidden;
+}
+
+.gallery-card-badges {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    flex-wrap: wrap;
+}
+
+.gallery-card-badges ::deep .bg-dark-alpha {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    color: #fff !important;
+}
+
+.gallery-img-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.gallery-img-preview:hover {
+    transform: scale(1.05);
+}
+
+.gallery-video-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}

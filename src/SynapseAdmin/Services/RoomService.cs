@@ -164,7 +164,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     }
                     catch (Exception ex)
                     {
-                        logger.LogDebug(ex, "Failed to fetch metadata for media {Mxc}", m);
+                        logger.LogDebug(ex, "Failed to fetch metadata for media {Mxc}", m.SanitizeForLogging());
                     }
                     return vm;
                 }
@@ -321,15 +321,18 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     .Where(m => m.Type == "m.room.message")
                     .Select(m =>
                     {
-                        if (m.Content == null) return new RoomMessageItemViewModel {
-                            EventId = m.EventId,
-                            Sender = m.Sender,
-                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
-                            Type = m.Type,
-                            StateKey = m.StateKey
-                        };
+                        if (m.Content is not { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } contentJson)
+                        {
+                            return new RoomMessageItemViewModel
+                            {
+                                EventId = m.EventId,
+                                Sender = m.Sender,
+                                OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
+                                Type = m.Type,
+                                StateKey = m.StateKey
+                            };
+                        }
 
-                        var contentJson = JsonSerializer.SerializeToElement(m.Content);
                         string? body = null;
                         if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
                         {
@@ -343,7 +346,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                             OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
                             Type = m.Type,
                             StateKey = m.StateKey,
-                            Content = JsonSerializer.Serialize(m.Content),
+                            Content = contentJson.GetRawText(),
                             Body = body
                         };
                     }).ToList()

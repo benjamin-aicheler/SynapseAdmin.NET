@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Localization;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
@@ -82,7 +83,7 @@ public class BackgroundUpdatesService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error starting background updates job {JobName}", jobName);
+            logger.LogError(ex, "Error starting background updates job {JobName}", jobName.SanitizeForLogging());
             return OperationResult.Failure(L["ErrorStartingBackgroundUpdateJob"]);
         }
     }

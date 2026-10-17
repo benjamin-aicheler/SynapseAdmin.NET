@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace SynapseAdmin.Models.Responses;
@@ -35,8 +36,8 @@ public class SynapseAdminEvent
     public string? StateKey { get; set; }
 
     [JsonPropertyName("content")]
-    public object? Content { get; set; }
+    public JsonElement? Content { get; set; }
 
     [JsonPropertyName("unsigned")]
-    public object? Unsigned { get; set; }
+    public JsonElement? Unsigned { get; set; }
 }

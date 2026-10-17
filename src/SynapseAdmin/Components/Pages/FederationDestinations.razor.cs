@@ -12,8 +12,6 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IFederationService FederationService { get; set; } = null!;
         [Inject]
-        public NavigationManager Navigation { get; set; } = null!;
-        [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
