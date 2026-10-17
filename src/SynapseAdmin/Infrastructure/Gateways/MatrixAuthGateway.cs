@@ -129,7 +129,7 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider) : IMatrixAu
             {
                 try
                 {
-                    var response = await generic.ClientHttpClient.GetAsync("/_synapse/admin/v1/server_version", cancellationToken);
+                    using var response = await generic.ClientHttpClient.GetAsync("/_synapse/admin/v1/server_version", cancellationToken);
                     if (response.IsSuccessStatusCode)
                     {
                         supportsAdmin = true;

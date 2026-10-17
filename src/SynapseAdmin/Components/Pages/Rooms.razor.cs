@@ -12,8 +12,6 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IRoomService RoomService { get; set; } = null!;
         [Inject]
-        public NavigationManager Navigation { get; set; } = null!;
-        [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
 
         private MudTable<RoomListViewModel>? table;

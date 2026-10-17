@@ -24,9 +24,10 @@ public class SynapseCompatibleAdminGateway(
     public override string ServerVersion => serverVersion;
 
     /// <summary>
-    /// Creates fresh options to handle Synapse's inconsistent next_token types (String vs Number).
+    /// Cached options to handle Synapse's inconsistent next_token types (String vs Number).
+    /// Passed only to JsonSerializer.DeserializeAsync (never to LibMatrix's mutating MatrixHttpClient).
     /// </summary>
-    private static JsonSerializerOptions GetSynapseCompatibilityJsonOptions() => new(JsonSerializerDefaults.Web)
+    protected static readonly JsonSerializerOptions SynapseCompatibilityJsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringConverter() }
     };
@@ -47,10 +48,10 @@ public class SynapseCompatibleAdminGateway(
                 url += $"&name={searchTerm.UrlEncode()}";
             }
         }
-        var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
+        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
-        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminUserListResult>(contentStream, GetSynapseCompatibilityJsonOptions(), cancellationToken);
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await JsonSerializer.DeserializeAsync<SynapseAdminUserListResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
     }
 
     public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default)
@@ -61,21 +62,21 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeactivateUserAsync(string userId, bool erase, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/deactivate/{userId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { erase }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { erase }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task QuarantineMediaByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/user/{userId.UrlEncode()}/media/quarantine";
-        var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task<LoginResponse> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/login?valid_until_ms={DateTimeOffset.UtcNow.Add(expireIn).ToUnixTimeMilliseconds()}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         var loginResp = await resp.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken: cancellationToken)
             ?? throw new InvalidOperationException($"Failed to deserialize shadow login response for user {userId}.");
@@ -92,7 +93,7 @@ public class SynapseCompatibleAdminGateway(
             Type = type,
             StateKey = stateKey
         };
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/send_server_notice", req, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/send_server_notice", req, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SendServerNoticeResponse>(cancellationToken: cancellationToken);
     }
@@ -100,15 +101,15 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(int limit = 10, string orderBy = "media_length", string dir = "b", CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/statistics/users/media?limit={limit}&order_by={orderBy.UrlEncode()}&dir={dir.UrlEncode()}";
-        var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
+        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
-        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<UserMediaStatisticsResponse>(contentStream, GetSynapseCompatibilityJsonOptions(), cancellationToken);
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await JsonSerializer.DeserializeAsync<UserMediaStatisticsResponse>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
     }
 
     public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, object request, CancellationToken cancellationToken = default)
     {
-        var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{userId.UrlEncode()}", request, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{userId.UrlEncode()}", request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>(cancellationToken: cancellationToken);
     }
@@ -121,10 +122,10 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/media";
-        var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
+        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
-        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminUserMediaResult>(contentStream, GetSynapseCompatibilityJsonOptions(), cancellationToken);
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await JsonSerializer.DeserializeAsync<SynapseAdminUserMediaResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
     }
 
     // --- Room Management ---
@@ -164,25 +165,25 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v2/rooms/{roomId.UrlEncode()}";
-        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url)
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url)
         {
             Content = new StringContent(JsonSerializer.Serialize(request), System.Text.Encoding.UTF8, "application/json")
         };
-        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/room/{roomId.UrlEncode()}/media/quarantine";
-        var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/block";
-        var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { block }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { block }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -208,7 +209,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/purge_history/{roomId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminPurgeHistoryResponse>(cancellationToken: cancellationToken);
     }
@@ -224,16 +225,16 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/federation/destinations?from={offset}&limit={limit}&dir={direction.UrlEncode()}";
-        var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
+        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
-        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminDestinationListResult>(contentStream, GetSynapseCompatibilityJsonOptions(), cancellationToken);
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await JsonSerializer.DeserializeAsync<SynapseAdminDestinationListResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
     }
 
     public override async Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/federation/destinations/{destination.UrlEncode()}/reset_connection";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -253,17 +254,17 @@ public class SynapseCompatibleAdminGateway(
                 url += $"&user_id={searchTerm.UrlEncode()}";
             }
         }
-        var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
+        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
-        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminEventReportListResult>(contentStream, GetSynapseCompatibilityJsonOptions(), cancellationToken);
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await JsonSerializer.DeserializeAsync<SynapseAdminEventReportListResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
     }
 
     public override async Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/event_reports/{reportId.UrlEncode()}";
-        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
-        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -298,7 +299,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken?> CreateRegistrationTokenAsync(SynapseAdminRegistrationTokenCreateRequest request, CancellationToken cancellationToken = default)
     {
         var url = "/_synapse/admin/v1/registration_tokens/new";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>(cancellationToken: cancellationToken);
     }
@@ -306,15 +307,15 @@ public class SynapseCompatibleAdminGateway(
     public override async Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/registration_tokens/{token.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/registration_tokens/{token.UrlEncode()}";
-        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
-        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -343,43 +344,43 @@ public class SynapseCompatibleAdminGateway(
     public override async Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/quarantine/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/unquarantine/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
-        var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/protect/{mediaId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/unprotect/{mediaId.UrlEncode()}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 
     public override async Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/purge_media_cache?before_ts={beforeTs}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminPurgeMediaCacheResponse>(cancellationToken: cancellationToken);
     }
@@ -387,7 +388,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/delete?before_ts={beforeTs}&size_gt={sizeGt}&keep_profiles={keepProfiles.ToString().ToLower()}";
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminDeleteMediaResponse>(cancellationToken: cancellationToken);
     }
@@ -401,14 +402,14 @@ public class SynapseCompatibleAdminGateway(
 
     public override async Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default)
     {
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/background_updates/enabled", new { enabled }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/background_updates/enabled", new { enabled }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminBackgroundUpdatesEnabledResponse>(cancellationToken: cancellationToken);
     }
 
     public override async Task StartBackgroundUpdatesJobAsync(string jobName, CancellationToken cancellationToken = default)
     {
-        var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/background_updates/start_job", new { job_name = jobName }, cancellationToken: cancellationToken);
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync("/_synapse/admin/v1/background_updates/start_job", new { job_name = jobName }, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
     }
 }

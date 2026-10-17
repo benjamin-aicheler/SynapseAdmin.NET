@@ -14,9 +14,6 @@ namespace SynapseAdmin.Components.Pages
         public IEventReportService EventReportService { get; set; } = null!;
 
         [Inject]
-        public NavigationManager Navigation { get; set; } = null!;
-
-        [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
 
         [Inject]

@@ -6,11 +6,6 @@ namespace SynapseAdmin.Components.Pages
 {
     public partial class RegistrationTokenDialog
     {
-        [Inject] 
-        public IDialogService DialogService { get; set; } = null!;
-        [Inject] 
-        public ISnackbar Snackbar { get; set; } = null!;
-
         [CascadingParameter] 
         IMudDialogInstance MudDialog { get; set; } = null!;
 
