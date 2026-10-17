@@ -7,7 +7,7 @@ public class FlashTheme : IAppTheme
     public string Id => "flash";
     public string Name => "The Flash (Speed Force)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

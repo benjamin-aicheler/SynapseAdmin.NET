@@ -7,7 +7,7 @@ public class NordTheme : IAppTheme
     public string Id => "nord";
     public string Name => "Nord (Arctic)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

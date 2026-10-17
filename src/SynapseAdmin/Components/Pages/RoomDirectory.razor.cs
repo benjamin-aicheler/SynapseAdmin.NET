@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
-using SynapseAdmin.Models.Responses;
+using SynapseAdmin.Models.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class RoomDirectory
+    public partial class RoomDirectory : IDisposable
     {
         [Inject]
         public IRoomService RoomService { get; set; } = null!;
@@ -21,9 +22,10 @@ namespace SynapseAdmin.Components.Pages
 
         private bool _isLoading;
         private string? _searchTerm;
-        private MatrixPublicRoomDirectoryResult? _directoryResult;
+        private PublicRoomDirectoryViewModel? _directoryResult;
         private string? _since;
         private readonly Stack<string?> _history = new();
+        private readonly CancellationTokenSource _cts = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -35,7 +37,7 @@ namespace SynapseAdmin.Components.Pages
             _isLoading = true;
             StateHasChanged();
 
-            var result = await RoomService.GetPublicRoomsAsync(50, _since, _searchTerm);
+            var result = await RoomService.GetPublicRoomsAsync(50, _since, _searchTerm, _cts.Token);
 
             _isLoading = false;
             if (result.Success && result.Data != null)
@@ -106,10 +108,10 @@ namespace SynapseAdmin.Components.Pages
 
             if (confirm == true)
             {
-                var result = await RoomService.SetRoomDirectoryVisibilityAsync(roomId, "private");
+                var result = await RoomService.SetRoomDirectoryVisibilityAsync(roomId, "private", _cts.Token);
                 if (result.Success)
                 {
-                    Snackbar.Add(L["RoomRemovedFromDirectory"], Severity.Success);
+                    Snackbar.Add(result.Message, Severity.Success);
                     await LoadDataAsync();
                 }
                 else if (result.Severity != Severity.Normal)
@@ -133,6 +135,12 @@ namespace SynapseAdmin.Components.Pages
             
             // Reload directory in case the canonical alias was modified or aliases changed
             await LoadDataAsync();
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

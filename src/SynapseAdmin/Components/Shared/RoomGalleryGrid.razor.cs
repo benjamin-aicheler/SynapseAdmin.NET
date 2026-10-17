@@ -28,6 +28,7 @@ namespace SynapseAdmin.Components.Shared
         private bool _isLoadingInitial = true;
         private bool _isBatchLoading = false;
         private bool _hasMoreToLoad = false;
+        private int _batchGeneration = 0;
         private const int PageSize = 20;
 
         private string _searchTerm = string.Empty;
@@ -47,7 +48,7 @@ namespace SynapseAdmin.Components.Shared
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender && !_isLoadingInitial)
+            if (firstRender)
             {
                 await SetupInfiniteScroll();
             }
@@ -86,6 +87,10 @@ namespace SynapseAdmin.Components.Shared
                 {
                     mediaModel = roomResult.Data.Media;
                 }
+                else if (roomResult.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(roomResult.Message, roomResult.Severity);
+                }
             }
 
             if (mediaModel != null)
@@ -123,6 +128,9 @@ namespace SynapseAdmin.Components.Shared
 
         private void ApplyFiltersAndResetDisplay()
         {
+            _batchGeneration++;
+            _isBatchLoading = false;
+
             IEnumerable<RoomMediaItemViewModel> query = _allMedia;
 
             if (_sourceFilter == "local")
@@ -155,48 +163,60 @@ namespace SynapseAdmin.Components.Shared
         {
             if (_isBatchLoading || !_hasMoreToLoad) return;
 
+            var currentGen = _batchGeneration;
             _isBatchLoading = true;
-            var currentCount = _displayedMedia.Count;
-            var nextItems = _filteredMedia.Skip(currentCount).Take(PageSize).ToList();
-
-            if (nextItems.Count == 0)
+            try
             {
-                _hasMoreToLoad = false;
-                _isBatchLoading = false;
-                StateHasChanged();
-                return;
-            }
+                var currentCount = _displayedMedia.Count;
+                var nextItems = _filteredMedia.Skip(currentCount).Take(PageSize).ToList();
 
-            _displayedMedia.AddRange(nextItems);
-            _hasMoreToLoad = _displayedMedia.Count < _filteredMedia.Count;
-            StateHasChanged();
-
-            // Fetch metadata for unhydrated items in parallel/batch
-            var unhydrated = nextItems.Where(x => !_loadedMetadataMxcs.Contains(x.MediaId)).Select(x => x.MediaId).ToList();
-            if (unhydrated.Count > 0)
-            {
-                var metaResult = await RoomService.GetMediaMetadataBatchAsync(unhydrated, _cts.Token);
-                if (metaResult.Success && metaResult.Data != null)
+                if (nextItems.Count == 0)
                 {
-                    var metaDict = metaResult.Data.ToDictionary(m => m.MediaId, m => m);
-                    foreach (var item in _displayedMedia)
-                    {
-                        if (metaDict.TryGetValue(item.MediaId, out var metaItem))
-                        {
-                            item.UploadName = metaItem.UploadName;
-                            item.MediaType = metaItem.MediaType;
-                            item.MediaLength = metaItem.MediaLength;
-                            item.CreatedTimestamp = metaItem.CreatedTimestamp;
-                            item.QuarantinedBy = metaItem.QuarantinedBy;
-                            item.SafeFromQuarantine = metaItem.SafeFromQuarantine;
-                            _loadedMetadataMxcs.Add(item.MediaId);
-                        }
-                    }
+                    _hasMoreToLoad = false;
                     StateHasChanged();
+                    return;
+                }
+
+                _displayedMedia.AddRange(nextItems);
+                _hasMoreToLoad = _displayedMedia.Count < _filteredMedia.Count;
+                StateHasChanged();
+
+                // Fetch metadata for unhydrated items in parallel/batch
+                var unhydrated = nextItems.Where(x => !_loadedMetadataMxcs.Contains(x.MediaId)).Select(x => x.MediaId).ToList();
+                if (unhydrated.Count > 0)
+                {
+                    var metaResult = await RoomService.GetMediaMetadataBatchAsync(unhydrated, _cts.Token);
+                    if (metaResult.Success && metaResult.Data != null)
+                    {
+                        var metaDict = metaResult.Data.ToDictionary(m => m.MediaId, m => m);
+                        foreach (var item in _allMedia)
+                        {
+                            if (metaDict.TryGetValue(item.MediaId, out var metaItem))
+                            {
+                                item.UploadName = metaItem.UploadName;
+                                item.MediaType = metaItem.MediaType;
+                                item.MediaLength = metaItem.MediaLength;
+                                item.CreatedTimestamp = metaItem.CreatedTimestamp;
+                                item.QuarantinedBy = metaItem.QuarantinedBy;
+                                item.SafeFromQuarantine = metaItem.SafeFromQuarantine;
+                                _loadedMetadataMxcs.Add(item.MediaId);
+                            }
+                        }
+                        StateHasChanged();
+                    }
+                    else if (!metaResult.Success && metaResult.Severity != Severity.Normal)
+                    {
+                        Snackbar.Add(metaResult.Message, metaResult.Severity);
+                    }
                 }
             }
-
-            _isBatchLoading = false;
+            finally
+            {
+                if (currentGen == _batchGeneration)
+                {
+                    _isBatchLoading = false;
+                }
+            }
         }
 
         [JSInvokable]

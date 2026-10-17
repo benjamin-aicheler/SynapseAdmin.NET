@@ -7,7 +7,7 @@ public class DefaultTheme : IAppTheme
     public string Id => "default";
     public string Name => "Indigo (Default)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

@@ -12,14 +12,26 @@ namespace SynapseAdmin.Infrastructure.Gateways;
 /// </summary>
 public class MatrixAuthGateway(HomeserverProviderService hsProvider) : IMatrixAuthGateway
 {
+    private static void ValidateHomeserverUrl(string homeserverUrl)
+    {
+        if (string.IsNullOrWhiteSpace(homeserverUrl) ||
+            !Uri.TryCreate(homeserverUrl, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new ArgumentException("Invalid homeserver URL. Must be an absolute HTTP or HTTPS URI.", nameof(homeserverUrl));
+        }
+    }
+
     public async Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default)
     {
+        ValidateHomeserverUrl(homeserverUrl);
         // Matches MatrixSessionService logic: enableServer: true for federation support
         await hsProvider.GetRemoteHomeserver(homeserverUrl, enableServer: true);
     }
 
     public async Task<LoginResponse> LoginAsync(string homeserverUrl, string username, string password, CancellationToken cancellationToken = default)
     {
+        ValidateHomeserverUrl(homeserverUrl);
         var sdkResp = await hsProvider.Login(homeserverUrl, username, password);
         return new LoginResponse
         {
@@ -32,12 +44,28 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider) : IMatrixAu
 
     public async Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default)
     {
+        ValidateHomeserverUrl(homeserverUrl);
         var authenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserverUrl, accessToken);
         
         if (authenticatedHomeserver is AuthenticatedHomeserverSynapse synapse)
         {
+            string synapseVersion = "Unknown";
+            try
+            {
+                var versionInfo = await synapse.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>(
+                    "/_synapse/admin/v1/server_version", cancellationToken: cancellationToken);
+                if (versionInfo != null && !string.IsNullOrEmpty(versionInfo.ServerVersion))
+                {
+                    synapseVersion = versionInfo.ServerVersion;
+                }
+            }
+            catch
+            {
+                // Soft fail on version probe
+            }
+
             // Switch Synapse to using SynapseCompatibleAdminGateway so it is thoroughly exercised and validated
-            return new SynapseCompatibleAdminGateway(synapse, "Synapse", "Unknown");
+            return new SynapseCompatibleAdminGateway(synapse, "Synapse", synapseVersion);
         }
         
         if (authenticatedHomeserver is AuthenticatedHomeserverGeneric generic)

@@ -12,7 +12,8 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
     private const string StorageKey_ThemeId = "app_theme_id";
     private const string StorageKey_DarkMode = "app_dark_mode";
 
-    private List<IAppTheme>? _availableThemes;
+    private static readonly Lazy<IReadOnlyList<IAppTheme>> _cachedThemes = new(DiscoverThemesStatic);
+
     private IAppTheme _currentThemeInstance = new DefaultTheme();
     private bool _isDarkMode = true;
     private bool _isInitialized = false;
@@ -34,17 +35,7 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
         }
     }
 
-    public IReadOnlyList<IAppTheme> AvailableThemes
-    {
-        get
-        {
-            if (_availableThemes == null)
-            {
-                _availableThemes = DiscoverThemes();
-            }
-            return _availableThemes;
-        }
-    }
+    public IReadOnlyList<IAppTheme> AvailableThemes => _cachedThemes.Value;
 
     public event Action? OnThemeChanged;
 
@@ -90,7 +81,14 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
         {
             logger.LogInformation("Switching theme to: {ThemeId} ({ThemeName})", theme.Id.SanitizeForLogging(), theme.Name.SanitizeForLogging());
             _currentThemeInstance = theme;
-            await localStorage.SetAsync(StorageKey_ThemeId, themeId);
+            try
+            {
+                await localStorage.SetAsync(StorageKey_ThemeId, themeId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to persist theme preference to local storage.");
+            }
             OnThemeChanged?.Invoke();
         }
     }
@@ -100,13 +98,19 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
         if (IsDarkMode != isDarkMode)
         {
             IsDarkMode = isDarkMode;
-            await localStorage.SetAsync(StorageKey_DarkMode, IsDarkMode);
+            try
+            {
+                await localStorage.SetAsync(StorageKey_DarkMode, IsDarkMode);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to persist dark mode preference to local storage.");
+            }
         }
     }
 
-    private List<IAppTheme> DiscoverThemes()
+    private static IReadOnlyList<IAppTheme> DiscoverThemesStatic()
     {
-        logger.LogDebug("Discovering themes via reflection...");
         var themeTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where(t => typeof(IAppTheme).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
@@ -118,25 +122,21 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
             {
                 if (Activator.CreateInstance(type) is IAppTheme theme)
                 {
-                    logger.LogDebug("Found theme: {ThemeId} ({ThemeName})", theme.Id.SanitizeForLogging(), theme.Name.SanitizeForLogging());
                     themes.Add(theme);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                logger.LogWarning(ex, "Failed to instantiate theme type: {TypeName}", type.FullName.SanitizeForLogging());
+                // Ignore theme types that cannot be instantiated with a parameterless constructor
             }
         }
 
         // Ensure default theme is always there and potentially first
         if (!themes.Any(t => t.Id == "default"))
         {
-            logger.LogDebug("Adding DefaultTheme to discovered themes.");
             themes.Insert(0, new DefaultTheme());
         }
 
-        var result = themes.OrderBy(t => t.Id == "default" ? 0 : 1).ThenBy(t => t.Name).ToList();
-        logger.LogInformation("Discovered {Count} themes.", result.Count);
-        return result;
+        return themes.OrderBy(t => t.Id == "default" ? 0 : 1).ThenBy(t => t.Name).ToList();
     }
 }

@@ -7,7 +7,7 @@ public class ShinjiTheme : IAppTheme
     public string Id => "shinji";
     public string Name => "Shinji (Unit-01)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

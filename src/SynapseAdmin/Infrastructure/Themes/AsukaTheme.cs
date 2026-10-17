@@ -7,7 +7,7 @@ public class AsukaTheme : IAppTheme
     public string Id => "asuka";
     public string Name => "Asuka (Unit-02)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

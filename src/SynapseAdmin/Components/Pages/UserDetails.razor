@@ -37,10 +37,10 @@ else
                 </MudCardHeader>
                 <MudCardContent>
                     <div class="d-flex align-center mb-4">
-                        @if (!string.IsNullOrEmpty(user.AvatarUrl))
+                        @if (!string.IsNullOrEmpty(user.AvatarUrl) && user.AvatarUrl.StartsWith("mxc://", StringComparison.OrdinalIgnoreCase))
                         {
                             <MudAvatar Size="Size.Large" Class="mr-4">
-                                <MudImage Src="@(user.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(user.AvatarUrl)}" : user.AvatarUrl)" />
+                                <MudImage Src="@($"/Media/Avatar?mxc={Uri.EscapeDataString(user.AvatarUrl)}")" />
                             </MudAvatar>
                         }
                         else

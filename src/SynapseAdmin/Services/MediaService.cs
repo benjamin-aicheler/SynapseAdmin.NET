@@ -167,7 +167,7 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
         {
             var result = await Gateway.PurgeRemoteMediaCacheAsync(beforeTs, token);
             if (result == null) return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Failure(L["ErrorPurgingMediaCache"]);
-            return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Ok(result, L["PurgedCacheSuccess"]);
+            return OperationResult<SynapseAdminPurgeMediaCacheResponse>.Ok(result, string.Format(L["PurgedCacheSuccess"], result.Deleted));
         }
         catch (OperationCanceledException)
         {

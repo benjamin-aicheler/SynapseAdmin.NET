@@ -43,6 +43,7 @@ public class EventForensicsService(
             var response = await Gateway.FetchEventAsync(trimmedEventId, cancellationToken);
             if (response?.Event == null)
             {
+                logger.LogWarning("Event {EventId} not found on server.", trimmedEventId.SanitizeForLogging());
                 return OperationResult<EventForensicsViewModel>.Failure(L["EventNotFound"], Severity.Warning);
             }
 
@@ -75,11 +76,6 @@ public class EventForensicsService(
         catch (OperationCanceledException)
         {
             return OperationResult<EventForensicsViewModel>.Cancelled();
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            logger.LogWarning("Event {EventId} not found on server.", trimmedEventId.SanitizeForLogging());
-            return OperationResult<EventForensicsViewModel>.Failure(L["EventNotFound"], Severity.Warning);
         }
         catch (Exception ex)
         {

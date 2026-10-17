@@ -51,7 +51,7 @@ public class MatrixAuthenticationStateProvider(
                     {
                         new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
                         new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                        new Claim("Homeserver", sessionService.Gateway.ServerName),
+                        new Claim("Homeserver", sessionService.Gateway.HomeserverUrl),
                         new Claim("AccessToken", sessionService.Gateway.AccessToken)
                     };
 
@@ -95,7 +95,7 @@ public class MatrixAuthenticationStateProvider(
             {
                 new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
                 new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                new Claim("Homeserver", sessionService.Gateway.ServerName),
+                new Claim("Homeserver", sessionService.Gateway.HomeserverUrl),
                 new Claim("AccessToken", sessionService.Gateway.AccessToken)
             };
 
@@ -123,7 +123,7 @@ public class MatrixAuthenticationStateProvider(
             {
                 new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
                 new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                new Claim("Homeserver", sessionService.Gateway.ServerName),
+                new Claim("Homeserver", sessionService.Gateway.HomeserverUrl),
                 new Claim("AccessToken", sessionService.Gateway.AccessToken)
             };
 
@@ -146,8 +146,15 @@ public class MatrixAuthenticationStateProvider(
     public async Task LogoutAsync(NavigationManager? navigation = null)
     {
         sessionService.Logout();
-        await localStorage.DeleteAsync(StorageKey_Homeserver);
-        await localStorage.DeleteAsync(StorageKey_AccessToken);
+        try
+        {
+            await localStorage.DeleteAsync(StorageKey_Homeserver);
+            await localStorage.DeleteAsync(StorageKey_AccessToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to clear local storage during logout.");
+        }
         
         _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));

@@ -65,7 +65,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
             var vm = r.ToDetailViewModel();
             
-            if (r.Tombstoned == null)
+            if (!vm.IsTombstoned || string.IsNullOrEmpty(vm.ReplacementRoom))
             {
                 var tombstone = stateEvents?.Events
                     .FirstOrDefault(x => x.Type == "m.room.tombstone");
@@ -74,7 +74,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     vm.IsTombstoned = true;
                     if (tombstone.RawContent != null && tombstone.RawContent.TryGetPropertyValue("replacement_room", out var replacementNode))
                     {
-                        vm.ReplacementRoom = replacementNode?.GetValue<string>();
+                        vm.ReplacementRoom = GetSafeString(replacementNode);
                     }
                 }
             }
@@ -92,15 +92,15 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     {
                         if (memberEvent.RawContent.TryGetPropertyValue("displayname", out var dnNode))
                         {
-                            memberVm.DisplayName = dnNode?.GetValue<string>();
+                            memberVm.DisplayName = GetSafeString(dnNode);
                         }
                         if (memberEvent.RawContent.TryGetPropertyValue("avatar_url", out var avNode))
                         {
-                            memberVm.AvatarUrl = avNode?.GetValue<string>();
+                            memberVm.AvatarUrl = GetSafeString(avNode);
                         }
                         if (memberEvent.RawContent.TryGetPropertyValue("membership", out var msNode))
                         {
-                            memberVm.Membership = msNode?.GetValue<string>();
+                            memberVm.Membership = GetSafeString(msNode);
                         }
                     }
                 }
@@ -388,24 +388,30 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult<SynapseAdminPurgeHistoryResponse>> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken token = default)
+    public async Task<OperationResult<string>> PurgeRoomHistoryAsync(string roomId, PurgeHistoryViewModel request, CancellationToken token = default)
     {
-        if (Gateway == null) return OperationResult<SynapseAdminPurgeHistoryResponse>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            var result = await Gateway.PurgeRoomHistoryAsync(roomId, request, token);
-            if (result == null) return OperationResult<SynapseAdminPurgeHistoryResponse>.Failure(L["ErrorPurgingHistory"]);
-            return OperationResult<SynapseAdminPurgeHistoryResponse>.Ok(result, L["PurgeStarted"]);
+            var gatewayReq = new SynapseAdminPurgeHistoryRequest
+            {
+                DeleteLocalEvents = request.DeleteLocalEvents,
+                PurgeUpToEventId = request.PurgeUpToEventId,
+                PurgeUpToTs = request.PurgeUpToTs
+            };
+            var result = await Gateway.PurgeRoomHistoryAsync(roomId, gatewayReq, token);
+            if (result == null) return OperationResult<string>.Failure(L["ErrorPurgingHistory"]);
+            return OperationResult<string>.Ok(result.PurgeId, L["PurgeStarted"]);
         }
         catch (OperationCanceledException)
         {
-            return OperationResult<SynapseAdminPurgeHistoryResponse>.Cancelled();
+            return OperationResult<string>.Cancelled();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error purging history for room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult<SynapseAdminPurgeHistoryResponse>.Failure(L["ErrorPurgingHistory"]);
+            return OperationResult<string>.Failure(L["ErrorPurgingHistory"]);
         }
     }
 
@@ -430,24 +436,42 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    public async Task<OperationResult<MatrixPublicRoomDirectoryResult>> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken token = default)
+    public async Task<OperationResult<PublicRoomDirectoryViewModel>> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken token = default)
     {
-        if (Gateway == null) return OperationResult<MatrixPublicRoomDirectoryResult>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<PublicRoomDirectoryViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
             var result = await Gateway.GetPublicRoomsAsync(limit, since, searchTerm, token);
-            if (result == null) return OperationResult<MatrixPublicRoomDirectoryResult>.Failure(L["ErrorFetchingRoomDirectory"]);
-            return OperationResult<MatrixPublicRoomDirectoryResult>.Ok(result);
+            if (result == null) return OperationResult<PublicRoomDirectoryViewModel>.Failure(L["ErrorFetchingRoomDirectory"]);
+            var vm = new PublicRoomDirectoryViewModel
+            {
+                NextBatch = result.NextBatch,
+                PrevBatch = result.PrevBatch,
+                TotalRoomCountEstimate = result.TotalRoomCountEstimate,
+                Chunk = result.Chunk.Select(c => new PublicRoomItemViewModel
+                {
+                    AvatarUrl = c.AvatarUrl,
+                    CanonicalAlias = c.CanonicalAlias,
+                    GuestCanJoin = c.GuestCanJoin,
+                    JoinRule = c.JoinRule,
+                    Name = c.Name,
+                    NumJoinedMembers = c.NumJoinedMembers,
+                    RoomId = c.RoomId,
+                    Topic = c.Topic,
+                    WorldReadable = c.WorldReadable
+                }).ToList()
+            };
+            return OperationResult<PublicRoomDirectoryViewModel>.Ok(vm);
         }
         catch (OperationCanceledException)
         {
-            return OperationResult<MatrixPublicRoomDirectoryResult>.Cancelled();
+            return OperationResult<PublicRoomDirectoryViewModel>.Cancelled();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching public room directory");
-            return OperationResult<MatrixPublicRoomDirectoryResult>.Failure(L["ErrorFetchingRoomDirectory"]);
+            return OperationResult<PublicRoomDirectoryViewModel>.Failure(L["ErrorFetchingRoomDirectory"]);
         }
     }
 
@@ -479,7 +503,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             await Gateway.SetRoomDirectoryVisibilityAsync(roomId, visibility, token);
-            return OperationResult.Ok(L["RoomDirectoryVisibilityUpdated"]);
+            var msg = string.Equals(visibility, "private", StringComparison.OrdinalIgnoreCase)
+                ? L["RoomRemovedFromDirectory"]
+                : L["RoomDirectoryVisibilityUpdated"];
+            return OperationResult.Ok(msg);
         }
         catch (OperationCanceledException)
         {
@@ -551,5 +578,11 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             logger.LogError(ex, "Error fetching aliases for room {RoomId}", roomId.SanitizeForLogging());
             return OperationResult<List<string>>.Failure(L["ErrorFetchingRoomAliases"]);
         }
+    }
+
+    private static string? GetSafeString(System.Text.Json.Nodes.JsonNode? node)
+    {
+        if (node is null) return null;
+        return node is System.Text.Json.Nodes.JsonValue val && val.TryGetValue<string>(out var str) ? str : node.ToString();
     }
 }

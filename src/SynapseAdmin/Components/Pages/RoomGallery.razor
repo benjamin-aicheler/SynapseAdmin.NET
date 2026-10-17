@@ -23,5 +23,15 @@ else
         </div>
     </div>
 
-    <RoomGalleryGrid RoomId="@RoomId" Media="@roomMedia" />
+    @if (isLoading)
+    {
+        <div class="d-flex flex-column align-center justify-center py-12">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" Class="mb-3" />
+            <MudText Typo="Typo.body1" Color="Color.Secondary">@L["Loading"]</MudText>
+        </div>
+    }
+    else
+    {
+        <RoomGalleryGrid RoomId="@RoomId" Media="@roomMedia" />
+    }
 }

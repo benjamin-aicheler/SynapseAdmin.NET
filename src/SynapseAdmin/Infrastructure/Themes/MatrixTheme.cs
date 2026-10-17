@@ -7,7 +7,7 @@ public class MatrixTheme : IAppTheme
     public string Id => "matrix";
     public string Name => "Matrix (Green)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

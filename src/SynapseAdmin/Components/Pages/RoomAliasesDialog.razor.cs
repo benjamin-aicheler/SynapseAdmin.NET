@@ -5,11 +5,12 @@ using SynapseAdmin.Interfaces;
 using SynapseAdmin.Resources;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class RoomAliasesDialog
+    public partial class RoomAliasesDialog : IDisposable
     {
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = null!;
@@ -38,6 +39,7 @@ namespace SynapseAdmin.Components.Pages
         private bool _isSaving;
         private List<string> _aliases = [];
         private string _newAlias = string.Empty;
+        private readonly CancellationTokenSource _cts = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -49,7 +51,7 @@ namespace SynapseAdmin.Components.Pages
             _isLoading = true;
             StateHasChanged();
 
-            var result = await RoomService.GetLocalRoomAliasesAsync(RoomId);
+            var result = await RoomService.GetLocalRoomAliasesAsync(RoomId, _cts.Token);
             if (result.Success && result.Data != null)
             {
                 _aliases = result.Data;
@@ -88,7 +90,7 @@ namespace SynapseAdmin.Components.Pages
             _isSaving = true;
             StateHasChanged();
 
-            var result = await RoomService.PutRoomAliasAsync(_newAlias, RoomId);
+            var result = await RoomService.PutRoomAliasAsync(_newAlias, RoomId, _cts.Token);
 
             _isSaving = false;
             if (result.Success)
@@ -119,7 +121,7 @@ namespace SynapseAdmin.Components.Pages
                 _isSaving = true;
                 StateHasChanged();
 
-                var result = await RoomService.DeleteRoomAliasAsync(alias);
+                var result = await RoomService.DeleteRoomAliasAsync(alias, _cts.Token);
 
                 _isSaving = false;
                 if (result.Success)
@@ -132,6 +134,12 @@ namespace SynapseAdmin.Components.Pages
                     Snackbar.Add(result.Message, result.Severity);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

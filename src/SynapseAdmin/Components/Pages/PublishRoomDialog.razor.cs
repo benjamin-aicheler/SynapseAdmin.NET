@@ -6,7 +6,7 @@ using SynapseAdmin.Resources;
 
 namespace SynapseAdmin.Components.Pages
 {
-    public partial class PublishRoomDialog
+    public partial class PublishRoomDialog : IDisposable
     {
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = null!;
@@ -23,6 +23,7 @@ namespace SynapseAdmin.Components.Pages
 
         private string roomId = string.Empty;
         private string visibility = "public";
+        private readonly CancellationTokenSource _cts = new();
 
         private void Cancel() => MudDialog.Cancel();
 
@@ -35,7 +36,7 @@ namespace SynapseAdmin.Components.Pages
             loading = true;
             StateHasChanged();
 
-            var result = await RoomService.SetRoomDirectoryVisibilityAsync(roomId, visibility);
+            var result = await RoomService.SetRoomDirectoryVisibilityAsync(roomId, visibility, _cts.Token);
 
             loading = false;
             StateHasChanged();
@@ -49,6 +50,12 @@ namespace SynapseAdmin.Components.Pages
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

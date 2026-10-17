@@ -7,7 +7,7 @@ public class SupermanTheme : IAppTheme
     public string Id => "superman";
     public string Name => "Superman (Metropolis)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {
