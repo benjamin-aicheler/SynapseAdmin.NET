@@ -32,7 +32,7 @@ To add a new custom theme (e.g., "Deep Sea"):
             public string Id => "deep-sea";
             public string Name => "Deep Sea";
 
-            public MudTheme Theme => new MudTheme
+            public MudTheme Theme { get; } = new MudTheme
             {
                 PaletteLight = new PaletteLight()
                 {
