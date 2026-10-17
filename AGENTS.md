@@ -114,8 +114,3 @@ You can ask the AI agent to perform a code review on a specific branch, commit, 
 3. **Report Generation:** The agent will fill out the template with its findings.
 4. **Saving:** The completed report MUST be saved in the `reviews/` directory with a timestamped filename (e.g., `reviews/YYYY-MM-DD_HH-MM-SS_review.md`).
 5. **Action:** The agent will summarize the Action Items in the chat and ask if you would like it to implement the High/Medium priority fixes.
-
-## Agent Orchestration Rules
-- **Context Protection:** Never perform broad, blind searches across the repository yourself. Always delegate codebase discovery to the `explorer` subagent first.
-- **Mandatory Deep Planning:** Whenever a task touches more than 2 files, modifies core business/security logic, or if a bug fix fails on the first attempt, you MUST invoke the `architect` subagent to generate a blueprint before writing code.
-- **Parallel Execution:** Delegate the actual file edits and test runs to one or more `builder` subagents based on the architect's blueprint.
