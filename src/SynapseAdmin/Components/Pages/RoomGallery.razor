@@ -1,17 +1,27 @@
 @page "/rooms/{RoomId}/gallery"
 @using SynapseAdmin.Components.Shared
+@attribute [Authorize]
 @inject IStringLocalizer<SharedResources> L
 
 <PageTitle>@L["RoomGallery"] - SynapseAdmin.NET</PageTitle>
 
-<div class="d-flex align-center mb-4">
-    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBackToRoom" Class="mr-2" title="@L["Back"]" />
-    <div>
-        <MudText Typo="Typo.h4">@L["RoomGallery"]</MudText>
-        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
-            @(string.IsNullOrEmpty(roomName) ? RoomId : roomName)
-        </MudText>
+@if (MatrixSession.Gateway is not { SupportsAdminApi: true })
+{
+    <MudAlert Severity="Severity.Error" Elevation="2" Class="mb-4">
+        @L["SynapseAdminApiRequired"]
+    </MudAlert>
+}
+else
+{
+    <div class="d-flex align-center mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBackToRoom" Class="mr-2" title="@L["Back"]" />
+        <div>
+            <MudText Typo="Typo.h4">@L["RoomGallery"]</MudText>
+            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+                @(string.IsNullOrEmpty(roomName) ? RoomId : roomName)
+            </MudText>
+        </div>
     </div>
-</div>
 
-<RoomGalleryGrid RoomId="@RoomId" Media="@roomMedia" />
+    <RoomGalleryGrid RoomId="@RoomId" Media="@roomMedia" />
+}

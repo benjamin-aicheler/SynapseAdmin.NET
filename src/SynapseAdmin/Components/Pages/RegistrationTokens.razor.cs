@@ -54,7 +54,10 @@ namespace SynapseAdmin.Components.Pages
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
                 var createResult = await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel, _cts.Token);
-                Snackbar.Add(createResult.Message, createResult.Severity);
+                if (createResult.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(createResult.Message, createResult.Severity);
+                }
                 if (createResult.Success)
                 {
                     await LoadTokens();
@@ -79,7 +82,10 @@ namespace SynapseAdmin.Components.Pages
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
                 var updateResult = await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel, _cts.Token);
-                Snackbar.Add(updateResult.Message, updateResult.Severity);
+                if (updateResult.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(updateResult.Message, updateResult.Severity);
+                }
                 if (updateResult.Success)
                 {
                     await LoadTokens();
@@ -97,7 +103,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var deleteResult = await RegistrationTokenService.DeleteRegistrationTokenAsync(token, _cts.Token);
-                Snackbar.Add(deleteResult.Message, deleteResult.Severity);
+                if (deleteResult.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(deleteResult.Message, deleteResult.Severity);
+                }
                 if (deleteResult.Success)
                 {
                     await LoadTokens();

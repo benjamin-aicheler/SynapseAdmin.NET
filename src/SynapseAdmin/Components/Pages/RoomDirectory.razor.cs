@@ -112,7 +112,7 @@ namespace SynapseAdmin.Components.Pages
                     Snackbar.Add(L["RoomRemovedFromDirectory"], Severity.Success);
                     await LoadDataAsync();
                 }
-                else
+                else if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }

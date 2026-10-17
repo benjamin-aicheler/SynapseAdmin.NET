@@ -48,7 +48,7 @@ public partial class MediaMaintenance : IDisposable
                 {
                     Snackbar.Add(string.Format(L["PurgedCacheSuccess"], result.Data.Deleted), Severity.Success);
                 }
-                else
+                else if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }
@@ -86,7 +86,7 @@ public partial class MediaMaintenance : IDisposable
                     // For the success message, we can show total deleted media count, or use the direct returned message
                     Snackbar.Add(result.Message, Severity.Success);
                 }
-                else
+                else if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }

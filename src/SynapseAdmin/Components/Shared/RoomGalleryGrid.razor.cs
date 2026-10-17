@@ -292,7 +292,10 @@ namespace SynapseAdmin.Components.Shared
             if (confirmed == true)
             {
                 var result = await MediaService.QuarantineMediaAsync(media.MediaId, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     media.QuarantinedBy = "Admin";
@@ -311,7 +314,10 @@ namespace SynapseAdmin.Components.Shared
             if (confirmed == true)
             {
                 var result = await MediaService.UnquarantineMediaAsync(media.MediaId, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     media.QuarantinedBy = null;
@@ -330,7 +336,10 @@ namespace SynapseAdmin.Components.Shared
             if (confirmed == true)
             {
                 var result = await MediaService.DeleteMediaAsync(media.MediaId, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     _allMedia.Remove(media);
@@ -347,7 +356,10 @@ namespace SynapseAdmin.Components.Shared
                 ? await MediaService.UnprotectMediaAsync(media.MediaId, _cts.Token)
                 : await MediaService.ProtectMediaAsync(media.MediaId, _cts.Token);
 
-            Snackbar.Add(result.Message, result.Severity);
+            if (result.Severity != Severity.Normal)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
 
             if (result.Success)
             {

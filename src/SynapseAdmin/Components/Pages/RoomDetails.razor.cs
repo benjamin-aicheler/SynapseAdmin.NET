@@ -138,7 +138,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await RoomService.DeleteRoomAsync(RoomId, block: false, purge: true, token: _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     Navigation.NavigateTo("/rooms");
@@ -156,7 +159,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await RoomService.DeleteRoomAsync(RoomId, block: true, purge: true, token: _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     Navigation.NavigateTo("/rooms");
@@ -174,14 +180,20 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await RoomService.QuarantineMediaAsync(RoomId, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
             }
         }
 
         private async Task BlockRoom()
         {
             var result = await RoomService.BlockRoomAsync(RoomId, true, _cts.Token);
-            Snackbar.Add(result.Message, result.Severity);
+            if (result.Severity != Severity.Normal)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
         }
 
         private async Task QuarantineSingleMedia(string mxc)
@@ -194,7 +206,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.QuarantineMediaAsync(mxc, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
@@ -213,7 +228,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.UnquarantineMediaAsync(mxc, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
@@ -232,7 +250,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.DeleteMediaAsync(mxc, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await LoadRoomDetails();
@@ -248,7 +269,10 @@ namespace SynapseAdmin.Components.Pages
                 ? await MediaService.UnprotectMediaAsync(media.MediaId, _cts.Token)
                 : await MediaService.ProtectMediaAsync(media.MediaId, _cts.Token);
 
-            Snackbar.Add(result.Message, result.Severity);
+            if (result.Severity != Severity.Normal)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
 
             if (result.Success)
             {
@@ -302,6 +326,7 @@ namespace SynapseAdmin.Components.Pages
 
         private void StartPolling()
         {
+            StopPolling();
             if (string.IsNullOrEmpty(activePurgeId)) return;
             
             _pollingCts = new CancellationTokenSource();
@@ -309,7 +334,7 @@ namespace SynapseAdmin.Components.Pages
             var purgeId = activePurgeId;
 
             // Start polling as a background task
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 int consecutiveFailures = 0;
                 try
@@ -320,44 +345,68 @@ namespace SynapseAdmin.Components.Pages
                         if (result.Success && result.Data != null)
                         {
                             consecutiveFailures = 0;
-                            activePurgeStatus = result.Data.Status;
-                            await InvokeAsync(StateHasChanged);
+                            var status = result.Data.Status;
+                            var error = result.Data.Error;
+                            var shouldStop = false;
 
-                            if (activePurgeStatus == "complete")
+                            await InvokeAsync(() =>
                             {
-                                RoomService.ClearActivePurgeId(RoomId);
-                                activePurgeId = null;
-                                activePurgeStatus = null;
-                                Snackbar.Add(L["PurgeCompleted"], Severity.Success);
-                                await InvokeAsync(StateHasChanged);
-                                break;
-                            }
-                            else if (activePurgeStatus == "failed")
+                                activePurgeStatus = status;
+
+                                if (status == "complete")
+                                {
+                                    RoomService.ClearActivePurgeId(RoomId);
+                                    activePurgeId = null;
+                                    activePurgeStatus = null;
+                                    Snackbar.Add(L["PurgeCompleted"], Severity.Success);
+                                    StateHasChanged();
+                                    shouldStop = true;
+                                    return;
+                                }
+
+                                if (status == "failed")
+                                {
+                                    RoomService.ClearActivePurgeId(RoomId);
+                                    activePurgeId = null;
+                                    activePurgeStatus = null;
+                                    var errMsg = !string.IsNullOrEmpty(error)
+                                        ? string.Format(L["PurgeFailed"], error)
+                                        : string.Format(L["PurgeFailed"], L["UnknownError"]);
+                                    Snackbar.Add(errMsg, Severity.Error);
+                                    StateHasChanged();
+                                    shouldStop = true;
+                                    return;
+                                }
+
+                                StateHasChanged();
+                            });
+
+                            if (shouldStop)
                             {
-                                RoomService.ClearActivePurgeId(RoomId);
-                                activePurgeId = null;
-                                activePurgeStatus = null;
-                                var errMsg = !string.IsNullOrEmpty(result.Data.Error) 
-                                    ? string.Format(L["PurgeFailed"], result.Data.Error)
-                                    : string.Format(L["PurgeFailed"], L["UnknownError"]);
-                                Snackbar.Add(errMsg, Severity.Error);
-                                await InvokeAsync(StateHasChanged);
                                 break;
                             }
                         }
                         else
                         {
+                            if (result.Severity == Severity.Normal && token.IsCancellationRequested)
+                            {
+                                break;
+                            }
+
                             consecutiveFailures++;
                             var errMsg = result.Message ?? "Unknown error";
                             Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", RoomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, errMsg.SanitizeForLogging());
                             
                             if (consecutiveFailures >= 5)
                             {
-                                RoomService.ClearActivePurgeId(RoomId);
-                                activePurgeId = null;
-                                activePurgeStatus = null;
-                                Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
-                                await InvokeAsync(StateHasChanged);
+                                await InvokeAsync(() =>
+                                {
+                                    RoomService.ClearActivePurgeId(RoomId);
+                                    activePurgeId = null;
+                                    activePurgeStatus = null;
+                                    Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
+                                    StateHasChanged();
+                                });
                                 break;
                             }
                         }
@@ -365,7 +414,7 @@ namespace SynapseAdmin.Components.Pages
                         await Task.Delay(5000, token);
                     }
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
                     // Ignore cancellation
                 }
@@ -374,11 +423,14 @@ namespace SynapseAdmin.Components.Pages
                     Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", RoomId.SanitizeForLogging(), purgeId.SanitizeForLogging());
                     try
                     {
-                        RoomService.ClearActivePurgeId(RoomId);
-                        activePurgeId = null;
-                        activePurgeStatus = null;
-                        Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
-                        await InvokeAsync(StateHasChanged);
+                        await InvokeAsync(() =>
+                        {
+                            RoomService.ClearActivePurgeId(RoomId);
+                            activePurgeId = null;
+                            activePurgeStatus = null;
+                            Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
+                            StateHasChanged();
+                        });
                     }
                     catch (Exception)
                     {

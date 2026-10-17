@@ -72,7 +72,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await EventReportService.DeleteEventReportAsync(reportId, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await ReloadTable();

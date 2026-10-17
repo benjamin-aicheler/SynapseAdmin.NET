@@ -47,13 +47,10 @@ namespace SynapseAdmin.Components.Pages
             {
                 user = result.Data;
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 errorMessage = result.Message;
-                if (result.Severity != Severity.Normal) // Don't show snackbar if cancelled
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.Add(result.Message, result.Severity);
             }
             isLoading = false;
         }
@@ -68,7 +65,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await UserService.DeactivateUserAsync(UserId, token: _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await LoadUserDetails();
@@ -86,7 +86,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await UserService.QuarantineMediaAsync(UserId, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
             }
         }
 
@@ -110,7 +113,7 @@ namespace SynapseAdmin.Components.Pages
                     (MarkupString)$"<b>{L["AccessToken"]}:</b><br/><code style='word-break: break-all;'>{result.Data}</code>",
                     yesText: L["Close"]);
             }
-            else
+            else if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
@@ -129,7 +132,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.QuarantineMediaAsync(mxc, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await LoadUserDetails();
@@ -150,7 +156,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.UnquarantineMediaAsync(mxc, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await LoadUserDetails();
@@ -171,7 +180,10 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.DeleteMediaAsync(mxc, _cts.Token);
-                Snackbar.Add(result.Message, result.Severity);
+                if (result.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(result.Message, result.Severity);
+                }
                 if (result.Success)
                 {
                     await LoadUserDetails();
@@ -188,7 +200,10 @@ namespace SynapseAdmin.Components.Pages
                 ? await MediaService.UnprotectMediaAsync(mxc, _cts.Token)
                 : await MediaService.ProtectMediaAsync(mxc, _cts.Token);
 
-            Snackbar.Add(result.Message, result.Severity);
+            if (result.Severity != Severity.Normal)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
 
             if (result.Success)
             {
