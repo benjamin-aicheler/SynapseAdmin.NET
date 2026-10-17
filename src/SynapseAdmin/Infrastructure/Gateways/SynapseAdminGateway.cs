@@ -279,7 +279,18 @@ public class SynapseAdminGateway(AuthenticatedHomeserverSynapse synapse) : Matri
     public override async Task<SynapseAdminFetchEventResponse?> FetchEventAsync(string eventId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/fetch_event/{eventId.UrlEncode()}";
-        return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminFetchEventResponse>(url, cancellationToken: cancellationToken);
+        try
+        {
+            return await _synapse.ClientHttpClient.GetFromJsonAsync<SynapseAdminFetchEventResponse>(url, cancellationToken: cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (LibMatrix.MatrixException ex) when (ex.ErrorCode == "M_NOT_FOUND")
+        {
+            return null;
+        }
     }
 
     // --- Registration Tokens ---

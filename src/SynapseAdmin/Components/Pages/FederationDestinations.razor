@@ -35,11 +35,11 @@ else
 
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
-            <MudTh>@L["Destination"]</MudTh>
+            <MudTh><MudTableSortLabel SortLabel="destination" T="FederationDestinationListViewModel">@L["Destination"]</MudTableSortLabel></MudTh>
             <MudTh>@L["Status"]</MudTh>
-            <MudTh>@L["LastRetry"]</MudTh>
-            <MudTh>@L["RetryInterval"]</MudTh>
-            <MudTh>@L["FailureTime"]</MudTh>
+            <MudTh><MudTableSortLabel SortLabel="retry_last_ts" T="FederationDestinationListViewModel">@L["LastRetry"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="retry_interval" T="FederationDestinationListViewModel">@L["RetryInterval"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="failure_ts" T="FederationDestinationListViewModel">@L["FailureTime"]</MudTableSortLabel></MudTh>
             <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>

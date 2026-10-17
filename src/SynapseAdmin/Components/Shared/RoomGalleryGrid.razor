@@ -162,22 +162,22 @@
                 </MudCard>
             }
         </div>
-
-        <!-- Infinite Scroll Sentinel & Loader -->
-        <div @ref="_sentinelElement" class="d-flex align-center justify-center py-6">
-            @if (_hasMoreToLoad)
-            {
-                <div class="d-flex align-center gap-2">
-                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Loading"]</MudText>
-                </div>
-            }
-            else if (_displayedMedia.Any())
-            {
-                <MudText Typo="Typo.caption" Color="Color.Secondary">@L["AllLoaded"] (@_displayedMedia.Count / @_filteredMedia.Count)</MudText>
-            }
-        </div>
     }
+
+    <!-- Infinite Scroll Sentinel & Loader -->
+    <div @ref="_sentinelElement" class="d-flex align-center justify-center py-6">
+        @if (!_isLoadingInitial && _hasMoreToLoad)
+        {
+            <div class="d-flex align-center gap-2">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Loading"]</MudText>
+            </div>
+        }
+        else if (!_isLoadingInitial && _displayedMedia.Any())
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@L["AllLoaded"] (@_displayedMedia.Count / @_filteredMedia.Count)</MudText>
+        }
+    </div>
 </div>
 
 <style>

@@ -5,7 +5,7 @@ using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages;
 
-public partial class UserCreateDialog
+public partial class UserCreateDialog : IDisposable
 {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
@@ -16,6 +16,7 @@ public partial class UserCreateDialog
     private MudForm form = default!;
     private bool success;
     private bool loading;
+    private readonly CancellationTokenSource _cts = new();
 
     private async Task Submit()
     {
@@ -24,7 +25,7 @@ public partial class UserCreateDialog
         if (form.IsValid)
         {
             loading = true;
-            var result = await UserService.CreateUserAsync(model);
+            var result = await UserService.CreateUserAsync(model, _cts.Token);
             loading = false;
 
             if (result.Success)
@@ -40,4 +41,10 @@ public partial class UserCreateDialog
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
 }

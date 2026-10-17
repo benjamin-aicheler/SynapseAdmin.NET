@@ -8,7 +8,7 @@ public class UserMediaStatisticsResponse
     public List<UserMediaStatistic> Users { get; set; } = [];
 
     [JsonPropertyName("next_token")]
-    public int? NextToken { get; set; }
+    public string? NextToken { get; set; }
 
     [JsonPropertyName("total")]
     public int Total { get; set; }

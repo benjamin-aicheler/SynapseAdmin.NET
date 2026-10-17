@@ -30,12 +30,17 @@ namespace SynapseAdmin.Components.Pages
         private UserDetailViewModel? user;
         private bool isLoading = true;
         private string? errorMessage;
+        private string? _loadedUserId;
         private MudTable<UserMediaItemViewModel>? mediaTable;
         private readonly CancellationTokenSource _cts = new();
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnParametersSetAsync()
         {
-            await LoadUserDetails();
+            if (_loadedUserId != UserId)
+            {
+                _loadedUserId = UserId;
+                await LoadUserDetails();
+            }
         }
 
         private async Task LoadUserDetails()
@@ -108,9 +113,12 @@ namespace SynapseAdmin.Components.Pages
                     Snackbar.Add(result.Message, result.Severity);
                 }
 
+                var encodedLabel = System.Net.WebUtility.HtmlEncode(L["AccessToken"]);
+                var encodedToken = System.Net.WebUtility.HtmlEncode(result.Data);
+
                 await DialogService.ShowMessageBoxAsync(
                     L["LoginAsUserShadow"],
-                    (MarkupString)$"<b>{L["AccessToken"]}:</b><br/><code style='word-break: break-all;'>{result.Data}</code>",
+                    (MarkupString)$"<b>{encodedLabel}:</b><br/><code style='word-break: break-all;'>{encodedToken}</code>",
                     yesText: L["Close"]);
             }
             else if (result.Severity != Severity.Normal)
@@ -138,7 +146,12 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    await LoadUserDetails();
+                    var item = user?.Media?.Media.FirstOrDefault(m => m.MediaId == mediaIdPart);
+                    if (item != null)
+                    {
+                        item.QuarantinedBy = "Admin";
+                        StateHasChanged();
+                    }
                 }
             }
         }
@@ -162,7 +175,12 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    await LoadUserDetails();
+                    var item = user?.Media?.Media.FirstOrDefault(m => m.MediaId == mediaIdPart);
+                    if (item != null)
+                    {
+                        item.QuarantinedBy = null;
+                        StateHasChanged();
+                    }
                 }
             }
         }
@@ -184,9 +202,16 @@ namespace SynapseAdmin.Components.Pages
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }
-                if (result.Success)
+                if (result.Success && user?.Media != null)
                 {
-                    await LoadUserDetails();
+                    var item = user.Media.Media.FirstOrDefault(m => m.MediaId == mediaIdPart);
+                    if (item != null)
+                    {
+                        user.Media.Media.Remove(item);
+                        user.Media.TotalCount = Math.Max(0, user.Media.TotalCount - 1);
+                        user.Media.TotalSize = Math.Max(0, user.Media.TotalSize - item.MediaLength);
+                        StateHasChanged();
+                    }
                 }
             }
         }
@@ -208,7 +233,7 @@ namespace SynapseAdmin.Components.Pages
             if (result.Success)
             {
                 media.SafeFromQuarantine = !media.SafeFromQuarantine;
-                await LoadUserDetails();
+                StateHasChanged();
             }
         }
 

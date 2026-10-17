@@ -24,14 +24,16 @@ public partial class EventForensics : IDisposable
     public string? EventIdParam { get; set; }
 
     private string eventId = string.Empty;
+    private string? _lastEventIdParam;
     private bool isLoading;
     private EventForensicsViewModel? eventData;
     private readonly CancellationTokenSource _cts = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        if (!string.IsNullOrWhiteSpace(EventIdParam))
+        if (!string.IsNullOrWhiteSpace(EventIdParam) && EventIdParam != _lastEventIdParam)
         {
+            _lastEventIdParam = EventIdParam;
             eventId = EventIdParam.Trim();
             if (MatrixSession.Gateway is { SupportsAdminApi: true })
             {
@@ -42,7 +44,7 @@ public partial class EventForensics : IDisposable
 
     private async Task FetchEvent()
     {
-        if (string.IsNullOrWhiteSpace(eventId)) return;
+        if (isLoading || string.IsNullOrWhiteSpace(eventId)) return;
 
         isLoading = true;
         eventData = null;

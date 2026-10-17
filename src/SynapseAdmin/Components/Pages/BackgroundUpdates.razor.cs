@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
-using SynapseAdmin.Models.Responses;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages;
 
@@ -19,7 +19,7 @@ public partial class BackgroundUpdates : IDisposable
     [Inject]
     public IDialogService DialogService { get; set; } = null!;
 
-    private SynapseAdminBackgroundUpdatesStatusResponse? statusResponse;
+    private BackgroundUpdatesStatusViewModel? statusResponse;
     private bool isLoading = true;
     private bool isToggling = false;
     private bool isTriggering = false;
@@ -69,13 +69,13 @@ public partial class BackgroundUpdates : IDisposable
         {
             isToggling = true;
             var result = await BackgroundUpdatesService.SetEnabledAsync(nextState, _cts.Token);
-            if (result.Success && result.Data != null)
+            if (result.Success)
             {
                 if (statusResponse != null)
                 {
-                    statusResponse.Enabled = result.Data.Enabled;
+                    statusResponse.Enabled = result.Data;
                 }
-                Snackbar.Add(L["BackgroundUpdatesStatus"] + ": " + (result.Data.Enabled ? L["Active"] : L["Paused"]), Severity.Success);
+                Snackbar.Add(result.Message, Severity.Success);
                 await LoadStatus();
             }
             else if (result.Severity != Severity.Normal)

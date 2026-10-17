@@ -46,7 +46,7 @@ public partial class MediaMaintenance : IDisposable
                 var result = await MediaService.PurgeRemoteMediaCacheAsync(beforeTs, _cts.Token);
                 if (result.Success && result.Data != null)
                 {
-                    Snackbar.Add(string.Format(L["PurgedCacheSuccess"], result.Data.Deleted), Severity.Success);
+                    Snackbar.Add(result.Message, Severity.Success);
                 }
                 else if (result.Severity != Severity.Normal)
                 {

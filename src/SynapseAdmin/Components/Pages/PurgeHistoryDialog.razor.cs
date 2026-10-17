@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
-using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages;
 
-public partial class PurgeHistoryDialog
+public partial class PurgeHistoryDialog : IDisposable
 {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
@@ -25,6 +25,7 @@ public partial class PurgeHistoryDialog
     private TimeSpan? selectedTime = DateTime.Now.TimeOfDay;
     private string? eventId;
     private bool deleteLocalEvents;
+    private readonly CancellationTokenSource _cts = new();
 
     protected override void OnInitialized()
     {
@@ -47,7 +48,7 @@ public partial class PurgeHistoryDialog
 
         if (form.IsValid)
         {
-            var request = new SynapseAdminPurgeHistoryRequest
+            var request = new PurgeHistoryViewModel
             {
                 DeleteLocalEvents = deleteLocalEvents
             };
@@ -75,14 +76,14 @@ public partial class PurgeHistoryDialog
             }
 
             loading = true;
-            var result = await RoomService.PurgeRoomHistoryAsync(RoomId, request);
+            var result = await RoomService.PurgeRoomHistoryAsync(RoomId, request, _cts.Token);
             loading = false;
 
-            if (result.Success && result.Data != null)
+            if (result.Success && !string.IsNullOrEmpty(result.Data))
             {
-                RoomService.SetActivePurgeId(RoomId, result.Data.PurgeId);
+                RoomService.SetActivePurgeId(RoomId, result.Data);
                 Snackbar.Add(result.Message, result.Severity);
-                MudDialog.Close(DialogResult.Ok(result.Data.PurgeId));
+                MudDialog.Close(DialogResult.Ok(result.Data));
             }
             else if (result.Severity != Severity.Normal)
             {
@@ -92,4 +93,10 @@ public partial class PurgeHistoryDialog
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
 }

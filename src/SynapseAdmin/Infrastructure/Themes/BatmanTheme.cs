@@ -7,7 +7,7 @@ public class BatmanTheme : IAppTheme
     public string Id => "batman";
     public string Name => "Batman (Dark Knight)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

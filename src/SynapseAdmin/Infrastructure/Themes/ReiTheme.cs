@@ -7,7 +7,7 @@ public class ReiTheme : IAppTheme
     public string Id => "rei";
     public string Name => "Rei (Unit-00)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

@@ -7,7 +7,7 @@ public class CyberpunkTheme : IAppTheme
     public string Id => "cyberpunk";
     public string Name => "Cyberpunk (Synthwave)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

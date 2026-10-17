@@ -75,10 +75,10 @@ else
                 </MudCardHeader>
                 <MudCardContent>
                     <div class="d-flex align-center mb-4">
-                        @if (!string.IsNullOrEmpty(room.AvatarUrl))
+                        @if (!string.IsNullOrEmpty(room.AvatarUrl) && room.AvatarUrl.StartsWith("mxc://", StringComparison.OrdinalIgnoreCase))
                         {
                             <MudAvatar Size="Size.Large" Class="mr-4">
-                                <MudImage Src="@(room.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(room.AvatarUrl)}" : room.AvatarUrl)" />
+                                <MudImage Src="@($"/Media/Avatar?mxc={Uri.EscapeDataString(room.AvatarUrl)}")" />
                             </MudAvatar>
                         }
                         else
@@ -206,10 +206,10 @@ else
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>
-                        @if (!string.IsNullOrEmpty(context.AvatarUrl))
+                        @if (!string.IsNullOrEmpty(context.AvatarUrl) && context.AvatarUrl.StartsWith("mxc://", StringComparison.OrdinalIgnoreCase))
                         {
                             <MudAvatar Size="Size.Small">
-                                <MudImage Src="@(context.AvatarUrl.StartsWith("mxc://") ? $"/Media/Avatar?mxc={Uri.EscapeDataString(context.AvatarUrl)}" : context.AvatarUrl)" />
+                                <MudImage Src="@($"/Media/Avatar?mxc={Uri.EscapeDataString(context.AvatarUrl)}")" />
                             </MudAvatar>
                         }
                         else

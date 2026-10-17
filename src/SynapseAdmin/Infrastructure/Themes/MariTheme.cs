@@ -7,7 +7,7 @@ public class MariTheme : IAppTheme
     public string Id => "mari";
     public string Name => "Mari (Unit-08)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {

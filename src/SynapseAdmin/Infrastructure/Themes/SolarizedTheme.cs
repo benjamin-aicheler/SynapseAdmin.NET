@@ -7,7 +7,7 @@ public class SolarizedTheme : IAppTheme
     public string Id => "solarized";
     public string Name => "Solarized (Professional)";
 
-    public MudTheme Theme => new MudTheme
+    public MudTheme Theme { get; } = new MudTheme
     {
         PaletteLight = new PaletteLight()
         {
