@@ -1,0 +1,108 @@
+# Dependabot configuration
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-options-reference
+#
+# Covered here:
+#   - nuget          -> NuGet packages of the web application
+#   - github-actions -> actions used by the workflows in .github/workflows
+#   - docker         -> base images in src/SynapseAdmin/Dockerfile
+#   - devcontainers  -> image and features in .devcontainer/devcontainer.json
+#
+# Not covered: the `LibMatrix` git submodule (Dependabot does not support
+# submodules). Keep that one updated manually.
+#
+# Minor and patch updates are grouped into a single PR per ecosystem to keep
+# the PR volume low. Major updates stay as individual PRs so each one can be
+# reviewed on its own.
+
+version: 2
+updates:
+  # --- NuGet packages -------------------------------------------------------
+  - package-ecosystem: "nuget"
+    directory: "/src/SynapseAdmin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      nuget-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # --- GitHub Actions -------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # --- Docker base images ---------------------------------------------------
+  - package-ecosystem: "docker"
+    directory: "/src/SynapseAdmin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    groups:
+      docker-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # --- Devcontainer ---------------------------------------------------------
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "devcontainer"
+    commit-message:
+      prefix: "chore(devcontainer)"
+      include: "scope"
+    groups:
+      devcontainer-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
