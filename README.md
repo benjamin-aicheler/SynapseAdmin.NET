@@ -111,7 +111,7 @@ Alternatively, you can run the container directly. Make sure to provide a secure
 
 ```bash
 docker run -d \
-  -p 8080:8080 \
+  -p 127.0.0.1:8080:8080 \
   -e DP_PASSPHRASE="your-secure-passphrase-here" \
   -v ./logs:/app/logs \
   -v ./keys:/app/keys \
@@ -151,7 +151,10 @@ If you are upgrading from an older version of SynapseAdmin.NET that ran as `root
 > - **Local access (`http://localhost:8080`):** Works out of the box because browsers treat `localhost` as a secure context and accept `Secure` cookies over loopback HTTP.
 > - **Remote or LAN access (e.g., `https://admin.example.com` or internal IPs):** **Requires** a TLS-terminating reverse proxy (such as Nginx, Caddy, Traefik, or Cloudflare) in front of the container. Over plain non-localhost HTTP, browsers reject the `Secure` authentication cookie, which prevents `/Media/Avatar`, `/Media/Preview`, and `/Media/Download` from authenticating.
 
-When running behind a reverse proxy with SSL/TLS termination, the application automatically respects `X-Forwarded-For` and `X-Forwarded-Proto` headers.
+When running behind a reverse proxy with SSL/TLS termination, the application respects `X-Forwarded-For` and `X-Forwarded-Proto` headers from trusted proxies.
+
+- **Network Isolation:** Always ensure the container port (`8080`) is only reachable through your reverse proxy (e.g., bound to `127.0.0.1:8080:8080` on the host, or attached to an internal Docker network shared only with the proxy).
+- **Trusted Proxies (`TRUSTED_PROXIES`):** By default, `X-Forwarded-*` headers are only trusted from loopback and private network ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`). To restrict trust to specific proxy IP addresses or CIDR subnets, set the `TRUSTED_PROXIES` environment variable (e.g., `TRUSTED_PROXIES=172.18.0.2,10.0.1.0/24`).
 
 Ensure your proxy is configured to pass these headers. For example, in **Nginx**:
 
