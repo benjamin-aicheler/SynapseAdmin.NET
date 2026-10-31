@@ -2,6 +2,7 @@ using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
@@ -13,9 +14,25 @@ using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Services;
 
-public class RoomService(IMatrixSessionService sessionService, ILogger<RoomService> logger, IStringLocalizer<SharedResources> L) : IRoomService
+public class RoomService(IMatrixSessionService sessionService, ILogger<RoomService> logger, IStringLocalizer<SharedResources> L, IMemoryCache memoryCache) : IRoomService
 {
+    private static readonly MemoryCacheEntryOptions RoomNameCacheOptions = new()
+    {
+        SlidingExpiration = TimeSpan.FromMinutes(30),
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
+    };
+
     private IMatrixGateway? Gateway => sessionService.Gateway;
+
+    private string GetRoomNameCacheKey(string roomId) =>
+        $"room_name:{Gateway?.HomeserverUrl?.TrimEnd('/').ToLowerInvariant()}:{roomId}";
+
+    private void CacheRoomName(string roomId, string? name)
+    {
+        if (Gateway == null || string.IsNullOrEmpty(roomId)) return;
+        var resolvedName = string.IsNullOrEmpty(name) ? roomId : name;
+        memoryCache.Set(GetRoomNameCacheKey(roomId), resolvedName, RoomNameCacheOptions);
+    }
 
     public async Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
     {
@@ -27,7 +44,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var dir = direction == SortDirection.Descending ? "b" : "f";
             var result = await Gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
-            
+
+            foreach (var room in result.Rooms)
+            {
+                CacheRoomName(room.RoomId, room.Name);
+            }
+
             var vms = result.Rooms.ToViewModels();
 
             return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((result.TotalRooms, vms));
@@ -52,6 +74,8 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var r = await Gateway.GetRoomDetailsAsync(roomId, token);
             
             if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
+
+            CacheRoomName(roomId, r.Name);
 
             var membersTask = Gateway.GetRoomMembersAsync(roomId, token);
             var stateTask = Gateway.GetRoomStateAsync(roomId, cancellationToken: token);
@@ -200,6 +224,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 Purge = purge
             };
             await Gateway.DeleteRoomAsync(roomId, req, token);
+            memoryCache.Remove(GetRoomNameCacheKey(roomId));
             logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
             return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
         }
@@ -271,12 +296,23 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     Name = roomStat.RoomId
                 };
 
+                if (memoryCache.TryGetValue<string>(GetRoomNameCacheKey(roomStat.RoomId), out var cachedName) &&
+                    !string.IsNullOrEmpty(cachedName))
+                {
+                    vm.Name = cachedName;
+                    return vm;
+                }
+
                 try
                 {
                     var roomDetails = await Gateway.GetRoomDetailsAsync(roomStat.RoomId, token);
-                    if (roomDetails != null && !string.IsNullOrEmpty(roomDetails.Name))
+                    if (roomDetails != null)
                     {
-                        vm.Name = roomDetails.Name;
+                        if (!string.IsNullOrEmpty(roomDetails.Name))
+                        {
+                            vm.Name = roomDetails.Name;
+                        }
+                        CacheRoomName(roomStat.RoomId, roomDetails.Name);
                     }
                 }
                 catch (OperationCanceledException)
