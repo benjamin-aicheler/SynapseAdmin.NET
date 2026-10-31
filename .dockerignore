@@ -15,6 +15,7 @@ docker-compose.build.yml
 .devcontainer/
 .github/
 reviews/
+tests/
 keys/
 logs/
 *.md

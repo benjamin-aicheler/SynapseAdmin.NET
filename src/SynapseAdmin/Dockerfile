@@ -3,13 +3,12 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 WORKDIR /source
 
-# Copy solution and projects
-COPY SynapseAdmin.NET.slnx .
+# Copy projects
 COPY src/SynapseAdmin/SynapseAdmin.csproj src/SynapseAdmin/
 COPY LibMatrix/ LibMatrix/
 
 # Restore dependencies
-RUN dotnet restore SynapseAdmin.NET.slnx -a $TARGETARCH
+RUN dotnet restore src/SynapseAdmin/SynapseAdmin.csproj -a $TARGETARCH
 
 # Copy everything else and build
 COPY . .
