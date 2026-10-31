@@ -2,12 +2,14 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Controllers;
 
 [Route("[controller]/[action]")]
+[EnableRateLimiting("auth")]
 public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthController> logger) : Controller
 {
     [HttpGet]

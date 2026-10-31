@@ -1315,4 +1315,7 @@
   <data name="HttpsRequiredForMediaWarning" xml:space="preserve">
     <value>HTTPS (oder localhost) ist für sichere Authentifizierungs-Cookies erforderlich. Medienvorschauen und Downloads sind über unverschlüsseltes HTTP nicht verfügbar.</value>
   </data>
+  <data name="TooManyLoginAttempts" xml:space="preserve">
+    <value>Zu viele Anmeldeversuche. Bitte warten Sie eine Minute und versuchen Sie es erneut.</value>
+  </data>
 </root>

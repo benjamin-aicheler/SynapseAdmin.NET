@@ -6,6 +6,7 @@ using MudBlazor.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 
 using System.Net;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MudBlazor.Translations;
 using Serilog;
@@ -28,6 +29,20 @@ builder.Host.UseSerilog();
 // Add services to the container.
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISessionBridgeService, SessionBridgeService>();
+builder.Services.AddSingleton<ILoginRateLimiter, LoginRateLimiter>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddRazorComponents()
@@ -188,6 +203,7 @@ app.UseRequestLocalization(localizationOptions);
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 app.UseAntiforgery();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

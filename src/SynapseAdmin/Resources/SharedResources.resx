@@ -1316,4 +1316,7 @@
   <data name="HttpsRequiredForMediaWarning" xml:space="preserve">
     <value>HTTPS (or localhost) is required for secure authentication cookies. Media previews and downloads are unavailable over plain HTTP.</value>
   </data>
+  <data name="TooManyLoginAttempts" xml:space="preserve">
+    <value>Too many login attempts. Please wait a minute and try again.</value>
+  </data>
 </root>
