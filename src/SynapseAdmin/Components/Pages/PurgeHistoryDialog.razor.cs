@@ -10,6 +10,7 @@ public partial class PurgeHistoryDialog : IDisposable
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Inject] private IRoomService RoomService { get; set; } = default!;
+    [Inject] private ITimeZoneService TimeZoneService { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
     [Parameter] public string RoomId { get; set; } = string.Empty;
@@ -21,14 +22,33 @@ public partial class PurgeHistoryDialog : IDisposable
     private bool loading;
 
     private string purgeType = "date";
-    private DateTime? selectedDate = DateTime.Today;
-    private TimeSpan? selectedTime = DateTime.Now.TimeOfDay;
+    private DateTime? selectedDate;
+    private TimeSpan? selectedTime;
     private string? eventId;
     private bool deleteLocalEvents;
     private readonly CancellationTokenSource _cts = new();
 
-    protected override void OnInitialized()
+    private DateTime? SelectedLocalDateTime =>
+        selectedDate.HasValue && selectedTime.HasValue
+            ? selectedDate.Value.Date.Add(selectedTime.Value)
+            : null;
+
+    private string ActiveTimeZoneDisplay =>
+        TimeZoneService.GetDisplayOffset(SelectedLocalDateTime);
+
+    private string? ResolvedUtcPreview =>
+        SelectedLocalDateTime.HasValue
+            ? $"{TimeZoneService.ToDateTimeOffset(SelectedLocalDateTime.Value).UtcDateTime:yyyy-MM-dd HH:mm} UTC"
+            : null;
+
+    protected override async Task OnInitializedAsync()
     {
+        await TimeZoneService.InitializeAsync();
+
+        var now = TimeZoneService.GetLocalNow();
+        selectedDate = now.Date;
+        selectedTime = new TimeSpan(now.Hour, now.Minute, 0);
+
         if (!string.IsNullOrEmpty(PreselectedEventId))
         {
             purgeType = "event";
@@ -37,8 +57,9 @@ public partial class PurgeHistoryDialog : IDisposable
         else if (PreselectedTimestamp.HasValue)
         {
             purgeType = "date";
-            selectedDate = PreselectedTimestamp.Value.LocalDateTime.Date;
-            selectedTime = PreselectedTimestamp.Value.LocalDateTime.TimeOfDay;
+            var local = TimeZoneService.ToLocal(PreselectedTimestamp.Value);
+            selectedDate = local.Date;
+            selectedTime = local.TimeOfDay;
         }
     }
 
@@ -62,7 +83,7 @@ public partial class PurgeHistoryDialog : IDisposable
                 }
 
                 var localDateTime = selectedDate.Value.Date.Add(selectedTime.Value);
-                var dto = new DateTimeOffset(localDateTime, TimeZoneInfo.Local.GetUtcOffset(localDateTime));
+                var dto = TimeZoneService.ToDateTimeOffset(localDateTime);
                 request.PurgeUpToTs = dto.ToUnixTimeMilliseconds();
             }
             else

@@ -9,6 +9,9 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     [Inject]
     public IThemeService ThemeService { get; set; } = default!;
 
+    [Inject]
+    public ITimeZoneService TimeZoneService { get; set; } = default!;
+
     private bool _drawerOpen = true;
     private bool _isRtl => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
 
@@ -22,6 +25,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         if (firstRender)
         {
             await ThemeService.InitializeAsync();
+            await TimeZoneService.InitializeAsync();
         }
     }
 

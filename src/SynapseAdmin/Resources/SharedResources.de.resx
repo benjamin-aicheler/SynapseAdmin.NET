@@ -1309,4 +1309,7 @@
   <data name="CannotQueryRemoteUser" xml:space="preserve">
     <value>Details entfernter Benutzer können nicht abgefragt werden. Die Synapse Admin API unterstützt nur lokale Benutzerkonten.</value>
   </data>
+  <data name="TimeZone" xml:space="preserve">
+    <value>Zeitzone</value>
+  </data>
 </root>

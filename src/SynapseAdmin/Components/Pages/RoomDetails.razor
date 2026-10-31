@@ -159,7 +159,7 @@ else
                         <MudTh>@L["Actions"]</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="@L["Time"]">@context.OriginServerTs.ToString("g")</MudTd>
+                        <MudTd DataLabel="@L["Time"]">@TimeZoneService.ToLocal(context.OriginServerTs).ToString("g")</MudTd>
                         <MudTd DataLabel="@L["Sender"]"><MudText Typo="Typo.body2" Color="Color.Primary">@context.Sender</MudText></MudTd>
                         <MudTd DataLabel="@L["Content"]">
                             @if (!string.IsNullOrEmpty(context.Body))

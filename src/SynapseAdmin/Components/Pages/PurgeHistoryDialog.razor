@@ -30,6 +30,13 @@
                         <MudTimePicker Label="@L["SelectTime"]" @bind-Time="selectedTime" Required="true" RequiredError="@L["PurgeUpToRequired"]" />
                     </MudItem>
                 </MudGrid>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">
+                    @L["TimeZone"]: @ActiveTimeZoneDisplay
+                    @if (!string.IsNullOrEmpty(ResolvedUtcPreview))
+                    {
+                        @($" ({ResolvedUtcPreview})")
+                    }
+                </MudText>
             }
             else
             {

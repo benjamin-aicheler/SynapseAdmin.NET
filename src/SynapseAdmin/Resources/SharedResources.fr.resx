@@ -1309,4 +1309,7 @@
   <data name="CannotQueryRemoteUser" xml:space="preserve">
     <value>Impossible d'interroger les utilisateurs distants. L'API d'administration Synapse ne prend en charge que les comptes locaux.</value>
   </data>
+  <data name="TimeZone" xml:space="preserve">
+    <value>Fuseau horaire</value>
+  </data>
 </root>
