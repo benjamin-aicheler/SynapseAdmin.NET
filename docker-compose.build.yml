@@ -4,10 +4,18 @@ services:
       context: .
       dockerfile: src/SynapseAdmin/Dockerfile
     ports:
-      - "8080:8080"
+      # NOTE: Bind to 127.0.0.1 so external clients cannot bypass your reverse proxy.
+      # Authentication cookies enforce Secure-only (CookieSecurePolicy.Always).
+      # Direct HTTP access works on http://localhost:8080, while remote/LAN access requires
+      # a TLS-terminating reverse proxy forwarding X-Forwarded-Proto: https.
+      - "127.0.0.1:8080:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080
+      # Optional: Comma-separated list of trusted reverse proxy IPs or CIDRs (defaults to loopback + private networks).
+      # - TRUSTED_PROXIES=172.18.0.2,10.0.0.0/8
+      # IMPORTANT: Change this to a secure, unique passphrase in production!
+      # It is used for encrypting session tokens on disk.
       - DP_PASSPHRASE=your-secure-passphrase-here
     volumes:
       - ./logs:/app/logs
