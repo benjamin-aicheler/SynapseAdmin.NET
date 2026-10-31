@@ -40,10 +40,19 @@ namespace SynapseAdmin.Components.Shared
         private List<RoomMediaItemViewModel> _displayedMedia = [];
         private readonly HashSet<string> _loadedMetadataMxcs = [];
         private readonly CancellationTokenSource _cts = new();
+        private bool _hasLoaded;
+        private string? _loadedRoomId;
+        private RoomMediaViewModel? _loadedMedia;
 
         protected override async Task OnParametersSetAsync()
         {
-            await LoadRoomMedia();
+            if (!_hasLoaded || _loadedRoomId != RoomId || !ReferenceEquals(_loadedMedia, Media))
+            {
+                _hasLoaded = true;
+                _loadedRoomId = RoomId;
+                _loadedMedia = Media;
+                await LoadRoomMedia();
+            }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
