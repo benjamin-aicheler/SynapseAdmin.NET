@@ -225,6 +225,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             };
             await Gateway.DeleteRoomAsync(roomId, req, token);
             memoryCache.Remove(GetRoomNameCacheKey(roomId));
+            ClearActivePurgeId(roomId);
             logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
             return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
         }
@@ -401,30 +402,30 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    private readonly Dictionary<string, string> _activePurges = new();
+    private static readonly MemoryCacheEntryOptions ActivePurgeCacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+    };
+
+    private string GetActivePurgeCacheKey(string roomId) =>
+        $"active_purge:{Gateway?.HomeserverUrl?.TrimEnd('/').ToLowerInvariant()}:{roomId}";
 
     public string? GetActivePurgeId(string roomId)
     {
-        lock (_activePurges)
-        {
-            return _activePurges.TryGetValue(roomId, out var purgeId) ? purgeId : null;
-        }
+        if (string.IsNullOrEmpty(roomId)) return null;
+        return memoryCache.TryGetValue<string>(GetActivePurgeCacheKey(roomId), out var purgeId) ? purgeId : null;
     }
 
     public void SetActivePurgeId(string roomId, string purgeId)
     {
-        lock (_activePurges)
-        {
-            _activePurges[roomId] = purgeId;
-        }
+        if (string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(purgeId)) return;
+        memoryCache.Set(GetActivePurgeCacheKey(roomId), purgeId, ActivePurgeCacheOptions);
     }
 
     public void ClearActivePurgeId(string roomId)
     {
-        lock (_activePurges)
-        {
-            _activePurges.Remove(roomId);
-        }
+        if (string.IsNullOrEmpty(roomId)) return;
+        memoryCache.Remove(GetActivePurgeCacheKey(roomId));
     }
 
     public async Task<OperationResult<string>> PurgeRoomHistoryAsync(string roomId, PurgeHistoryViewModel request, CancellationToken token = default)
@@ -441,6 +442,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             };
             var result = await Gateway.PurgeRoomHistoryAsync(roomId, gatewayReq, token);
             if (result == null) return OperationResult<string>.Failure(L["ErrorPurgingHistory"]);
+            SetActivePurgeId(roomId, result.PurgeId);
             return OperationResult<string>.Ok(result.PurgeId, L["PurgeStarted"]);
         }
         catch (OperationCanceledException)
