@@ -5,11 +5,13 @@ using SynapseAdmin.Interfaces;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 
+using System.Net;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MudBlazor.Translations;
 using Serilog;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Infrastructure.Gateways;
@@ -44,12 +46,45 @@ else
     Log.Warning("DP_PASSPHRASE is not configured or empty. Data Protection keys will be stored UNENCRYPTED on disk.");
 }
 
+var trustedProxiesConfig = builder.Configuration["TRUSTED_PROXIES"];
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // Clear known networks and proxies so it works in Docker/Container environments
+    options.ForwardLimit = 1;
     options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
+
+    if (!string.IsNullOrWhiteSpace(trustedProxiesConfig))
+    {
+        var entries = trustedProxiesConfig.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var entry in entries)
+        {
+            if (System.Net.IPNetwork.TryParse(entry, out var network))
+            {
+                options.KnownIPNetworks.Add(network);
+            }
+            else if (IPAddress.TryParse(entry, out var address))
+            {
+                options.KnownProxies.Add(address);
+            }
+            else
+            {
+                Log.Warning("Invalid entry '{ProxyEntry}' in TRUSTED_PROXIES configuration; ignoring.", entry.SanitizeForLogging());
+            }
+        }
+    }
+
+    // Default to loopback and private networks (RFC 1918 / RFC 4193) so Docker bridge/reverse proxies work without trusting arbitrary public peers
+    if (options.KnownIPNetworks.Count == 0 && options.KnownProxies.Count == 0)
+    {
+        options.KnownProxies.Add(IPAddress.Loopback);
+        options.KnownProxies.Add(IPAddress.IPv6Loopback);
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("127.0.0.0/8"));
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("10.0.0.0/8"));
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("172.16.0.0/12"));
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("192.168.0.0/16"));
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("fc00::/7"));
+    }
 });
 
 builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
