@@ -92,7 +92,7 @@ We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are 
 - **Issue Linking:** Link GitHub issues in the commit message (e.g., `Closes #42` or `Fixes #42`) to trigger automatic closing on merge.
 
 ### 3. Pull Requests & Verification
-- **Local Build Verification:** ALWAYS run `dotnet build` locally and ensure it passes before pushing your commits to the remote branch.
+- **Local Build & Test Verification:** ALWAYS run `dotnet build` and `dotnet test` locally and ensure both pass before pushing your commits to the remote branch.
 - **Pushing:** Push your branch to the remote: `git push -u origin <branch-name>`.
 - **Creation:** Generate a Pull Request against `main` (e.g., `gh pr create`).
 - **Description:** Provide a clear title and reference the issue in the PR description (e.g., "Resolves #42").
@@ -105,6 +105,7 @@ We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are 
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.
 - `src/SynapseAdmin/`: Main web application source code.
+- `tests/SynapseAdmin.Tests/`: xUnit unit test project.
 - `LibMatrix/`: Matrix SDK submodule.
 - `docker-compose.yml`: Root-level Docker Compose configuration.
 - `src/SynapseAdmin/Dockerfile`: Multi-stage .NET 10 Dockerfile.
