@@ -1318,4 +1318,10 @@
   <data name="TooManyLoginAttempts" xml:space="preserve">
     <value>Trop de tentatives de connexion. Veuillez patienter une minute et réessayer.</value>
   </data>
+  <data name="DeleteAllSizesWarning" xml:space="preserve">
+    <value>Définir le seuil de taille à 0 Mo supprimera tous les fichiers médias locaux plus anciens que le nombre de jours spécifié, quelle que soit leur taille.</value>
+  </data>
+  <data name="ConfirmDeleteAllSizes" xml:space="preserve">
+    <value>Je comprends que toutes les tailles de fichiers (minimum 0 Mo) seront supprimées</value>
+  </data>
 </root>
