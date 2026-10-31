@@ -6,6 +6,7 @@ WORKDIR /source
 # Copy solution and projects
 COPY SynapseAdmin.NET.slnx .
 COPY src/SynapseAdmin/SynapseAdmin.csproj src/SynapseAdmin/
+COPY tests/SynapseAdmin.Tests/SynapseAdmin.Tests.csproj tests/SynapseAdmin.Tests/
 COPY LibMatrix/ LibMatrix/
 
 # Restore dependencies

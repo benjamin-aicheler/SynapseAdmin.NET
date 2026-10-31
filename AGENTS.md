@@ -17,7 +17,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Run (Local):** `dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj`
 - **Run (Docker):** `docker compose up --build`
 - **Logs:** Application logs are written to stdout (viewable via `docker logs`) and persisted to the `logs/` directory within the container.
-- **Test:** `dotnet test` (Infrastructure in place via submodules)
+- **Test:** `dotnet test` (Runs unit tests in `tests/SynapseAdmin.Tests/`)
 
 ## Development Conventions
 - **N-Tier Architecture:** The application follows an N-Tier architecture pattern.

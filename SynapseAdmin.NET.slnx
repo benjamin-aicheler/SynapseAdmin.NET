@@ -9,4 +9,7 @@
   <Folder Name="/src/">
     <Project Path="src/SynapseAdmin/SynapseAdmin.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SynapseAdmin.Tests/SynapseAdmin.Tests.csproj" />
+  </Folder>
 </Solution>
