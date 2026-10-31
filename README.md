@@ -12,6 +12,14 @@
 
 A modern .NET 10 Blazor Server web application for administering Synapse and compatible homeservers (such as Tuwunel) via the Synapse Admin API.
 
+<p align="center">
+  <a href="./assets/synapse_admin_explainer.mp4">
+    <img src="./assets/synapse_admin_explainer_preview.png" alt="Watch the SynapseAdmin.NET Explainer Video" width="100%" />
+  </a>
+  <br />
+  <em>▶️ <a href="./assets/synapse_admin_explainer.mp4">Watch the SynapseAdmin.NET Explainer Video (MP4, 1080p60)</a></em>
+</p>
+
 ## Features
 
 SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix homeserver right from your browser. Current capabilities include:
