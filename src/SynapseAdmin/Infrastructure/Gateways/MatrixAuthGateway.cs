@@ -1,5 +1,8 @@
+using System.Security.Cryptography;
+using System.Text;
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
+using Microsoft.Extensions.Caching.Memory;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
@@ -10,8 +13,10 @@ namespace SynapseAdmin.Infrastructure.Gateways;
 /// Implementation of IMatrixAuthGateway using LibMatrix's HomeserverProviderService.
 /// Centralizes unauthenticated "wire-level" entry points.
 /// </summary>
-public class MatrixAuthGateway(HomeserverProviderService hsProvider) : IMatrixAuthGateway
+public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCache cache) : IMatrixAuthGateway
 {
+    private static readonly SemaphoreSlim CacheLock = new(1, 1);
+
     private static void ValidateHomeserverUrl(string homeserverUrl)
     {
         if (string.IsNullOrWhiteSpace(homeserverUrl) ||
@@ -20,6 +25,13 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider) : IMatrixAu
         {
             throw new ArgumentException("Invalid homeserver URL. Must be an absolute HTTP or HTTPS URI.", nameof(homeserverUrl));
         }
+    }
+
+    private static string GetGatewayCacheKey(string homeserverUrl, string accessToken)
+    {
+        var normalizedHs = homeserverUrl.Trim().TrimEnd('/').ToLowerInvariant();
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(accessToken)));
+        return $"matrix_gateway:{normalizedHs}:{tokenHash}";
     }
 
     public async Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default)
@@ -45,6 +57,38 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider) : IMatrixAu
     public async Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default)
     {
         ValidateHomeserverUrl(homeserverUrl);
+
+        var cacheKey = GetGatewayCacheKey(homeserverUrl, accessToken);
+        if (cache.TryGetValue(cacheKey, out IMatrixGateway? cachedGateway) && cachedGateway != null)
+        {
+            return cachedGateway;
+        }
+
+        await CacheLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (cache.TryGetValue(cacheKey, out cachedGateway) && cachedGateway != null)
+            {
+                return cachedGateway;
+            }
+
+            var gateway = await CreateAuthenticatedGatewayAsync(homeserverUrl, accessToken, cancellationToken);
+            cache.Set(cacheKey, gateway, new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = TimeSpan.FromMinutes(15),
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+            });
+
+            return gateway;
+        }
+        finally
+        {
+            CacheLock.Release();
+        }
+    }
+
+    private async Task<IMatrixGateway> CreateAuthenticatedGatewayAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken)
+    {
         var authenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserverUrl, accessToken);
         
         if (authenticatedHomeserver is AuthenticatedHomeserverSynapse synapse)
