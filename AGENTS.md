@@ -53,11 +53,13 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Licensing:** All contributions must comply with the AGPLv3 license.
 - **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
     - **Themes:** Support multiple themes by implementing the `IAppTheme` interface in `src/SynapseAdmin/Infrastructure/Themes/`. Themes are automatically discovered via reflection. User preferences are persisted using `ProtectedLocalStorage`. See [Theme Guide](./THEMING.md).
+    - **Timezone Handling:** Always use `ITimeZoneService` (initialized via JS interop in `MainLayout`) to convert and interpret user-facing timestamps in the browser's local timezone rather than relying on server-local `DateTime.Now` or `TimeZoneInfo.Local`.
 
 ## Synapse API Compatibility & Brand Support
 - **Inconsistent Types:** Some Synapse Admin APIs (e.g., User Media) return pagination tokens (`next_token`) as JSON Numbers, while the SDK/DTOs expect Strings.
 - **Field Naming Inconsistency:** The Synapse Room Admin API uses the key **`avatar`** for room avatars in its responses, whereas the User Admin API (and most other Matrix APIs) uses **`avatar_url`**.
 - **Timestamp Unit Inconsistency (`creation_ts`):** Synapse returns `creation_ts` in **milliseconds** on the user list endpoint (`/_synapse/admin/v3/users`, mapped via `FromUnixTimeMilliseconds` in `UserMappingExtensions.ToViewModel`), but in **seconds** on the single-user details endpoint (`/_synapse/admin/v2/users/{userId}`, mapped via `FromUnixTimeSeconds` in `UserMappingExtensions.ToDetailViewModel`). Do not unify or alter these two conversions.
+- **Room Size Semantics:** In Synapse's Room List API (`/_synapse/admin/v1/rooms`), `order_by=size` sorts by member count (`joined_members`), not database byte size. Database byte size (`estimated_size`) is only returned by `/_synapse/admin/v1/statistics/database/rooms` (without room names), so `RoomService` caches resolved room names in `IMemoryCache`.
 - **Handling Strategy:** To avoid modifying the `LibMatrix` submodule, use `SynapseCompatibilityJsonOptions` (defined as a `protected static readonly` field in `SynapseCompatibleAdminGateway`, which `SynapseAdminGateway` inherits from) for type coercion. For field naming, ensure local DTOs map the correct keys.
 - **Implementation:** This utilizes `JsonStringConverter` to safely coerce Numbers into Strings during deserialization.
 - **Guideline:** When deserializing endpoints where Synapse returns inconsistent types, use `ClientHttpClient.GetAsync` + `JsonSerializer.DeserializeAsync(..., SynapseCompatibilityJsonOptions)` rather than `ClientHttpClient.GetFromJsonAsync` (as `LibMatrix`'s `MatrixHttpClient` mutates options passed to `GetFromJsonAsync`).
@@ -69,6 +71,8 @@ The project uses the standard .NET 10 CLI and Docker:
     - **Docker:** Keys are persisted to the host via a volume mount to `./keys` (\`/app/keys\` in the container).
     - **Host:** Keys are stored in the application's root directory (\`./keys\`).
 - **Encryption at Rest:** Implemented a universal passphrase-based encryption (AES-256-GCM) for DataProtection keys to ensure they are encrypted on disk.
+- **Reverse Proxy & Forwarded Headers:** `ForwardedHeadersMiddleware` only trusts loopback and private network ranges (RFC 1918 / RFC 4193) by default (`ForwardLimit = 1`), or explicit proxies/CIDRs configured via the `TRUSTED_PROXIES` environment variable.
+- **Login Rate Limiting:** Login attempts (`MatrixSessionService`) are protected against brute-force attacks by `ILoginRateLimiter` (per client IP and `(homeserver, account)`), and `/api/auth/set-cookie` is guarded by ASP.NET Core's `"auth"` rate-limiting policy.
 
 ## Git & GitHub Workflow
 We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are prohibited.
