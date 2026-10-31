@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SynapseAdmin.Controllers;
 
@@ -13,6 +16,12 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     private string? Homeserver => User.FindFirst("Homeserver")?.Value;
     private string? AccessToken => User.FindFirst("AccessToken")?.Value;
     private string? UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    private static EntityTagHeaderValue ComputeETag(string mxc)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(mxc.Trim())))[..32].ToLowerInvariant();
+        return new EntityTagHeaderValue($"\"{hash}\"");
+    }
 
     [HttpGet]
     public async Task<IActionResult> Avatar(string mxc, CancellationToken cancellationToken = default)
@@ -71,7 +80,13 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
 
         Response.Headers.Append("X-Content-Type-Options", "nosniff");
         
-        return File(result.Data, finalMimeType, finalFileName);
+        return File(
+            result.Data,
+            finalMimeType,
+            finalFileName,
+            lastModified: null,
+            entityTag: ComputeETag(mxc),
+            enableRangeProcessing: result.Data.CanSeek);
     }
 
     [HttpGet]
@@ -90,6 +105,19 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             logger.LogWarning("Preview failed for MXC {Mxc}: Missing session information for user {UserId}", 
                 mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
             return Unauthorized();
+        }
+
+        var entityTag = ComputeETag(mxc);
+        Response.Headers.CacheControl = "private, max-age=300";
+
+        if (string.IsNullOrEmpty(Request.Headers.Range))
+        {
+            var ifNoneMatch = Request.GetTypedHeaders().IfNoneMatch;
+            if (ifNoneMatch != null && (ifNoneMatch.Contains(EntityTagHeaderValue.Any) || ifNoneMatch.Contains(entityTag)))
+            {
+                Response.GetTypedHeaders().ETag = entityTag;
+                return StatusCode(StatusCodes.Status304NotModified);
+            }
         }
 
         var restoreResult = await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
@@ -134,6 +162,11 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             Response.Headers.Append("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
         }
 
-        return File(result.Data, finalMimeType);
+        return File(
+            result.Data,
+            finalMimeType,
+            lastModified: null,
+            entityTag: entityTag,
+            enableRangeProcessing: result.Data.CanSeek);
     }
 }
