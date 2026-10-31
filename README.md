@@ -143,9 +143,15 @@ If you are upgrading from an older version of SynapseAdmin.NET that ran as `root
   docker run --rm -v synapseadmin_logs:/logs -u root alpine chown -R 1654:1654 /logs
   ```
 
-### Reverse Proxy Configuration
+### Reverse Proxy Configuration (Required for Non-Localhost Access)
 
-If you are running the application behind a reverse proxy (like Nginx, Traefik, or Cloudflare) with SSL termination, the app is already configured to respect `X-Forwarded-For` and `X-Forwarded-Proto` headers.
+> [!IMPORTANT]
+> **HTTPS Requirement for Authentication Cookies & Media Endpoints:**
+> SynapseAdmin.NET enforces `CookieSecurePolicy.Always` on its authentication cookie to protect Matrix session credentials.
+> - **Local access (`http://localhost:8080`):** Works out of the box because browsers treat `localhost` as a secure context and accept `Secure` cookies over loopback HTTP.
+> - **Remote or LAN access (e.g., `https://admin.example.com` or internal IPs):** **Requires** a TLS-terminating reverse proxy (such as Nginx, Caddy, Traefik, or Cloudflare) in front of the container. Over plain non-localhost HTTP, browsers reject the `Secure` authentication cookie, which prevents `/Media/Avatar`, `/Media/Preview`, and `/Media/Download` from authenticating.
+
+When running behind a reverse proxy with SSL/TLS termination, the application automatically respects `X-Forwarded-For` and `X-Forwarded-Proto` headers.
 
 Ensure your proxy is configured to pass these headers. For example, in **Nginx**:
 

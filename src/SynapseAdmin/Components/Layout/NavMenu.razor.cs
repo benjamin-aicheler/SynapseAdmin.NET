@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
+using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Layout;
@@ -10,6 +12,8 @@ public partial class NavMenu : ComponentBase
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
     [Inject] private ISessionBridgeService BridgeService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private ILogger<NavMenu> Logger { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,6 +35,15 @@ public partial class NavMenu : ComponentBase
 
         if (isBlazorAuth && !isCookieAuth)
         {
+            if (!CanStoreSecureCookie())
+            {
+                Logger.LogWarning(
+                    "Skipping authentication cookie synchronization because the current origin ({Uri}) is neither HTTPS nor localhost. Media streaming requires HTTPS or a reverse proxy setting X-Forwarded-Proto: https.",
+                    Navigation.Uri.SanitizeForLogging());
+                Snackbar.Add(L["HttpsRequiredForMediaWarning"], Severity.Warning);
+                return;
+            }
+
             var homeserver = AuthProvider.GetHomeserver();
             var token = AuthProvider.GetAccessToken();
             var userId = AuthProvider.GetUserId();
@@ -44,6 +57,26 @@ public partial class NavMenu : ComponentBase
                 Navigation.NavigateTo(url, forceLoad: true);
             }
         }
+    }
+
+    private bool CanStoreSecureCookie()
+    {
+        if (HttpContextAccessor.HttpContext?.Request.IsHttps == true)
+        {
+            return true;
+        }
+
+        if (Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out var uri))
+        {
+            if (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return uri.IsLoopback;
+        }
+
+        return false;
     }
 
     private async Task Logout()

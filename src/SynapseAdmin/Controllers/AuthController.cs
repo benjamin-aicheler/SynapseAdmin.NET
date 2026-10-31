@@ -38,6 +38,13 @@ public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthCon
             ExpiresUtc = DateTimeOffset.UtcNow.AddDays(1)
         };
 
+        if (!HttpContext.Request.IsHttps && !IsLoopbackHost(HttpContext.Request.Host.Host))
+        {
+            logger.LogWarning(
+                "SignIn executed over plain HTTP on non-localhost host ({Host}). Browser will reject the Secure authentication cookie unless accessed via HTTPS or a reverse proxy forwarding X-Forwarded-Proto: https.",
+                HttpContext.Request.Host.Value.SanitizeForLogging());
+        }
+
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(claimsIdentity),
@@ -60,4 +67,10 @@ public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthCon
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return LocalRedirect("~/");
     }
+
+    private static bool IsLoopbackHost(string host) =>
+        string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(host, "[::1]", StringComparison.OrdinalIgnoreCase);
 }

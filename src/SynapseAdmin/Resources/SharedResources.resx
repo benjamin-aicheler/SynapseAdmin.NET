@@ -1313,4 +1313,7 @@
   <data name="TimeZone" xml:space="preserve">
     <value>Time zone</value>
   </data>
+  <data name="HttpsRequiredForMediaWarning" xml:space="preserve">
+    <value>HTTPS (or localhost) is required for secure authentication cookies. Media previews and downloads are unavailable over plain HTTP.</value>
+  </data>
 </root>
