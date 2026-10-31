@@ -44,7 +44,7 @@ else
                     <MudButton Variant="Variant.Filled" 
                                Color="Color.Warning" 
                                OnClick="ConfirmPurgeRemoteCache" 
-                               Disabled="isWorking"
+                               Disabled="@(isWorking || purgeCacheDays < 1)"
                                StartIcon="@Icons.Material.Filled.DeleteSweep">
                         @L["PurgeCache"]
                     </MudButton>
@@ -67,11 +67,13 @@ else
 
                     <MudNumericField @bind-Value="deleteLocalDays" 
                                      Label="@L["UploadedBeforeDays"]" 
-                                     Min="0" 
+                                     Min="1" 
                                      Variant="Variant.Outlined" 
                                      Class="mb-4" />
 
-                    <MudNumericField @bind-Value="deleteLocalSizeMb" 
+                    <MudNumericField T="int"
+                                     Value="deleteLocalSizeMb" 
+                                     ValueChanged="OnDeleteLocalSizeMbChanged"
                                      Label="@L["SizeGreaterThanMb"]" 
                                      Min="0" 
                                      Variant="Variant.Outlined" 
@@ -81,12 +83,23 @@ else
                                Color="Color.Info"
                                Label="@L["KeepProfiles"]" 
                                Class="mb-4" />
+
+                    @if (deleteLocalSizeMb == 0)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-2">
+                            @L["DeleteAllSizesWarning"]
+                        </MudAlert>
+                        <MudCheckBox @bind-Value="confirmUnboundedSize"
+                                     Color="Color.Error"
+                                     Label="@L["ConfirmDeleteAllSizes"]"
+                                     Class="mb-2" />
+                    }
                 </MudCardContent>
                 <MudCardActions>
                     <MudButton Variant="Variant.Filled" 
                                Color="Color.Error" 
                                OnClick="ConfirmDeleteLocalMedia" 
-                               Disabled="isWorking"
+                               Disabled="@(isWorking || deleteLocalDays < 1 || deleteLocalSizeMb < 0 || (deleteLocalSizeMb == 0 && !confirmUnboundedSize))"
                                StartIcon="@Icons.Material.Filled.DeleteForever">
                         @L["DeleteMedia"]
                     </MudButton>

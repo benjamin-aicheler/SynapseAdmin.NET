@@ -22,12 +22,21 @@ public partial class MediaMaintenance : IDisposable
     private int deleteLocalDays = 90;
     private int deleteLocalSizeMb = 10;
     private bool keepProfiles = true;
+    private bool confirmUnboundedSize = false;
     private bool isWorking = false;
 
     private readonly CancellationTokenSource _cts = new();
 
+    private void OnDeleteLocalSizeMbChanged(int value)
+    {
+        deleteLocalSizeMb = value;
+        confirmUnboundedSize = false;
+    }
+
     private async Task ConfirmPurgeRemoteCache()
     {
+        if (purgeCacheDays < 1) return;
+
         var message = string.Format(L["PurgeCacheConfirmation"], purgeCacheDays);
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
             L["PurgeRemoteCache"],
@@ -63,6 +72,11 @@ public partial class MediaMaintenance : IDisposable
 
     private async Task ConfirmDeleteLocalMedia()
     {
+        if (deleteLocalDays < 1 || deleteLocalSizeMb < 0 || (deleteLocalSizeMb == 0 && !confirmUnboundedSize))
+        {
+            return;
+        }
+
         var message = string.Format(L["DeleteLocalMediaConfirmation"], deleteLocalDays, deleteLocalSizeMb);
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
             L["DeleteLocalMedia"],
@@ -94,6 +108,7 @@ public partial class MediaMaintenance : IDisposable
             finally
             {
                 isWorking = false;
+                confirmUnboundedSize = false;
                 StateHasChanged();
             }
         }

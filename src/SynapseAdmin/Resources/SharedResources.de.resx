@@ -1318,4 +1318,10 @@
   <data name="TooManyLoginAttempts" xml:space="preserve">
     <value>Zu viele Anmeldeversuche. Bitte warten Sie eine Minute und versuchen Sie es erneut.</value>
   </data>
+  <data name="DeleteAllSizesWarning" xml:space="preserve">
+    <value>Ein Schwellenwert von 0 MB löscht alle lokalen Mediendateien, die älter als die angegebenen Tage sind, unabhängig von ihrer Dateigröße.</value>
+  </data>
+  <data name="ConfirmDeleteAllSizes" xml:space="preserve">
+    <value>Mir ist bewusst, dass alle Dateigrößen (ab 0 MB) gelöscht werden</value>
+  </data>
 </root>
