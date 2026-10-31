@@ -78,7 +78,7 @@ public class MatrixSessionService(IMatrixAuthGateway authGateway, ILogger<Matrix
 
             Gateway = await authGateway.GetAuthenticatedAsync(homeserver, accessToken);
             
-            logger.LogInformation("Session successfully restored for user {UserId} on {Homeserver}", Gateway.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
+            logger.LogDebug("Session successfully restored for user {UserId} on {Homeserver}", Gateway.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok();
         }
         catch (OperationCanceledException)
