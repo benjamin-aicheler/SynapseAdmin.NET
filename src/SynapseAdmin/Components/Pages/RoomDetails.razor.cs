@@ -21,6 +21,8 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
         [Inject]
+        public ITimeZoneService TimeZoneService { get; set; } = null!;
+        [Inject]
         public Microsoft.Extensions.Logging.ILogger<RoomDetails> Logger { get; set; } = null!;
 
         [Parameter]
@@ -45,6 +47,7 @@ namespace SynapseAdmin.Components.Pages
             activePurgeId = RoomService.GetActivePurgeId(RoomId);
             activePurgeStatus = null;
 
+            await TimeZoneService.InitializeAsync();
             await LoadRoomDetails();
             await LoadMessages();
 

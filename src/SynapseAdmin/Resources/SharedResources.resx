@@ -1310,4 +1310,7 @@
   <data name="CannotQueryRemoteUser" xml:space="preserve">
     <value>Cannot query remote users. The Synapse Admin API only supports local accounts.</value>
   </data>
+  <data name="TimeZone" xml:space="preserve">
+    <value>Time zone</value>
+  </data>
 </root>
