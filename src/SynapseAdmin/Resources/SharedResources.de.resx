@@ -1312,4 +1312,7 @@
   <data name="TimeZone" xml:space="preserve">
     <value>Zeitzone</value>
   </data>
+  <data name="HttpsRequiredForMediaWarning" xml:space="preserve">
+    <value>HTTPS (oder localhost) ist für sichere Authentifizierungs-Cookies erforderlich. Medienvorschauen und Downloads sind über unverschlüsseltes HTTP nicht verfügbar.</value>
+  </data>
 </root>
