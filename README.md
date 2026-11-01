@@ -13,6 +13,7 @@
 A modern .NET 10 Blazor Server web application for administering Synapse and compatible homeservers (such as Tuwunel) via the Synapse Admin API.
 
 https://github.com/user-attachments/assets/5d1de7ae-9ed0-4ef9-a185-d600b030aa18
+
 Video AI generated
 
 ## Features
