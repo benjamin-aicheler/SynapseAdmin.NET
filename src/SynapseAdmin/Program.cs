@@ -217,3 +217,5 @@ app.MapRazorComponents<App>()
     .AllowAnonymous();
 
 app.Run();
+
+public partial class Program;

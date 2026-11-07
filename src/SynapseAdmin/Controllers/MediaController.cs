@@ -94,7 +94,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         var finalFileName = safeFilename ?? mediaId;
         var finalMimeType = safeMimeType ?? "application/octet-stream";
 
-        Response.Headers.Append("X-Content-Type-Options", "nosniff");
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
         
         return File(
             result.Data,
@@ -162,7 +162,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         }
 
         // Add defensive headers for content-sniffing prevention
-        Response.Headers.Append("X-Content-Type-Options", "nosniff");
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
 
         var finalMimeType = safeMimeType ?? "image/jpeg";
 
@@ -175,7 +175,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         if (finalMimeType == "image/svg+xml" || finalMimeType == "text/html" || !isSafeInlineType)
         {
             // For SVG or any non-standard preview type, enforce an isolated sandbox CSP
-            Response.Headers.Append("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+            Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
         }
 
         return File(
