@@ -10,13 +10,12 @@ public class LoginRateLimiter : ILoginRateLimiter
     private static readonly TimeSpan WindowDuration = TimeSpan.FromMinutes(1);
     private readonly ILoginRateLimitStore _store;
 
-    [ActivatorUtilitiesConstructor]
     public LoginRateLimiter(ILoginRateLimitStore store)
     {
         _store = store;
     }
 
-    public LoginRateLimiter(IMemoryCache cache)
+    internal LoginRateLimiter(IMemoryCache cache)
         : this(new MemoryLoginRateLimitStore(cache))
     {
     }

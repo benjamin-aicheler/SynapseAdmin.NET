@@ -1,12 +1,16 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Controllers;
@@ -49,6 +53,37 @@ public class SecurityInfrastructureTests
         Assert.True(limiter.IsAllowed("198.51.100.5", "https://matrix.example.com|@other:example.com"));
 
         // Reset clears both buckets
+        limiter.ResetAttempts(ip, identifier);
+        Assert.True(limiter.IsAllowed(ip, identifier));
+    }
+
+    [Fact]
+    public async Task LoginRateLimiter_ParallelTryAcquire_AllowsAtMostFiveSlotsUnderConcurrency()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        ILoginRateLimiter limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+
+        const string ip = "192.0.2.55";
+        const string identifier = "https://matrix.example.com|@Admin:example.com";
+        const int parallelCallers = 50;
+
+        var startSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tasks = Enumerable.Range(0, parallelCallers)
+            .Select(i => Task.Run(async () =>
+            {
+                await startSignal.Task;
+                var candidateId = i % 2 == 0 ? identifier : identifier.ToUpperInvariant();
+                return limiter.TryAcquire(ip, candidateId);
+            }))
+            .ToArray();
+
+        startSignal.SetResult();
+        var outcomes = await Task.WhenAll(tasks);
+
+        Assert.Equal(5, outcomes.Count(allowed => allowed));
+        Assert.Equal(parallelCallers - 5, outcomes.Count(allowed => !allowed));
+        Assert.False(limiter.IsAllowed(ip, identifier));
+
         limiter.ResetAttempts(ip, identifier);
         Assert.True(limiter.IsAllowed(ip, identifier));
     }
@@ -192,6 +227,102 @@ public class SecurityInfrastructureTests
         var previewFile = Assert.IsType<FileStreamResult>(previewResult);
         Assert.Equal("private, max-age=300", previewController.Response.Headers.CacheControl.ToString());
         Assert.Equal(downloadFile.EntityTag, previewFile.EntityTag);
+    }
+
+    [Fact]
+    public async Task MediaController_WebApplicationFactory_CoversAuthGate_ETag304_RangeProcessing_AndCacheHeaders()
+    {
+        const string mxc = "mxc://example.com/media123";
+        var mediaService = new FakeMediaService();
+        var sessionService = new FakeRestorableSessionService();
+
+        await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.AddDataProtection().UseEphemeralDataProtectionProvider();
+                services.RemoveAll<IMediaService>();
+                services.RemoveAll<IMatrixSessionService>();
+                services.AddScoped<IMediaService>(_ => mediaService);
+                services.AddScoped<IMatrixSessionService>(_ => sessionService);
+            });
+        });
+
+        using var anonymousClient = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+
+        // 1. Unauthenticated requests to /Media/* must return 401 Unauthorized (not 302 redirect)
+        using var unauthDownload = await anonymousClient.GetAsync($"/Media/Download?mxc={Uri.EscapeDataString(mxc)}");
+        Assert.Equal(HttpStatusCode.Unauthorized, unauthDownload.StatusCode);
+
+        using var unauthPreview = await anonymousClient.GetAsync($"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}");
+        Assert.Equal(HttpStatusCode.Unauthorized, unauthPreview.StatusCode);
+        Assert.Equal(0, mediaService.StreamFetchCount);
+
+        // 2. Authenticate via the Cookie Bridge (/Auth/SignIn)
+        using var authenticatedClient = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false,
+            HandleCookies = true
+        });
+
+        var bridgeService = factory.Services.GetRequiredService<ISessionBridgeService>();
+        var bridgeKey = bridgeService.CreateBridge("https://example.com", "syt_token", "@admin:example.com", "admin");
+        using var signInResponse = await authenticatedClient.GetAsync($"/Auth/SignIn?key={Uri.EscapeDataString(bridgeKey)}");
+        Assert.Equal(HttpStatusCode.Redirect, signInResponse.StatusCode);
+
+        // 3. Authenticated Download returns 200 OK, Cache-Control, ETag, and Accept-Ranges
+        using var downloadResponse = await authenticatedClient.GetAsync(
+            $"/Media/Download?mxc={Uri.EscapeDataString(mxc)}&filename=photo.png&mimeType=image/png");
+        Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
+        Assert.True(downloadResponse.Headers.CacheControl?.Private);
+        Assert.Equal(TimeSpan.FromSeconds(300), downloadResponse.Headers.CacheControl?.MaxAge);
+        Assert.Equal("nosniff", downloadResponse.Headers.GetValues("X-Content-Type-Options").Single());
+        Assert.Contains("bytes", downloadResponse.Headers.AcceptRanges);
+        Assert.NotNull(downloadResponse.Headers.ETag);
+        Assert.Equal([1, 2, 3, 4], await downloadResponse.Content.ReadAsByteArrayAsync());
+        Assert.Equal(1, mediaService.StreamFetchCount);
+
+        var etag = downloadResponse.Headers.ETag!;
+
+        // 4. Conditional GET with matching If-None-Match returns 304 Not Modified without fetching stream again
+        using var conditionalRequest = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/Media/Download?mxc={Uri.EscapeDataString(mxc)}&filename=photo.png&mimeType=image/png");
+        conditionalRequest.Headers.IfNoneMatch.Add(etag);
+
+        using var notModifiedResponse = await authenticatedClient.SendAsync(conditionalRequest);
+        Assert.Equal(HttpStatusCode.NotModified, notModifiedResponse.StatusCode);
+        Assert.True(notModifiedResponse.Headers.CacheControl?.Private);
+        Assert.Equal(TimeSpan.FromSeconds(300), notModifiedResponse.Headers.CacheControl?.MaxAge);
+        Assert.Equal(etag.Tag, notModifiedResponse.Headers.ETag?.Tag);
+        Assert.Equal(1, mediaService.StreamFetchCount);
+
+        // 5. Range request returns 206 Partial Content with the requested byte slice
+        using var rangeRequest = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/Media/Download?mxc={Uri.EscapeDataString(mxc)}&filename=photo.png&mimeType=image/png");
+        rangeRequest.Headers.Range = new RangeHeaderValue(1, 2);
+
+        using var rangeResponse = await authenticatedClient.SendAsync(rangeRequest);
+        Assert.Equal(HttpStatusCode.PartialContent, rangeResponse.StatusCode);
+        Assert.Equal([2, 3], await rangeResponse.Content.ReadAsByteArrayAsync());
+        Assert.Equal(new ContentRangeHeaderValue(1, 2, 4), rangeResponse.Content.Headers.ContentRange);
+
+        // 6. Preview sets Cache-Control, ETag, and sandbox CSP for SVG content
+        using var svgPreviewResponse = await authenticatedClient.GetAsync(
+            $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString("image/svg+xml")}");
+        Assert.Equal(HttpStatusCode.OK, svgPreviewResponse.StatusCode);
+        Assert.True(svgPreviewResponse.Headers.CacheControl?.Private);
+        Assert.Equal(TimeSpan.FromSeconds(300), svgPreviewResponse.Headers.CacheControl?.MaxAge);
+        Assert.Equal(etag.Tag, svgPreviewResponse.Headers.ETag?.Tag);
+        Assert.Equal(
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            svgPreviewResponse.Headers.GetValues("Content-Security-Policy").Single());
     }
 
     [Fact]
