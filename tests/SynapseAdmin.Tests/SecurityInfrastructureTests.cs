@@ -12,9 +12,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Controllers;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
+using SynapseAdmin.Infrastructure.Gateways;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
@@ -192,6 +194,47 @@ public class SecurityInfrastructureTests
         Assert.Equal(downloadFile.EntityTag, previewFile.EntityTag);
     }
 
+    [Fact]
+    public async Task MatrixAuthGateway_SlowHomeserverCreation_DoesNotBlockDifferentHomeserverKey_AndDeduplicatesSameKey()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var slowStartedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSlowTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var gatewayFactory = new TestableMatrixAuthGateway(cache, async (hsUrl, _, ct) =>
+        {
+            if (hsUrl.Contains("slow.example.com", StringComparison.OrdinalIgnoreCase))
+            {
+                slowStartedTcs.TrySetResult();
+                await releaseSlowTcs.Task.WaitAsync(ct);
+            }
+
+            return new StubMatrixGateway(hsUrl);
+        });
+
+        // Start two concurrent requests for the SAME slow key (should deduplicate into 1 creation call)
+        var slowTask1 = gatewayFactory.GetAuthenticatedAsync("https://slow.example.com", "token_slow");
+        var slowTask2 = gatewayFactory.GetAuthenticatedAsync("https://slow.example.com", "token_slow");
+
+        await slowStartedTcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(slowTask1.IsCompleted);
+
+        // While slow.example.com is blocked in-flight, fast.example.com must complete without waiting
+        var fastGateway = await gatewayFactory
+            .GetAuthenticatedAsync("https://fast.example.com", "token_fast")
+            .WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal("https://fast.example.com", fastGateway.HomeserverUrl);
+
+        // Release the slow creation and verify both callers receive the exact same deduplicated instance
+        releaseSlowTcs.TrySetResult();
+        var slowGateways = await Task.WhenAll(slowTask1, slowTask2);
+
+        Assert.Same(slowGateways[0], slowGateways[1]);
+        Assert.Equal(1, gatewayFactory.GetCreationCount("https://slow.example.com"));
+        Assert.Equal(1, gatewayFactory.GetCreationCount("https://fast.example.com"));
+    }
+
     private static MediaController CreateAuthenticatedMediaController(IMediaService mediaService, IMatrixSessionService sessionService)
     {
         var httpContext = new DefaultHttpContext
@@ -242,6 +285,95 @@ public class SecurityInfrastructureTests
         public Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken, bool force = false) => Task.FromResult(OperationResult.Ok());
         public Task<string?> GetServerVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public void Logout() { }
+    }
+
+    private sealed class TestableMatrixAuthGateway(
+        IMemoryCache cache,
+        Func<string, string, CancellationToken, Task<IMatrixGateway>> factory) : MatrixAuthGateway(null!, cache)
+    {
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, int> _creationCounts = new(StringComparer.OrdinalIgnoreCase);
+
+        public int GetCreationCount(string homeserverUrl) =>
+            _creationCounts.TryGetValue(homeserverUrl, out var count) ? count : 0;
+
+        protected override Task<IMatrixGateway> CreateAuthenticatedGatewayAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken)
+        {
+            _creationCounts.AddOrUpdate(homeserverUrl, 1, (_, current) => current + 1);
+            return factory(homeserverUrl, accessToken, cancellationToken);
+        }
+    }
+
+    private sealed class StubMatrixGateway(string homeserverUrl) : IMatrixGateway
+    {
+        public string UserId => "@admin:example.com";
+        public string Username => "admin";
+        public string HomeserverUrl => homeserverUrl;
+        public string ServerName => "example.com";
+        public string AccessToken => "token";
+        public bool SupportsAdminApi => true;
+        public string ServerBrand => "Synapse";
+        public string ServerVersion => "1.120.0";
+
+        public Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeactivateUserAsync(string userId, bool erase, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task QuarantineMediaByUserIdAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<LoginResponse> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SendServerNoticeResponse?> SendServerNoticeAsync(string userId, object content, string? type = null, string? stateKey = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(int limit = 10, string orderBy = "media_length", string dir = "b", CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, object request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task SetUserExperimentalFeaturesAsync(string userId, SynapseAdminExperimentalFeaturesRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom?> GetRoomDetailsAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminRoomMemberListResult?> GetRoomMembersAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminRoomStateResult?> GetRoomStateAsync(string roomId, string? type = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminRoomMediaListResult?> GetRoomMediaListAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminPurgeHistoryStatusResponse?> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<MatrixPublicRoomDirectoryResult?> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<string?> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteRoomAliasAsync(string roomAlias, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<string>?> GetLocalRoomAliasesAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminFetchEventResponse?> FetchEventAsync(string eventId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken?> CreateRegistrationTokenAsync(SynapseAdminRegistrationTokenCreateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseVersionResponse?> GetSynapseVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5242880, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<Stream> GetMediaStreamAsync(string mxcUri, string? filename = null, int? timeout = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task QuarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UnquarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteMediaAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task ProtectMediaAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UnprotectMediaAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task StartBackgroundUpdatesJobAsync(string jobName, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private sealed class BurstFailingAuthGateway : IMatrixAuthGateway

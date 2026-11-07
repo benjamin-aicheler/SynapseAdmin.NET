@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using LibMatrix.Homeservers;
@@ -15,7 +17,7 @@ namespace SynapseAdmin.Infrastructure.Gateways;
 /// </summary>
 public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCache cache) : IMatrixAuthGateway
 {
-    private static readonly SemaphoreSlim CacheLock = new(1, 1);
+    private static readonly ConditionalWeakTable<IMemoryCache, ConcurrentDictionary<string, Lazy<Task<IMatrixGateway>>>> InFlightByCache = new();
 
     private static void ValidateHomeserverUrl(string homeserverUrl)
     {
@@ -57,6 +59,7 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCach
     public async Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default)
     {
         ValidateHomeserverUrl(homeserverUrl);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var cacheKey = GetGatewayCacheKey(homeserverUrl, accessToken);
         if (cache.TryGetValue(cacheKey, out IMatrixGateway? cachedGateway) && cachedGateway != null)
@@ -64,10 +67,27 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCach
             return cachedGateway;
         }
 
-        await CacheLock.WaitAsync(cancellationToken);
+        var inFlightMap = InFlightByCache.GetOrCreateValue(cache);
+
+        var lazyTask = inFlightMap.GetOrAdd(
+            cacheKey,
+            _ => new Lazy<Task<IMatrixGateway>>(
+                () => CreateAndCacheGatewayAsync(inFlightMap, cacheKey, homeserverUrl, accessToken, cancellationToken),
+                LazyThreadSafetyMode.ExecutionAndPublication));
+
+        return await lazyTask.Value.WaitAsync(cancellationToken);
+    }
+
+    private async Task<IMatrixGateway> CreateAndCacheGatewayAsync(
+        ConcurrentDictionary<string, Lazy<Task<IMatrixGateway>>> inFlightMap,
+        string cacheKey,
+        string homeserverUrl,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
         try
         {
-            if (cache.TryGetValue(cacheKey, out cachedGateway) && cachedGateway != null)
+            if (cache.TryGetValue(cacheKey, out IMatrixGateway? cachedGateway) && cachedGateway != null)
             {
                 return cachedGateway;
             }
@@ -83,11 +103,11 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCach
         }
         finally
         {
-            CacheLock.Release();
+            inFlightMap.TryRemove(cacheKey, out _);
         }
     }
 
-    private async Task<IMatrixGateway> CreateAuthenticatedGatewayAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken)
+    protected virtual async Task<IMatrixGateway> CreateAuthenticatedGatewayAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken)
     {
         var authenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserverUrl, accessToken);
         
