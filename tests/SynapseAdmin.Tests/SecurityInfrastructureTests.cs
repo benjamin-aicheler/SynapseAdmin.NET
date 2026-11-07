@@ -1,15 +1,20 @@
 using System.Net;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
+using SynapseAdmin.Controllers;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
+using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Models;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
@@ -149,6 +154,94 @@ public class SecurityInfrastructureTests
         var oversized = new string('A', 2000);
         var truncated = oversized.SanitizeForLogging(maxLength: 64);
         Assert.Equal(new string('A', 64) + "...(truncated)", truncated);
+    }
+
+    [Fact]
+    public async Task MediaController_DownloadAndPreview_SetCacheControlAndETag_AndReturn304OnMatchingIfNoneMatch()
+    {
+        const string mxc = "mxc://example.com/media123";
+        var mediaService = new FakeMediaService();
+        var sessionService = new FakeRestorableSessionService();
+
+        var downloadController = CreateAuthenticatedMediaController(mediaService, sessionService);
+        var downloadResult = await downloadController.Download(mxc, "photo.png", "image/png");
+
+        var downloadFile = Assert.IsType<FileStreamResult>(downloadResult);
+        Assert.Equal("private, max-age=300", downloadController.Response.Headers.CacheControl.ToString());
+        Assert.Equal("nosniff", downloadController.Response.Headers["X-Content-Type-Options"].ToString());
+        Assert.NotNull(downloadFile.EntityTag);
+        Assert.Equal(1, mediaService.StreamFetchCount);
+
+        // Conditional request on Download with matching If-None-Match returns 304 without fetching stream again
+        var conditionalDownloadController = CreateAuthenticatedMediaController(mediaService, sessionService);
+        conditionalDownloadController.Request.Headers.IfNoneMatch = downloadFile.EntityTag.Tag.ToString();
+        var notModifiedResult = await conditionalDownloadController.Download(mxc, "photo.png", "image/png");
+
+        var statusCodeResult = Assert.IsType<StatusCodeResult>(notModifiedResult);
+        Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
+        Assert.Equal("private, max-age=300", conditionalDownloadController.Response.Headers.CacheControl.ToString());
+        Assert.Equal(downloadFile.EntityTag.Tag.ToString(), conditionalDownloadController.Response.Headers.ETag.ToString());
+        Assert.Equal(1, mediaService.StreamFetchCount);
+
+        // Preview sets identical Cache-Control and ETag
+        var previewController = CreateAuthenticatedMediaController(mediaService, sessionService);
+        var previewResult = await previewController.Preview(mxc, "image/png");
+
+        var previewFile = Assert.IsType<FileStreamResult>(previewResult);
+        Assert.Equal("private, max-age=300", previewController.Response.Headers.CacheControl.ToString());
+        Assert.Equal(downloadFile.EntityTag, previewFile.EntityTag);
+    }
+
+    private static MediaController CreateAuthenticatedMediaController(IMediaService mediaService, IMatrixSessionService sessionService)
+    {
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, "@admin:example.com"),
+                new Claim("Homeserver", "https://example.com"),
+                new Claim("AccessToken", "syt_token")
+            ], "TestAuth"))
+        };
+
+        return new MediaController(mediaService, sessionService, NullLogger<MediaController>.Instance)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext
+            }
+        };
+    }
+
+    private sealed class FakeMediaService : IMediaService
+    {
+        public int StreamFetchCount { get; private set; }
+
+        public Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc, CancellationToken token = default)
+        {
+            StreamFetchCount++;
+            return Task.FromResult(OperationResult<Stream>.Ok(new MemoryStream([1, 2, 3, 4])));
+        }
+
+        public Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
+        public Task<OperationResult> QuarantineMediaAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
+        public Task<OperationResult> UnquarantineMediaAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
+        public Task<OperationResult> DeleteMediaAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
+        public Task<OperationResult> ProtectMediaAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
+        public Task<OperationResult> UnprotectMediaAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
+        public Task<OperationResult<SynapseAdminPurgeMediaCacheResponse>> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken token = default) => throw new NotImplementedException();
+        public Task<OperationResult<SynapseAdminDeleteMediaResponse>> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken token = default) => throw new NotImplementedException();
+    }
+
+    private sealed class FakeRestorableSessionService : IMatrixSessionService
+    {
+        public IMatrixGateway? Gateway => null;
+        public bool IsLoggedIn => true;
+        public Task<OperationResult> LoginAsync(string homeserver, string username, string password) => throw new NotImplementedException();
+        public Task<OperationResult> LoginWithTokenAsync(string homeserver, string accessToken) => throw new NotImplementedException();
+        public Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken, bool force = false) => Task.FromResult(OperationResult.Ok());
+        public Task<string?> GetServerVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public void Logout() { }
     }
 
     private sealed class BurstFailingAuthGateway : IMatrixAuthGateway
