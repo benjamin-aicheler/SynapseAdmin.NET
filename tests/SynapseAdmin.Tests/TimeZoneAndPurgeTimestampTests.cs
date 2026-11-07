@@ -1,5 +1,17 @@
+using System.Reflection;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
+using MudBlazor;
+using SynapseAdmin.Components.Pages;
+using SynapseAdmin.Interfaces;
+using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Models;
+using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.Responses;
+using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using Xunit;
 
@@ -56,6 +68,184 @@ public class TimeZoneAndPurgeTimestampTests
 
         Assert.Equal(TimeZoneInfo.Utc, service.UserTimeZone);
         Assert.Equal("UTC (UTC+00:00)", service.GetDisplayOffset(new DateTime(2026, 6, 1, 12, 0, 0)));
+    }
+
+    [Fact]
+    public async Task PurgeHistoryDialog_ExecutePurgeAsync_WhenSuccessWithoutPurgeId_ShowsFeedbackAndClosesDialog()
+    {
+        var roomService = DispatchProxy.Create<IRoomService, StubRoomServiceProxy>();
+        var roomProxy = (StubRoomServiceProxy)(object)roomService;
+        roomProxy.PurgeHandler = (_, _, _) => Task.FromResult(OperationResult<string>.Ok(null!));
+
+        var snackbar = DispatchProxy.Create<ISnackbar, RecordingSnackbarProxy>();
+        var snackbarProxy = (RecordingSnackbarProxy)(object)snackbar;
+
+        var mudDialog = DispatchProxy.Create<IMudDialogInstance, RecordingDialogProxy>();
+        var dialogProxy = (RecordingDialogProxy)(object)mudDialog;
+
+        using var dialog = CreateDialog("!room:example.com", roomService, snackbar, mudDialog);
+
+        await dialog.ExecutePurgeAsync(new PurgeHistoryViewModel { PurgeUpToEventId = "$event1" });
+
+        Assert.Empty(roomProxy.SetActivePurgeCalls);
+        var notification = Assert.Single(snackbarProxy.AddedMessages);
+        Assert.Equal(Severity.Success, notification.Severity);
+        Assert.False(string.IsNullOrWhiteSpace(notification.Message));
+        Assert.Equal(1, dialogProxy.CloseCallCount);
+        Assert.NotNull(dialogProxy.ClosedResult);
+        Assert.False(dialogProxy.ClosedResult!.Canceled);
+    }
+
+    [Fact]
+    public async Task PurgeHistoryDialog_ExecutePurgeAsync_WhenSuccessWithPurgeId_SetsActivePurgeIdAndClosesDialog()
+    {
+        var roomService = DispatchProxy.Create<IRoomService, StubRoomServiceProxy>();
+        var roomProxy = (StubRoomServiceProxy)(object)roomService;
+        roomProxy.PurgeHandler = (_, _, _) => Task.FromResult(OperationResult<string>.Ok("purge-42", "PurgeStarted"));
+
+        var snackbar = DispatchProxy.Create<ISnackbar, RecordingSnackbarProxy>();
+        var snackbarProxy = (RecordingSnackbarProxy)(object)snackbar;
+
+        var mudDialog = DispatchProxy.Create<IMudDialogInstance, RecordingDialogProxy>();
+        var dialogProxy = (RecordingDialogProxy)(object)mudDialog;
+
+        using var dialog = CreateDialog("!room:example.com", roomService, snackbar, mudDialog);
+
+        await dialog.ExecutePurgeAsync(new PurgeHistoryViewModel { PurgeUpToEventId = "$event1" });
+
+        var activeCall = Assert.Single(roomProxy.SetActivePurgeCalls);
+        Assert.Equal("!room:example.com", activeCall.RoomId);
+        Assert.Equal("purge-42", activeCall.PurgeId);
+        var notification = Assert.Single(snackbarProxy.AddedMessages);
+        Assert.Equal("PurgeStarted", notification.Message);
+        Assert.Equal(Severity.Success, notification.Severity);
+        Assert.Equal(1, dialogProxy.CloseCallCount);
+        Assert.Equal("purge-42", dialogProxy.ClosedResult?.Data);
+    }
+
+    [Fact]
+    public async Task RoomService_PurgeRoomHistoryAsync_WhenGatewayReturnsEmptyPurgeId_ReturnsSuccessWithoutCachingEmptyId()
+    {
+        var gateway = DispatchProxy.Create<IMatrixGateway, StubPurgeGatewayProxy>();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var roomService = new RoomService(
+            new StubSessionService(gateway),
+            NullLogger<RoomService>.Instance,
+            new StubStringLocalizer(),
+            cache);
+
+        var result = await roomService.PurgeRoomHistoryAsync(
+            "!room:example.com",
+            new PurgeHistoryViewModel { PurgeUpToEventId = "$event1" });
+
+        Assert.True(result.Success);
+        Assert.Equal(string.Empty, result.Data);
+        Assert.Equal("PurgeStarted", result.Message);
+        Assert.Null(roomService.GetActivePurgeId("!room:example.com"));
+    }
+
+#pragma warning disable BL0005
+    private static PurgeHistoryDialog CreateDialog(
+        string roomId,
+        IRoomService roomService,
+        ISnackbar snackbar,
+        IMudDialogInstance mudDialog) => new()
+    {
+        RoomId = roomId,
+        RoomService = roomService,
+        Snackbar = snackbar,
+        MudDialog = mudDialog
+    };
+#pragma warning restore BL0005
+
+    public class StubRoomServiceProxy : DispatchProxy
+    {
+        public Func<string, PurgeHistoryViewModel, CancellationToken, Task<OperationResult<string>>>? PurgeHandler { get; set; }
+        public List<(string RoomId, string PurgeId)> SetActivePurgeCalls { get; } = [];
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == nameof(IRoomService.PurgeRoomHistoryAsync) && args is [string roomId, PurgeHistoryViewModel req, CancellationToken ct])
+            {
+                return PurgeHandler!(roomId, req, ct);
+            }
+
+            if (targetMethod?.Name == nameof(IRoomService.SetActivePurgeId) && args is [string rId, string pId])
+            {
+                SetActivePurgeCalls.Add((rId, pId));
+                return null;
+            }
+
+            throw new NotSupportedException($"Unexpected call: {targetMethod?.Name}");
+        }
+    }
+
+    public class RecordingSnackbarProxy : DispatchProxy
+    {
+        public List<(string Message, Severity Severity)> AddedMessages { get; } = [];
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == nameof(ISnackbar.Add) && args is { Length: >= 2 } && args[0] is string msg && args[1] is Severity sev)
+            {
+                AddedMessages.Add((msg, sev));
+            }
+
+            return null;
+        }
+    }
+
+    public class RecordingDialogProxy : DispatchProxy
+    {
+        public DialogResult? ClosedResult { get; private set; }
+        public int CloseCallCount { get; private set; }
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == nameof(IMudDialogInstance.Close))
+            {
+                CloseCallCount++;
+                ClosedResult = args is { Length: > 0 } ? args[0] as DialogResult : DialogResult.Ok<object?>(null);
+            }
+
+            return null;
+        }
+    }
+
+    public class StubPurgeGatewayProxy : DispatchProxy
+    {
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == $"get_{nameof(IMatrixGateway.HomeserverUrl)}")
+            {
+                return "https://matrix.example.com";
+            }
+
+            if (targetMethod?.Name == nameof(IMatrixGateway.PurgeRoomHistoryAsync))
+            {
+                return Task.FromResult<SynapseAdminPurgeHistoryResponse?>(new SynapseAdminPurgeHistoryResponse { PurgeId = string.Empty });
+            }
+
+            throw new NotSupportedException($"Unexpected gateway call: {targetMethod?.Name}");
+        }
+    }
+
+    private sealed class StubSessionService(IMatrixGateway gateway) : IMatrixSessionService
+    {
+        public IMatrixGateway? Gateway => gateway;
+        public bool IsLoggedIn => true;
+        public Task<OperationResult> LoginAsync(string homeserver, string username, string password) => throw new NotImplementedException();
+        public Task<OperationResult> LoginWithTokenAsync(string homeserver, string accessToken) => throw new NotImplementedException();
+        public Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken, bool force = false) => throw new NotImplementedException();
+        public Task<string?> GetServerVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public void Logout() => throw new NotImplementedException();
+    }
+
+    private sealed class StubStringLocalizer : IStringLocalizer<SharedResources>
+    {
+        public LocalizedString this[string name] => new(name, name, resourceNotFound: false);
+        public LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments), resourceNotFound: false);
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
     }
 
     private sealed class StubJsRuntime(string timeZoneId) : IJSRuntime
