@@ -1,69 +1,47 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Services;
 
-public class LoginRateLimiter(IMemoryCache cache) : ILoginRateLimiter
+public class LoginRateLimiter : ILoginRateLimiter
 {
     private const int MaxAttemptsPerWindow = 5;
     private static readonly TimeSpan WindowDuration = TimeSpan.FromMinutes(1);
-    private readonly Lock _syncLock = new();
+    private readonly ILoginRateLimitStore _store;
 
-    public bool IsAllowed(string? clientIp, string? identifier = null)
+    [ActivatorUtilitiesConstructor]
+    public LoginRateLimiter(ILoginRateLimitStore store)
     {
-        lock (_syncLock)
-        {
-            if (GetAttemptCount(GetIpKey(clientIp)) >= MaxAttemptsPerWindow)
-            {
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(identifier) &&
-                GetAttemptCount(GetIdentifierKey(identifier)) >= MaxAttemptsPerWindow)
-            {
-                return false;
-            }
-
-            return true;
-        }
+        _store = store;
     }
 
-    public void RecordFailedAttempt(string? clientIp, string? identifier = null)
+    public LoginRateLimiter(IMemoryCache cache)
+        : this(new MemoryLoginRateLimitStore(cache))
     {
-        lock (_syncLock)
-        {
-            IncrementAttemptCount(GetIpKey(clientIp));
-
-            if (!string.IsNullOrWhiteSpace(identifier))
-            {
-                IncrementAttemptCount(GetIdentifierKey(identifier));
-            }
-        }
     }
 
-    public void ResetAttempts(string? clientIp, string? identifier = null)
-    {
-        lock (_syncLock)
-        {
-            cache.Remove(GetIpKey(clientIp));
+    public bool TryAcquire(string? clientIp, string? identifier = null) =>
+        _store.TryAcquire(BuildKeys(clientIp, identifier), MaxAttemptsPerWindow, WindowDuration);
 
-            if (!string.IsNullOrWhiteSpace(identifier))
-            {
-                cache.Remove(GetIdentifierKey(identifier));
-            }
+    public bool IsAllowed(string? clientIp, string? identifier = null) =>
+        _store.IsAllowed(BuildKeys(clientIp, identifier), MaxAttemptsPerWindow);
+
+    public void RecordFailedAttempt(string? clientIp, string? identifier = null) =>
+        _store.Increment(BuildKeys(clientIp, identifier), WindowDuration);
+
+    public void ResetAttempts(string? clientIp, string? identifier = null) =>
+        _store.Reset(BuildKeys(clientIp, identifier));
+
+    private static IReadOnlyList<string> BuildKeys(string? clientIp, string? identifier)
+    {
+        var ipKey = GetIpKey(clientIp);
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            return [ipKey];
         }
-    }
 
-    private int GetAttemptCount(string key) =>
-        cache.TryGetValue(key, out int count) ? count : 0;
-
-    private void IncrementAttemptCount(string key)
-    {
-        var current = GetAttemptCount(key);
-        cache.Set(key, current + 1, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = WindowDuration
-        });
+        return [ipKey, GetIdentifierKey(identifier)];
     }
 
     private static string GetIpKey(string? clientIp) =>

@@ -12,6 +12,7 @@ using MudBlazor.Translations;
 using Serilog;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
 using SynapseAdmin.Interfaces.Gateways;
@@ -29,7 +30,8 @@ builder.Host.UseSerilog();
 // Add services to the container.
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ISessionBridgeService, SessionBridgeService>();
-builder.Services.AddSingleton<ILoginRateLimiter, LoginRateLimiter>();
+builder.Services.TryAddSingleton<ILoginRateLimitStore, MemoryLoginRateLimitStore>();
+builder.Services.TryAddSingleton<ILoginRateLimiter, LoginRateLimiter>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
