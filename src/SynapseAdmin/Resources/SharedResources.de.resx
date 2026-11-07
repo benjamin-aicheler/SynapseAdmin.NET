@@ -1324,4 +1324,52 @@
   <data name="ConfirmDeleteAllSizes" xml:space="preserve">
     <value>Mir ist bewusst, dass alle Dateigrößen (ab 0 MB) gelöscht werden</value>
   </data>
+  <data name="ExperimentalFeatures" xml:space="preserve">
+    <value>Experimentelle Funktionen</value>
+  </data>
+  <data name="ExperimentalFeaturesNotAvailable" xml:space="preserve">
+    <value>Experimentelle Funktionen sind auf diesem Homeserver nicht verfügbar.</value>
+  </data>
+  <data name="NoExperimentalFeaturesFound" xml:space="preserve">
+    <value>Keine experimentellen Funktionen vom Homeserver gemeldet.</value>
+  </data>
+  <data name="Feature" xml:space="preserve">
+    <value>Funktion</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Aktiviert</value>
+  </data>
+  <data name="Disabled" xml:space="preserve">
+    <value>Deaktiviert</value>
+  </data>
+  <data name="ExperimentalFeaturesUpdatedSuccessfully" xml:space="preserve">
+    <value>Experimentelle Funktionen erfolgreich aktualisiert.</value>
+  </data>
+  <data name="ErrorFetchingExperimentalFeatures" xml:space="preserve">
+    <value>Fehler beim Abrufen der experimentellen Funktionen.</value>
+  </data>
+  <data name="ErrorUpdatingExperimentalFeatures" xml:space="preserve">
+    <value>Fehler beim Aktualisieren der experimentellen Funktionen.</value>
+  </data>
+  <data name="ExperimentalFeature_msc3026" xml:space="preserve">
+    <value>Anwesenheitsstatus „Beschäftigt“ (MSC3026)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3575" xml:space="preserve">
+    <value>Sliding Sync (MSC3575)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3861" xml:space="preserve">
+    <value>Authentifizierung der nächsten Generation / OIDC (MSC3861)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3881" xml:space="preserve">
+    <value>Push-Benachrichtigungen für andere Clients aus der Ferne umschalten (MSC3881)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3967" xml:space="preserve">
+    <value>Keine UIA beim erstmaligen Hochladen von Cross-Signing-Schlüsseln anfordern (MSC3967)</value>
+  </data>
+  <data name="ExperimentalFeature_Unknown" xml:space="preserve">
+    <value>Experimentelle Matrix-Spezifikationsänderung (MSC)</value>
+  </data>
 </root>

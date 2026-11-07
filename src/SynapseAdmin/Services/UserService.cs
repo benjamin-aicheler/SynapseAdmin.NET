@@ -91,13 +91,32 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 }
             }
 
+            async Task<SynapseAdminExperimentalFeaturesResponse?> FetchExperimentalFeaturesSafeAsync()
+            {
+                try
+                {
+                    return await Gateway.GetUserExperimentalFeaturesAsync(userId, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to fetch experimental features for user {UserId}. Continuing without experimental features.", userId.SanitizeForLogging());
+                    return null;
+                }
+            }
+
             var mediaTask = FetchMediaSafeAsync();
             var membershipsTask = FetchMembershipsSafeAsync();
+            var experimentalFeaturesTask = FetchExperimentalFeaturesSafeAsync();
 
-            await Task.WhenAll(mediaTask, membershipsTask);
+            await Task.WhenAll(mediaTask, membershipsTask, experimentalFeaturesTask);
 
             var mediaResult = await mediaTask;
             var membershipsResult = await membershipsTask;
+            var experimentalFeaturesResult = await experimentalFeaturesTask;
 
             var vm = u.ToDetailViewModel();
             vm.Media = mediaResult == null ? null : new UserMediaViewModel
@@ -116,6 +135,9 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 }).ToList()
             };
             vm.Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : [];
+            vm.ExperimentalFeatures = experimentalFeaturesResult == null
+                ? null
+                : MapExperimentalFeatures(experimentalFeaturesResult.Features);
 
             return OperationResult<UserDetailViewModel>.Ok(vm);
         }
@@ -300,5 +322,72 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             logger.LogError(ex, "Error fetching memberships for user {UserId}", userId.SanitizeForLogging());
             return OperationResult<List<UserMembershipViewModel>>.Failure(L["ErrorFetchingUserMemberships"]);
         }
+    }
+
+    public async Task<OperationResult<List<UserExperimentalFeatureViewModel>>> GetUserExperimentalFeaturesAsync(string userId, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<List<UserExperimentalFeatureViewModel>>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var result = await Gateway.GetUserExperimentalFeaturesAsync(userId, token);
+            if (result == null) return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok([]);
+
+            return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok(MapExperimentalFeatures(result.Features));
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<List<UserExperimentalFeatureViewModel>>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching experimental features for user {UserId}", userId.SanitizeForLogging());
+            return OperationResult<List<UserExperimentalFeatureViewModel>>.Failure(L["ErrorFetchingExperimentalFeatures"]);
+        }
+    }
+
+    public async Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var req = new SynapseAdminExperimentalFeaturesRequest
+            {
+                Features = features
+            };
+            await Gateway.SetUserExperimentalFeaturesAsync(userId, req, token);
+            logger.LogInformation("Successfully updated experimental features for user {UserId}", userId.SanitizeForLogging());
+            return OperationResult.Ok(L["ExperimentalFeaturesUpdatedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating experimental features for user {UserId}", userId.SanitizeForLogging());
+            return OperationResult.Failure(L["ErrorUpdatingExperimentalFeatures"]);
+        }
+    }
+
+    private List<UserExperimentalFeatureViewModel> MapExperimentalFeatures(Dictionary<string, bool> features)
+    {
+        return features
+            .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(kvp =>
+            {
+                var resourceKey = $"ExperimentalFeature_{kvp.Key.ToLowerInvariant()}";
+                var localized = L[resourceKey];
+                var description = localized.ResourceNotFound ? L["ExperimentalFeature_Unknown"].Value : localized.Value;
+
+                return new UserExperimentalFeatureViewModel
+                {
+                    FeatureKey = kvp.Key,
+                    Description = description,
+                    Enabled = kvp.Value
+                };
+            })
+            .ToList();
     }
 }

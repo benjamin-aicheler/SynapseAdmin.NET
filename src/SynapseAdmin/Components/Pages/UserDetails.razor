@@ -224,5 +224,46 @@ else
                 </MudTable>
             }
         </MudTabPanel>
+
+        <MudTabPanel Text="@L["ExperimentalFeatures"]" Icon="@Icons.Material.Filled.Science">
+            @if (user.ExperimentalFeatures == null)
+            {
+                <MudAlert Severity="Severity.Info" Elevation="0" Class="m-4">
+                    @L["ExperimentalFeaturesNotAvailable"]
+                </MudAlert>
+            }
+            else if (user.ExperimentalFeatures.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Elevation="0" Class="m-4">
+                    @L["NoExperimentalFeaturesFound"]
+                </MudAlert>
+            }
+            else
+            {
+                <MudTable T="UserExperimentalFeatureViewModel" Items="user.ExperimentalFeatures" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel SortBy="new Func<UserExperimentalFeatureViewModel, object>(x => x.FeatureKey)">@L["Feature"]</MudTableSortLabel></MudTh>
+                        <MudTh>@L["Description"]</MudTh>
+                        <MudTh>@L["Status"]</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="@L["Feature"]">
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
+                                @context.FeatureKey.ToUpperInvariant()
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="@L["Description"]">@context.Description</MudTd>
+                        <MudTd DataLabel="@L["Status"]">
+                            <MudSwitch T="bool"
+                                       Value="@context.Enabled"
+                                       ValueChanged="@(enabled => ToggleExperimentalFeature(context, enabled))"
+                                       Color="Color.Primary"
+                                       Disabled="@context.IsUpdating"
+                                       Label="@(context.Enabled ? L["Enabled"] : L["Disabled"])" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudTabPanel>
     </MudTabs>
 }
