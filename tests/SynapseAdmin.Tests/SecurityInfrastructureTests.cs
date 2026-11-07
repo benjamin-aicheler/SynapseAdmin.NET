@@ -1,11 +1,17 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
+using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Models.Responses;
+using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using Xunit;
 
@@ -38,6 +44,41 @@ public class SecurityInfrastructureTests
         // Reset clears both buckets
         limiter.ResetAttempts(ip, identifier);
         Assert.True(limiter.IsAllowed(ip, identifier));
+    }
+
+    [Fact]
+    public async Task MatrixSessionService_ConcurrentLoginBurst_AllowsAtMostFiveAttemptsThroughGateway()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var authGateway = new BurstFailingAuthGateway();
+        var httpContext = new DefaultHttpContext();
+        httpContext.Connection.RemoteIpAddress = IPAddress.Parse("192.0.2.99");
+        var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
+        var localizer = new FakeAuthStringLocalizer();
+
+        const int concurrentRequests = 25;
+
+        var tasks = Enumerable.Range(0, concurrentRequests)
+            .Select(_ => Task.Run(async () =>
+            {
+                var sessionService = new MatrixSessionService(
+                    authGateway,
+                    limiter,
+                    httpContextAccessor,
+                    NullLogger<MatrixSessionService>.Instance,
+                    localizer);
+
+                return await sessionService.LoginAsync("https://matrix.example.com", "admin", "wrong-password");
+            }))
+            .ToArray();
+
+        var results = await Task.WhenAll(tasks);
+
+        // Exactly 5 attempts may reach the upstream gateway; the remaining 20 must be blocked atomically by TryAcquire
+        Assert.Equal(5, authGateway.GatewayCallCount);
+        Assert.Equal(5, results.Count(r => !r.Success && r.Message == "LoginFailed"));
+        Assert.Equal(concurrentRequests - 5, results.Count(r => !r.Success && r.Message == "TooManyLoginAttempts"));
     }
 
     [Fact]
@@ -108,5 +149,33 @@ public class SecurityInfrastructureTests
         var oversized = new string('A', 2000);
         var truncated = oversized.SanitizeForLogging(maxLength: 64);
         Assert.Equal(new string('A', 64) + "...(truncated)", truncated);
+    }
+
+    private sealed class BurstFailingAuthGateway : IMatrixAuthGateway
+    {
+        private int _gatewayCallCount;
+        public int GatewayCallCount => Volatile.Read(ref _gatewayCallCount);
+
+        public async Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _gatewayCallCount);
+            await Task.Delay(50, cancellationToken);
+        }
+
+        public Task<LoginResponse> LoginAsync(string homeserverUrl, string username, string password, CancellationToken cancellationToken = default) =>
+            throw new HttpRequestException("Invalid username or password", null, HttpStatusCode.Forbidden);
+
+        public Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default) =>
+            throw new NotImplementedException();
+    }
+
+    private sealed class FakeAuthStringLocalizer : IStringLocalizer<SharedResources>
+    {
+        public LocalizedString this[string name] => new(name, name, resourceNotFound: false);
+
+        public LocalizedString this[string name, params object[] arguments] =>
+            new(name, string.Format(name, arguments), resourceNotFound: false);
+
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
     }
 }

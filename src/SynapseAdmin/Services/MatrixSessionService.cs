@@ -33,7 +33,7 @@ public class MatrixSessionService(
         var clientIp = GetClientIp();
         var rateLimitId = $"{homeserver?.Trim().ToLowerInvariant()}|{username?.Trim().ToLowerInvariant()}";
 
-        if (!loginRateLimiter.IsAllowed(clientIp, rateLimitId))
+        if (!loginRateLimiter.TryAcquire(clientIp, rateLimitId))
         {
             logger.LogWarning(
                 "Login rate limit exceeded for user {Username} on {Homeserver} from IP {ClientIp}",
@@ -61,7 +61,6 @@ public class MatrixSessionService(
         }
         catch (Exception ex)
         {
-            loginRateLimiter.RecordFailedAttempt(clientIp, rateLimitId);
             logger.LogError(ex, "Login failed for user {Username} on {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
 
             if (IsUpstreamRateLimit(ex))
@@ -78,7 +77,7 @@ public class MatrixSessionService(
         var clientIp = GetClientIp();
         var rateLimitId = homeserver?.Trim().ToLowerInvariant();
 
-        if (!loginRateLimiter.IsAllowed(clientIp, rateLimitId))
+        if (!loginRateLimiter.TryAcquire(clientIp, rateLimitId))
         {
             logger.LogWarning(
                 "Token login rate limit exceeded on {Homeserver} from IP {ClientIp}",
@@ -105,7 +104,6 @@ public class MatrixSessionService(
         }
         catch (Exception ex)
         {
-            loginRateLimiter.RecordFailedAttempt(clientIp, rateLimitId);
             logger.LogError(ex, "Login with token failed for {Homeserver}", homeserver.SanitizeForLogging());
             Gateway = null;
 
