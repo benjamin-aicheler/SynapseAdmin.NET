@@ -56,7 +56,8 @@ public class MappingExtensionsTests
             ShadowBanned = true,
             ConsentVersion = null,
             ConsentServerNoticeSent = null,
-            AppserviceId = null
+            AppserviceId = null,
+            ExpirationTs = 1785542400000L
         };
 
         var detailVm = dto.ToDetailViewModel();
@@ -70,6 +71,8 @@ public class MappingExtensionsTests
         Assert.Equal(string.Empty, detailVm.ConsentVersion);
         Assert.Equal(string.Empty, detailVm.ConsentServerNoticeSent);
         Assert.Equal(string.Empty, detailVm.AppserviceId);
+        Assert.Equal(1785542400000L, detailVm.ExpirationTs);
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1785542400000L), detailVm.ExpirationTsDateTime);
     }
 
     [Fact]

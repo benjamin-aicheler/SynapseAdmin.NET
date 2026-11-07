@@ -1373,4 +1373,34 @@
   <data name="ExperimentalFeature_Unknown" xml:space="preserve">
     <value>Experimental Matrix Specification Change (MSC) feature</value>
   </data>
+  <data name="RenewAccount" xml:space="preserve">
+    <value>Renew Account</value>
+  </data>
+  <data name="AccountExpiration" xml:space="preserve">
+    <value>Account Expiration</value>
+  </data>
+  <data name="Expired" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="RenewAccountDescription" xml:space="preserve">
+    <value>Extend the account validity period for this user.</value>
+  </data>
+  <data name="UseServerDefaultPeriod" xml:space="preserve">
+    <value>Extend using server default validity period</value>
+  </data>
+  <data name="SetCustomExpirationDate" xml:space="preserve">
+    <value>Set custom expiration date and time</value>
+  </data>
+  <data name="EnableRenewalEmails" xml:space="preserve">
+    <value>Enable renewal emails</value>
+  </data>
+  <data name="EnableRenewalEmailsHelp" xml:space="preserve">
+    <value>Send automated renewal emails to this user before the account expires.</value>
+  </data>
+  <data name="AccountValidityRenewedSuccessfully" xml:space="preserve">
+    <value>Account validity renewed successfully.</value>
+  </data>
+  <data name="ErrorRenewingAccountValidity" xml:space="preserve">
+    <value>Error renewing account validity. Ensure account validity is enabled on the homeserver.</value>
+  </data>
 </root>

@@ -6,6 +6,7 @@ using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
+using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using Xunit;
@@ -115,6 +116,66 @@ public class UserExperimentalFeaturesTests
         Assert.Null(result.Data.ExperimentalFeatures);
     }
 
+    [Fact]
+    public void AccountValidityDtos_SerializeAndOmitNullFieldsCorrectly()
+    {
+        var defaultPeriodReq = new SynapseAdminAccountValidityRequest
+        {
+            UserId = "@alice:example.com",
+            ExpirationTs = null,
+            EnableRenewalEmails = true
+        };
+
+        var defaultJson = JsonSerializer.Serialize(defaultPeriodReq);
+        Assert.Contains("\"user_id\":\"@alice:example.com\"", defaultJson);
+        Assert.Contains("\"enable_renewal_emails\":true", defaultJson);
+        Assert.DoesNotContain("expiration_ts", defaultJson);
+
+        var customTsReq = new SynapseAdminAccountValidityRequest
+        {
+            UserId = "@alice:example.com",
+            ExpirationTs = 1785542400000L,
+            EnableRenewalEmails = false
+        };
+
+        var customJson = JsonSerializer.Serialize(customTsReq);
+        Assert.Contains("\"expiration_ts\":1785542400000", customJson);
+        Assert.Contains("\"enable_renewal_emails\":false", customJson);
+
+        var resp = JsonSerializer.Deserialize<SynapseAdminAccountValidityResponse>("{\"expiration_ts\":1785542400000}");
+        Assert.NotNull(resp);
+        Assert.Equal(1785542400000L, resp.ExpirationTs);
+    }
+
+    [Fact]
+    public async Task RenewAccountValidityAsync_SendsRequestAndReturnsUpdatedExpirationTimestamp()
+    {
+        var gateway = new FakeExperimentalFeaturesGateway
+        {
+            AccountValidityResponse = new SynapseAdminAccountValidityResponse
+            {
+                ExpirationTs = 1785542400000L
+            }
+        };
+        var service = CreateUserService(gateway);
+
+        var model = new AccountValidityRenewViewModel
+        {
+            UserId = "@alice:example.com",
+            ExpirationTs = 1785542400000L,
+            EnableRenewalEmails = true
+        };
+
+        var result = await service.RenewAccountValidityAsync(model);
+
+        Assert.True(result.Success);
+        Assert.Equal(1785542400000L, result.Data);
+        Assert.NotNull(gateway.LastAccountValidityRequest);
+        Assert.Equal("@alice:example.com", gateway.LastAccountValidityRequest.UserId);
+        Assert.Equal(1785542400000L, gateway.LastAccountValidityRequest.ExpirationTs);
+        Assert.True(gateway.LastAccountValidityRequest.EnableRenewalEmails);
+    }
+
     private static UserService CreateUserService(IMatrixGateway gateway)
     {
         var session = new FakeMatrixSessionService(gateway);
@@ -140,7 +201,8 @@ public class UserExperimentalFeaturesTests
             ["ExperimentalFeature_msc3026"] = "Busy presence state (MSC3026)",
             ["ExperimentalFeature_msc3881"] = "Remotely toggle push notifications for another client (MSC3881)",
             ["ExperimentalFeature_Unknown"] = "Experimental Matrix Specification Change (MSC) feature",
-            ["ExperimentalFeaturesUpdatedSuccessfully"] = "Experimental features updated successfully."
+            ["ExperimentalFeaturesUpdatedSuccessfully"] = "Experimental features updated successfully.",
+            ["AccountValidityRenewedSuccessfully"] = "Account validity renewed successfully."
         };
 
         public LocalizedString this[string name] =>
@@ -160,6 +222,8 @@ public class UserExperimentalFeaturesTests
         public bool ThrowOnGetExperimentalFeatures { get; set; }
         public string? LastUpdatedUserId { get; private set; }
         public SynapseAdminExperimentalFeaturesRequest? LastUpdatedFeaturesRequest { get; private set; }
+        public SynapseAdminAccountValidityResponse? AccountValidityResponse { get; set; }
+        public SynapseAdminAccountValidityRequest? LastAccountValidityRequest { get; private set; }
 
         public string UserId => "@admin:example.com";
         public string Username => "admin";
@@ -182,6 +246,12 @@ public class UserExperimentalFeaturesTests
             LastUpdatedUserId = userId;
             LastUpdatedFeaturesRequest = request;
             return Task.CompletedTask;
+        }
+
+        public Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default)
+        {
+            LastAccountValidityRequest = request;
+            return Task.FromResult(AccountValidityResponse);
         }
 
         public Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default) =>
