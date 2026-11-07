@@ -7,11 +7,11 @@ namespace SynapseAdmin.Components.Pages;
 
 public partial class PurgeHistoryDialog : IDisposable
 {
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] internal IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Inject] private IRoomService RoomService { get; set; } = default!;
-    [Inject] private ITimeZoneService TimeZoneService { get; set; } = default!;
-    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] internal IRoomService RoomService { get; set; } = default!;
+    [Inject] internal ITimeZoneService TimeZoneService { get; set; } = default!;
+    [Inject] internal ISnackbar Snackbar { get; set; } = default!;
 
     [Parameter] public string RoomId { get; set; } = string.Empty;
     [Parameter] public string? PreselectedEventId { get; set; }
@@ -96,20 +96,32 @@ public partial class PurgeHistoryDialog : IDisposable
                 request.PurgeUpToEventId = eventId.Trim();
             }
 
-            loading = true;
-            var result = await RoomService.PurgeRoomHistoryAsync(RoomId, request, _cts.Token);
-            loading = false;
+            await ExecutePurgeAsync(request);
+        }
+    }
 
-            if (result.Success && !string.IsNullOrEmpty(result.Data))
+    internal async Task ExecutePurgeAsync(PurgeHistoryViewModel request)
+    {
+        loading = true;
+        var result = await RoomService.PurgeRoomHistoryAsync(RoomId, request, _cts.Token);
+        loading = false;
+
+        if (result.Success)
+        {
+            if (!string.IsNullOrWhiteSpace(result.Data))
             {
                 RoomService.SetActivePurgeId(RoomId, result.Data);
-                Snackbar.Add(result.Message, result.Severity);
-                MudDialog.Close(DialogResult.Ok(result.Data));
             }
-            else if (result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+
+            var message = !string.IsNullOrWhiteSpace(result.Message)
+                ? result.Message
+                : L?["PurgeStarted"].Value ?? "PurgeStarted";
+            Snackbar.Add(message, result.Severity);
+            MudDialog.Close(DialogResult.Ok(result.Data));
+        }
+        else if (result.Severity != Severity.Normal)
+        {
+            Snackbar.Add(result.Message, result.Severity);
         }
     }
 

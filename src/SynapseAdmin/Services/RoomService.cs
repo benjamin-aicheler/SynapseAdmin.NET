@@ -442,6 +442,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             };
             var result = await Gateway.PurgeRoomHistoryAsync(roomId, gatewayReq, token);
             if (result == null) return OperationResult<string>.Failure(L["ErrorPurgingHistory"]);
+            if (string.IsNullOrWhiteSpace(result.PurgeId))
+            {
+                logger.LogWarning("Purge history request for room {RoomId} succeeded without returning a purge_id", roomId.SanitizeForLogging());
+                return OperationResult<string>.Ok(string.Empty, L["PurgeStarted"]);
+            }
+
             SetActivePurgeId(roomId, result.PurgeId);
             return OperationResult<string>.Ok(result.PurgeId, L["PurgeStarted"]);
         }

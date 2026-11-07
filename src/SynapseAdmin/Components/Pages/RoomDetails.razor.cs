@@ -466,7 +466,7 @@ namespace SynapseAdmin.Components.Pages
             var dialog = await DialogService.ShowAsync<PurgeHistoryDialog>(L["PurgeHistory"], parameters, options);
             var result = await dialog.Result;
 
-            if (result != null && !result.Canceled && result.Data is string newPurgeId)
+            if (result != null && !result.Canceled && result.Data is string newPurgeId && !string.IsNullOrWhiteSpace(newPurgeId))
             {
                 activePurgeId = newPurgeId;
                 activePurgeStatus = "active";
