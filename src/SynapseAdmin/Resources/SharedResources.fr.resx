@@ -1402,4 +1402,7 @@
   <data name="ErrorRenewingAccountValidity" xml:space="preserve">
     <value>Erreur lors du renouvellement de la validité du compte. Vérifiez que la validité des comptes est activée sur le homeserver.</value>
   </data>
+  <data name="AmbiguousLocalTimeNote" xml:space="preserve">
+    <value>Heure ambiguë lors du changement d'heure : la première occurrence (heure d'été) est utilisée.</value>
+  </data>
 </root>

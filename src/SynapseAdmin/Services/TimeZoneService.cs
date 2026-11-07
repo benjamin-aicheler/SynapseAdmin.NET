@@ -53,27 +53,36 @@ public class TimeZoneService(IJSRuntime jsRuntime, ILogger<TimeZoneService> logg
 
     public DateTimeOffset ToDateTimeOffset(DateTime localDateTime)
     {
+        var (unspecified, offset) = ResolveLocalTime(localDateTime);
+        return new DateTimeOffset(unspecified, offset);
+    }
+
+    public bool IsAmbiguousLocalTime(DateTime localDateTime)
+    {
+        var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
+        return !UserTimeZone.IsInvalidTime(unspecified) && UserTimeZone.IsAmbiguousTime(unspecified);
+    }
+
+    public string GetDisplayOffset(DateTime? forLocalDateTime = null)
+    {
+        var (_, offset) = ResolveLocalTime(forLocalDateTime ?? GetLocalNow().DateTime);
+        var sign = offset < TimeSpan.Zero ? "-" : "+";
+        return $"{UserTimeZone.Id} (UTC{sign}{offset:hh\\:mm})";
+    }
+
+    private (DateTime UnspecifiedLocalTime, TimeSpan Offset) ResolveLocalTime(DateTime localDateTime)
+    {
         var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
         if (UserTimeZone.IsInvalidTime(unspecified))
         {
             unspecified = unspecified.AddHours(1);
         }
 
-        var offset = UserTimeZone.GetUtcOffset(unspecified);
-        return new DateTimeOffset(unspecified, offset);
-    }
+        var offset = UserTimeZone.IsAmbiguousTime(unspecified)
+            ? UserTimeZone.GetAmbiguousTimeOffsets(unspecified).Max()
+            : UserTimeZone.GetUtcOffset(unspecified);
 
-    public string GetDisplayOffset(DateTime? forLocalDateTime = null)
-    {
-        var refTime = DateTime.SpecifyKind(forLocalDateTime ?? GetLocalNow().DateTime, DateTimeKind.Unspecified);
-        if (UserTimeZone.IsInvalidTime(refTime))
-        {
-            refTime = refTime.AddHours(1);
-        }
-
-        var offset = UserTimeZone.GetUtcOffset(refTime);
-        var sign = offset < TimeSpan.Zero ? "-" : "+";
-        return $"{UserTimeZone.Id} (UTC{sign}{offset:hh\\:mm})";
+        return (unspecified, offset);
     }
 
     public async ValueTask DisposeAsync()

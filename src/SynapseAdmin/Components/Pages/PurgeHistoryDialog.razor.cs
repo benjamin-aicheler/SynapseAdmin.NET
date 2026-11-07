@@ -41,6 +41,9 @@ public partial class PurgeHistoryDialog : IDisposable
             ? $"{TimeZoneService.ToDateTimeOffset(SelectedLocalDateTime.Value).UtcDateTime:yyyy-MM-dd HH:mm} UTC"
             : null;
 
+    private bool IsSelectedLocalTimeAmbiguous =>
+        SelectedLocalDateTime.HasValue && TimeZoneService.IsAmbiguousLocalTime(SelectedLocalDateTime.Value);
+
     protected override async Task OnInitializedAsync()
     {
         await TimeZoneService.InitializeAsync();

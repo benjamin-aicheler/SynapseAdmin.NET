@@ -1403,4 +1403,7 @@
   <data name="ErrorRenewingAccountValidity" xml:space="preserve">
     <value>Error renewing account validity. Ensure account validity is enabled on the homeserver.</value>
   </data>
+  <data name="AmbiguousLocalTimeNote" xml:space="preserve">
+    <value>Ambiguous daylight saving time: resolves to the earlier (first) occurrence.</value>
+  </data>
 </root>

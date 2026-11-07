@@ -59,6 +59,27 @@ public class TimeZoneAndPurgeTimestampTests
     }
 
     [Fact]
+    public async Task ToDateTimeOffset_DuringDstFallBackAmbiguousHour_SelectsEarlierDstOccurrence()
+    {
+        var jsRuntime = new StubJsRuntime("Europe/Berlin");
+        await using var service = new TimeZoneService(jsRuntime, NullLogger<TimeZoneService>.Instance);
+        await service.InitializeAsync();
+
+        // In Europe/Berlin, 2026-10-25 at 02:30:00 occurs twice (03:00 CEST UTC+2 falls back to 02:00 CET UTC+1)
+        var ambiguousLocalTime = new DateTime(2026, 10, 25, 2, 30, 0, DateTimeKind.Local);
+
+        Assert.True(service.IsAmbiguousLocalTime(ambiguousLocalTime));
+
+        var dto = service.ToDateTimeOffset(ambiguousLocalTime);
+
+        Assert.Equal(2, dto.Hour);
+        Assert.Equal(30, dto.Minute);
+        Assert.Equal(TimeSpan.FromHours(2), dto.Offset);
+        Assert.Equal(new DateTimeOffset(2026, 10, 25, 0, 30, 0, TimeSpan.Zero), dto.ToUniversalTime());
+        Assert.Contains("(UTC+02:00)", service.GetDisplayOffset(ambiguousLocalTime));
+    }
+
+    [Fact]
     public async Task InitializeAsync_WithUnknownTimeZone_FallsBackToUtc()
     {
         var jsRuntime = new StubJsRuntime("Invalid/NoSuchZone");

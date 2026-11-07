@@ -37,6 +37,12 @@
                         @($" ({ResolvedUtcPreview})")
                     }
                 </MudText>
+                @if (IsSelectedLocalTimeAmbiguous)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Info" Class="d-block mt-1">
+                        @L["AmbiguousLocalTimeNote"]
+                    </MudText>
+                }
             }
             else
             {
