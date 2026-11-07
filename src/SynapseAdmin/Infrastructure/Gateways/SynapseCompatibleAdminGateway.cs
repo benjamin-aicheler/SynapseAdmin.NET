@@ -128,6 +128,19 @@ public class SynapseCompatibleAdminGateway(
         return await JsonSerializer.DeserializeAsync<SynapseAdminUserMediaResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
     }
 
+    public override async Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/experimental_features/{userId.UrlEncode()}";
+        return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminExperimentalFeaturesResponse>(url, cancellationToken: cancellationToken);
+    }
+
+    public override async Task SetUserExperimentalFeaturesAsync(string userId, SynapseAdminExperimentalFeaturesRequest request, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/experimental_features/{userId.UrlEncode()}";
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
     // --- Room Management ---
 
     public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)

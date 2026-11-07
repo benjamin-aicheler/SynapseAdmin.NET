@@ -260,6 +260,34 @@ namespace SynapseAdmin.Components.Pages
             await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
         }
 
+        private async Task ToggleExperimentalFeature(UserExperimentalFeatureViewModel feature, bool enabled)
+        {
+            if (feature.IsUpdating || feature.Enabled == enabled) return;
+
+            feature.IsUpdating = true;
+            StateHasChanged();
+
+            var updates = new Dictionary<string, bool>
+            {
+                [feature.FeatureKey] = enabled
+            };
+
+            var result = await UserService.SetUserExperimentalFeaturesAsync(UserId, updates, _cts.Token);
+
+            if (result.Severity != Severity.Normal)
+            {
+                Snackbar.Add(result.Message, result.Severity);
+            }
+
+            if (result.Success)
+            {
+                feature.Enabled = enabled;
+            }
+
+            feature.IsUpdating = false;
+            StateHasChanged();
+        }
+
         public void Dispose()
         {
             _cts.Cancel();

@@ -20,6 +20,15 @@ public class UserDetailViewModel
     
     public UserMediaViewModel? Media { get; set; }
     public List<UserMembershipViewModel> Memberships { get; set; } = [];
+    public List<UserExperimentalFeatureViewModel>? ExperimentalFeatures { get; set; }
+}
+
+public class UserExperimentalFeatureViewModel
+{
+    public string FeatureKey { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool Enabled { get; set; }
+    public bool IsUpdating { get; set; }
 }
 
 public class UserMembershipViewModel

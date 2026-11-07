@@ -1325,4 +1325,52 @@
   <data name="ConfirmDeleteAllSizes" xml:space="preserve">
     <value>I understand that all file sizes (0 MB minimum) will be deleted</value>
   </data>
+  <data name="ExperimentalFeatures" xml:space="preserve">
+    <value>Experimental Features</value>
+  </data>
+  <data name="ExperimentalFeaturesNotAvailable" xml:space="preserve">
+    <value>Experimental features are not available on this homeserver.</value>
+  </data>
+  <data name="NoExperimentalFeaturesFound" xml:space="preserve">
+    <value>No experimental features reported by the homeserver.</value>
+  </data>
+  <data name="Feature" xml:space="preserve">
+    <value>Feature</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="ExperimentalFeaturesUpdatedSuccessfully" xml:space="preserve">
+    <value>Experimental features updated successfully.</value>
+  </data>
+  <data name="ErrorFetchingExperimentalFeatures" xml:space="preserve">
+    <value>Error fetching experimental features.</value>
+  </data>
+  <data name="ErrorUpdatingExperimentalFeatures" xml:space="preserve">
+    <value>Error updating experimental features.</value>
+  </data>
+  <data name="ExperimentalFeature_msc3026" xml:space="preserve">
+    <value>Busy presence state (MSC3026)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3575" xml:space="preserve">
+    <value>Sliding Sync (MSC3575)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3861" xml:space="preserve">
+    <value>Next-generation authentication / OIDC (MSC3861)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3881" xml:space="preserve">
+    <value>Remotely toggle push notifications for another client (MSC3881)</value>
+  </data>
+  <data name="ExperimentalFeature_msc3967" xml:space="preserve">
+    <value>Do not require UIA when first uploading cross-signing keys (MSC3967)</value>
+  </data>
+  <data name="ExperimentalFeature_Unknown" xml:space="preserve">
+    <value>Experimental Matrix Specification Change (MSC) feature</value>
+  </data>
 </root>
