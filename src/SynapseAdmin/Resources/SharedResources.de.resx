@@ -1402,4 +1402,7 @@
   <data name="ErrorRenewingAccountValidity" xml:space="preserve">
     <value>Fehler beim Verlängern der Kontogültigkeit. Stellen Sie sicher, dass Kontogültigkeit auf dem Homeserver aktiviert ist.</value>
   </data>
+  <data name="AmbiguousLocalTimeNote" xml:space="preserve">
+    <value>Mehrdeutige Zeit bei der Zeitumstellung: Es wird das frühere (erste) Auftreten verwendet.</value>
+  </data>
 </root>
