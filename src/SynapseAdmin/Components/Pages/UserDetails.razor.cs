@@ -23,6 +23,8 @@ namespace SynapseAdmin.Components.Pages
         public IMediaService MediaService { get; set; } = null!;
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = null!;
+        [Inject]
+        public ITimeZoneService TimeZoneService { get; set; } = null!;
 
         [Parameter]
         public string UserId { get; set; } = string.Empty;
@@ -36,6 +38,7 @@ namespace SynapseAdmin.Components.Pages
 
         protected override async Task OnParametersSetAsync()
         {
+            await TimeZoneService.InitializeAsync();
             if (_loadedUserId != UserId)
             {
                 _loadedUserId = UserId;
@@ -78,6 +81,27 @@ namespace SynapseAdmin.Components.Pages
                 {
                     await LoadUserDetails();
                 }
+            }
+        }
+
+        private async Task OpenRenewAccountDialog()
+        {
+            if (user == null) return;
+
+            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var parameters = new DialogParameters
+            {
+                { nameof(RenewAccountDialog.UserId), UserId },
+                { nameof(RenewAccountDialog.CurrentExpirationTimestamp), user.ExpirationTsDateTime }
+            };
+
+            var dialog = await DialogService.ShowAsync<RenewAccountDialog>(L["RenewAccount"], parameters, options);
+            var result = await dialog.Result;
+
+            if (result is { Canceled: false, Data: long newExpirationTs } && user != null)
+            {
+                user.ExpirationTs = newExpirationTs;
+                StateHasChanged();
             }
         }
 

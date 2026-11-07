@@ -17,4 +17,5 @@ public interface IUserService
     Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default);
     Task<OperationResult<List<UserExperimentalFeatureViewModel>>> GetUserExperimentalFeaturesAsync(string userId, CancellationToken token = default);
     Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default);
+    Task<OperationResult<long>> RenewAccountValidityAsync(AccountValidityRenewViewModel model, CancellationToken token = default);
 }

@@ -1372,4 +1372,34 @@
   <data name="ExperimentalFeature_Unknown" xml:space="preserve">
     <value>Proposition de modification expérimentale de la spécification Matrix (MSC)</value>
   </data>
+  <data name="RenewAccount" xml:space="preserve">
+    <value>Renouveler le compte</value>
+  </data>
+  <data name="AccountExpiration" xml:space="preserve">
+    <value>Expiration du compte</value>
+  </data>
+  <data name="Expired" xml:space="preserve">
+    <value>Expiré</value>
+  </data>
+  <data name="RenewAccountDescription" xml:space="preserve">
+    <value>Prolongez la période de validité du compte de cet utilisateur.</value>
+  </data>
+  <data name="UseServerDefaultPeriod" xml:space="preserve">
+    <value>Prolonger avec la période de validité par défaut du serveur</value>
+  </data>
+  <data name="SetCustomExpirationDate" xml:space="preserve">
+    <value>Définir une date et une heure d'expiration personnalisées</value>
+  </data>
+  <data name="EnableRenewalEmails" xml:space="preserve">
+    <value>Activer les e-mails de renouvellement</value>
+  </data>
+  <data name="EnableRenewalEmailsHelp" xml:space="preserve">
+    <value>Envoyer des e-mails automatiques de renouvellement à cet utilisateur avant l'expiration du compte.</value>
+  </data>
+  <data name="AccountValidityRenewedSuccessfully" xml:space="preserve">
+    <value>Validité du compte renouvelée avec succès.</value>
+  </data>
+  <data name="ErrorRenewingAccountValidity" xml:space="preserve">
+    <value>Erreur lors du renouvellement de la validité du compte. Vérifiez que la validité des comptes est activée sur le homeserver.</value>
+  </data>
 </root>

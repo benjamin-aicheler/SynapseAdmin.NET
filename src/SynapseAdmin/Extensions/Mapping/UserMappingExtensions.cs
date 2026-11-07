@@ -41,7 +41,8 @@ public static class UserMappingExtensions
             ShadowBanned = user.ShadowBanned,
             ConsentVersion = user.ConsentVersion ?? "",
             ConsentServerNoticeSent = user.ConsentServerNoticeSent ?? "",
-            AppserviceId = user.AppserviceId ?? ""
+            AppserviceId = user.AppserviceId ?? "",
+            ExpirationTs = user.ExpirationTs
         };
     }
 }

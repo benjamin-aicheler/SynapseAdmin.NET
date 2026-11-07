@@ -141,6 +141,14 @@ public class SynapseCompatibleAdminGateway(
         resp.EnsureSuccessStatusCode();
     }
 
+    public override async Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default)
+    {
+        const string url = "/_synapse/admin/v1/account_validity/validity";
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminAccountValidityResponse>(cancellationToken: cancellationToken);
+    }
+
     // --- Room Management ---
 
     public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)

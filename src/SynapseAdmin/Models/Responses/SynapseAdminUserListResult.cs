@@ -68,5 +68,8 @@ public class SynapseAdminUserListResult
 
         [JsonPropertyName("consent_server_notice_sent")]
         public string? ConsentServerNoticeSent { get; set; }
+
+        [JsonPropertyName("expiration_ts")]
+        public long? ExpirationTs { get; set; }
     }
 }

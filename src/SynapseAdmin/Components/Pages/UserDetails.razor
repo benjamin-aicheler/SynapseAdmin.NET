@@ -55,7 +55,17 @@ else
 
                     <MudList T="string" Dense="true">
                         <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@user.UserId</MudText></MudListItem>
-                        <MudListItem T="string"><b>@L["Created"]:</b> @user.CreationTsDateTime.ToString("f")</MudListItem>
+                        <MudListItem T="string"><b>@L["Created"]:</b> @TimeZoneService.ToLocal(user.CreationTsDateTime).ToString("f")</MudListItem>
+                        @if (user.ExpirationTsDateTime.HasValue)
+                        {
+                            <MudListItem T="string">
+                                <b>@L["AccountExpiration"]:</b> @TimeZoneService.ToLocal(user.ExpirationTsDateTime.Value).ToString("f")
+                                @if (user.ExpirationTsDateTime.Value <= DateTimeOffset.UtcNow)
+                                {
+                                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Class="ml-2">@L["Expired"]</MudChip>
+                                }
+                            </MudListItem>
+                        }
                         <MudListItem T="string"><b>@L["Status"]:</b> 
                             @if (user.Deactivated)
                             {
@@ -100,6 +110,7 @@ else
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenRenewAccountDialog" Class="mb-2 mr-2">@L["RenewAccount"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeactivateUser" Class="mb-2 mr-2" Disabled="@user.Deactivated">@L["DeactivateUser"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="LoginAsUser" Class="mb-2 mr-2">@L["LoginAsUserShadow"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineAllMedia" Class="mb-2">@L["QuarantineMedia"]</MudButton>
@@ -173,7 +184,7 @@ else
                     <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
                     <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
                     <MudTd DataLabel="@L["Size"]">@(context.MediaLength / 1024) KB</MudTd>
-                    <MudTd DataLabel="@L["Created"]">@DateTimeOffset.FromUnixTimeMilliseconds(context.CreatedTimestamp).DateTime.ToString("g")</MudTd>
+                    <MudTd DataLabel="@L["Created"]">@TimeZoneService.ToLocal(DateTimeOffset.FromUnixTimeMilliseconds(context.CreatedTimestamp)).DateTime.ToString("g")</MudTd>
                     <MudTd DataLabel="@L["Actions"]">
                     <div class="d-flex">
                     @if (!context.IsQuarantined)

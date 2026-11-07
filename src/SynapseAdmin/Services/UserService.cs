@@ -371,6 +371,36 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
+    public async Task<OperationResult<long>> RenewAccountValidityAsync(AccountValidityRenewViewModel model, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<long>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            var req = new SynapseAdminAccountValidityRequest
+            {
+                UserId = model.UserId,
+                ExpirationTs = model.ExpirationTs,
+                EnableRenewalEmails = model.EnableRenewalEmails
+            };
+
+            var resp = await Gateway.RenewAccountValidityAsync(req, token);
+            if (resp == null) return OperationResult<long>.Failure(L["ErrorRenewingAccountValidity"]);
+
+            logger.LogInformation("Successfully renewed account validity for user {UserId} (new expiration_ts: {ExpirationTs})", model.UserId.SanitizeForLogging(), resp.ExpirationTs);
+            return OperationResult<long>.Ok(resp.ExpirationTs, L["AccountValidityRenewedSuccessfully"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<long>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error renewing account validity for user {UserId}", model.UserId.SanitizeForLogging());
+            return OperationResult<long>.Failure(L["ErrorRenewingAccountValidity"]);
+        }
+    }
+
     private List<UserExperimentalFeatureViewModel> MapExperimentalFeatures(Dictionary<string, bool> features)
     {
         return features

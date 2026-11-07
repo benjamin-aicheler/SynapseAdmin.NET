@@ -15,6 +15,8 @@ public class UserDetailViewModel
     public string ConsentVersion { get; set; } = string.Empty;
     public string ConsentServerNoticeSent { get; set; } = string.Empty;
     public string AppserviceId { get; set; } = string.Empty;
+    public long? ExpirationTs { get; set; }
+    public DateTimeOffset? ExpirationTsDateTime => ExpirationTs.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ExpirationTs.Value) : null;
     
     // Threepids, external ids etc could be added here as flattened properties or specific VMs
     
@@ -29,6 +31,13 @@ public class UserExperimentalFeatureViewModel
     public string Description { get; set; } = string.Empty;
     public bool Enabled { get; set; }
     public bool IsUpdating { get; set; }
+}
+
+public class AccountValidityRenewViewModel
+{
+    public string UserId { get; set; } = string.Empty;
+    public long? ExpirationTs { get; set; }
+    public bool EnableRenewalEmails { get; set; } = true;
 }
 
 public class UserMembershipViewModel

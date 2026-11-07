@@ -1372,4 +1372,34 @@
   <data name="ExperimentalFeature_Unknown" xml:space="preserve">
     <value>Experimentelle Matrix-Spezifikationsänderung (MSC)</value>
   </data>
+  <data name="RenewAccount" xml:space="preserve">
+    <value>Konto verlängern</value>
+  </data>
+  <data name="AccountExpiration" xml:space="preserve">
+    <value>Kontoablauf</value>
+  </data>
+  <data name="Expired" xml:space="preserve">
+    <value>Abgelaufen</value>
+  </data>
+  <data name="RenewAccountDescription" xml:space="preserve">
+    <value>Verlängern Sie den Gültigkeitszeitraum für dieses Benutzerkonto.</value>
+  </data>
+  <data name="UseServerDefaultPeriod" xml:space="preserve">
+    <value>Mit Standard-Gültigkeitszeitraum des Servers verlängern</value>
+  </data>
+  <data name="SetCustomExpirationDate" xml:space="preserve">
+    <value>Benutzerdefiniertes Ablaufdatum und Uhrzeit festlegen</value>
+  </data>
+  <data name="EnableRenewalEmails" xml:space="preserve">
+    <value>Verlängerungs-E-Mails aktivieren</value>
+  </data>
+  <data name="EnableRenewalEmailsHelp" xml:space="preserve">
+    <value>Automatische Verlängerungs-E-Mails vor Ablauf des Kontos an diesen Benutzer senden.</value>
+  </data>
+  <data name="AccountValidityRenewedSuccessfully" xml:space="preserve">
+    <value>Kontogültigkeit erfolgreich verlängert.</value>
+  </data>
+  <data name="ErrorRenewingAccountValidity" xml:space="preserve">
+    <value>Fehler beim Verlängern der Kontogültigkeit. Stellen Sie sicher, dass Kontogültigkeit auf dem Homeserver aktiviert ist.</value>
+  </data>
 </root>
