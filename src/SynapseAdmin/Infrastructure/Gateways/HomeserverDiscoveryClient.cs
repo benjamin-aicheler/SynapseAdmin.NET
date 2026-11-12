@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -244,7 +243,11 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
         catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException or SocketException or IOException or UriFormatException ||
                                    (ex is TaskCanceledException && !cancellationToken.IsCancellationRequested))
         {
-            _logger.LogDebug(ex, "Discovery request to {Url} failed", url.SanitizeForLogging());
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug(ex, "Discovery request to {Url} failed", url.SanitizeForLogging());
+            }
+
             return null;
         }
     }
@@ -259,7 +262,11 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
         catch (Exception ex) when (ex is HttpRequestException or SocketException or IOException or UriFormatException ||
                                    (ex is TaskCanceledException && !cancellationToken.IsCancellationRequested))
         {
-            _logger.LogDebug(ex, "Discovery request to {Url} failed", url.SanitizeForLogging());
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug(ex, "Discovery request to {Url} failed", url.SanitizeForLogging());
+            }
+
             return false;
         }
     }
