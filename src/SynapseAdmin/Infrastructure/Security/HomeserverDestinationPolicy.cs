@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using IPNetwork = System.Net.IPNetwork;
@@ -18,7 +19,7 @@ namespace SynapseAdmin.Infrastructure.Security;
 /// <item><c>10.0.0.0/8</c> or a bare IP – exempts those addresses from the internal-address rule.</item>
 /// </list>
 /// </remarks>
-public sealed class HomeserverDestinationPolicy : IHomeserverDestinationPolicy
+public sealed partial class HomeserverDestinationPolicy : IHomeserverDestinationPolicy
 {
     public const string ConfigurationKey = "HOMESERVER_ALLOWLIST";
 
@@ -44,12 +45,21 @@ public sealed class HomeserverDestinationPolicy : IHomeserverDestinationPolicy
     ];
 
     private readonly IReadOnlyList<Entry> _entries;
+    private readonly bool _allowlistConfigured;
 
     public HomeserverDestinationPolicy(IEnumerable<string>? allowlistEntries, Action<string>? onInvalidEntry = null)
     {
         var entries = new List<Entry>();
         foreach (var raw in allowlistEntries ?? [])
         {
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                continue;
+            }
+
+            // Any configured entry (even an invalid one) turns the gate on, so a typo fails closed
+            // instead of silently allowing every public homeserver.
+            _allowlistConfigured = true;
             if (TryParseEntry(raw, out var entry))
             {
                 entries.Add(entry);
@@ -70,7 +80,7 @@ public sealed class HomeserverDestinationPolicy : IHomeserverDestinationPolicy
                 : value.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
             onInvalidEntry);
 
-    public bool HasAllowlist => _entries.Count > 0;
+    public bool HasAllowlist => _allowlistConfigured;
 
     public void EnsureEntryAllowed(Uri uri)
     {
@@ -123,6 +133,11 @@ public sealed class HomeserverDestinationPolicy : IHomeserverDestinationPolicy
         if (!HasAllowlist)
         {
             return "allowlist: (empty - any public HTTPS homeserver), cleartext HTTP: none, internal addresses: refused";
+        }
+
+        if (_entries.Count == 0)
+        {
+            return "allowlist: configured but contains no valid entries - ALL homeservers are refused";
         }
 
         var http = _entries.Where(e => e.AllowHttp).Select(e => e.ToString()).ToList();
@@ -200,12 +215,17 @@ public sealed class HomeserverDestinationPolicy : IHomeserverDestinationPolicy
             hostUri.AbsolutePath == "/" &&
             string.IsNullOrEmpty(hostUri.Query))
         {
-            entry = new Entry(NormalizeHost(hostUri.Host), hostUri.IsDefaultPort ? null : hostUri.Port, false, null, value);
+            // Uri reports an explicit ":443" as the default port, so detect an explicit port from the raw text.
+            var hasExplicitPort = ExplicitPortPattern().IsMatch(value);
+            entry = new Entry(NormalizeHost(hostUri.Host), hasExplicitPort ? hostUri.Port : null, false, null, value);
             return true;
         }
 
         return false;
     }
+
+    [GeneratedRegex(@":\d+$")]
+    private static partial Regex ExplicitPortPattern();
 
     private sealed record Entry(string? Host, int? Port, bool AllowHttp, IPNetwork? Network, string Original)
     {

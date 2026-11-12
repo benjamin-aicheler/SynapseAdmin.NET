@@ -96,6 +96,37 @@ public class HomeserverDestinationPolicyTests
     }
 
     [Fact]
+    public void AllowlistWithOnlyInvalidEntries_FailsClosed()
+    {
+        var invalid = new List<string>();
+        var policy = HomeserverDestinationPolicy.FromConfiguration("https://matrix.example.com/invalid-path", invalid.Add);
+
+        Assert.Single(invalid);
+        Assert.True(policy.HasAllowlist);
+        Assert.Throws<HomeserverNotAllowedException>(() => policy.EnsureEntryAllowed(new Uri("https://matrix.org")));
+        Assert.Contains("ALL homeservers are refused", policy.Describe());
+    }
+
+    [Fact]
+    public void ExplicitDefaultPortInHostEntry_IsNotTreatedAsWildcard()
+    {
+        var policy = HomeserverDestinationPolicy.FromConfiguration("synapse.lan:443");
+
+        policy.EnsureEntryAllowed(new Uri("https://synapse.lan"));
+        Assert.Throws<HomeserverNotAllowedException>(() => policy.EnsureEntryAllowed(new Uri("https://synapse.lan:8448")));
+        Assert.False(policy.IsAddressAllowed("synapse.lan", 8448, IPAddress.Parse("10.0.0.5")));
+        Assert.True(policy.IsAddressAllowed("synapse.lan", 443, IPAddress.Parse("10.0.0.5")));
+    }
+
+    [Fact]
+    public void HostEntryWithoutPort_MatchesAnyPort()
+    {
+        var policy = HomeserverDestinationPolicy.FromConfiguration("synapse.lan");
+
+        policy.EnsureEntryAllowed(new Uri("https://synapse.lan:8448"));
+    }
+
+    [Fact]
     public void InvalidAllowlistEntries_AreReportedAndIgnored()
     {
         var invalid = new List<string>();

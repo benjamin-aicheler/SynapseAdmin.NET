@@ -164,7 +164,7 @@ When running behind a reverse proxy with SSL/TLS termination, the application re
   - `http://synapse:8008` allows that host and port over plain HTTP, including private addresses. Use this for a Synapse container on the same Docker network.
   - `10.0.0.0/8` or `10.0.0.5` exempts those addresses from the internal-address rule (HTTPS only).
 
-  When the list is non-empty, any homeserver not on it is refused before any request is sent. Delegated public hosts (e.g. `matrix.org` → `matrix-client.matrix.org`) do not need their own entry. The effective policy is logged at startup.
+  When the list is non-empty, any homeserver not on it is refused before any request is sent. Delegated public hosts (e.g. `matrix.org` → `matrix-client.matrix.org`) do not need their own entry. Invalid entries are logged and ignored. If the variable is set but contains no valid entry, **all** homeservers are refused (fail closed). The effective policy is logged at startup.
 
 > [!WARNING]
 > **Breaking change:** Logging in to a homeserver over plain `http://` or on an internal address (e.g. `http://synapse:8008`, `https://192.168.1.10`) now requires a matching `HOMESERVER_ALLOWLIST` entry.
