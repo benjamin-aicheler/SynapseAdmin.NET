@@ -1405,4 +1405,7 @@
   <data name="AmbiguousLocalTimeNote" xml:space="preserve">
     <value>Mehrdeutige Zeit bei der Zeitumstellung: Es wird das frühere (erste) Auftreten verwendet.</value>
   </data>
+  <data name="HomeserverNotAllowed" xml:space="preserve">
+    <value>Der Homeserver ist nicht zugelassen. Unverschlüsseltes HTTP und interne Adressen müssen vom Administrator ausdrücklich freigegeben werden (HOMESERVER_ALLOWLIST).</value>
+  </data>
 </root>

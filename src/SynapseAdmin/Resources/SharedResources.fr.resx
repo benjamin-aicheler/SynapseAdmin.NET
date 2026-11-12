@@ -1405,4 +1405,7 @@
   <data name="AmbiguousLocalTimeNote" xml:space="preserve">
     <value>Heure ambiguë lors du changement d'heure : la première occurrence (heure d'été) est utilisée.</value>
   </data>
+  <data name="HomeserverNotAllowed" xml:space="preserve">
+    <value>Ce serveur d'accueil n'est pas autorisé. Le HTTP non chiffré et les adresses internes doivent être explicitement autorisés par l'administrateur (HOMESERVER_ALLOWLIST).</value>
+  </data>
 </root>

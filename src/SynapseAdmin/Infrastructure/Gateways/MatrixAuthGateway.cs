@@ -12,12 +12,14 @@ using SynapseAdmin.Models.Requests;
 namespace SynapseAdmin.Infrastructure.Gateways;
 
 /// <summary>
-/// Implementation of IMatrixAuthGateway using LibMatrix's HomeserverProviderService.
-/// Centralizes unauthenticated "wire-level" entry points.
+/// Implementation of IMatrixAuthGateway. Centralizes unauthenticated "wire-level" entry points.
+/// Discovery and password login run through <see cref="IHomeserverDiscoveryClient"/>, which enforces the
+/// homeserver destination policy; LibMatrix only ever receives the already validated base URLs.
 /// </summary>
-public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCache cache) : IMatrixAuthGateway
+public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemoryCache cache) : IMatrixAuthGateway
 {
     private static readonly ConditionalWeakTable<IMemoryCache, ConcurrentDictionary<string, Lazy<Task<IMatrixGateway>>>> InFlightByCache = new();
+    private static readonly TimeSpan DiscoveryCacheDuration = TimeSpan.FromMinutes(10);
 
     private static void ValidateHomeserverUrl(string homeserverUrl)
     {
@@ -29,31 +31,43 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCach
         }
     }
 
+    private static string NormalizeHomeserverUrl(string homeserverUrl) => homeserverUrl.Trim().TrimEnd('/').ToLowerInvariant();
+
     private static string GetGatewayCacheKey(string homeserverUrl, string accessToken)
     {
-        var normalizedHs = homeserverUrl.Trim().TrimEnd('/').ToLowerInvariant();
+        var normalizedHs = NormalizeHomeserverUrl(homeserverUrl);
         var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(accessToken)));
         return $"matrix_gateway:{normalizedHs}:{tokenHash}";
     }
 
-    public async Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Discovers (and briefly caches) the policy-validated endpoints for a homeserver.
+    /// Failures and policy rejections are never cached.
+    /// </summary>
+    private async Task<HomeserverEndpoints> GetEndpointsAsync(string homeserverUrl, CancellationToken cancellationToken)
     {
         ValidateHomeserverUrl(homeserverUrl);
-        // Matches MatrixSessionService logic: enableServer: true for federation support
-        await hsProvider.GetRemoteHomeserver(homeserverUrl, enableServer: true);
+
+        var cacheKey = $"matrix_discovery:{NormalizeHomeserverUrl(homeserverUrl)}";
+        if (cache.TryGetValue(cacheKey, out HomeserverEndpoints? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var endpoints = await discoveryClient.DiscoverAsync(homeserverUrl, cancellationToken);
+        cache.Set(cacheKey, endpoints, DiscoveryCacheDuration);
+        return endpoints;
+    }
+
+    public async Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default)
+    {
+        await GetEndpointsAsync(homeserverUrl, cancellationToken);
     }
 
     public async Task<LoginResponse> LoginAsync(string homeserverUrl, string username, string password, CancellationToken cancellationToken = default)
     {
-        ValidateHomeserverUrl(homeserverUrl);
-        var sdkResp = await hsProvider.Login(homeserverUrl, username, password);
-        return new LoginResponse
-        {
-            AccessToken = sdkResp.AccessToken,
-            DeviceId = sdkResp.DeviceId,
-            Homeserver = sdkResp.Homeserver,
-            UserId = sdkResp.UserId
-        };
+        var endpoints = await GetEndpointsAsync(homeserverUrl, cancellationToken);
+        return await discoveryClient.LoginAsync(endpoints.ClientUrl, username, password, cancellationToken);
     }
 
     public async Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default)
@@ -109,7 +123,20 @@ public class MatrixAuthGateway(HomeserverProviderService hsProvider, IMemoryCach
 
     protected virtual async Task<IMatrixGateway> CreateAuthenticatedGatewayAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken)
     {
-        var authenticatedHomeserver = await hsProvider.GetAuthenticatedWithToken(homeserverUrl, accessToken);
+        var endpoints = await GetEndpointsAsync(homeserverUrl, cancellationToken);
+        var wellKnownUris = new HomeserverResolverService.WellKnownUris
+        {
+            Client = endpoints.ClientUrl,
+            Server = endpoints.ServerUrl
+        };
+
+        // Construct the SDK homeserver from the validated URLs instead of HomeserverProviderService,
+        // which would re-run LibMatrix's unchecked .well-known resolution.
+        AuthenticatedHomeserverGeneric authenticatedHomeserver =
+            string.Equals(endpoints.ServerSoftwareName, "Synapse", StringComparison.OrdinalIgnoreCase)
+                ? new AuthenticatedHomeserverSynapse(homeserverUrl, wellKnownUris, null, accessToken)
+                : new AuthenticatedHomeserverGeneric(homeserverUrl, wellKnownUris, null, accessToken);
+        await authenticatedHomeserver.Initialise();
         
         if (authenticatedHomeserver is AuthenticatedHomeserverSynapse synapse)
         {

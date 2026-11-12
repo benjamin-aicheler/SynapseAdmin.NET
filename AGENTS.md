@@ -73,6 +73,12 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Encryption at Rest:** Implemented a universal passphrase-based encryption (AES-256-GCM) for DataProtection keys to ensure they are encrypted on disk.
 - **Reverse Proxy & Forwarded Headers:** `ForwardedHeadersMiddleware` only trusts loopback and private network ranges (RFC 1918 / RFC 4193) by default (`ForwardLimit = 1`), or explicit proxies/CIDRs configured via the `TRUSTED_PROXIES` environment variable.
 - **Login Rate Limiting:** Login attempts (`MatrixSessionService`) are protected against brute-force attacks by `ILoginRateLimiter` (per client IP and `(homeserver, account)`), and `/api/auth/set-cookie` is guarded by ASP.NET Core's `"auth"` rate-limiting policy.
+- **Homeserver Destination Policy (SSRF / cleartext protection):** All unauthenticated homeserver traffic (discovery and password login) goes through `HomeserverDiscoveryClient` (gateway layer), never through LibMatrix's `HomeserverResolverService`/`HomeserverProviderService`. Those LibMatrix services follow `.well-known` delegation and redirects without any checks, and LibMatrix's static `MatrixHttpClient` cannot be configured from outside. `IHomeserverDestinationPolicy` (`Infrastructure/Security/HomeserverDestinationPolicy.cs`, configured via `HOMESERVER_ALLOWLIST`) works as follows:
+    - It enforces HTTPS unless an allowlist entry is written as `http://host:port`.
+    - It refuses internal addresses (loopback, link-local, RFC 1918, CGNAT, ULA) unless they are allowlisted. This check runs on every hop and, through a `SocketsHttpHandler.ConnectCallback`, on every resolved address.
+    - A non-empty allowlist is a hard gate on the homeserver entered by the user.
+
+  `MatrixAuthGateway` builds the LibMatrix `AuthenticatedHomeserver*` instance directly from the validated `WellKnownUris`. Do not reintroduce `hsProvider.GetAuthenticatedWithToken`/`Login`/`GetRemoteHomeserver` on the auth path. Policy rejections surface as `HomeserverNotAllowedException`, which `MatrixSessionService` maps to the localized `HomeserverNotAllowed` message. Known limitation: after login, token-bearing calls use LibMatrix's static client. Those URLs are validated, but the addresses they resolve to are not re-checked at connect time.
 
 ## Git & GitHub Workflow
 We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are prohibited.
