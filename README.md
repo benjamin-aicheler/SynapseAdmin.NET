@@ -159,6 +159,15 @@ When running behind a reverse proxy with SSL/TLS termination, the application re
 
 - **Network Isolation:** Always ensure the container port (`8080`) is only reachable through your reverse proxy (e.g., bound to `127.0.0.1:8080:8080` on the host, or attached to an internal Docker network shared only with the proxy).
 - **Trusted Proxies (`TRUSTED_PROXIES`):** By default, `X-Forwarded-*` headers are only trusted from loopback and private network ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`). To restrict trust to specific proxy IP addresses or CIDR subnets, set the `TRUSTED_PROXIES` environment variable (e.g., `TRUSTED_PROXIES=172.18.0.2,10.0.1.0/24`).
+- **Homeserver Destinations (`HOMESERVER_ALLOWLIST`):** Discovery and login only contact homeservers over HTTPS, and refuse loopback, link-local, private (RFC 1918), CGNAT and IPv6 ULA addresses. These checks also apply to `.well-known` delegation, redirects and the IP addresses that DNS names resolve to. Set `HOMESERVER_ALLOWLIST` (comma or semicolon separated) to restrict the login form to specific homeservers and to permit internal targets:
+  - `matrix.example.com` or `matrix.example.com:8448` allows that host over HTTPS.
+  - `http://synapse:8008` allows that host and port over plain HTTP, including private addresses. Use this for a Synapse container on the same Docker network.
+  - `10.0.0.0/8` or `10.0.0.5` exempts those addresses from the internal-address rule (HTTPS only).
+
+  When the list is non-empty, any homeserver not on it is refused before any request is sent. Delegated public hosts (e.g. `matrix.org` → `matrix-client.matrix.org`) do not need their own entry. Invalid entries are logged and ignored. If the variable is set but contains no valid entry, **all** homeservers are refused (fail closed). The effective policy is logged at startup.
+
+> [!WARNING]
+> **Breaking change:** Logging in to a homeserver over plain `http://` or on an internal address (e.g. `http://synapse:8008`, `https://192.168.1.10`) now requires a matching `HOMESERVER_ALLOWLIST` entry.
 
 Ensure your proxy is configured to pass these headers. For example, in **Nginx**:
 

@@ -59,6 +59,11 @@ public class MatrixSessionService(
         {
             return OperationResult.Cancelled();
         }
+        catch (HomeserverNotAllowedException ex)
+        {
+            logger.LogWarning("Login to {Homeserver} refused by homeserver destination policy: {Reason}", homeserver.SanitizeForLogging(), ex.Message.SanitizeForLogging());
+            return OperationResult.Failure(L["HomeserverNotAllowed"]);
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Login failed for user {Username} on {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
@@ -102,6 +107,12 @@ public class MatrixSessionService(
             Gateway = null;
             return OperationResult.Cancelled();
         }
+        catch (HomeserverNotAllowedException ex)
+        {
+            logger.LogWarning("Token login to {Homeserver} refused by homeserver destination policy: {Reason}", homeserver.SanitizeForLogging(), ex.Message.SanitizeForLogging());
+            Gateway = null;
+            return OperationResult.Failure(L["HomeserverNotAllowed"]);
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Login with token failed for {Homeserver}", homeserver.SanitizeForLogging());
@@ -139,6 +150,12 @@ public class MatrixSessionService(
         {
             Gateway = null;
             return OperationResult.Cancelled();
+        }
+        catch (HomeserverNotAllowedException ex)
+        {
+            logger.LogWarning("Session restore for {Homeserver} refused by homeserver destination policy: {Reason}", homeserver.SanitizeForLogging(), ex.Message.SanitizeForLogging());
+            Gateway = null;
+            return OperationResult.Failure(L["HomeserverNotAllowed"]);
         }
         catch (Exception ex)
         {

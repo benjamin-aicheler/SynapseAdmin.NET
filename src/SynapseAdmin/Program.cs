@@ -17,6 +17,7 @@ using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Infrastructure.Gateways;
+using SynapseAdmin.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -111,6 +112,12 @@ builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
 builder.Services.AddLocalization();
 builder.Services.AddMudTranslations();
 
+var homeserverPolicy = HomeserverDestinationPolicy.FromConfiguration(
+    builder.Configuration[HomeserverDestinationPolicy.ConfigurationKey],
+    invalid => Log.Warning("Invalid entry '{AllowlistEntry}' in {ConfigKey} configuration; ignoring.", invalid.SanitizeForLogging(), HomeserverDestinationPolicy.ConfigurationKey));
+Log.Information("Homeserver destination policy: {HomeserverPolicy}", homeserverPolicy.Describe());
+builder.Services.AddSingleton<IHomeserverDestinationPolicy>(homeserverPolicy);
+builder.Services.AddSingleton<IHomeserverDiscoveryClient, HomeserverDiscoveryClient>();
 builder.Services.AddScoped<IMatrixAuthGateway, MatrixAuthGateway>();
 
 builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();

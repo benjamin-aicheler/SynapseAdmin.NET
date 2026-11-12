@@ -1406,4 +1406,7 @@
   <data name="AmbiguousLocalTimeNote" xml:space="preserve">
     <value>Ambiguous daylight saving time: resolves to the earlier (first) occurrence.</value>
   </data>
+  <data name="HomeserverNotAllowed" xml:space="preserve">
+    <value>The homeserver is not allowed. Plain HTTP and internal addresses must be explicitly permitted by the administrator (HOMESERVER_ALLOWLIST).</value>
+  </data>
 </root>
