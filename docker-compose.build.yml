@@ -14,6 +14,9 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       # Optional: Comma-separated list of trusted reverse proxy IPs or CIDRs (defaults to loopback + private networks).
       # - TRUSTED_PROXIES=172.18.0.2,10.0.0.0/8
+      # Optional: Restrict login to these homeservers and permit internal/plain-HTTP targets.
+      # Required for a homeserver reached over http:// or on a private address (e.g. a Synapse container).
+      # - HOMESERVER_ALLOWLIST=http://synapse:8008,matrix.example.com
       # IMPORTANT: Change this to a secure, unique passphrase in production!
       # It is used for encrypting session tokens on disk.
       - DP_PASSPHRASE=your-secure-passphrase-here
