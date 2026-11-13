@@ -17,6 +17,7 @@ using SynapseAdmin.Controllers;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
 using SynapseAdmin.Infrastructure.Gateways;
+using SynapseAdmin.Infrastructure.Security;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
@@ -24,6 +25,7 @@ using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
+using SynapseAdmin.Tests.Components;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -107,7 +109,7 @@ public class SecurityInfrastructureTests
                 var sessionService = new MatrixSessionService(
                     authGateway,
                     limiter,
-                    httpContextAccessor,
+                    new ClientIdentityProvider(httpContextAccessor),
                     NullLogger<MatrixSessionService>.Instance,
                     localizer);
 
@@ -121,6 +123,165 @@ public class SecurityInfrastructureTests
         Assert.Equal(5, authGateway.GatewayCallCount);
         Assert.Equal(5, results.Count(r => !r.Success && r.Message == "LoginFailed"));
         Assert.Equal(concurrentRequests - 5, results.Count(r => !r.Success && r.Message == "TooManyLoginAttempts"));
+    }
+
+    private static MatrixSessionService CreateSessionService(
+        IMatrixAuthGateway authGateway, ILoginRateLimiter limiter, IClientIdentityProvider clientIdentity) =>
+        new(authGateway, limiter, clientIdentity, NullLogger<MatrixSessionService>.Instance, new FakeAuthStringLocalizer());
+
+    private static IClientIdentityProvider ClientAt(string ip)
+    {
+        var context = new DefaultHttpContext();
+        context.Connection.RemoteIpAddress = IPAddress.Parse(ip);
+        return new ClientIdentityProvider(new FakeHttpContextAccessor { HttpContext = context });
+    }
+
+    /// <summary>
+    /// Simulates a Blazor circuit: the IP is captured by the circuit handler while the SignalR connection's
+    /// HttpContext is present, after which (as in interactive event handlers) no ambient HttpContext exists.
+    /// </summary>
+    private static async Task<ClientIdentityProvider> OpenCircuitAt(string ip)
+    {
+        var context = new DefaultHttpContext();
+        context.Connection.RemoteIpAddress = IPAddress.Parse(ip);
+        var accessor = new FakeHttpContextAccessor { HttpContext = context };
+        var provider = new ClientIdentityProvider(accessor);
+        var handler = new ClientIdentityCircuitHandler(provider, NullLogger<ClientIdentityCircuitHandler>.Instance);
+
+        await handler.OnCircuitOpenedAsync(null!, CancellationToken.None);
+        accessor.HttpContext = null;
+        return provider;
+    }
+
+    [Fact]
+    public async Task TokenLogin_FailuresFromClientA_DoNotBlockClientB_OnSameHomeserver()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var authGateway = new TokenAuthGateway(validToken: "syt_valid");
+        const string homeserver = "https://matrix.example.com";
+
+        var clientA = CreateSessionService(authGateway, limiter, ClientAt("192.0.2.1"));
+        for (var i = 0; i < 5; i++)
+        {
+            Assert.Equal("LoginFailed", (await clientA.LoginWithTokenAsync(homeserver, $"syt_wrong_{i}")).Message);
+        }
+
+        // Burst protection for client A is preserved: the 6th attempt never reaches the homeserver.
+        Assert.Equal("TooManyLoginAttempts", (await clientA.LoginWithTokenAsync(homeserver, "syt_wrong_6")).Message);
+        Assert.Equal(5, authGateway.AuthenticatedCalls.Count);
+
+        // Client B (different IP, same homeserver) is unaffected and actually authenticates.
+        var clientB = CreateSessionService(authGateway, limiter, ClientAt("192.0.2.2"));
+        var result = await clientB.LoginWithTokenAsync(homeserver.ToUpperInvariant(), "syt_valid");
+
+        Assert.True(result.Success);
+        Assert.Equal("syt_valid", authGateway.AuthenticatedCalls.Last());
+        Assert.True(clientB.IsLoggedIn);
+
+        // B's successful login does not reset A's bucket.
+        Assert.Equal("TooManyLoginAttempts", (await clientA.LoginWithTokenAsync(homeserver, "syt_valid")).Message);
+    }
+
+    [Fact]
+    public async Task InteractiveLogin_ClientsWithoutHttpContext_UseTheirCircuitIp_AndDoNotShareBucket()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var authGateway = new TokenAuthGateway(validToken: "syt_valid");
+        const string homeserver = "https://matrix.example.com";
+
+        var circuitX = await OpenCircuitAt("198.51.100.10");
+        var circuitY = await OpenCircuitAt("198.51.100.20");
+        Assert.Equal("198.51.100.10", circuitX.GetClientIp());
+        Assert.Equal("198.51.100.20", circuitY.GetClientIp());
+
+        var x = CreateSessionService(authGateway, limiter, circuitX);
+        for (var i = 0; i < 5; i++)
+        {
+            Assert.Equal("LoginFailed", (await x.LoginWithTokenAsync(homeserver, "syt_wrong")).Message);
+        }
+        Assert.Equal("TooManyLoginAttempts", (await x.LoginWithTokenAsync(homeserver, "syt_wrong")).Message);
+
+        // Without the circuit-captured IP both would land in the shared "unknown" bucket and Y would be blocked.
+        var y = CreateSessionService(authGateway, limiter, circuitY);
+        Assert.True((await y.LoginWithTokenAsync(homeserver, "syt_valid")).Success);
+    }
+
+    [Fact]
+    public async Task InteractivePasswordLogin_ClientsWithoutHttpContext_AreThrottledPerCircuitIp()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var authGateway = new BurstFailingAuthGateway();
+        const string homeserver = "https://matrix.example.com";
+
+        var x = CreateSessionService(authGateway, limiter, await OpenCircuitAt("198.51.100.30"));
+        var y = CreateSessionService(authGateway, limiter, await OpenCircuitAt("198.51.100.40"));
+
+        for (var i = 0; i < 5; i++)
+        {
+            Assert.Equal("LoginFailed", (await x.LoginAsync(homeserver, $"user{i}", "wrong")).Message);
+        }
+        Assert.Equal("TooManyLoginAttempts", (await x.LoginAsync(homeserver, "user9", "wrong")).Message);
+
+        // A different client trying a different account still reaches the homeserver.
+        Assert.Equal("LoginFailed", (await y.LoginAsync(homeserver, "bob", "wrong")).Message);
+        Assert.Equal(6, authGateway.GatewayCallCount);
+    }
+
+    [Fact]
+    public async Task ClientIdentityProvider_PrefersCircuitIp_UpdatesOnReconnect_AndFallsBackToHttpContext()
+    {
+        var context = new DefaultHttpContext();
+        context.Connection.RemoteIpAddress = IPAddress.Parse("203.0.113.1");
+        var accessor = new FakeHttpContextAccessor { HttpContext = context };
+        var provider = new ClientIdentityProvider(accessor);
+        var handler = new ClientIdentityCircuitHandler(provider, NullLogger<ClientIdentityCircuitHandler>.Instance);
+
+        // Not captured yet (e.g. controller request): ambient HttpContext is used.
+        Assert.Equal("203.0.113.1", provider.GetClientIp());
+
+        await handler.OnCircuitOpenedAsync(null!, CancellationToken.None);
+        accessor.HttpContext = null;
+        Assert.Equal("203.0.113.1", provider.GetClientIp());
+
+        // Reconnect from a new address updates the identity.
+        var reconnect = new DefaultHttpContext();
+        reconnect.Connection.RemoteIpAddress = IPAddress.Parse("203.0.113.2");
+        accessor.HttpContext = reconnect;
+        await handler.OnConnectionUpAsync(null!, CancellationToken.None);
+        accessor.HttpContext = null;
+        Assert.Equal("203.0.113.2", provider.GetClientIp());
+
+        // A reconnect without a usable HttpContext keeps the last known IP.
+        await handler.OnConnectionUpAsync(null!, CancellationToken.None);
+        Assert.Equal("203.0.113.2", provider.GetClientIp());
+
+        Assert.Null(new ClientIdentityProvider(new FakeHttpContextAccessor()).GetClientIp());
+    }
+
+    [Fact]
+    public async Task ClientIdentity_IsWiredPerCircuitScope_AndSharedWithSessionService()
+    {
+        await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.AddDataProtection().UseEphemeralDataProtectionProvider()));
+
+        using var scope = factory.Services.CreateScope();
+        var provider = scope.ServiceProvider;
+
+        var handler = Assert.Single(provider.GetServices<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler>()
+            .OfType<ClientIdentityCircuitHandler>());
+        Assert.NotNull(handler);
+
+        // The handler writes into the same scoped instance that MatrixSessionService reads from.
+        var concrete = provider.GetRequiredService<ClientIdentityProvider>();
+        Assert.Same(concrete, provider.GetRequiredService<IClientIdentityProvider>());
+        Assert.IsType<MatrixSessionService>(provider.GetRequiredService<IMatrixSessionService>());
+
+        // Different circuits (scopes) get different identities.
+        using var otherScope = factory.Services.CreateScope();
+        Assert.NotSame(concrete, otherScope.ServiceProvider.GetRequiredService<ClientIdentityProvider>());
     }
 
     [Fact]
@@ -523,6 +684,42 @@ public class SecurityInfrastructureTests
 
         public Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Per-instance accessor. The real <see cref="HttpContextAccessor"/> stores its context in a static AsyncLocal,
+    /// so several "clients" created in one test flow would overwrite each other's context.
+    /// </summary>
+    private sealed class FakeHttpContextAccessor : IHttpContextAccessor
+    {
+        public HttpContext? HttpContext { get; set; }
+    }
+
+    private sealed class TokenAuthGateway(string validToken) : IMatrixAuthGateway
+    {
+        private readonly List<string> _authenticatedCalls = [];
+
+        public IReadOnlyList<string> AuthenticatedCalls
+        {
+            get { lock (_authenticatedCalls) return _authenticatedCalls.ToList(); }
+        }
+
+        public Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<LoginResponse> LoginAsync(string homeserverUrl, string username, string password, CancellationToken cancellationToken = default) =>
+            throw new NotImplementedException();
+
+        public Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default)
+        {
+            lock (_authenticatedCalls) _authenticatedCalls.Add(accessToken);
+            if (accessToken != validToken)
+            {
+                throw new HttpRequestException("Unknown token", null, HttpStatusCode.Unauthorized);
+            }
+
+            return Task.FromResult(Stub.Create<IMatrixGateway>(s => s.On("get_UserId", _ => "@admin:example.com")));
+        }
     }
 
     private sealed class FakeAuthStringLocalizer : IStringLocalizer<SharedResources>
