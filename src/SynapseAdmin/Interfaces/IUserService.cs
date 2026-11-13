@@ -8,6 +8,12 @@ public interface IUserService
 {
     Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default);
     Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId, CancellationToken token = default);
+
+    /// <summary>One page of the user's uploads, newest first. <paramref name="offset"/> is the item offset.</summary>
+    Task<OperationResult<UserMediaPageViewModel>> GetUserMediaPageAsync(string userId, int offset, int limit, CancellationToken token = default);
+
+    /// <summary>Upload count and total bytes across all of the user's media.</summary>
+    Task<OperationResult<UserMediaTotalsViewModel>> GetUserMediaTotalsAsync(string userId, CancellationToken token = default);
     Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false, CancellationToken token = default);
     Task<OperationResult> QuarantineMediaAsync(string userId, CancellationToken token = default);
     Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken token = default);

@@ -20,7 +20,6 @@ public class UserDetailViewModel
     
     // Threepids, external ids etc could be added here as flattened properties or specific VMs
     
-    public UserMediaViewModel? Media { get; set; }
     public List<UserMembershipViewModel> Memberships { get; set; } = [];
     public List<UserExperimentalFeatureViewModel>? ExperimentalFeatures { get; set; }
 }
@@ -46,11 +45,26 @@ public class UserMembershipViewModel
     public string Membership { get; set; } = string.Empty;
 }
 
-public class UserMediaViewModel
+/// <summary>One server-side page of a user's uploads. Statistics on this type describe the page only.</summary>
+public class UserMediaPageViewModel
 {
+    /// <summary>Offset of the first item of this page within all uploads.</summary>
+    public int Offset { get; set; }
+
+    /// <summary>Number of uploads across all pages, as reported by the server.</summary>
     public long TotalCount { get; set; }
-    public long TotalSize { get; set; }
-    public List<UserMediaItemViewModel> Media { get; set; } = [];
+
+    public List<UserMediaItemViewModel> Items { get; set; } = [];
+
+    /// <summary>Bytes of the items on this page only.</summary>
+    public long PageBytes => Items.Sum(i => i.MediaLength);
+}
+
+/// <summary>Totals across all of a user's uploads (from the user media statistics endpoint).</summary>
+public class UserMediaTotalsViewModel
+{
+    public long Count { get; set; }
+    public long Bytes { get; set; }
 }
 
 public class UserMediaItemViewModel

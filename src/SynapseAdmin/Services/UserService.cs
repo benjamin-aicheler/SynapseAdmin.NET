@@ -16,6 +16,9 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 {
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
+    private const int MaxMediaPageSize = 100;
+    private const int MediaTotalsSearchLimit = 100;
+
     public async Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["NotAuthenticated"]);
@@ -57,23 +60,6 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
 
 
-            async Task<SynapseAdminUserMediaResult?> FetchMediaSafeAsync()
-            {
-                try
-                {
-                    return await Gateway.GetUserMediaAsync(userId, token);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to fetch user media for user {UserId}. Continuing without media.", userId.SanitizeForLogging());
-                    return null;
-                }
-            }
-
             async Task<OperationResult<List<UserMembershipViewModel>>> FetchMembershipsSafeAsync()
             {
                 try
@@ -108,32 +94,16 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 }
             }
 
-            var mediaTask = FetchMediaSafeAsync();
+            // Media is loaded page by page by the media table (GetUserMediaPageAsync), not here.
             var membershipsTask = FetchMembershipsSafeAsync();
             var experimentalFeaturesTask = FetchExperimentalFeaturesSafeAsync();
 
-            await Task.WhenAll(mediaTask, membershipsTask, experimentalFeaturesTask);
+            await Task.WhenAll(membershipsTask, experimentalFeaturesTask);
 
-            var mediaResult = await mediaTask;
             var membershipsResult = await membershipsTask;
             var experimentalFeaturesResult = await experimentalFeaturesTask;
 
             var vm = u.ToDetailViewModel();
-            vm.Media = mediaResult == null ? null : new UserMediaViewModel
-            {
-                TotalCount = mediaResult.Total,
-                TotalSize = mediaResult.Media.Sum(m => m.MediaLength), 
-                Media = mediaResult.Media.Select(m => new UserMediaItemViewModel
-                {
-                    MediaId = m.MediaId,
-                    UploadName = m.UploadName,
-                    MediaType = m.MediaType,
-                    MediaLength = m.MediaLength,
-                    CreatedTimestamp = m.CreatedTimestamp,
-                    QuarantinedBy = m.QuarantinedBy,
-                    SafeFromQuarantine = m.SafeFromQuarantine
-                }).ToList()
-            };
             vm.Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : [];
             vm.ExperimentalFeatures = experimentalFeaturesResult == null
                 ? null
@@ -149,6 +119,91 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         {
             logger.LogError(ex, "Error fetching user details for {UserId}", userId.SanitizeForLogging());
             return OperationResult<UserDetailViewModel>.Failure(L["ErrorFetchingUserDetails"]);
+        }
+    }
+
+    public async Task<OperationResult<UserMediaPageViewModel>> GetUserMediaPageAsync(string userId, int offset, int limit, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<UserMediaPageViewModel>.Failure(L["NotAuthenticated"]);
+
+        offset = Math.Max(0, offset);
+        limit = Math.Clamp(limit, 1, MaxMediaPageSize);
+
+        try
+        {
+            var result = await Gateway.GetUserMediaAsync(userId, offset, limit, orderBy: "created_ts", dir: "b", cancellationToken: token);
+            var page = new UserMediaPageViewModel
+            {
+                Offset = offset,
+                TotalCount = result?.Total ?? 0,
+                Items = (result?.Media ?? []).Select(m => new UserMediaItemViewModel
+                {
+                    MediaId = m.MediaId,
+                    UploadName = m.UploadName,
+                    MediaType = m.MediaType,
+                    MediaLength = m.MediaLength,
+                    CreatedTimestamp = m.CreatedTimestamp,
+                    QuarantinedBy = m.QuarantinedBy,
+                    SafeFromQuarantine = m.SafeFromQuarantine
+                }).ToList()
+            };
+            return OperationResult<UserMediaPageViewModel>.Ok(page);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<UserMediaPageViewModel>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching media page (offset {Offset}, limit {Limit}) for user {UserId}", offset, limit, userId.SanitizeForLogging());
+            return OperationResult<UserMediaPageViewModel>.Failure(L["ErrorFetchingMedia"]);
+        }
+    }
+
+    /// <summary>
+    /// Search term for the user media statistics endpoint. Synapse filters with
+    /// <c>user_id LIKE '@%' || term || '%:%'</c>, so a full Matrix ID can never match; the localpart must be used
+    /// (it also matches on servers that use a plain substring search).
+    /// </summary>
+    internal static string MediaStatisticsSearchTerm(string userId)
+    {
+        var withoutSigil = userId.StartsWith('@') ? userId[1..] : userId;
+        var colon = withoutSigil.IndexOf(':');
+        return colon >= 0 ? withoutSigil[..colon] : withoutSigil;
+    }
+
+    public async Task<OperationResult<UserMediaTotalsViewModel>> GetUserMediaTotalsAsync(string userId, CancellationToken token = default)
+    {
+        if (Gateway == null) return OperationResult<UserMediaTotalsViewModel>.Failure(L["NotAuthenticated"]);
+
+        try
+        {
+            // Search by localpart, then pick the exact user: the term also matches similar IDs and display names.
+            var stats = await Gateway.GetUserMediaStatisticsAsync(MediaTotalsSearchLimit, searchTerm: MediaStatisticsSearchTerm(userId), cancellationToken: token);
+            var users = stats?.Users ?? [];
+            var match = users.FirstOrDefault(u => string.Equals(u.UserId, userId, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+            {
+                return OperationResult<UserMediaTotalsViewModel>.Ok(new UserMediaTotalsViewModel { Count = match.MediaCount, Bytes = match.MediaLength });
+            }
+
+            // The statistics only list users with uploads. If every match was returned, the user has none.
+            if (stats != null && stats.Total <= users.Count)
+            {
+                return OperationResult<UserMediaTotalsViewModel>.Ok(new UserMediaTotalsViewModel());
+            }
+
+            logger.LogWarning("Could not determine media totals for user {UserId}: not among the first {Limit} statistics matches.", userId.SanitizeForLogging(), MediaTotalsSearchLimit);
+            return OperationResult<UserMediaTotalsViewModel>.Failure(L["ErrorFetchingMedia"]);
+        }
+        catch (OperationCanceledException)
+        {
+            return OperationResult<UserMediaTotalsViewModel>.Cancelled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching media totals for user {UserId}", userId.SanitizeForLogging());
+            return OperationResult<UserMediaTotalsViewModel>.Failure(L["ErrorFetchingMedia"]);
         }
     }
 
