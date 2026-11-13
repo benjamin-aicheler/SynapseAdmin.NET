@@ -12,9 +12,18 @@
         @L["SynapseAdminApiRequired"]
     </MudAlert>
 }
-else if (room == null)
+else if (isLoading)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (room == null)
+{
+    <MudAlert Severity="Severity.Warning" Elevation="2" Class="mb-4">
+        @(errorMessage ?? L["RoomNotFound"])
+    </MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="rooms" StartIcon="@Icons.Material.Filled.ArrowBack">
+        @L["Rooms"]
+    </MudButton>
 }
 else
 {
@@ -133,11 +142,11 @@ else
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
         <MudTabPanel Text="@L["Messages"]" Icon="@Icons.Material.Filled.Message">
             <MudToolBar Dense="true" Class="px-2">
-                <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="() => LoadMessages()" Disabled="loadingMessages" Variant="Variant.Text">@L["Refresh"]</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="() => LoadMoreMessages(null)" Disabled="loadingMessages" Variant="Variant.Text">@L["Refresh"]</MudButton>
                 <MudSpacer />
                 @if (messages?.EndToken != null)
                 {
-                    <MudButton EndIcon="@Icons.Material.Filled.ArrowForward" OnClick="() => LoadMessages(messages.EndToken)" Disabled="loadingMessages" Variant="Variant.Text">@L["LoadMore"]</MudButton>
+                    <MudButton EndIcon="@Icons.Material.Filled.ArrowForward" OnClick="() => LoadMoreMessages(messages.EndToken)" Disabled="loadingMessages" Variant="Variant.Text">@L["LoadMore"]</MudButton>
                 }
             </MudToolBar>
             
@@ -281,13 +290,13 @@ else
                     <div class="d-flex align-center gap-2">
                         <MudButton Variant="@(_mediaViewMode == "table" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.TableChart" OnClick="@(() => _mediaViewMode = "table")">@L["TableView"]</MudButton>
                         <MudButton Variant="@(_mediaViewMode == "gallery" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.GridView" OnClick="@(() => _mediaViewMode = "gallery")">@L["GalleryView"]</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" StartIcon="@Icons.Material.Filled.OpenInNew" Href="@($"/rooms/{Uri.EscapeDataString(RoomId)}/gallery")" Target="_blank">@L["RoomGallery"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" StartIcon="@Icons.Material.Filled.OpenInNew" Href="@($"/rooms/{Uri.EscapeDataString(room.RoomId)}/gallery")" Target="_blank">@L["RoomGallery"]</MudButton>
                     </div>
                 </div>
 
                 @if (_mediaViewMode == "gallery")
                 {
-                    <RoomGalleryGrid RoomId="@RoomId" Media="@room.Media" />
+                    <RoomGalleryGrid RoomId="@room.RoomId" Media="@room.Media" />
                 }
                 else
                 {

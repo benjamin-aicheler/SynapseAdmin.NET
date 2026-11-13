@@ -33,72 +33,121 @@ namespace SynapseAdmin.Components.Pages
         private bool isLoading = true;
         private string? errorMessage;
         private string? _loadedUserId;
+        // The user the currently shown `user` model was loaded for; actions target this ID,
+        // never the (possibly newer) route parameter.
+        private string? _displayedUserId;
+        private CancellationTokenSource? _loadCts;
         private MudTable<UserMediaItemViewModel>? mediaTable;
         private readonly CancellationTokenSource _cts = new();
 
         protected override async Task OnParametersSetAsync()
         {
+            if (_loadedUserId == UserId && _loadCts != null) return;
+
+            // Reset synchronously, before the first await, so the previous user (and its
+            // action buttons) is never rendered while the route already points at a new user.
+            var userId = UserId;
+            _loadedUserId = userId;
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+            _loadCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+            var token = _loadCts.Token;
+            user = null;
+            _displayedUserId = null;
+            errorMessage = null;
+            isLoading = true;
+
             await TimeZoneService.InitializeAsync();
-            if (_loadedUserId != UserId)
-            {
-                _loadedUserId = UserId;
-                await LoadUserDetails();
-            }
+            if (token.IsCancellationRequested) return;
+
+            await LoadUserDetails(userId, token);
         }
 
-        private async Task LoadUserDetails()
+        private async Task LoadUserDetails(string userId, CancellationToken token)
         {
-            isLoading = true;
-            errorMessage = null;
-            var result = await UserService.GetUserDetailsAsync(UserId, _cts.Token);
-            if (result.Success)
+            var result = await UserService.GetUserDetailsAsync(userId, token);
+            // Discard responses for a selection that is no longer current.
+            if (token.IsCancellationRequested || userId != _loadedUserId) return;
+
+            if (result.Success && result.Data != null)
             {
                 user = result.Data;
+                _displayedUserId = userId;
+                errorMessage = null;
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                errorMessage = result.Message;
-                Snackbar.Add(result.Message, result.Severity);
+                user = null;
+                _displayedUserId = null;
+                if (result.Severity != Severity.Normal)
+                {
+                    errorMessage = result.Message;
+                    Snackbar.Add(result.Message, result.Severity);
+                }
             }
             isLoading = false;
         }
 
+        /// <summary>
+        /// Returns the ID of the user currently shown, or null if nothing (or a stale user) is shown.
+        /// </summary>
+        private string? GetDisplayedTarget() =>
+            user != null && !isLoading && _displayedUserId != null && _displayedUserId == UserId
+                ? _displayedUserId
+                : null;
+
+        /// <summary>
+        /// Re-checks after an awaited confirmation that the user is still looking at <paramref name="target"/>.
+        /// </summary>
+        private bool IsStillDisplayed(string target)
+        {
+            if (GetDisplayedTarget() == target) return true;
+            Snackbar.Add(L["SelectionChangedActionAborted"], Severity.Warning);
+            return false;
+        }
+
+        private static string FormatTarget(UserDetailViewModel? model, string userId) =>
+            string.IsNullOrWhiteSpace(model?.DisplayName) ? userId : $"{model.DisplayName} ({userId})";
+
         private async Task DeactivateUser()
         {
+            if (GetDisplayedTarget() is not { } target) return;
+
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["DeactivateUserTitle"], 
-                L["DeactivateUserConfirmation"], 
+                L["DeactivateUserTitle"],
+                L["DeactivateUserConfirmation", FormatTarget(user, target)],
                 yesText: L["Deactivate"], cancelText: L["Cancel"]);
-                
-            if (confirmed == true)
+
+            if (confirmed == true && IsStillDisplayed(target))
             {
-                var result = await UserService.DeactivateUserAsync(UserId, token: _cts.Token);
+                var result = await UserService.DeactivateUserAsync(target, token: _cts.Token);
                 if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }
-                if (result.Success)
+                if (result.Success && _loadCts != null && GetDisplayedTarget() == target)
                 {
-                    await LoadUserDetails();
+                    await LoadUserDetails(target, _loadCts.Token);
                 }
             }
         }
 
         private async Task OpenRenewAccountDialog()
         {
-            if (user == null) return;
+            if (GetDisplayedTarget() is not { } target || user == null) return;
 
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
             var parameters = new DialogParameters
             {
-                { nameof(RenewAccountDialog.UserId), UserId },
+                { nameof(RenewAccountDialog.UserId), target },
                 { nameof(RenewAccountDialog.CurrentExpirationTimestamp), user.ExpirationTsDateTime }
             };
 
             var dialog = await DialogService.ShowAsync<RenewAccountDialog>(L["RenewAccount"], parameters, options);
             var result = await dialog.Result;
 
-            if (result is { Canceled: false, Data: long newExpirationTs } && user != null)
+            // The renewal was issued for `target`; only patch the model if that user is still shown.
+            if (result is { Canceled: false, Data: long newExpirationTs } && user != null && GetDisplayedTarget() == target)
             {
                 user.ExpirationTs = newExpirationTs;
                 StateHasChanged();
@@ -107,14 +156,16 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task QuarantineAllMedia()
         {
+            if (GetDisplayedTarget() is not { } target) return;
+
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["QuarantineMediaTitle"], 
-                L["QuarantineUserMediaConfirmation"], 
+                L["QuarantineMediaTitle"],
+                L["QuarantineUserMediaConfirmation", FormatTarget(user, target)],
                 yesText: L["Quarantine"], cancelText: L["Cancel"]);
-            
-            if (confirmed == true)
+
+            if (confirmed == true && IsStillDisplayed(target))
             {
-                var result = await UserService.QuarantineMediaAsync(UserId, _cts.Token);
+                var result = await UserService.QuarantineMediaAsync(target, _cts.Token);
                 if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
@@ -124,7 +175,9 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task LoginAsUser()
         {
-            var result = await UserService.LoginAsUserAsync(UserId, TimeSpan.FromHours(1), _cts.Token);
+            if (GetDisplayedTarget() is not { } target) return;
+
+            var result = await UserService.LoginAsUserAsync(target, TimeSpan.FromHours(1), _cts.Token);
             if (result.Success && !string.IsNullOrEmpty(result.Data))
             {
                 try
@@ -287,6 +340,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task ToggleExperimentalFeature(UserExperimentalFeatureViewModel feature, bool enabled)
         {
             if (feature.IsUpdating || feature.Enabled == enabled) return;
+            if (GetDisplayedTarget() is not { } target) return;
 
             feature.IsUpdating = true;
             StateHasChanged();
@@ -296,7 +350,7 @@ namespace SynapseAdmin.Components.Pages
                 [feature.FeatureKey] = enabled
             };
 
-            var result = await UserService.SetUserExperimentalFeaturesAsync(UserId, updates, _cts.Token);
+            var result = await UserService.SetUserExperimentalFeaturesAsync(target, updates, _cts.Token);
 
             if (result.Severity != Severity.Normal)
             {
@@ -314,6 +368,8 @@ namespace SynapseAdmin.Components.Pages
 
         public void Dispose()
         {
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
             _cts.Cancel();
             _cts.Dispose();
         }
