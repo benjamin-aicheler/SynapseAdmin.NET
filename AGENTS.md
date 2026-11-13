@@ -60,6 +60,7 @@ The project uses the standard .NET 10 CLI and Docker:
 
   Follow the same pattern for any new detail page with destructive actions.
 - **Component Tests:** Blazor components are tested with **bUnit** (`tests/SynapseAdmin.Tests/Components/`). `DetailPageTestBase` provides MudBlazor and localization, plus recording `Stub` doubles (a `DispatchProxy`) for services, dialogs and the snackbar. Test classes deriving from `BunitContext` must implement `IAsyncLifetime`, because MudBlazor services are async-disposable only.
+    - **Culture independence:** tests run under the developer's locale (e.g. `de_DE`). Never match hard-coded English UI text; build expected strings with the app's `IStringLocalizer<SharedResources>` and compare them against `WebUtility.HtmlDecode(cut.Markup)` (the renderer leaves non-ASCII characters unescaped, so `HtmlEncode`d expectations fail for e.g. `ä`).
 - **Logging:** ALWAYS inject `ILogger<T>` into services and log exceptions/errors to provide server-side traceability for Matrix API failures.
 - **ViewModels:** Always use dedicated ViewModels (`src/SynapseAdmin/Models/ViewModels/`) to pass data from services to components. Avoid passing raw SDK models to the UI.
 - **Dependency Injection:** Services are registered in `Program.cs` and injected into components using the `[Inject]` attribute.
