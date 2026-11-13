@@ -617,13 +617,13 @@
     <value>Raum löschen</value>
   </data>
   <data name="DeleteRoomConfirmation" xml:space="preserve">
-    <value>Sind Sie sicher, dass Sie diesen Raum löschen möchten? Dies wird ihn NICHT sperren. Diese Aktion kann nicht rückgängig gemacht werden.</value>
+    <value>Sind Sie sicher, dass Sie den Raum „{0}“ löschen möchten? Dies wird ihn NICHT sperren. Diese Aktion kann nicht rückgängig gemacht werden.</value>
   </data>
   <data name="DeleteAndBlockRoomTitle" xml:space="preserve">
     <value>Raum löschen &amp; sperren</value>
   </data>
   <data name="DeleteAndBlockRoomConfirmation" xml:space="preserve">
-    <value>Sind Sie sicher, dass Sie diesen Raum löschen UND sperren möchten? Diese Aktion kann nicht rückgängig gemacht werden.</value>
+    <value>Sind Sie sicher, dass Sie den Raum „{0}“ löschen UND sperren möchten? Diese Aktion kann nicht rückgängig gemacht werden.</value>
   </data>
   <data name="DeleteAndBlock" xml:space="preserve">
     <value>Löschen &amp; Sperren</value>
@@ -632,7 +632,7 @@
     <value>Medien unter Quarantäne stellen</value>
   </data>
   <data name="QuarantineRoomMediaConfirmation" xml:space="preserve">
-    <value>Sind Sie sicher, dass Sie alle Medien in diesem Raum unter Quarantäne stellen möchten?</value>
+    <value>Sind Sie sicher, dass Sie alle Medien im Raum „{0}“ unter Quarantäne stellen möchten?</value>
   </data>
   <data name="Quarantine" xml:space="preserve">
     <value>Quarantäne</value>
@@ -641,13 +641,13 @@
     <value>Benutzer deaktivieren</value>
   </data>
   <data name="DeactivateUserConfirmation" xml:space="preserve">
-    <value>Sind Sie sicher, dass Sie diesen Benutzer deaktivieren möchten?</value>
+    <value>Sind Sie sicher, dass Sie den Benutzer „{0}“ deaktivieren möchten?</value>
   </data>
   <data name="Deactivate" xml:space="preserve">
     <value>Deaktivieren</value>
   </data>
   <data name="QuarantineUserMediaConfirmation" xml:space="preserve">
-    <value>Sind Sie sicher, dass Sie alle von diesem Benutzer hochgeladenen Medien unter Quarantäne stellen möchten?</value>
+    <value>Sind Sie sicher, dass Sie alle vom Benutzer „{0}“ hochgeladenen Medien unter Quarantäne stellen möchten?</value>
   </data>
   <data name="LatestUsers" xml:space="preserve">
     <value>Neueste Benutzer</value>
@@ -1407,5 +1407,8 @@
   </data>
   <data name="HomeserverNotAllowed" xml:space="preserve">
     <value>Der Homeserver ist nicht zugelassen. Unverschlüsseltes HTTP und interne Adressen müssen vom Administrator ausdrücklich freigegeben werden (HOMESERVER_ALLOWLIST).</value>
+  </data>
+  <data name="SelectionChangedActionAborted" xml:space="preserve">
+    <value>Die Auswahl hat sich geändert, während die Bestätigung geöffnet war. Die Aktion wurde abgebrochen, es wurde nichts geändert.</value>
   </data>
 </root>

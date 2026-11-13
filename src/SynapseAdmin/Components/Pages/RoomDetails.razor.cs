@@ -41,34 +41,108 @@ namespace SynapseAdmin.Components.Pages
         private string? activePurgeStatus;
         private CancellationTokenSource? _pollingCts;
 
+        // Per-selection state. `_loadCts` is replaced on every route change so that requests
+        // for a previous room are cancelled and their late responses are discarded.
+        // `_displayedRoomId` is the room the currently shown `room` model was loaded for;
+        // destructive actions target this ID, never the (possibly newer) route parameter.
+        private CancellationTokenSource? _loadCts;
+        private string? _loadedRoomId;
+        private string? _displayedRoomId;
+        private bool isLoading = true;
+        private string? errorMessage;
+
         protected override async Task OnParametersSetAsync()
         {
+            if (_loadedRoomId == RoomId && _loadCts != null) return;
+
+            // Reset synchronously, before the first await, so the previous room (and its
+            // action buttons) is never rendered while the route already points at a new room.
+            var roomId = RoomId;
+            _loadedRoomId = roomId;
             StopPolling();
-            activePurgeId = RoomService.GetActivePurgeId(RoomId);
+            var token = ResetLoadToken();
+            room = null;
+            _displayedRoomId = null;
+            messages = null;
+            loadingMessages = false;
+            errorMessage = null;
+            isLoading = true;
+            activePurgeId = RoomService.GetActivePurgeId(roomId);
             activePurgeStatus = null;
 
             await TimeZoneService.InitializeAsync();
-            await LoadRoomDetails();
-            await LoadMessages();
+            if (token.IsCancellationRequested) return;
+
+            await LoadRoomDetails(roomId, token);
+            if (token.IsCancellationRequested) return;
+
+            await LoadMessages(roomId, null, token);
+            if (token.IsCancellationRequested) return;
 
             if (!string.IsNullOrEmpty(activePurgeId))
             {
-                StartPolling();
+                StartPolling(roomId);
             }
         }
 
-        private async Task LoadRoomDetails()
+        private CancellationToken ResetLoadToken()
         {
-            var result = await RoomService.GetRoomDetailsAsync(RoomId, _cts.Token);
-            if (result.Success)
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+            _loadCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+            return _loadCts.Token;
+        }
+
+        private CancellationToken LoadToken => _loadCts?.Token ?? _cts.Token;
+
+        private async Task LoadRoomDetails(string roomId, CancellationToken token)
+        {
+            var result = await RoomService.GetRoomDetailsAsync(roomId, token);
+            // Discard responses for a selection that is no longer current.
+            if (token.IsCancellationRequested || roomId != _loadedRoomId) return;
+
+            if (result.Success && result.Data != null)
             {
                 room = result.Data;
+                _displayedRoomId = roomId;
+                errorMessage = null;
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                room = null;
+                _displayedRoomId = null;
+                if (result.Severity != Severity.Normal)
+                {
+                    errorMessage = result.Message;
+                    Snackbar.Add(result.Message, result.Severity);
+                }
             }
+            isLoading = false;
         }
+
+        private Task ReloadRoomDetails() =>
+            _displayedRoomId is { } roomId ? LoadRoomDetails(roomId, LoadToken) : Task.CompletedTask;
+
+        /// <summary>
+        /// Returns the ID of the room currently shown, or null if nothing (or a stale room) is shown.
+        /// </summary>
+        private string? GetDisplayedTarget() =>
+            room != null && !isLoading && _displayedRoomId != null && _displayedRoomId == RoomId
+                ? _displayedRoomId
+                : null;
+
+        /// <summary>
+        /// Re-checks after an awaited confirmation that the user is still looking at <paramref name="target"/>.
+        /// </summary>
+        private bool IsStillDisplayed(string target)
+        {
+            if (GetDisplayedTarget() == target) return true;
+            Snackbar.Add(L["SelectionChangedActionAborted"], Severity.Warning);
+            return false;
+        }
+
+        private static string FormatTarget(RoomDetailViewModel? model, string roomId) =>
+            string.IsNullOrWhiteSpace(model?.Name) ? roomId : $"{model.Name} ({roomId})";
 
         private async Task<TableData<RoomMediaItemViewModel>> LoadLocalMedia(TableState state, CancellationToken token)
         {
@@ -108,10 +182,15 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
-        private async Task LoadMessages(string? from = null)
+        private Task LoadMoreMessages(string? from) =>
+            _displayedRoomId is { } roomId ? LoadMessages(roomId, from, LoadToken) : Task.CompletedTask;
+
+        private async Task LoadMessages(string roomId, string? from, CancellationToken token)
         {
             loadingMessages = true;
-            var result = await RoomService.GetRoomMessagesAsync(RoomId, from: from, limit: 50, dir: "b", token: _cts.Token);
+            var result = await RoomService.GetRoomMessagesAsync(roomId, from: from, limit: 50, dir: "b", token: token);
+            if (token.IsCancellationRequested || roomId != _loadedRoomId) return;
+
             if (result.Success && result.Data != null)
             {
                 if (from == null || messages == null)
@@ -133,14 +212,16 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task DeleteRoom()
         {
+            if (GetDisplayedTarget() is not { } target) return;
+
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["DeleteRoomTitle"], 
-                L["DeleteRoomConfirmation"], 
+                L["DeleteRoomTitle"],
+                L["DeleteRoomConfirmation", FormatTarget(room, target)],
                 yesText: L["Delete"], cancelText: L["Cancel"]);
-            
-            if (confirmed == true)
+
+            if (confirmed == true && IsStillDisplayed(target))
             {
-                var result = await RoomService.DeleteRoomAsync(RoomId, block: false, purge: true, token: _cts.Token);
+                var result = await RoomService.DeleteRoomAsync(target, block: false, purge: true, token: _cts.Token);
                 if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
@@ -154,14 +235,16 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task DeleteAndBlockRoom()
         {
+            if (GetDisplayedTarget() is not { } target) return;
+
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["DeleteAndBlockRoomTitle"], 
-                L["DeleteAndBlockRoomConfirmation"], 
+                L["DeleteAndBlockRoomTitle"],
+                L["DeleteAndBlockRoomConfirmation", FormatTarget(room, target)],
                 yesText: L["DeleteAndBlock"], cancelText: L["Cancel"]);
-            
-            if (confirmed == true)
+
+            if (confirmed == true && IsStillDisplayed(target))
             {
-                var result = await RoomService.DeleteRoomAsync(RoomId, block: true, purge: true, token: _cts.Token);
+                var result = await RoomService.DeleteRoomAsync(target, block: true, purge: true, token: _cts.Token);
                 if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
@@ -175,14 +258,16 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task QuarantineMedia()
         {
+            if (GetDisplayedTarget() is not { } target) return;
+
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["QuarantineMediaTitle"], 
-                L["QuarantineRoomMediaConfirmation"], 
+                L["QuarantineMediaTitle"],
+                L["QuarantineRoomMediaConfirmation", FormatTarget(room, target)],
                 yesText: L["Quarantine"], cancelText: L["Cancel"]);
-            
-            if (confirmed == true)
+
+            if (confirmed == true && IsStillDisplayed(target))
             {
-                var result = await RoomService.QuarantineMediaAsync(RoomId, _cts.Token);
+                var result = await RoomService.QuarantineMediaAsync(target, _cts.Token);
                 if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
@@ -192,7 +277,9 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task BlockRoom()
         {
-            var result = await RoomService.BlockRoomAsync(RoomId, true, _cts.Token);
+            if (GetDisplayedTarget() is not { } target) return;
+
+            var result = await RoomService.BlockRoomAsync(target, true, _cts.Token);
             if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
@@ -259,7 +346,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    await LoadRoomDetails();
+                    await ReloadRoomDetails();
                     await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
                     await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
                 }
@@ -327,7 +414,7 @@ namespace SynapseAdmin.Components.Pages
             _pollingCts = null;
         }
 
-        private void StartPolling()
+        private void StartPolling(string roomId)
         {
             StopPolling();
             if (string.IsNullOrEmpty(activePurgeId)) return;
@@ -354,11 +441,12 @@ namespace SynapseAdmin.Components.Pages
 
                             await InvokeAsync(() =>
                             {
+                                if (token.IsCancellationRequested) return;
                                 activePurgeStatus = status;
 
                                 if (status == "complete")
                                 {
-                                    RoomService.ClearActivePurgeId(RoomId);
+                                    RoomService.ClearActivePurgeId(roomId);
                                     activePurgeId = null;
                                     activePurgeStatus = null;
                                     Snackbar.Add(L["PurgeCompleted"], Severity.Success);
@@ -369,7 +457,7 @@ namespace SynapseAdmin.Components.Pages
 
                                 if (status == "failed")
                                 {
-                                    RoomService.ClearActivePurgeId(RoomId);
+                                    RoomService.ClearActivePurgeId(roomId);
                                     activePurgeId = null;
                                     activePurgeStatus = null;
                                     var errMsg = !string.IsNullOrEmpty(error)
@@ -398,13 +486,13 @@ namespace SynapseAdmin.Components.Pages
 
                             consecutiveFailures++;
                             var errMsg = result.Message ?? "Unknown error";
-                            Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", RoomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, errMsg.SanitizeForLogging());
+                            Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, errMsg.SanitizeForLogging());
                             
                             if (consecutiveFailures >= 5)
                             {
                                 await InvokeAsync(() =>
                                 {
-                                    RoomService.ClearActivePurgeId(RoomId);
+                                    RoomService.ClearActivePurgeId(roomId);
                                     activePurgeId = null;
                                     activePurgeStatus = null;
                                     Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
@@ -423,12 +511,12 @@ namespace SynapseAdmin.Components.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", RoomId.SanitizeForLogging(), purgeId.SanitizeForLogging());
+                    Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging());
                     try
                     {
                         await InvokeAsync(() =>
                         {
-                            RoomService.ClearActivePurgeId(RoomId);
+                            RoomService.ClearActivePurgeId(roomId);
                             activePurgeId = null;
                             activePurgeStatus = null;
                             Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
@@ -455,10 +543,12 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task OpenPurgeHistoryDialogInternal(string? preselectedEventId, DateTimeOffset? preselectedTimestamp)
         {
+            if (GetDisplayedTarget() is not { } target) return;
+
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
             var parameters = new DialogParameters
             {
-                { "RoomId", RoomId },
+                { "RoomId", target },
                 { "PreselectedEventId", preselectedEventId },
                 { "PreselectedTimestamp", preselectedTimestamp }
             };
@@ -466,11 +556,13 @@ namespace SynapseAdmin.Components.Pages
             var dialog = await DialogService.ShowAsync<PurgeHistoryDialog>(L["PurgeHistory"], parameters, options);
             var result = await dialog.Result;
 
-            if (result != null && !result.Canceled && result.Data is string newPurgeId && !string.IsNullOrWhiteSpace(newPurgeId))
+            // The purge itself was issued for `target`; only track it here if that room is still shown.
+            if (result != null && !result.Canceled && result.Data is string newPurgeId && !string.IsNullOrWhiteSpace(newPurgeId)
+                && GetDisplayedTarget() == target)
             {
                 activePurgeId = newPurgeId;
                 activePurgeStatus = "active";
-                StartPolling();
+                StartPolling(target);
                 StateHasChanged();
             }
         }
@@ -494,6 +586,8 @@ namespace SynapseAdmin.Components.Pages
         public void Dispose()
         {
             StopPolling();
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
             _cts.Cancel();
             _cts.Dispose();
         }

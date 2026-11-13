@@ -44,6 +44,13 @@ The project uses the standard .NET 10 CLI and Docker:
     - **Services:** Responsible for generating localized, user-friendly messages for **Business Outcomes** (the result of a protocol or data operation) using `IStringLocalizer`.
     - **Code-Behind (.razor.cs):** Allowed to inject `IStringLocalizer` ONLY for **Interaction Logic** (e.g., Dialog titles/messages, complex UI-only alerts, or dynamic Page Titles). They should NEVER perform translations for service-level business logic.
     - **Razor (.razor):** Uses `IStringLocalizer` for **Static Layout** strings (labels, headers, constant button text).
+- **Detail Pages & Destructive Actions:** Blazor reuses a routed page instance when only its route parameter changes (e.g. `/rooms/A` → `/rooms/B`). Detail pages (`RoomDetails`, `UserDetails`) therefore:
+    - On a parameter change, clear the old model, cancel the previous selection's `CancellationTokenSource`, and discard late responses, all before the first `await`.
+    - Make actions target the ID of the entity *currently displayed* (captured before any confirmation), never the route parameter.
+    - Include that target in the confirmation text, and re-check after the confirmation that it is still displayed. Otherwise abort with `SelectionChangedActionAborted`.
+
+  Follow the same pattern for any new detail page with destructive actions.
+- **Component Tests:** Blazor components are tested with **bUnit** (`tests/SynapseAdmin.Tests/Components/`). `DetailPageTestBase` provides MudBlazor and localization, plus recording `Stub` doubles (a `DispatchProxy`) for services, dialogs and the snackbar. Test classes deriving from `BunitContext` must implement `IAsyncLifetime`, because MudBlazor services are async-disposable only.
 - **Logging:** ALWAYS inject `ILogger<T>` into services and log exceptions/errors to provide server-side traceability for Matrix API failures.
 - **ViewModels:** Always use dedicated ViewModels (`src/SynapseAdmin/Models/ViewModels/`) to pass data from services to components. Avoid passing raw SDK models to the UI.
 - **Dependency Injection:** Services are registered in `Program.cs` and injected into components using the `[Inject]` attribute.
