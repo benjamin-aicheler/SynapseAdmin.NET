@@ -108,10 +108,13 @@ namespace SynapseAdmin.Components.Shared
 
             if (mediaModel != null)
             {
+                // A room can reference the same MXC URI several times (issue #384): show each once.
+                var seen = new HashSet<string>(StringComparer.Ordinal);
                 if (mediaModel.Local != null)
                 {
                     foreach (var item in mediaModel.Local)
                     {
+                        if (string.IsNullOrEmpty(item.MediaId) || !seen.Add(item.MediaId)) continue;
                         item.IsLocal = true;
                         _allMedia.Add(item);
                     }
@@ -120,6 +123,7 @@ namespace SynapseAdmin.Components.Shared
                 {
                     foreach (var item in mediaModel.Remote)
                     {
+                        if (string.IsNullOrEmpty(item.MediaId) || !seen.Add(item.MediaId)) continue;
                         item.IsLocal = false;
                         _allMedia.Add(item);
                     }
@@ -195,13 +199,22 @@ namespace SynapseAdmin.Components.Shared
                 StateHasChanged();
 
                 // Fetch metadata for unhydrated items in parallel/batch
-                var unhydrated = nextItems.Where(x => !_loadedMetadataMxcs.Contains(x.MediaId)).Select(x => x.MediaId).ToList();
+                var unhydrated = nextItems
+                    .Select(x => x.MediaId)
+                    .Where(id => !_loadedMetadataMxcs.Contains(id))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
                 if (unhydrated.Count > 0)
                 {
                     var metaResult = await RoomService.GetMediaMetadataBatchAsync(unhydrated, _cts.Token);
                     if (metaResult.Success && metaResult.Data != null)
                     {
-                        var metaDict = metaResult.Data.ToDictionary(m => m.MediaId, m => m);
+                        // Tolerate repeated result IDs: the first result for an MXC URI wins.
+                        var metaDict = new Dictionary<string, RoomMediaItemViewModel>(StringComparer.Ordinal);
+                        foreach (var meta in metaResult.Data)
+                        {
+                            if (!string.IsNullOrEmpty(meta.MediaId)) metaDict.TryAdd(meta.MediaId, meta);
+                        }
                         foreach (var item in _allMedia)
                         {
                             if (metaDict.TryGetValue(item.MediaId, out var metaItem))

@@ -139,8 +139,8 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             }).ToList() ?? [];
             vm.Media = media == null ? null : new RoomMediaViewModel
             {
-                Local = media.Local.Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
-                Remote = media.Remote.Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
+                Local = UniqueMxcs(media.Local).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
+                Remote = UniqueMxcs(media.Remote).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
             };
             
             return OperationResult<RoomDetailViewModel>.Ok(vm);
@@ -156,6 +156,18 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
+    /// <summary>
+    /// Synapse's room media list contains one entry per event reference, so the same MXC URI can
+    /// appear several times (issue #384). Keeps the first occurrence of each URI, in order.
+    /// URIs are compared ordinally as a whole: media IDs are case-sensitive and only unique per server.
+    /// </summary>
+    private static List<string> UniqueMxcs(IEnumerable<string?>? mxcUris)
+    {
+        if (mxcUris == null) return [];
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        return mxcUris.Where(m => !string.IsNullOrEmpty(m) && seen.Add(m)).Select(m => m!).ToList();
+    }
+
     public async Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<List<RoomMediaItemViewModel>>.Failure(L["NotAuthenticated"]);
@@ -163,7 +175,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             using var semaphore = new SemaphoreSlim(10, 10);
-            var tasks = mxcUris.Select(async m =>
+            var tasks = UniqueMxcs(mxcUris).Select(async m =>
             {
                 await semaphore.WaitAsync(token);
                 try
