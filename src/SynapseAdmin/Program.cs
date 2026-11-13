@@ -31,7 +31,9 @@ builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddMemoryCache();
+builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ISessionBridgeService, SessionBridgeService>();
+builder.Services.AddScoped<IAuthCookieService, AuthCookieService>();
 builder.Services.TryAddSingleton<ILoginRateLimitStore, MemoryLoginRateLimitStore>();
 builder.Services.TryAddSingleton<ILoginRateLimiter, LoginRateLimiter>();
 builder.Services.AddRateLimiter(options =>

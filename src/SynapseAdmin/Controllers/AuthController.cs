@@ -1,8 +1,10 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
@@ -10,20 +12,45 @@ namespace SynapseAdmin.Controllers;
 
 [Route("[controller]/[action]")]
 [EnableRateLimiting("auth")]
-public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthController> logger) : Controller
+public class AuthController(
+    ISessionBridgeService bridgeService,
+    IAntiforgery antiforgery,
+    IOptions<AntiforgeryOptions> antiforgeryOptions,
+    ILogger<AuthController> logger) : Controller
 {
-    [HttpGet]
+    public sealed record SignInRequest(string? Key);
+
+    /// <summary>
+    /// Exchanges a session bridge key for the authentication cookie. Called via <c>fetch</c> from the Blazor page
+    /// (<c>wwwroot/js/auth-bridge.js</c>), so the key travels in the request body, never in a URL.
+    /// The request must carry a valid antiforgery token for this browser, and that token must be the one the
+    /// bridge was created with (binding the exchange to the initiating browser).
+    /// </summary>
+    [HttpPost]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public async Task<IActionResult> SignIn(string key, string? redirectUri = null)
+    public async Task<IActionResult> SignIn([FromBody] SignInRequest? request)
     {
-        if (!bridgeService.TryConsumeBridge(key, out var data))
+        try
         {
-            logger.LogWarning("SignIn attempt failed: invalid or expired session bridge key.");
-            return LocalRedirect($"/login?Error=SessionBridgeFailed");
+            await antiforgery.ValidateRequestAsync(HttpContext);
+        }
+        catch (AntiforgeryValidationException ex)
+        {
+            logger.LogWarning("SignIn attempt rejected: antiforgery validation failed ({Reason}).", ex.Message.SanitizeForLogging());
+            return BadRequest();
         }
 
-        logger.LogInformation("SignIn successful for user {UserId} on {Homeserver}. Redirecting to: {RedirectUri}", 
-            data.UserId.SanitizeForLogging(), data.Homeserver.SanitizeForLogging(), redirectUri.SanitizeForLogging());
+        var headerName = antiforgeryOptions.Value.HeaderName;
+        var bindingToken = headerName is null ? null : Request.Headers[headerName].ToString();
+
+        if (!bridgeService.TryConsumeBridge(request?.Key, bindingToken, out var data))
+        {
+            logger.LogWarning("SignIn attempt failed: invalid, expired, reused or unbound session bridge key.");
+            return BadRequest();
+        }
+
+        logger.LogInformation("SignIn successful for user {UserId} on {Homeserver}.",
+            data.UserId.SanitizeForLogging(), data.Homeserver.SanitizeForLogging());
 
         var claims = new List<Claim>
         {
@@ -52,12 +79,7 @@ public class AuthController(ISessionBridgeService bridgeService, ILogger<AuthCon
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        if (string.IsNullOrEmpty(redirectUri) || !Url.IsLocalUrl(redirectUri))
-        {
-            return LocalRedirect("~/");
-        }
-
-        return LocalRedirect(redirectUri);
+        return NoContent();
     }
 
     [HttpGet]

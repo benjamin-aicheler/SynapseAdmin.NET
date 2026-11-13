@@ -11,7 +11,7 @@ public partial class NavMenu : ComponentBase
     [Inject] private Services.MatrixAuthenticationStateProvider AuthProvider { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
-    [Inject] private ISessionBridgeService BridgeService { get; set; } = default!;
+    [Inject] private IAuthCookieService AuthCookie { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private ILogger<NavMenu> Logger { get; set; } = default!;
 
@@ -51,10 +51,17 @@ public partial class NavMenu : ComponentBase
 
             if (homeserver != null && token != null && userId != null && username != null)
             {
-                // Use the bridge to hide sensitive data from the URL during proactive sync
-                var key = BridgeService.CreateBridge(homeserver, token, userId, username);
-                var url = $"/Auth/SignIn?key={Uri.EscapeDataString(key)}&redirectUri={Uri.EscapeDataString(Navigation.Uri)}";
-                Navigation.NavigateTo(url, forceLoad: true);
+                // Proactive sync via the browser-bound bridge (no secrets in URLs), then reload so
+                // HttpContext-based state (e.g. the cookie identity) reflects the new cookie.
+                var cookieResult = await AuthCookie.EstablishCookieSessionAsync(homeserver, token, userId, username);
+                if (cookieResult.Success)
+                {
+                    Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+                }
+                else if (cookieResult.Severity != Severity.Normal)
+                {
+                    Snackbar.Add(cookieResult.Message, cookieResult.Severity);
+                }
             }
         }
     }

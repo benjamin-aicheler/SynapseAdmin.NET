@@ -26,8 +26,13 @@ The project uses the standard .NET 10 CLI and Docker:
     - **Gateway Layer:** `LibMatrix` SDK and the **Gateway Layer** (`src/SynapseAdmin/Infrastructure/Gateways/`).
         - **Responsibility:** The Gateway layer is responsible for all "wire-level" concerns, including raw HTTP calls, URI encoding, and JSON deserialization. It MUST return structured DTOs or nullable models to the Application Layer, never raw `HttpResponseMessage` or technical SDK objects that leak protocol details.
 - **Authentication Bridge:** The application uses a "Cookie Bridge" pattern to synchronize authentication between the Blazor circuit and standard ASP.NET Core Controllers.
-    - **SessionBridgeService:** A singleton service used to securely hand off authentication data using short-lived GUID keys.
-    - **AuthController:** Issues the `matrix_auth` cookie required by standard HTTP requests.
+    - **SessionBridgeService:** A singleton service that hands off authentication data using random keys. Each key:
+        - is single-use, with consumption claimed atomically, so concurrent requests cannot both redeem it;
+        - expires after 60 seconds;
+        - is bound to the initiating browser's antiforgery request token. A request with a mismatched binding is rejected and does not burn the key.
+    - **AuthCookieService** (`IAuthCookieService`, circuit-scoped): the only entry point for components (`Login`, `NavMenu`). It takes the circuit's token from `AntiforgeryStateProvider`, creates the bridge, and redeems it through `wwwroot/js/auth-bridge.js`.
+    - **AuthController.SignIn:** `POST /Auth/SignIn` with a JSON body `{ key }` and the antiforgery token in the `RequestVerificationToken` header. It validates antiforgery, consumes the bridge and issues the authentication cookie (`.AspNetCore.Cookies`), returning `204`. The caller then navigates with `forceLoad: true`.
+    - **Never** put bridge keys or tokens in URLs or query strings, and do not reintroduce a GET sign-in endpoint.
     - **MediaController:** Uses the authentication cookie to support native browser streaming for large files.
 - **Interfaces:** ALWAYS extract an Interface (in `src/SynapseAdmin/Interfaces/`) for every service to enable unit testing, mocking, and decoupling.
 - **Gateway Pattern:** The application uses a Gateway-based architecture to decouple services from the `LibMatrix` SDK.
@@ -79,7 +84,7 @@ The project uses the standard .NET 10 CLI and Docker:
     - **Host:** Keys are stored in the application's root directory (\`./keys\`).
 - **Encryption at Rest:** Implemented a universal passphrase-based encryption (AES-256-GCM) for DataProtection keys to ensure they are encrypted on disk.
 - **Reverse Proxy & Forwarded Headers:** `ForwardedHeadersMiddleware` only trusts loopback and private network ranges (RFC 1918 / RFC 4193) by default (`ForwardLimit = 1`), or explicit proxies/CIDRs configured via the `TRUSTED_PROXIES` environment variable.
-- **Login Rate Limiting:** Login attempts (`MatrixSessionService`) are protected against brute-force attacks by `ILoginRateLimiter`. `/api/auth/set-cookie` is separately guarded by ASP.NET Core's `"auth"` rate-limiting policy.
+- **Login Rate Limiting:** Login attempts (`MatrixSessionService`) are protected against brute-force attacks by `ILoginRateLimiter`. `POST /Auth/SignIn` (the cookie bridge) is separately guarded by ASP.NET Core's `"auth"` rate-limiting policy.
     - **Password login** is throttled per client IP *and* per `(homeserver, account)` across IPs. The cross-IP bucket is intentional protection against distributed brute force.
     - **Token login** is throttled per client IP only. Access tokens are high-entropy, so a destination-wide bucket adds no protection; it would only let any client lock everyone else out of token login to the same homeserver (#368). Do not reintroduce a homeserver-only key.
     - **Client identity:** never read `IHttpContextAccessor` directly for the client IP in interactive code, because `HttpContext` is not guaranteed inside Blazor circuit event handlers. Use `IClientIdentityProvider` instead. Its circuit-scoped `ClientIdentityProvider` is filled by `ClientIdentityCircuitHandler` when a circuit opens or reconnects, and falls back to the ambient `HttpContext` outside circuits. If no IP is known, attempts share the `unknown` bucket and a warning is logged. Do not use per-circuit random fallbacks: they let an attacker bypass throttling by opening new circuits.

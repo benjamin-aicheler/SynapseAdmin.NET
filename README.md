@@ -180,7 +180,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
 
 SynapseAdmin.NET uses Blazor Interactive Server (SignalR circuits) and process-local `IMemoryCache` by default (`MemoryLoginRateLimitStore` and `SessionBridgeService`). If you run multiple container replicas behind a load balancer:
 
-- **Sticky Sessions (Session Affinity):** Configure your reverse proxy or load balancer for sticky sessions so each client's Blazor circuit, `/api/auth/set-cookie` handoff, and per-IP rate-limiting buckets stay pinned to the same replica.
+- **Sticky Sessions (Session Affinity):** Configure your reverse proxy or load balancer for sticky sessions so each client's Blazor circuit, `/Auth/SignIn` cookie handoff, and per-IP rate-limiting buckets stay pinned to the same replica.
 - **Shared Data Protection Keys:** Mount a shared volume (or configure a shared key ring) for `/app/keys` with the same `DP_PASSPHRASE` across all replicas so authentication cookies and encrypted session data can be decrypted by any instance.
 - **Distributed Rate Limiting:** To enforce login rate limits globally across replicas without relying solely on sticky sessions, register a distributed `ILoginRateLimitStore` implementation (e.g., backed by Redis) before `TryAddSingleton<ILoginRateLimitStore, MemoryLoginRateLimitStore>()` in `Program.cs`.
 
