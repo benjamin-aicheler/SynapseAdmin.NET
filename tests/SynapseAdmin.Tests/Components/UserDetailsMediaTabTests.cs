@@ -53,8 +53,12 @@ public class UserDetailsMediaTabTests : DetailPageTestBase
         return cut;
     }
 
-    private static void OpenMediaTab(IRenderedComponent<UserDetails> cut) =>
-        cut.FindAll(".mud-tab").First(t => t.TextContent.Trim() == "Media").Click();
+    /// <summary>Finds the tab by its localized label, so the test does not depend on the machine's culture.</summary>
+    private void OpenMediaTab(IRenderedComponent<UserDetails> cut)
+    {
+        var label = Services.GetRequiredService<IStringLocalizer<SharedResources>>()["Media"].Value;
+        cut.FindAll(".mud-tab").First(t => t.TextContent.Trim() == label).Click();
+    }
 
     private static Task<TableData<UserMediaItemViewModel>> LoadPage(IRenderedComponent<UserDetails> cut, int page, int pageSize)
     {
@@ -80,9 +84,10 @@ public class UserDetailsMediaTabTests : DetailPageTestBase
         // Totals across all uploads and the current page's statistics are shown as separate lines
         // (expected text built with the app's localizer, so the test does not depend on the machine's culture).
         var L = Services.GetRequiredService<IStringLocalizer<SharedResources>>();
-        string Html(string text) => System.Net.WebUtility.HtmlEncode(text);
-        Assert.Contains(Html(L["UserMediaTotals", UploadCount, 1_536_000L.FormatSize()]), cut.Markup);
-        Assert.Contains(Html(L["UserMediaPageSummary", 1, 10, (10 * 1024L).FormatSize()]), cut.Markup);
+        // Compare decoded text: the renderer leaves non-ASCII characters (e.g. "ä") unescaped, while HtmlEncode escapes them.
+        var text = System.Net.WebUtility.HtmlDecode(cut.Markup);
+        Assert.Contains(L["UserMediaTotals", UploadCount, 1_536_000L.FormatSize()].Value, text);
+        Assert.Contains(L["UserMediaPageSummary", 1, 10, (10 * 1024L).FormatSize()].Value, text);
         Assert.Single(_users.CallsTo(nameof(IUserService.GetUserMediaTotalsAsync)));
     }
 
