@@ -18,6 +18,7 @@ using SynapseAdmin.Infrastructure.DataProtection;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Infrastructure.Gateways;
 using SynapseAdmin.Infrastructure.Security;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -120,6 +121,11 @@ builder.Services.AddSingleton<IHomeserverDestinationPolicy>(homeserverPolicy);
 builder.Services.AddSingleton<IHomeserverDiscoveryClient, HomeserverDiscoveryClient>();
 builder.Services.AddScoped<IMatrixAuthGateway, MatrixAuthGateway>();
 
+// Per-circuit client identity: captured from the SignalR connection when the circuit opens/reconnects,
+// because HttpContext is not reliably available inside interactive event handlers (#368).
+builder.Services.AddScoped<ClientIdentityProvider>();
+builder.Services.AddScoped<IClientIdentityProvider>(sp => sp.GetRequiredService<ClientIdentityProvider>());
+builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<CircuitHandler, ClientIdentityCircuitHandler>());
 builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IRoomService, RoomService>();

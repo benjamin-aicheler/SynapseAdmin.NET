@@ -1,6 +1,5 @@
 using System.Net;
 using LibMatrix;
-using Microsoft.AspNetCore.Http;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
@@ -13,7 +12,7 @@ namespace SynapseAdmin.Services;
 public class MatrixSessionService(
     IMatrixAuthGateway authGateway,
     ILoginRateLimiter loginRateLimiter,
-    IHttpContextAccessor httpContextAccessor,
+    IClientIdentityProvider clientIdentity,
     ILogger<MatrixSessionService> logger,
     IStringLocalizer<SharedResources> L) : IMatrixSessionService
 {
@@ -21,8 +20,15 @@ public class MatrixSessionService(
 
     public bool IsLoggedIn => Gateway != null;
 
-    private string? GetClientIp() =>
-        httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+    private string? GetClientIp()
+    {
+        var clientIp = clientIdentity.GetClientIp();
+        if (clientIp == null)
+        {
+            logger.LogWarning("Client IP could not be determined for a login attempt; throttling falls back to a shared bucket.");
+        }
+        return clientIp;
+    }
 
     private static bool IsUpstreamRateLimit(Exception ex) =>
         ex is LibMatrixException { ErrorCode: "M_LIMIT_EXCEEDED" } ||
@@ -80,9 +86,11 @@ public class MatrixSessionService(
     public async Task<OperationResult> LoginWithTokenAsync(string homeserver, string accessToken)
     {
         var clientIp = GetClientIp();
-        var rateLimitId = homeserver?.Trim().ToLowerInvariant();
 
-        if (!loginRateLimiter.TryAcquire(clientIp, rateLimitId))
+        // Token logins are throttled per client only. Unlike passwords, access tokens are high-entropy and
+        // cannot realistically be sprayed, so a destination-wide bucket would add no protection — it would only
+        // let any client lock every other client out of token login to the same homeserver (#368).
+        if (!loginRateLimiter.TryAcquire(clientIp))
         {
             logger.LogWarning(
                 "Token login rate limit exceeded on {Homeserver} from IP {ClientIp}",
@@ -97,7 +105,7 @@ public class MatrixSessionService(
             await authGateway.ResolveHomeserverAsync(homeserver!);
 
             Gateway = await authGateway.GetAuthenticatedAsync(homeserver!, accessToken);
-            loginRateLimiter.ResetAttempts(clientIp, rateLimitId);
+            loginRateLimiter.ResetAttempts(clientIp);
             
             logger.LogInformation("Session successfully logged in via token for user {UserId} on {Homeserver}", Gateway.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"]);
