@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Infrastructure.Gateways;
@@ -34,7 +35,8 @@ public class UserMediaPaginationTests
 
     private readonly Stub _gateway;
     private readonly UserService _service;
-    private UserMediaStatisticsResponse? _statistics;
+    /// <summary>Users with uploads known to the simulated statistics endpoint.</summary>
+    private List<UserMediaStatisticsResponse.UserMediaStatistic> _statsUsers = [];
 
     public UserMediaPaginationTests()
     {
@@ -43,11 +45,32 @@ public class UserMediaPaginationTests
             .On("get_ServerName", _ => "example.com")
             .On(nameof(IMatrixGateway.GetUserMediaAsync), args => Task.FromResult<SynapseAdminUserMediaResult?>(
                 ServeUploads((int)args[1]!, (int)args[2]!)))
-            .On(nameof(IMatrixGateway.GetUserMediaStatisticsAsync), _ => Task.FromResult(_statistics));
+            .On(nameof(IMatrixGateway.GetUserMediaStatisticsAsync), args => Task.FromResult<UserMediaStatisticsResponse?>(
+                ServeStatistics((int)args[0]!, (string?)args[3])));
 
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
         _service = new UserService(session, NullLogger<UserService>.Instance, new KeyLocalizer());
     }
+
+    /// <summary>
+    /// Simulates Synapse's <c>get_users_media_usage_paginate</c> filter:
+    /// <c>lmr.user_id LIKE '@%' || term || '%:%' OR displayname LIKE '%' || term || '%'</c>.
+    /// </summary>
+    private UserMediaStatisticsResponse ServeStatistics(int limit, string? searchTerm)
+    {
+        var matches = _statsUsers
+            .Where(u => searchTerm is null ||
+                        SqlLike(u.UserId, "@%" + searchTerm + "%:%") ||
+                        SqlLike(u.DisplayName ?? string.Empty, "%" + searchTerm + "%"))
+            .ToList();
+        return new UserMediaStatisticsResponse { Total = matches.Count, Users = matches.Take(limit).ToList() };
+    }
+
+    private static bool SqlLike(string value, string pattern) =>
+        Regex.IsMatch(value, "^" + Regex.Escape(pattern).Replace("%", ".*").Replace("_", ".") + "$", RegexOptions.Singleline);
+
+    private static UserMediaStatisticsResponse.UserMediaStatistic StatsUser(string userId, int count, long bytes, string? displayName = null) =>
+        new() { UserId = userId, MediaCount = count, MediaLength = bytes, DisplayName = displayName };
 
     /// <summary>Simulates Synapse: newest first, <c>next_token</c> = from + returned items while more remain.</summary>
     private static SynapseAdminUserMediaResult ServeUploads(int from, int limit)
@@ -125,16 +148,14 @@ public class UserMediaPaginationTests
     [Fact]
     public async Task PageStatistics_DescribeThePageOnly_AndTotalsComeFromTheStatisticsEndpoint()
     {
-        _statistics = new UserMediaStatisticsResponse
-        {
-            Total = 2,
-            Users =
-            [
-                // search_term is a substring match: "@bob:example.com" also matches this user.
-                new() { UserId = "@bob:example.com.evil", MediaCount = 3, MediaLength = 999 },
-                new() { UserId = UserId, MediaCount = UploadCount, MediaLength = 1_500 }
-            ]
-        };
+        // "bob" also matches these users; only the exact user ID may be used.
+        _statsUsers =
+        [
+            StatsUser("@bobby:example.com", 3, 999),
+            StatsUser("@bob:example.com.evil", 4, 888),
+            StatsUser(UserId, UploadCount, 1_500, displayName: "Bob"),
+            StatsUser("@alice:example.com", 7, 777)
+        ];
 
         var page = await _service.GetUserMediaPageAsync(UserId, 0, 100);
         var totals = await _service.GetUserMediaTotalsAsync(UserId);
@@ -143,21 +164,44 @@ public class UserMediaPaginationTests
         Assert.True(totals.Success);
         Assert.Equal(UploadCount, totals.Data!.Count);
         Assert.Equal(1_500, totals.Data.Bytes);     // all 150 uploads, from the exact user match
-
-        var statsCall = Assert.Single(_gateway.CallsTo(nameof(IMatrixGateway.GetUserMediaStatisticsAsync)));
-        Assert.Equal(UserId, statsCall[3]);
     }
+
+    [Fact]
+    public async Task Totals_SearchByLocalpart_BecauseSynapseWrapsTheTermInAUserIdPattern()
+    {
+        // Display name does not contain the Matrix ID, so only the user_id predicate can match.
+        _statsUsers = [StatsUser(UserId, UploadCount, 1_500, displayName: "Bob")];
+
+        // Regression guard: Synapse turns a full-ID term into '@%@bob:example.com%:%', which matches nobody.
+        Assert.Empty(ServeStatistics(100, UserId).Users);
+
+        var totals = await _service.GetUserMediaTotalsAsync(UserId);
+
+        Assert.True(totals.Success);
+        Assert.Equal(UploadCount, totals.Data!.Count);
+        var statsCall = Assert.Single(_gateway.CallsTo(nameof(IMatrixGateway.GetUserMediaStatisticsAsync)));
+        Assert.Equal("bob", statsCall[3]);
+    }
+
+    [Theory]
+    [InlineData("@bob:example.com", "bob")]
+    [InlineData("@bob.smith_1:matrix.example.org:8448", "bob.smith_1")]
+    [InlineData("bob", "bob")]
+    public void StatisticsSearchTerm_IsTheLocalpart(string userId, string expected) =>
+        Assert.Equal(expected, UserService.MediaStatisticsSearchTerm(userId));
 
     [Fact]
     public async Task Totals_ForUserWithoutUploads_AreZero_AndUnknownWhenTheMatchMayBeCutOff()
     {
-        _statistics = new UserMediaStatisticsResponse { Total = 1, Users = [new() { UserId = "@bobby:example.com", MediaCount = 1, MediaLength = 5 }] };
+        _statsUsers = [StatsUser("@bobby:example.com", 1, 5)];
         var none = await _service.GetUserMediaTotalsAsync(UserId);
         Assert.True(none.Success);
         Assert.Equal(0, none.Data!.Count);
         Assert.Equal(0, none.Data.Bytes);
 
-        _statistics = new UserMediaStatisticsResponse { Total = 500, Users = [new() { UserId = "@bobby:example.com" }] };
+        // More than one page of similar users, with the exact user beyond the returned ones.
+        _statsUsers = Enumerable.Range(0, 120).Select(i => StatsUser($"@bob{i:D3}:example.com", 1, 1)).ToList();
+        _statsUsers.Add(StatsUser(UserId, UploadCount, 1_500));
         var unknown = await _service.GetUserMediaTotalsAsync(UserId);
         Assert.False(unknown.Success);
     }

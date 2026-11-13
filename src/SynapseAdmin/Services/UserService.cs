@@ -160,14 +160,26 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         }
     }
 
+    /// <summary>
+    /// Search term for the user media statistics endpoint. Synapse filters with
+    /// <c>user_id LIKE '@%' || term || '%:%'</c>, so a full Matrix ID can never match; the localpart must be used
+    /// (it also matches on servers that use a plain substring search).
+    /// </summary>
+    internal static string MediaStatisticsSearchTerm(string userId)
+    {
+        var withoutSigil = userId.StartsWith('@') ? userId[1..] : userId;
+        var colon = withoutSigil.IndexOf(':');
+        return colon >= 0 ? withoutSigil[..colon] : withoutSigil;
+    }
+
     public async Task<OperationResult<UserMediaTotalsViewModel>> GetUserMediaTotalsAsync(string userId, CancellationToken token = default)
     {
         if (Gateway == null) return OperationResult<UserMediaTotalsViewModel>.Failure(L["NotAuthenticated"]);
 
         try
         {
-            // search_term is a substring match on user ID or display name, so pick the exact user.
-            var stats = await Gateway.GetUserMediaStatisticsAsync(MediaTotalsSearchLimit, searchTerm: userId, cancellationToken: token);
+            // Search by localpart, then pick the exact user: the term also matches similar IDs and display names.
+            var stats = await Gateway.GetUserMediaStatisticsAsync(MediaTotalsSearchLimit, searchTerm: MediaStatisticsSearchTerm(userId), cancellationToken: token);
             var users = stats?.Users ?? [];
             var match = users.FirstOrDefault(u => string.Equals(u.UserId, userId, StringComparison.OrdinalIgnoreCase));
             if (match != null)
