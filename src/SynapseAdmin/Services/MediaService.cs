@@ -2,6 +2,7 @@ using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Resources;
 using SynapseAdmin.Interfaces.Gateways;
@@ -12,24 +13,24 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
 {
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
-    public async Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc, CancellationToken token = default)
+    public async Task<OperationResult<MediaDownload>> OpenMediaAsync(string mxc, MediaByteRange? range = null, CancellationToken token = default)
     {
-        if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<Stream>.Failure(L["NotAuthenticated"]);
-        if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<Stream>.Failure(L["ErrorFetchingMedia"]);
+        if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<MediaDownload>.Failure(L["NotAuthenticated"]);
+        if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<MediaDownload>.Failure(L["ErrorFetchingMedia"]);
 
         try
         {
-            var stream = await Gateway.GetMediaStreamAsync(mxc, cancellationToken: token);
-            return OperationResult<Stream>.Ok(stream);
+            var media = await Gateway.OpenMediaAsync(mxc, range, token);
+            return OperationResult<MediaDownload>.Ok(media);
         }
         catch (OperationCanceledException)
         {
-            return OperationResult<Stream>.Cancelled();
+            return OperationResult<MediaDownload>.Cancelled();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error fetching media for MXC: {Mxc}", mxc.SanitizeForLogging());
-            return OperationResult<Stream>.Failure(L["ErrorFetchingMedia"]);
+            return OperationResult<MediaDownload>.Failure(L["ErrorFetchingMedia"]);
         }
     }
 

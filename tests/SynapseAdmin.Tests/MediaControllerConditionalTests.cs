@@ -6,6 +6,7 @@ using SynapseAdmin.Controllers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using Xunit;
 
@@ -34,18 +35,22 @@ public class MediaControllerConditionalTests
 
     private sealed class ConfigurableMediaService : IMediaService
     {
-        public Func<OperationResult<Stream>> StreamResult { get; set; } =
-            () => OperationResult<Stream>.Ok(new TrackingStream([1, 2, 3, 4]));
+        public Func<OperationResult<MediaDownload>> StreamResult { get; set; } =
+            () => OperationResult<MediaDownload>.Ok(new MediaDownload
+            {
+                Status = MediaDownloadStatus.Full,
+                Content = new TrackingStream([1, 2, 3, 4])
+            });
 
         public List<TrackingStream> OpenedStreams { get; } = [];
         public int StreamFetchCount { get; private set; }
         public int MetadataFetchCount { get; private set; }
 
-        public Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc, CancellationToken token = default)
+        public Task<OperationResult<MediaDownload>> OpenMediaAsync(string mxc, MediaByteRange? range = null, CancellationToken token = default)
         {
             StreamFetchCount++;
             var result = StreamResult();
-            if (result.Data is TrackingStream tracking) OpenedStreams.Add(tracking);
+            if (result.Data?.Content is TrackingStream tracking) OpenedStreams.Add(tracking);
             return Task.FromResult(result);
         }
 
@@ -124,7 +129,7 @@ public class MediaControllerConditionalTests
     public async Task MatchingETag_ForDeletedMedia_Returns404(Endpoint endpoint)
     {
         var etag = await GetCachedETag();
-        _media.StreamResult = () => OperationResult<Stream>.Failure("not found");
+        _media.StreamResult = () => OperationResult<MediaDownload>.Failure("not found");
 
         var result = await Invoke(CreateController(etag), endpoint);
 
@@ -137,7 +142,7 @@ public class MediaControllerConditionalTests
     {
         var etag = await GetCachedETag();
         // Synapse refuses to serve quarantined media; MediaService surfaces that as a failed stream result.
-        _media.StreamResult = () => OperationResult<Stream>.Failure("Media is quarantined", MudBlazor.Severity.Warning);
+        _media.StreamResult = () => OperationResult<MediaDownload>.Failure("Media is quarantined", MudBlazor.Severity.Warning);
 
         var result = await Invoke(CreateController(etag), endpoint);
 
@@ -148,7 +153,7 @@ public class MediaControllerConditionalTests
     [MemberData(nameof(Endpoints))]
     public async Task WildcardValidator_ForMissingMedia_Returns404(Endpoint endpoint)
     {
-        _media.StreamResult = () => OperationResult<Stream>.Failure("not found");
+        _media.StreamResult = () => OperationResult<MediaDownload>.Failure("not found");
 
         var result = await Invoke(CreateController("*"), endpoint);
 

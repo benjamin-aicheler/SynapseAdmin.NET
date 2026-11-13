@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.Responses;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -31,13 +33,13 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     // revalidate on every use. The ETag still saves the body transfer when the media is unchanged.
     private const string ProtectedMediaCacheControl = "private, no-cache";
 
-    private readonly record struct OpenedMedia(IActionResult? EarlyResult, Stream? Stream, EntityTagHeaderValue ETag);
+    private readonly record struct OpenedMedia(IActionResult? EarlyResult, MediaDownload? Media, EntityTagHeaderValue ETag);
 
     /// <summary>
     /// Authorizes the request, establishes that the media still exists, and only then evaluates
-    /// <c>If-None-Match</c> (#370). Returns either an early result (401 / 404 / 304) or the open media stream.
-    /// Opening the stream costs only the upstream response headers: LibMatrix reads responses with
-    /// <c>ResponseHeadersRead</c>, so a 304 releases the stream without transferring the body.
+    /// <c>If-None-Match</c> (#370). Returns either an early result (401 / 404 / 304 / 416) or the open download.
+    /// Opening the download costs only the upstream response headers, so a 304 releases it without
+    /// transferring the body. A single byte range is forwarded to the homeserver (#372).
     /// </summary>
     private async Task<OpenedMedia> OpenAuthorizedMediaAsync(string mxc, string operation, CancellationToken cancellationToken)
     {
@@ -60,26 +62,71 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             return new OpenedMedia(Unauthorized(), null, entityTag);
         }
 
-        var result = await mediaService.GetMediaStreamAsync(mxc, cancellationToken);
+        var result = await mediaService.OpenMediaAsync(mxc, GetForwardableRange(entityTag), cancellationToken);
         if (!result.Success || result.Data == null)
         {
             logger.LogWarning("Media {Operation} not found for MXC {Mxc}", operation, mxc.SanitizeForLogging());
             return new OpenedMedia(NotFound(), null, entityTag);
         }
 
-        // Range requests are left to the file result's own precondition handling.
-        if (string.IsNullOrEmpty(Request.Headers.Range))
+        var media = result.Data;
+
+        // If-None-Match takes precedence over Range (RFC 9110, section 13.2.2).
+        var ifNoneMatch = Request.GetTypedHeaders().IfNoneMatch;
+        if (ifNoneMatch != null && (ifNoneMatch.Contains(EntityTagHeaderValue.Any) || ifNoneMatch.Contains(entityTag)))
         {
-            var ifNoneMatch = Request.GetTypedHeaders().IfNoneMatch;
-            if (ifNoneMatch != null && (ifNoneMatch.Contains(EntityTagHeaderValue.Any) || ifNoneMatch.Contains(entityTag)))
-            {
-                await result.Data.DisposeAsync();
-                Response.GetTypedHeaders().ETag = entityTag;
-                return new OpenedMedia(StatusCode(StatusCodes.Status304NotModified), null, entityTag);
-            }
+            await media.DisposeAsync();
+            Response.GetTypedHeaders().ETag = entityTag;
+            return new OpenedMedia(StatusCode(StatusCodes.Status304NotModified), null, entityTag);
         }
 
-        return new OpenedMedia(null, result.Data, entityTag);
+        if (media.Status == MediaDownloadStatus.RangeNotSatisfiable)
+        {
+            await media.DisposeAsync();
+            if (media.CompleteLength is { } length)
+                Response.GetTypedHeaders().ContentRange = new ContentRangeHeaderValue(length);
+            return new OpenedMedia(StatusCode(StatusCodes.Status416RangeNotSatisfiable), null, entityTag);
+        }
+
+        return new OpenedMedia(null, media, entityTag);
+    }
+
+    /// <summary>
+    /// The byte range to forward upstream: a single <c>bytes</c> range whose <c>If-Range</c> validator (if any)
+    /// matches our ETag. Anything else is not forwarded, and the full object is served, which RFC 9110 permits.
+    /// </summary>
+    private MediaByteRange? GetForwardableRange(EntityTagHeaderValue entityTag)
+    {
+        var headers = Request.GetTypedHeaders();
+        var range = headers.Range;
+        if (range == null || !range.Unit.Equals("bytes", StringComparison.OrdinalIgnoreCase) || range.Ranges.Count != 1)
+            return null;
+
+        // No Last-Modified is sent, so a date validator can never match; an entity tag must match strongly.
+        var ifRange = headers.IfRange;
+        if (ifRange != null && (ifRange.EntityTag == null || !ifRange.EntityTag.Compare(entityTag, useStrongComparison: true)))
+            return null;
+
+        var item = range.Ranges.Single();
+        return item.From == null && item.To == null ? null : new MediaByteRange(item.From, item.To);
+    }
+
+    /// <summary>
+    /// Relays an upstream <c>206</c> as is; otherwise serves the full object. A seekable stream (in-memory callers)
+    /// still gets local range processing.
+    /// </summary>
+    private IActionResult MediaResult(MediaDownload media, string contentType, EntityTagHeaderValue entityTag, string? downloadFileName)
+    {
+        if (media.Status == MediaDownloadStatus.Partial)
+            return new PartialMediaResult(media, contentType, entityTag, downloadFileName);
+
+        return File(
+            media.Content,
+            contentType,
+            downloadFileName,
+            lastModified: null,
+            entityTag: entityTag,
+            enableRangeProcessing: media.Content.CanSeek);
     }
 
     [HttpGet]
@@ -100,7 +147,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         logger.LogInformation("Download request for MXC {Mxc} (file: {Filename}, mime: {MimeType}) from user {UserId}", 
             mxc.SanitizeForLogging(), safeFilename.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
-        var (earlyResult, stream, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Download", cancellationToken);
+        var (earlyResult, media, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Download", cancellationToken);
         if (earlyResult != null) return earlyResult;
 
         var mediaId = Infrastructure.Helpers.MediaHelper.GetMediaIdFromMxc(mxc);
@@ -120,13 +167,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
 
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         
-        return File(
-            stream!,
-            finalMimeType,
-            finalFileName,
-            lastModified: null,
-            entityTag: entityTag,
-            enableRangeProcessing: stream!.CanSeek);
+        return MediaResult(media!, finalMimeType, entityTag, finalFileName);
     }
 
     [HttpGet]
@@ -140,7 +181,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         logger.LogDebug("Preview request for MXC {Mxc} (mime: {MimeType}) from user {UserId}", 
             mxc.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
-        var (earlyResult, stream, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Preview", cancellationToken);
+        var (earlyResult, media, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Preview", cancellationToken);
         if (earlyResult != null) return earlyResult;
 
         // If no MIME type was provided, try to get it from metadata
@@ -170,11 +211,6 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
         }
 
-        return File(
-            stream!,
-            finalMimeType,
-            lastModified: null,
-            entityTag: entityTag,
-            enableRangeProcessing: stream!.CanSeek);
+        return MediaResult(media!, finalMimeType, entityTag, downloadFileName: null);
     }
 }

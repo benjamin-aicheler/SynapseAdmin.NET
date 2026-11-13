@@ -1,4 +1,8 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using LibMatrix.Homeservers;
+using LibMatrix.StructuredData;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
@@ -30,7 +34,9 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     {
         try
         {
-            using var responseStream = await GetMediaStreamAsync(mxcUrl, cancellationToken: cancellationToken);
+            await using var media = await OpenMediaAsync(mxcUrl, cancellationToken: cancellationToken);
+            if (media.Status != MediaDownloadStatus.Full) return null;
+            var responseStream = media.Content;
             using var ms = new MemoryStream();
             var buffer = new byte[8192];
             int read;
@@ -55,9 +61,128 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
         }
     }
 
-    public virtual async Task<Stream> GetMediaStreamAsync(string mxcUri, string? filename = null, int? timeout = null, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Opens a media download, forwarding <paramref name="range"/> and <paramref name="cancellationToken"/> to the
+    /// homeserver (#372). Only the response headers are read; the caller owns (and must dispose) the result.
+    /// </summary>
+    /// <remarks>
+    /// LibMatrix's <c>GetMediaStreamAsync</c> is not used: it accepts neither a range nor a token, and on a fresh
+    /// homeserver instance (one per HTTP request here) it first probes the media endpoint with an extra full
+    /// <c>GET</c> whose response is never disposed. Instead the real request goes to the authenticated media endpoint
+    /// directly and falls back to the legacy endpoint only when the server does not recognise the former.
+    /// <c>SendUnhandledAsync</c> is used so that <c>206</c> and <c>416</c> reach us instead of being turned into
+    /// exceptions.
+    /// </remarks>
+    public virtual async Task<MediaDownload> OpenMediaAsync(string mxcUri, MediaByteRange? range = null, CancellationToken cancellationToken = default)
     {
-        return await Homeserver.GetMediaStreamAsync(mxcUri, filename, timeout);
+        var mxc = MxcUri.Parse(mxcUri.Trim());
+
+        var response = await SendMediaRequestAsync(mxc.ToDownloadUri(), range, cancellationToken);
+        try
+        {
+            if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed or HttpStatusCode.BadRequest &&
+                await IsUnrecognisedEndpointAsync(response, cancellationToken))
+            {
+                response.Dispose();
+                response = await SendMediaRequestAsync(mxc.ToLegacyDownloadUri(), range, cancellationToken);
+            }
+
+            return await ToMediaDownloadAsync(response, cancellationToken);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
+    }
+
+    private Task<HttpResponseMessage> SendMediaRequestAsync(string relativeUri, MediaByteRange? range, CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, new Uri(relativeUri, UriKind.Relative));
+        if (range is { } r) request.Headers.Range = new RangeHeaderValue(r.From, r.To);
+        return Homeserver.ClientHttpClient.SendUnhandledAsync(request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Servers without authenticated media answer <c>M_UNRECOGNIZED</c> (or a bare 404/405 from a proxy). A missing
+    /// object is <c>M_NOT_FOUND</c> and must not trigger a second request.
+    /// </summary>
+    private static async Task<bool> IsUnrecognisedEndpointAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        var errorCode = await ReadErrorCodeAsync(response, cancellationToken);
+        return errorCode == "M_UNRECOGNIZED" ||
+               (errorCode == null && response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed);
+    }
+
+    private static async Task<MediaDownload> ToMediaDownloadAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        switch (response.StatusCode)
+        {
+            case HttpStatusCode.OK:
+                return new MediaDownload
+                {
+                    Status = MediaDownloadStatus.Full,
+                    Content = await ResponseOwningStream.OpenAsync(response, cancellationToken),
+                    ContentLength = response.Content.Headers.ContentLength
+                };
+
+            case HttpStatusCode.PartialContent:
+                var contentRange = response.Content.Headers.ContentRange;
+                if (contentRange is not { HasRange: true, From: not null, To: not null } || contentRange.Unit != "bytes")
+                    throw new InvalidDataException("Homeserver returned 206 without a single byte range.");
+
+                return new MediaDownload
+                {
+                    Status = MediaDownloadStatus.Partial,
+                    Content = await ResponseOwningStream.OpenAsync(response, cancellationToken),
+                    ContentLength = response.Content.Headers.ContentLength,
+                    RangeFrom = contentRange.From,
+                    RangeTo = contentRange.To,
+                    CompleteLength = contentRange.Length
+                };
+
+            case HttpStatusCode.RequestedRangeNotSatisfiable:
+                var completeLength = response.Content.Headers.ContentRange?.Length;
+                response.Dispose();
+                return new MediaDownload
+                {
+                    Status = MediaDownloadStatus.RangeNotSatisfiable,
+                    Content = Stream.Null,
+                    CompleteLength = completeLength
+                };
+
+            default:
+                var status = response.StatusCode;
+                var errorCode = await ReadErrorCodeAsync(response, cancellationToken);
+                response.Dispose();
+                throw new HttpRequestException($"Media download failed with {(int)status} ({errorCode ?? "no errcode"}).", null, status);
+        }
+    }
+
+    /// <summary>Reads the Matrix <c>errcode</c> from a (small) error body, or <c>null</c> if there is none.</summary>
+    private static async Task<string?> ReadErrorCodeAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        const int maxErrorBodyBytes = 16 * 1024;
+        try
+        {
+            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var buffer = new byte[maxErrorBodyBytes];
+            var length = 0;
+            int read;
+            while (length < buffer.Length && (read = await body.ReadAsync(buffer.AsMemory(length), cancellationToken)) > 0)
+                length += read;
+
+            using var json = JsonDocument.Parse(buffer.AsMemory(0, length));
+            return json.RootElement.ValueKind == JsonValueKind.Object &&
+                   json.RootElement.TryGetProperty("errcode", out var errcode) &&
+                   errcode.ValueKind == JsonValueKind.String
+                ? errcode.GetString()
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     // --- Abstract Admin Methods (Must be implemented by server-specific gateways) ---

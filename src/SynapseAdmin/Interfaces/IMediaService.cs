@@ -1,3 +1,4 @@
+using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models;
 
@@ -5,7 +6,11 @@ namespace SynapseAdmin.Interfaces;
 
 public interface IMediaService
 {
-    Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc, CancellationToken token = default);
+    /// <summary>
+    /// Opens a media download, forwarding <paramref name="range"/> to the homeserver. On success the caller owns
+    /// the returned <see cref="MediaDownload"/> and must dispose it.
+    /// </summary>
+    Task<OperationResult<MediaDownload>> OpenMediaAsync(string mxc, MediaByteRange? range = null, CancellationToken token = default);
     Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc, CancellationToken token = default);
     Task<OperationResult> QuarantineMediaAsync(string mxc, CancellationToken token = default);
     Task<OperationResult> UnquarantineMediaAsync(string mxc, CancellationToken token = default);

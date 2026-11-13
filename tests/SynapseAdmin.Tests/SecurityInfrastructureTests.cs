@@ -729,10 +729,14 @@ public class SecurityInfrastructureTests
     {
         public int StreamFetchCount { get; private set; }
 
-        public Task<OperationResult<Stream>> GetMediaStreamAsync(string mxc, CancellationToken token = default)
+        public Task<OperationResult<MediaDownload>> OpenMediaAsync(string mxc, MediaByteRange? range = null, CancellationToken token = default)
         {
             StreamFetchCount++;
-            return Task.FromResult(OperationResult<Stream>.Ok(new MemoryStream([1, 2, 3, 4])));
+            return Task.FromResult(OperationResult<MediaDownload>.Ok(new MediaDownload
+            {
+                Status = MediaDownloadStatus.Full,
+                Content = new MemoryStream([1, 2, 3, 4])
+            }));
         }
 
         public Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
@@ -825,7 +829,7 @@ public class SecurityInfrastructureTests
         public Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseVersionResponse?> GetSynapseVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5242880, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<Stream> GetMediaStreamAsync(string mxcUri, string? filename = null, int? timeout = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<MediaDownload> OpenMediaAsync(string mxcUri, MediaByteRange? range = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
