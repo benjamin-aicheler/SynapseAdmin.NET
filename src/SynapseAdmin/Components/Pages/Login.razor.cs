@@ -16,7 +16,7 @@ namespace SynapseAdmin.Components.Pages
         public NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
-        public ISessionBridgeService BridgeService { get; set; } = null!;
+        public IAuthCookieService AuthCookie { get; set; } = null!;
 
         [Parameter]
         [SupplyParameterFromQuery]
@@ -67,11 +67,16 @@ namespace SynapseAdmin.Components.Pages
                 var userId = AuthProvider.GetUserId();
                 var username = AuthProvider.GetUsername();
 
-                // Use the bridge to hide sensitive data from the URL
-                var key = BridgeService.CreateBridge(homeserver, token!, userId!, username!);
-
-                var url = $"/Auth/SignIn?key={Uri.EscapeDataString(key)}&redirectUri={Uri.EscapeDataString("/")}";
-                Navigation.NavigateTo(url, forceLoad: true);
+                // Hand the session to the HTTP auth cookie via the browser-bound bridge (no secrets in URLs).
+                var cookieResult = await AuthCookie.EstablishCookieSessionAsync(homeserver, token!, userId!, username!);
+                if (cookieResult.Success)
+                {
+                    Navigation.NavigateTo("/", forceLoad: true);
+                }
+                else if (cookieResult.Severity != Severity.Normal)
+                {
+                    Navigation.NavigateTo("/login?Error=SessionBridgeFailed", forceLoad: true);
+                }
             }
             else if (result.Severity != Severity.Normal)
             {

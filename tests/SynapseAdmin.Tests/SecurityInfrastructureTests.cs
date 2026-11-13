@@ -284,24 +284,197 @@ public class SecurityInfrastructureTests
         Assert.NotSame(concrete, otherScope.ServiceProvider.GetRequiredService<ClientIdentityProvider>());
     }
 
+    private const string BrowserBinding = "antiforgery-request-token-of-browser-a";
+
     [Fact]
     public void SessionBridgeService_ConsumesTokenOnlyOnce()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var bridge = new SessionBridgeService(cache, NullLogger<SessionBridgeService>.Instance);
 
-        var key = bridge.CreateBridge("https://matrix.example.com", "syt_secret_token", "@admin:example.com", "admin");
+        var key = bridge.CreateBridge("https://matrix.example.com", "syt_secret_token", "@admin:example.com", "admin", BrowserBinding);
 
         Assert.False(string.IsNullOrWhiteSpace(key));
-        Assert.True(bridge.TryConsumeBridge(key, out var data));
+        Assert.True(bridge.TryConsumeBridge(key, BrowserBinding, out var data));
         Assert.Equal("https://matrix.example.com", data.Homeserver);
         Assert.Equal("syt_secret_token", data.AccessToken);
         Assert.Equal("@admin:example.com", data.UserId);
         Assert.Equal("admin", data.Username);
 
         // Replay must fail
-        Assert.False(bridge.TryConsumeBridge(key, out var replayData));
+        Assert.False(bridge.TryConsumeBridge(key, BrowserBinding, out var replayData));
         Assert.Equal(string.Empty, replayData.AccessToken);
+    }
+
+    [Fact]
+    public async Task SessionBridgeService_ParallelRedemption_SucceedsExactlyOnce()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var bridge = new SessionBridgeService(cache, NullLogger<SessionBridgeService>.Instance);
+
+        for (var round = 0; round < 20; round++)
+        {
+            var key = bridge.CreateBridge("https://matrix.example.com", "syt_token", "@admin:example.com", "admin", BrowserBinding);
+            const int parallelCallers = 32;
+            using var barrier = new Barrier(parallelCallers);
+
+            var outcomes = await Task.WhenAll(Enumerable.Range(0, parallelCallers).Select(_ => Task.Factory.StartNew(() =>
+            {
+                barrier.SignalAndWait();
+                return bridge.TryConsumeBridge(key, BrowserBinding, out var data) && data.AccessToken == "syt_token";
+            }, TaskCreationOptions.LongRunning)));
+
+            Assert.Equal(1, outcomes.Count(ok => ok));
+        }
+    }
+
+    [Fact]
+    public void SessionBridgeService_RejectsExpiredKeys()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-11-13T12:00:00Z"));
+        var bridge = new SessionBridgeService(cache, NullLogger<SessionBridgeService>.Instance, clock);
+
+        var fresh = bridge.CreateBridge("https://matrix.example.com", "syt_token", "@admin:example.com", "admin", BrowserBinding);
+        var stale = bridge.CreateBridge("https://matrix.example.com", "syt_token", "@admin:example.com", "admin", BrowserBinding);
+
+        clock.Advance(TimeSpan.FromSeconds(59));
+        Assert.True(bridge.TryConsumeBridge(fresh, BrowserBinding, out _));
+
+        clock.Advance(TimeSpan.FromSeconds(1));
+        Assert.False(bridge.TryConsumeBridge(stale, BrowserBinding, out var data));
+        Assert.Equal(string.Empty, data.AccessToken);
+    }
+
+    [Fact]
+    public void SessionBridgeService_RequiresMatchingBinding_WithoutBurningTheKey()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var bridge = new SessionBridgeService(cache, NullLogger<SessionBridgeService>.Instance);
+
+        Assert.ThrowsAny<ArgumentException>(() => bridge.CreateBridge("https://matrix.example.com", "syt_token", "@a:example.com", "a", ""));
+
+        var key = bridge.CreateBridge("https://matrix.example.com", "syt_token", "@admin:example.com", "admin", BrowserBinding);
+
+        Assert.False(bridge.TryConsumeBridge(key, null, out _));
+        Assert.False(bridge.TryConsumeBridge(key, "", out _));
+        Assert.False(bridge.TryConsumeBridge(key, "antiforgery-request-token-of-browser-b", out _));
+        Assert.False(bridge.TryConsumeBridge(null, BrowserBinding, out _));
+        Assert.False(bridge.TryConsumeBridge("not-a-key", BrowserBinding, out _));
+
+        // Failed attempts from another browser must not consume the key for the initiating browser.
+        Assert.True(bridge.TryConsumeBridge(key, BrowserBinding, out var data));
+        Assert.Equal("syt_token", data.AccessToken);
+    }
+
+    /// <summary>Antiforgery cookie + request token pair for one simulated browser, issued by the app under test.</summary>
+    private sealed record BrowserTokens(string CookieName, string CookieToken, string HeaderName, string RequestToken);
+
+    private static BrowserTokens IssueBrowserTokens(IServiceProvider services)
+    {
+        var antiforgery = services.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+        var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Antiforgery.AntiforgeryOptions>>().Value;
+        var tokens = antiforgery.GetAndStoreTokens(new DefaultHttpContext { RequestServices = services });
+        return new BrowserTokens(options.Cookie.Name!, tokens.CookieToken!, tokens.HeaderName!, tokens.RequestToken!);
+    }
+
+    private static HttpRequestMessage SignInRequest(string? key, BrowserTokens? cookieOf, BrowserTokens? headerOf)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/Auth/SignIn")
+        {
+            Content = System.Net.Http.Json.JsonContent.Create(new { key })
+        };
+        if (cookieOf != null) request.Headers.Add("Cookie", $"{cookieOf.CookieName}={cookieOf.CookieToken}");
+        if (headerOf != null) request.Headers.Add(headerOf.HeaderName, headerOf.RequestToken);
+        return request;
+    }
+
+    private static WebApplicationFactory<Program> CreateAppFactory() =>
+        new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.AddDataProtection().UseEphemeralDataProtectionProvider()));
+
+    private static HttpClient CreateBrowserClient(WebApplicationFactory<Program> factory) =>
+        factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false,
+            HandleCookies = false
+        });
+
+    [Fact]
+    public async Task AuthSignIn_BoundPost_IssuesCookie_AndRejectsGetReplayAndQueryString()
+    {
+        await using var factory = CreateAppFactory();
+        var bridge = factory.Services.GetRequiredService<ISessionBridgeService>();
+        var browserA = IssueBrowserTokens(factory.Services);
+        using var client = CreateBrowserClient(factory);
+
+        var key = bridge.CreateBridge("https://example.com", "syt_token", "@admin:example.com", "admin", browserA.RequestToken);
+
+        // The old GET-with-query-string form no longer exists.
+        using var getResponse = await client.GetAsync($"/Auth/SignIn?key={Uri.EscapeDataString(key)}");
+        Assert.True(getResponse.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.NotFound,
+            $"GET /Auth/SignIn returned {getResponse.StatusCode}");
+
+        using var ok = await client.SendAsync(SignInRequest(key, browserA, browserA));
+        Assert.Equal(HttpStatusCode.NoContent, ok.StatusCode);
+        Assert.Contains(ok.Headers.GetValues("Set-Cookie"), c =>
+            c.StartsWith(".AspNetCore.Cookies=", StringComparison.Ordinal) &&
+            c.Contains("httponly", StringComparison.OrdinalIgnoreCase) &&
+            c.Contains("secure", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("no-store", ok.Headers.CacheControl?.ToString() ?? string.Empty);
+
+        using var replay = await client.SendAsync(SignInRequest(key, browserA, browserA));
+        Assert.Equal(HttpStatusCode.BadRequest, replay.StatusCode);
+        Assert.False(replay.Headers.Contains("Set-Cookie"));
+    }
+
+    [Fact]
+    public async Task AuthSignIn_RejectsMissingOrForeignBinding_WithoutConsumingTheKey()
+    {
+        await using var factory = CreateAppFactory();
+        var bridge = factory.Services.GetRequiredService<ISessionBridgeService>();
+        var browserA = IssueBrowserTokens(factory.Services);
+        var browserB = IssueBrowserTokens(factory.Services);
+        using var client = CreateBrowserClient(factory);
+
+        var key = bridge.CreateBridge("https://example.com", "syt_token", "@admin:example.com", "admin", browserA.RequestToken);
+
+        // No antiforgery at all (e.g. cross-site form/link).
+        using var none = await client.SendAsync(SignInRequest(key, null, null));
+        Assert.Equal(HttpStatusCode.BadRequest, none.StatusCode);
+
+        // A's header without A's cookie (stolen token replayed from elsewhere).
+        using var headerOnly = await client.SendAsync(SignInRequest(key, browserB, browserA));
+        Assert.Equal(HttpStatusCode.BadRequest, headerOnly.StatusCode);
+
+        // Another browser with its own valid antiforgery pair, but the key is bound to A.
+        using var foreign = await client.SendAsync(SignInRequest(key, browserB, browserB));
+        Assert.Equal(HttpStatusCode.BadRequest, foreign.StatusCode);
+        Assert.False(foreign.Headers.Contains("Set-Cookie"));
+
+        // None of the above burned the key: the initiating browser can still redeem it.
+        using var ok = await client.SendAsync(SignInRequest(key, browserA, browserA));
+        Assert.Equal(HttpStatusCode.NoContent, ok.StatusCode);
+    }
+
+    [Fact]
+    public async Task AuthSignIn_ParallelBoundRequests_IssueExactlyOneCookie()
+    {
+        await using var factory = CreateAppFactory();
+        var bridge = factory.Services.GetRequiredService<ISessionBridgeService>();
+        var browserA = IssueBrowserTokens(factory.Services);
+        using var client = CreateBrowserClient(factory);
+
+        var key = bridge.CreateBridge("https://example.com", "syt_token", "@admin:example.com", "admin", browserA.RequestToken);
+
+        // Stays within the "auth" rate-limit policy (10 requests / minute per IP).
+        var responses = await Task.WhenAll(Enumerable.Range(0, 8)
+            .Select(_ => client.SendAsync(SignInRequest(key, browserA, browserA))));
+
+        Assert.Equal(1, responses.Count(r => r.StatusCode == HttpStatusCode.NoContent));
+        Assert.Equal(7, responses.Count(r => r.StatusCode == HttpStatusCode.BadRequest));
+        foreach (var response in responses) response.Dispose();
     }
 
     [Fact]
@@ -432,9 +605,10 @@ public class SecurityInfrastructureTests
         });
 
         var bridgeService = factory.Services.GetRequiredService<ISessionBridgeService>();
-        var bridgeKey = bridgeService.CreateBridge("https://example.com", "syt_token", "@admin:example.com", "admin");
-        using var signInResponse = await authenticatedClient.GetAsync($"/Auth/SignIn?key={Uri.EscapeDataString(bridgeKey)}");
-        Assert.Equal(HttpStatusCode.Redirect, signInResponse.StatusCode);
+        var browser = IssueBrowserTokens(factory.Services);
+        var bridgeKey = bridgeService.CreateBridge("https://example.com", "syt_token", "@admin:example.com", "admin", browser.RequestToken);
+        using var signInResponse = await authenticatedClient.SendAsync(SignInRequest(bridgeKey, browser, browser));
+        Assert.Equal(HttpStatusCode.NoContent, signInResponse.StatusCode);
 
         // 3. Authenticated Download returns 200 OK, Cache-Control, ETag, and Accept-Ranges
         using var downloadResponse = await authenticatedClient.GetAsync(
@@ -684,6 +858,13 @@ public class SecurityInfrastructureTests
 
         public Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
+    }
+
+    private sealed class ManualTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        private DateTimeOffset _now = now;
+        public override DateTimeOffset GetUtcNow() => _now;
+        public void Advance(TimeSpan by) => _now = _now.Add(by);
     }
 
     /// <summary>
