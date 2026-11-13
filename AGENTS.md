@@ -17,7 +17,7 @@ The project uses the standard .NET 10 CLI and Docker:
 - **Run (Local):** `dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj`
 - **Run (Docker):** `docker compose up --build`
 - **Logs:** Application logs are written to stdout (viewable via `docker logs`) and persisted to the `logs/` directory within the container.
-- **Test:** `dotnet test` (Runs unit tests in `tests/SynapseAdmin.Tests/`)
+- **Test:** `dotnet test` (runs the xUnit unit tests, bUnit component tests and `WebApplicationFactory` integration tests in `tests/SynapseAdmin.Tests/`)
 
 ## Development Conventions
 - **N-Tier Architecture:** The application follows an N-Tier architecture pattern.
@@ -126,7 +126,7 @@ We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are 
 ## Key Files
 - `SynapseAdmin.NET.slnx`: New .NET 10 solution file.
 - `src/SynapseAdmin/`: Main web application source code.
-- `tests/SynapseAdmin.Tests/`: xUnit unit test project.
+- `tests/SynapseAdmin.Tests/`: xUnit test project (unit tests, bUnit component tests in `Components/`, and `WebApplicationFactory` integration tests).
 - `LibMatrix/`: Matrix SDK submodule.
 - `docker-compose.yml`: Root-level Docker Compose configuration.
 - `src/SynapseAdmin/Dockerfile`: Multi-stage .NET 10 Dockerfile.

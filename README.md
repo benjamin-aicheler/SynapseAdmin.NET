@@ -159,6 +159,7 @@ When running behind a reverse proxy with SSL/TLS termination, the application re
 
 - **Network Isolation:** Always ensure the container port (`8080`) is only reachable through your reverse proxy (e.g., bound to `127.0.0.1:8080:8080` on the host, or attached to an internal Docker network shared only with the proxy).
 - **Trusted Proxies (`TRUSTED_PROXIES`):** By default, `X-Forwarded-*` headers are only trusted from loopback and private network ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`). To restrict trust to specific proxy IP addresses or CIDR subnets, set the `TRUSTED_PROXIES` environment variable (e.g., `TRUSTED_PROXIES=172.18.0.2,10.0.1.0/24`).
+- **Client IP & Login Throttling:** Login attempts are rate-limited per client IP (5 per minute). This only works if the real client IP reaches the app. If your proxy is not trusted (see `TRUSTED_PROXIES`), every user appears with the proxy's IP and shares one limit, so five failed logins from anyone briefly block everyone. If the app cannot determine a client IP at all (e.g. a proxy connected over a Unix socket), all users share one fallback limit, and the warning `Could not determine the client IP …` is logged.
 - **Homeserver Destinations (`HOMESERVER_ALLOWLIST`):** Discovery and login only contact homeservers over HTTPS, and refuse loopback, link-local, private (RFC 1918), CGNAT and IPv6 ULA addresses. These checks also apply to `.well-known` delegation, redirects and the IP addresses that DNS names resolve to. Set `HOMESERVER_ALLOWLIST` (comma or semicolon separated) to restrict the login form to specific homeservers and to permit internal targets:
   - `matrix.example.com` or `matrix.example.com:8448` allows that host over HTTPS.
   - `http://synapse:8008` allows that host and port over plain HTTP, including private addresses. Use this for a Synapse container on the same Docker network.
@@ -181,7 +182,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
 SynapseAdmin.NET uses Blazor Interactive Server (SignalR circuits) and process-local `IMemoryCache` by default (`MemoryLoginRateLimitStore` and `SessionBridgeService`). If you run multiple container replicas behind a load balancer:
 
 - **Sticky Sessions (Session Affinity):** Configure your reverse proxy or load balancer for sticky sessions so each client's Blazor circuit, `/Auth/SignIn` cookie handoff, and per-IP rate-limiting buckets stay pinned to the same replica.
-- **Shared Data Protection Keys:** Mount a shared volume (or configure a shared key ring) for `/app/keys` with the same `DP_PASSPHRASE` across all replicas so authentication cookies and encrypted session data can be decrypted by any instance.
+- **Shared Data Protection Keys:** Mount a shared volume (or configure a shared key ring) for `/app/keys` with the same `DP_PASSPHRASE` across all replicas so authentication cookies, antiforgery tokens (used by the `/Auth/SignIn` cookie handoff) and encrypted session data can be decrypted by any instance.
 - **Distributed Rate Limiting:** To enforce login rate limits globally across replicas without relying solely on sticky sessions, register a distributed `ILoginRateLimitStore` implementation (e.g., backed by Redis) before `TryAddSingleton<ILoginRateLimitStore, MemoryLoginRateLimitStore>()` in `Program.cs`.
 
 ## License
