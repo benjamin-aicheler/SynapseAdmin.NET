@@ -19,11 +19,67 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
 
     // Matrix media URIs (mxc://<server>/<media_id>) are immutable in the Matrix specification:
     // a media ID never changes its underlying content once uploaded (it can only be deleted or quarantined).
-    // Deriving the ETag from the normalized mxc URI allows conditional 304 responses without streaming from the homeserver.
+    // The ETag is therefore derived from the normalized mxc URI. Because media can still disappear, a 304 is only
+    // returned after the session is authorized and the media is confirmed to exist (see OpenAuthorizedMediaAsync).
     private static EntityTagHeaderValue ComputeETag(string mxc)
     {
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(mxc.Trim())))[..32].ToLowerInvariant();
         return new EntityTagHeaderValue($"\"{hash}\"");
+    }
+
+    // Protected media may be deleted, quarantined or become inaccessible at any time, so browsers must
+    // revalidate on every use. The ETag still saves the body transfer when the media is unchanged.
+    private const string ProtectedMediaCacheControl = "private, no-cache";
+
+    private readonly record struct OpenedMedia(IActionResult? EarlyResult, Stream? Stream, EntityTagHeaderValue ETag);
+
+    /// <summary>
+    /// Authorizes the request, establishes that the media still exists, and only then evaluates
+    /// <c>If-None-Match</c> (#370). Returns either an early result (401 / 404 / 304) or the open media stream.
+    /// Opening the stream costs only the upstream response headers: LibMatrix reads responses with
+    /// <c>ResponseHeadersRead</c>, so a 304 releases the stream without transferring the body.
+    /// </summary>
+    private async Task<OpenedMedia> OpenAuthorizedMediaAsync(string mxc, string operation, CancellationToken cancellationToken)
+    {
+        var entityTag = ComputeETag(mxc);
+
+        if (string.IsNullOrEmpty(Homeserver) || string.IsNullOrEmpty(AccessToken))
+        {
+            logger.LogWarning("{Operation} failed for MXC {Mxc}: Missing session information for user {UserId}",
+                operation, mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
+            return new OpenedMedia(Unauthorized(), null, entityTag);
+        }
+
+        Response.Headers.CacheControl = ProtectedMediaCacheControl;
+
+        var restoreResult = await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
+        if (!restoreResult.Success)
+        {
+            logger.LogWarning("{Operation} failed for MXC {Mxc}: Failed to restore session for user {UserId}",
+                operation, mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
+            return new OpenedMedia(Unauthorized(), null, entityTag);
+        }
+
+        var result = await mediaService.GetMediaStreamAsync(mxc, cancellationToken);
+        if (!result.Success || result.Data == null)
+        {
+            logger.LogWarning("Media {Operation} not found for MXC {Mxc}", operation, mxc.SanitizeForLogging());
+            return new OpenedMedia(NotFound(), null, entityTag);
+        }
+
+        // Range requests are left to the file result's own precondition handling.
+        if (string.IsNullOrEmpty(Request.Headers.Range))
+        {
+            var ifNoneMatch = Request.GetTypedHeaders().IfNoneMatch;
+            if (ifNoneMatch != null && (ifNoneMatch.Contains(EntityTagHeaderValue.Any) || ifNoneMatch.Contains(entityTag)))
+            {
+                await result.Data.DisposeAsync();
+                Response.GetTypedHeaders().ETag = entityTag;
+                return new OpenedMedia(StatusCode(StatusCodes.Status304NotModified), null, entityTag);
+            }
+        }
+
+        return new OpenedMedia(null, result.Data, entityTag);
     }
 
     [HttpGet]
@@ -44,40 +100,8 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         logger.LogInformation("Download request for MXC {Mxc} (file: {Filename}, mime: {MimeType}) from user {UserId}", 
             mxc.SanitizeForLogging(), safeFilename.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
-        if (string.IsNullOrEmpty(Homeserver) || string.IsNullOrEmpty(AccessToken))
-        {
-            logger.LogWarning("Download failed for MXC {Mxc}: Missing session information for user {UserId}", 
-                mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
-            return Unauthorized();
-        }
-
-        var entityTag = ComputeETag(mxc);
-        Response.Headers.CacheControl = "private, max-age=300";
-
-        if (string.IsNullOrEmpty(Request.Headers.Range))
-        {
-            var ifNoneMatch = Request.GetTypedHeaders().IfNoneMatch;
-            if (ifNoneMatch != null && (ifNoneMatch.Contains(EntityTagHeaderValue.Any) || ifNoneMatch.Contains(entityTag)))
-            {
-                Response.GetTypedHeaders().ETag = entityTag;
-                return StatusCode(StatusCodes.Status304NotModified);
-            }
-        }
-
-        var restoreResult = await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
-        if (!restoreResult.Success)
-        {
-            logger.LogWarning("Download failed for MXC {Mxc}: Failed to restore session for user {UserId}", 
-                mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
-            return Unauthorized();
-        }
-
-        var result = await mediaService.GetMediaStreamAsync(mxc, cancellationToken);
-        if (!result.Success || result.Data == null)
-        {
-            logger.LogWarning("Media download not found for MXC {Mxc}", mxc.SanitizeForLogging());
-            return NotFound();
-        }
+        var (earlyResult, stream, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Download", cancellationToken);
+        if (earlyResult != null) return earlyResult;
 
         var mediaId = Infrastructure.Helpers.MediaHelper.GetMediaIdFromMxc(mxc);
         
@@ -97,12 +121,12 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         
         return File(
-            result.Data,
+            stream!,
             finalMimeType,
             finalFileName,
             lastModified: null,
             entityTag: entityTag,
-            enableRangeProcessing: result.Data.CanSeek);
+            enableRangeProcessing: stream!.CanSeek);
     }
 
     [HttpGet]
@@ -116,40 +140,8 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         logger.LogDebug("Preview request for MXC {Mxc} (mime: {MimeType}) from user {UserId}", 
             mxc.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
-        if (string.IsNullOrEmpty(Homeserver) || string.IsNullOrEmpty(AccessToken))
-        {
-            logger.LogWarning("Preview failed for MXC {Mxc}: Missing session information for user {UserId}", 
-                mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
-            return Unauthorized();
-        }
-
-        var entityTag = ComputeETag(mxc);
-        Response.Headers.CacheControl = "private, max-age=300";
-
-        if (string.IsNullOrEmpty(Request.Headers.Range))
-        {
-            var ifNoneMatch = Request.GetTypedHeaders().IfNoneMatch;
-            if (ifNoneMatch != null && (ifNoneMatch.Contains(EntityTagHeaderValue.Any) || ifNoneMatch.Contains(entityTag)))
-            {
-                Response.GetTypedHeaders().ETag = entityTag;
-                return StatusCode(StatusCodes.Status304NotModified);
-            }
-        }
-
-        var restoreResult = await sessionService.RestoreSessionAsync(Homeserver, AccessToken);
-        if (!restoreResult.Success)
-        {
-            logger.LogWarning("Preview failed for MXC {Mxc}: Failed to restore session for user {UserId}", 
-                mxc.SanitizeForLogging(), UserId.SanitizeForLogging());
-            return Unauthorized();
-        }
-
-        var result = await mediaService.GetMediaStreamAsync(mxc, cancellationToken);
-        if (!result.Success || result.Data == null)
-        {
-            logger.LogWarning("Media preview not found for MXC {Mxc}", mxc.SanitizeForLogging());
-            return NotFound();
-        }
+        var (earlyResult, stream, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Preview", cancellationToken);
+        if (earlyResult != null) return earlyResult;
 
         // If no MIME type was provided, try to get it from metadata
         if (string.IsNullOrEmpty(safeMimeType))
@@ -179,10 +171,10 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         }
 
         return File(
-            result.Data,
+            stream!,
             finalMimeType,
             lastModified: null,
             entityTag: entityTag,
-            enableRangeProcessing: result.Data.CanSeek);
+            enableRangeProcessing: stream!.CanSeek);
     }
 }

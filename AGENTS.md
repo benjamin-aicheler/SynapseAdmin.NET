@@ -34,6 +34,8 @@ The project uses the standard .NET 10 CLI and Docker:
     - **AuthController.SignIn:** `POST /Auth/SignIn` with a JSON body `{ key }` and the antiforgery token in the `RequestVerificationToken` header. It validates antiforgery, consumes the bridge and issues the authentication cookie (`.AspNetCore.Cookies`), returning `204`. The caller then navigates with `forceLoad: true`.
     - **Never** put bridge keys or tokens in URLs or query strings, and do not reintroduce a GET sign-in endpoint.
     - **MediaController:** Uses the authentication cookie to support native browser streaming for large files.
+        - **Conditional requests (#370):** `Download`, `Preview` and `Avatar` must authorize, restore the session and open the media stream *before* evaluating `If-None-Match` (including `*`). A missing or quarantined object returns `404`, never `304`. Opening the stream only costs the upstream response headers, because LibMatrix reads responses with `ResponseHeadersRead`; on a `304` the stream is disposed unread.
+        - **Cache policy:** protected media is served with `Cache-Control: private, no-cache`, so browsers revalidate on every use and deletion, quarantine or revocation takes effect immediately. Do not reintroduce a `max-age`.
 - **Interfaces:** ALWAYS extract an Interface (in `src/SynapseAdmin/Interfaces/`) for every service to enable unit testing, mocking, and decoupling.
 - **Gateway Pattern:** The application uses a Gateway-based architecture to decouple services from the `LibMatrix` SDK.
     - **Contract:** Services should only interact with the Matrix server via the `IMatrixGateway` interface (available through `IMatrixSessionService`).

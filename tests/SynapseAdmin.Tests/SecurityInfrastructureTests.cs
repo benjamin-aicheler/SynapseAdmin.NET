@@ -538,28 +538,29 @@ public class SecurityInfrastructureTests
         var downloadResult = await downloadController.Download(mxc, "photo.png", "image/png");
 
         var downloadFile = Assert.IsType<FileStreamResult>(downloadResult);
-        Assert.Equal("private, max-age=300", downloadController.Response.Headers.CacheControl.ToString());
+        Assert.Equal("private, no-cache", downloadController.Response.Headers.CacheControl.ToString());
         Assert.Equal("nosniff", downloadController.Response.Headers["X-Content-Type-Options"].ToString());
         Assert.NotNull(downloadFile.EntityTag);
         Assert.Equal(1, mediaService.StreamFetchCount);
 
-        // Conditional request on Download with matching If-None-Match returns 304 without fetching stream again
+        // Conditional request on Download with matching If-None-Match returns 304 only after confirming the media
+        // still exists (the upstream stream is opened, then released without being sent; see #370)
         var conditionalDownloadController = CreateAuthenticatedMediaController(mediaService, sessionService);
         conditionalDownloadController.Request.Headers.IfNoneMatch = downloadFile.EntityTag.Tag.ToString();
         var notModifiedResult = await conditionalDownloadController.Download(mxc, "photo.png", "image/png");
 
         var statusCodeResult = Assert.IsType<StatusCodeResult>(notModifiedResult);
         Assert.Equal(StatusCodes.Status304NotModified, statusCodeResult.StatusCode);
-        Assert.Equal("private, max-age=300", conditionalDownloadController.Response.Headers.CacheControl.ToString());
+        Assert.Equal("private, no-cache", conditionalDownloadController.Response.Headers.CacheControl.ToString());
         Assert.Equal(downloadFile.EntityTag.Tag.ToString(), conditionalDownloadController.Response.Headers.ETag.ToString());
-        Assert.Equal(1, mediaService.StreamFetchCount);
+        Assert.Equal(2, mediaService.StreamFetchCount);
 
         // Preview sets identical Cache-Control and ETag
         var previewController = CreateAuthenticatedMediaController(mediaService, sessionService);
         var previewResult = await previewController.Preview(mxc, "image/png");
 
         var previewFile = Assert.IsType<FileStreamResult>(previewResult);
-        Assert.Equal("private, max-age=300", previewController.Response.Headers.CacheControl.ToString());
+        Assert.Equal("private, no-cache", previewController.Response.Headers.CacheControl.ToString());
         Assert.Equal(downloadFile.EntityTag, previewFile.EntityTag);
     }
 
@@ -615,7 +616,8 @@ public class SecurityInfrastructureTests
             $"/Media/Download?mxc={Uri.EscapeDataString(mxc)}&filename=photo.png&mimeType=image/png");
         Assert.Equal(HttpStatusCode.OK, downloadResponse.StatusCode);
         Assert.True(downloadResponse.Headers.CacheControl?.Private);
-        Assert.Equal(TimeSpan.FromSeconds(300), downloadResponse.Headers.CacheControl?.MaxAge);
+        Assert.True(downloadResponse.Headers.CacheControl?.NoCache);
+        Assert.Null(downloadResponse.Headers.CacheControl?.MaxAge);
         Assert.Equal("nosniff", downloadResponse.Headers.GetValues("X-Content-Type-Options").Single());
         Assert.Contains("bytes", downloadResponse.Headers.AcceptRanges);
         Assert.NotNull(downloadResponse.Headers.ETag);
@@ -624,7 +626,7 @@ public class SecurityInfrastructureTests
 
         var etag = downloadResponse.Headers.ETag!;
 
-        // 4. Conditional GET with matching If-None-Match returns 304 Not Modified without fetching stream again
+        // 4. Conditional GET with matching If-None-Match returns 304 Not Modified (after an existence check, #370)
         using var conditionalRequest = new HttpRequestMessage(
             HttpMethod.Get,
             $"/Media/Download?mxc={Uri.EscapeDataString(mxc)}&filename=photo.png&mimeType=image/png");
@@ -633,9 +635,10 @@ public class SecurityInfrastructureTests
         using var notModifiedResponse = await authenticatedClient.SendAsync(conditionalRequest);
         Assert.Equal(HttpStatusCode.NotModified, notModifiedResponse.StatusCode);
         Assert.True(notModifiedResponse.Headers.CacheControl?.Private);
-        Assert.Equal(TimeSpan.FromSeconds(300), notModifiedResponse.Headers.CacheControl?.MaxAge);
+        Assert.True(notModifiedResponse.Headers.CacheControl?.NoCache);
         Assert.Equal(etag.Tag, notModifiedResponse.Headers.ETag?.Tag);
-        Assert.Equal(1, mediaService.StreamFetchCount);
+        Assert.Empty(await notModifiedResponse.Content.ReadAsByteArrayAsync());
+        Assert.Equal(2, mediaService.StreamFetchCount);
 
         // 5. Range request returns 206 Partial Content with the requested byte slice
         using var rangeRequest = new HttpRequestMessage(
@@ -653,7 +656,7 @@ public class SecurityInfrastructureTests
             $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString("image/svg+xml")}");
         Assert.Equal(HttpStatusCode.OK, svgPreviewResponse.StatusCode);
         Assert.True(svgPreviewResponse.Headers.CacheControl?.Private);
-        Assert.Equal(TimeSpan.FromSeconds(300), svgPreviewResponse.Headers.CacheControl?.MaxAge);
+        Assert.True(svgPreviewResponse.Headers.CacheControl?.NoCache);
         Assert.Equal(etag.Tag, svgPreviewResponse.Headers.ETag?.Tag);
         Assert.Equal(
             "default-src 'none'; style-src 'unsafe-inline'; sandbox",
