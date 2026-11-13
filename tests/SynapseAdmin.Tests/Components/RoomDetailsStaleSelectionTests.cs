@@ -21,6 +21,7 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
     private readonly Stub _rooms;
     private readonly Dictionary<string, TaskCompletionSource<OperationResult<RoomDetailViewModel>>> _pendingDetails = new();
     private readonly Dictionary<string, CancellationToken> _detailTokens = new();
+    private TaskCompletionSource<OperationResult<List<RoomMediaItemViewModel>>>? _pendingMediaBatch;
 
     public RoomDetailsStaleSelectionTests()
     {
@@ -35,13 +36,25 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
             })
             .On(nameof(IRoomService.GetRoomMessagesAsync), _ =>
                 Task.FromResult(OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel())))
+            .On(nameof(IRoomService.GetMediaMetadataBatchAsync), args =>
+                _pendingMediaBatch?.Task ?? Task.FromResult(OperationResult<List<RoomMediaItemViewModel>>.Ok(
+                    ((List<string>)args[0]!).Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList())))
             .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(OperationResult.Ok()))
             .On(nameof(IRoomService.QuarantineMediaAsync), _ => Task.FromResult(OperationResult.Ok()))
             .On(nameof(IRoomService.BlockRoomAsync), _ => Task.FromResult(OperationResult.Ok()));
     }
 
     private static OperationResult<RoomDetailViewModel> Found(string roomId) =>
-        OperationResult<RoomDetailViewModel>.Ok(new RoomDetailViewModel { RoomId = roomId, Name = roomId == RoomA ? "Alpha Lounge" : "Bravo Lounge" });
+        OperationResult<RoomDetailViewModel>.Ok(new RoomDetailViewModel
+        {
+            RoomId = roomId,
+            Name = roomId == RoomA ? "Alpha Lounge" : "Bravo Lounge",
+            Media = new RoomMediaViewModel
+            {
+                Local = [new RoomMediaItemViewModel { MediaId = $"mxc://hs/local-{roomId[1]}" }],
+                Remote = [new RoomMediaItemViewModel { MediaId = $"mxc://remote/remote-{roomId[1]}" }]
+            }
+        });
 
     private static OperationResult<RoomDetailViewModel> Failed() =>
         OperationResult<RoomDetailViewModel>.Failure("Room could not be loaded");
@@ -157,5 +170,69 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
         Assert.Equal(expectedBlock, call[1]);
         Assert.Equal(true, call[2]);
         Assert.False(WarningShown());
+    }
+
+    private static Task<TableData<RoomMediaItemViewModel>> InvokeMediaLoader(
+        IRenderedComponent<RoomDetails> cut, string name, CancellationToken token = default)
+    {
+        var method = typeof(RoomDetails).GetMethod(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var state = new TableState { Page = 0, PageSize = 10 };
+        return cut.InvokeAsync(() => (Task<TableData<RoomMediaItemViewModel>>)method.Invoke(cut.Instance, [state, token])!);
+    }
+
+    public static TheoryData<string, bool, bool> PendingMediaCases => new()
+    {
+        // loader, B fails to load (vs. still loading), batch result is a failure (vs. success)
+        { "LoadLocalMedia", false, false },
+        { "LoadLocalMedia", true, false },
+        { "LoadLocalMedia", true, true },
+        { "LoadRemoteMedia", false, false },
+        { "LoadRemoteMedia", true, false },
+        { "LoadRemoteMedia", true, true },
+    };
+
+    [Theory]
+    [MemberData(nameof(PendingMediaCases))]
+    public async Task PendingMediaRequestDuringNavigation_IsDiscardedWithoutThrowing(string loader, bool roomBFails, bool batchFails)
+    {
+        var cut = RenderRoom(RoomA);
+        cut.WaitForAssertion(() => Assert.Contains("Alpha Lounge", cut.Markup));
+
+        _pendingMediaBatch = Pending<OperationResult<List<RoomMediaItemViewModel>>>();
+        var mediaLoad = InvokeMediaLoader(cut, loader);
+
+        _pendingDetails[RoomB] = Pending<OperationResult<RoomDetailViewModel>>();
+        Navigate(cut, RoomB);
+        cut.WaitForAssertion(() => Assert.DoesNotContain("Alpha Lounge", cut.Markup));
+        if (roomBFails)
+        {
+            _pendingDetails[RoomB].SetResult(Failed());
+            cut.WaitForAssertion(() => Assert.Contains("Room could not be loaded", cut.Markup));
+        }
+        var snackbarCallsBefore = SnackbarStub.CallsTo(nameof(ISnackbar.Add)).Count;
+
+        // A's media response arrives after `room` was cleared; it must be discarded, not dereference the null model.
+        _pendingMediaBatch.SetResult(batchFails
+            ? OperationResult<List<RoomMediaItemViewModel>>.Failure("media failed")
+            : OperationResult<List<RoomMediaItemViewModel>>.Ok([new RoomMediaItemViewModel { MediaId = "mxc://hs/local-a" }]));
+        var data = await mediaLoad;
+
+        Assert.Empty(data.Items!);
+        Assert.Equal(0, data.TotalItems);
+        Assert.Equal(snackbarCallsBefore, SnackbarStub.CallsTo(nameof(ISnackbar.Add)).Count);
+    }
+
+    [Theory]
+    [InlineData("LoadLocalMedia", "mxc://hs/local-a")]
+    [InlineData("LoadRemoteMedia", "mxc://remote/remote-a")]
+    public async Task MediaLoader_ReturnsDisplayedRoomMedia(string loader, string expectedMediaId)
+    {
+        var cut = RenderRoom(RoomA);
+        cut.WaitForAssertion(() => Assert.Contains("Alpha Lounge", cut.Markup));
+
+        var data = await InvokeMediaLoader(cut, loader);
+
+        Assert.Equal(1, data.TotalItems);
+        Assert.Equal(expectedMediaId, Assert.Single(data.Items!).MediaId);
     }
 }

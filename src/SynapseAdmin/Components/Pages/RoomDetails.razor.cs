@@ -144,42 +144,37 @@ namespace SynapseAdmin.Components.Pages
         private static string FormatTarget(RoomDetailViewModel? model, string roomId) =>
             string.IsNullOrWhiteSpace(model?.Name) ? roomId : $"{model.Name} ({roomId})";
 
-        private async Task<TableData<RoomMediaItemViewModel>> LoadLocalMedia(TableState state, CancellationToken token)
-        {
-            if (room?.Media?.Local == null) return new TableData<RoomMediaItemViewModel> { TotalItems = 0, Items = [] };
+        private Task<TableData<RoomMediaItemViewModel>> LoadLocalMedia(TableState state, CancellationToken token) =>
+            LoadMediaPage(state, room?.Media?.Local, token);
 
-            var uris = room.Media.Local.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
-            if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
+        private Task<TableData<RoomMediaItemViewModel>> LoadRemoteMedia(TableState state, CancellationToken token) =>
+            LoadMediaPage(state, room?.Media?.Remote, token);
+
+        /// <summary>
+        /// Loads one page of metadata for <paramref name="media"/>, a list captured from the model before awaiting.
+        /// If the room changes while the request is in flight (navigation, failed reload), the response is
+        /// discarded instead of reading the new — possibly cleared — model.
+        /// </summary>
+        private async Task<TableData<RoomMediaItemViewModel>> LoadMediaPage(
+            TableState state, List<RoomMediaItemViewModel>? media, CancellationToken token)
+        {
+            var empty = new TableData<RoomMediaItemViewModel> { TotalItems = 0, Items = [] };
+            if (media == null) return empty;
+
+            var model = room;
+            var uris = media.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
+            if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = media.Count, Items = [] };
 
             var result = await RoomService.GetMediaMetadataBatchAsync(uris, token);
+            if (token.IsCancellationRequested || !ReferenceEquals(room, model)) return empty;
+
             if (result.Success)
             {
-                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = result.Data };
+                return new TableData<RoomMediaItemViewModel> { TotalItems = media.Count, Items = result.Data };
             }
-            else
-            {
-                if (result.Severity != Severity.Normal) Snackbar.Add(result.Message, result.Severity);
-                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Local.Count, Items = [] };
-            }
-        }
 
-        private async Task<TableData<RoomMediaItemViewModel>> LoadRemoteMedia(TableState state, CancellationToken token)
-        {
-            if (room?.Media?.Remote == null) return new TableData<RoomMediaItemViewModel> { TotalItems = 0, Items = [] };
-
-            var uris = room.Media.Remote.Select(m => m.MediaId).Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
-            if (uris.Count == 0) return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
-
-            var result = await RoomService.GetMediaMetadataBatchAsync(uris, token);
-            if (result.Success)
-            {
-                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = result.Data };
-            }
-            else
-            {
-                if (result.Severity != Severity.Normal) Snackbar.Add(result.Message, result.Severity);
-                return new TableData<RoomMediaItemViewModel> { TotalItems = room.Media.Remote.Count, Items = [] };
-            }
+            if (result.Severity != Severity.Normal) Snackbar.Add(result.Message, result.Severity);
+            return new TableData<RoomMediaItemViewModel> { TotalItems = media.Count, Items = [] };
         }
 
         private Task LoadMoreMessages(string? from) =>
