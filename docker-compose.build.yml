@@ -18,7 +18,7 @@ services:
       # Required for a homeserver reached over http:// or on a private address (e.g. a Synapse container).
       # - HOMESERVER_ALLOWLIST=http://synapse:8008,matrix.example.com
       # IMPORTANT: Change this to a secure, unique passphrase in production!
-      # It is used for encrypting session tokens on disk.
+      # It is used for encrypting the persisted Data Protection keys on disk (/app/keys).
       - DP_PASSPHRASE=your-secure-passphrase-here
     volumes:
       - ./logs:/app/logs

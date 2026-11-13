@@ -22,9 +22,10 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 
 - **Flexible Login:** Sign in using either standard Matrix credentials (Username/Password) or an existing Access Token.
 - **Dashboard:** At-a-glance overview of your server's status and metrics, including server brand (Synapse or compatible servers like Tuwunel) and version, room storage usage, and user media consumption. Features integrated quick-links to detailed user and room management views.
-- **User Management:** Search, view, create, deactivate, and manage properties of server users, including their room memberships, uploaded media (paginated, with total upload count and size), and extended metadata like Appservice IDs and Consent status.
+- **User Management:** Search, view, create, deactivate, and manage properties of server users, including account validity renewal, shadow login tokens, experimental feature flags, room memberships, uploaded media (paginated, with total upload count and size), and extended metadata like Appservice IDs and Consent status.
 - **Media Management:** Directly download or preview user-uploaded media (images, video, audio) with native browser streaming support, including seeking in video/audio and resumable downloads when the homeserver supports HTTP range requests. Includes capabilities to quarantine/unquarantine media, toggle quarantine protection for individual files, and perform advanced bulk maintenance operations (remote cache purging and local media cleanup by age/size).
-- **Room Management:** Search and inspect server rooms and their details, including room avatars, message history, Room Type/Spaces identification, room-specific media auditing with download/preview support, and an interactive room gallery view with infinite scrolling.
+- **Room Management:** Search and inspect server rooms and their details (including room avatars, message history, state events, member lists, and Room Type/Spaces identification), block or delete rooms, purge room message history (up to an event ID or timestamp), audit room media with download/preview support, and browse an interactive room gallery view with infinite scrolling.
+- **Public Room Directory & Aliases:** Browse and search the public room directory, publish or unpublish rooms, and add or remove local room aliases.
 - **Event Reports:** Search, review, and manage reported events/messages from users.
 - **Event Forensics:** Inspect raw, unredacted JSON event payloads by Event ID for moderation, auditing, and debugging without requiring room membership.
 - **Registration Tokens:** Generate and manage tokens to restrict server registration.
@@ -36,10 +37,10 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 
 ## Security
 
-SynapseAdmin.NET implements **AES-256-GCM** encryption for session tokens stored on disk. This ensures that even if someone has access to your server's storage, they cannot read your Matrix access tokens without the passphrase.
+SynapseAdmin.NET uses **AES-256-GCM** (via PBKDF2-SHA256) to encrypt the ASP.NET Core Data Protection keys stored on disk (`./keys`), which protect your browser-stored session tokens (`ProtectedLocalStorage`) and authentication cookies (`.AspNetCore.Cookies`).
 
 > [!IMPORTANT]
-> **Always** set a secure, unique `DP_PASSPHRASE` environment variable in production. If this value is changed, all existing sessions will be invalidated, but your data will remain secure.
+> **Always** set a secure, unique `DP_PASSPHRASE` environment variable in production. If this value is changed, all existing sessions will be invalidated, but your persisted key files cannot be decrypted without the matching passphrase.
 
 ## Technologies
 
@@ -47,8 +48,8 @@ SynapseAdmin.NET implements **AES-256-GCM** encryption for session tokens stored
 - **Framework:** .NET 10 Blazor Server (Interactive Server Mode)
 - **UI Component Library:** [MudBlazor](https://mudblazor.com/)
 - **Logging:** [Serilog](https://serilog.net/) (File & Console)
-- **Matrix SDK:** [LibMatrix](https://github.com/Rory-LibMatrix/LibMatrix) (Git Submodule)
-- **Utilities:** [ArcaneLibs](https://github.com/TheArcaneBrony/ArcaneLibs) (Git Submodule)
+- **Matrix SDK:** [LibMatrix](https://github.com/benjamin-aicheler/LibMatrix/tree/SynapseAdmin.NET) (Git Submodule — fork of [Rory-LibMatrix/LibMatrix](https://github.com/Rory-LibMatrix/LibMatrix))
+- **Utilities:** [ArcaneLibs](https://github.com/benjamin-aicheler/ArcaneLibs) (Git Submodule — fork of [TheArcaneBrony/ArcaneLibs](https://github.com/TheArcaneBrony/ArcaneLibs))
 - **Deployment:** Docker & Docker Compose
 
 ## Getting Started
@@ -87,7 +88,7 @@ dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj
 You can run the application using our pre-built images from the [GitHub Container Registry](https://github.com/benjamin-aicheler/SynapseAdmin.NET/pkgs/container/synapseadmin.net).
 
 #### Using Docker Compose (Recommended)
-The easiest way to get started is by using the default `docker-compose.yml` file. **Important:** Change the `DP_PASSPHRASE` value in the file to a secure, random string to encrypt your session keys on disk.
+The easiest way to get started is by using the default `docker-compose.yml` file. **Important:** Change the `DP_PASSPHRASE` value in the file to a secure, random string to encrypt the Data Protection keys on disk (`./keys`).
 
 ```bash
 docker compose up -d
@@ -104,11 +105,11 @@ docker compose up -d
 >   ```
 
 This will:
-- Pull the latest image from GHCR.
-- Map port `8080` for the web interface.
+- Pull the image from GHCR (`:latest` tracks stable releases; use `:main` or a specific release tag for pre-releases or `main` builds).
+- Map port `8080` on `127.0.0.1` for the web interface.
 - Persist application logs to a `./logs` directory on your host.
-- Persist encryption keys to a `./keys` directory on your host (keeps you logged in across restarts).
-- **Encrypt** the persisted keys using the `DP_PASSPHRASE`.
+- Persist Data Protection encryption keys to a `./keys` directory on your host (keeps sessions valid across restarts).
+- **Encrypt** the persisted keys using `DP_PASSPHRASE`.
 
 #### Using Docker CLI
 Alternatively, you can run the container directly. Make sure to provide a secure passphrase, and that the host directories are writable by UID `1654` (as described in the Docker Compose section above):
@@ -122,6 +123,8 @@ docker run -d \
   --name synapseadmin \
   ghcr.io/benjamin-aicheler/synapseadmin.net:latest
 ```
+
+*(Replace `:latest` with `:main` to run the latest `main` branch build.)*
 
 #### Building from Source
 If you prefer to build the image yourself, use the provided build-specific compose file:
@@ -159,7 +162,7 @@ When running behind a reverse proxy with SSL/TLS termination, the application re
 
 - **Network Isolation:** Always ensure the container port (`8080`) is only reachable through your reverse proxy (e.g., bound to `127.0.0.1:8080:8080` on the host, or attached to an internal Docker network shared only with the proxy).
 - **Trusted Proxies (`TRUSTED_PROXIES`):** By default, `X-Forwarded-*` headers are only trusted from loopback and private network ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`). To restrict trust to specific proxy IP addresses or CIDR subnets, set the `TRUSTED_PROXIES` environment variable (e.g., `TRUSTED_PROXIES=172.18.0.2,10.0.1.0/24`).
-- **Client IP & Login Throttling:** Login attempts are rate-limited per client IP (5 per minute). This only works if the real client IP reaches the app. If your proxy is not trusted (see `TRUSTED_PROXIES`), every user appears with the proxy's IP and shares one limit, so five failed logins from anyone briefly block everyone. If the app cannot determine a client IP at all (e.g. a proxy connected over a Unix socket), all users share one fallback limit, and the warning `Could not determine the client IP …` is logged.
+- **Client IP & Login Throttling:** Login attempts are rate-limited per client IP (5 per minute, plus a cross-IP `(homeserver, username)` limit for password logins; `/Auth/SignIn` has a separate 10/min IP limit). This only works if the real client IP reaches the app. If your proxy is not trusted (see `TRUSTED_PROXIES`), every user appears with the proxy's IP and shares one limit, so five failed logins from anyone briefly block everyone. If the app cannot determine a client IP at all (e.g. a proxy connected over a Unix socket), all users share one fallback limit, and the warning `Could not determine the client IP …` is logged.
 - **Media Caching & Range Requests:** `/Media/*` responses are sent with `Cache-Control: private, no-cache` and an `ETag`, so browsers revalidate on every use and a deleted or quarantined file stops being served immediately. Do not cache these paths in the proxy or a CDN, and do not override their `Cache-Control`. Pass the `Range`, `If-Range` and `If-None-Match` request headers through unchanged (Nginx does this by default), so that seeking, resumed downloads and `304 Not Modified` responses keep working.
 - **Homeserver Destinations (`HOMESERVER_ALLOWLIST`):** Discovery and login only contact homeservers over HTTPS, and refuse loopback, link-local, private (RFC 1918), CGNAT and IPv6 ULA addresses. These checks also apply to `.well-known` delegation, redirects and the IP addresses that DNS names resolve to. Set `HOMESERVER_ALLOWLIST` (comma or semicolon separated) to restrict the login form to specific homeservers and to permit internal targets:
   - `matrix.example.com` or `matrix.example.com:8448` allows that host over HTTPS.
@@ -185,6 +188,13 @@ SynapseAdmin.NET uses Blazor Interactive Server (SignalR circuits) and process-l
 - **Sticky Sessions (Session Affinity):** Configure your reverse proxy or load balancer for sticky sessions so each client's Blazor circuit, `/Auth/SignIn` cookie handoff, and per-IP rate-limiting buckets stay pinned to the same replica.
 - **Shared Data Protection Keys:** Mount a shared volume (or configure a shared key ring) for `/app/keys` with the same `DP_PASSPHRASE` across all replicas so authentication cookies, antiforgery tokens (used by the `/Auth/SignIn` cookie handoff) and encrypted session data can be decrypted by any instance.
 - **Distributed Rate Limiting:** To enforce login rate limits globally across replicas without relying solely on sticky sessions, register a distributed `ILoginRateLimitStore` implementation (e.g., backed by Redis) before `TryAddSingleton<ILoginRateLimitStore, MemoryLoginRateLimitStore>()` in `Program.cs`.
+
+## Documentation
+
+- [Architecture Overview](./ARCHITECTURE.md) – system context, N-tier design, auth/media flows, ADRs, and risks
+- [System Specification](./SPEC.md) – living functional/non-functional specification and acceptance criteria
+- [Localization Guide](./LOCALIZATION.md) – adding `.resx` languages and UI cultures
+- [Theme Guide](./THEMING.md) – adding custom MudBlazor themes (`IAppTheme`)
 
 ## License
 
