@@ -40,6 +40,12 @@ namespace SynapseAdmin.Components.Pages
         private MudTable<UserMediaItemViewModel>? mediaTable;
         private readonly CancellationTokenSource _cts = new();
 
+        // Server-side media paging (#371): the current page and the totals across all uploads.
+        // Statistics on _mediaPage describe that page only; _mediaTotals covers every upload.
+        private UserMediaPageViewModel? _mediaPage;
+        private UserMediaTotalsViewModel? _mediaTotals;
+        private string? _mediaTotalsUserId;
+
         protected override async Task OnParametersSetAsync()
         {
             if (_loadedUserId == UserId && _loadCts != null) return;
@@ -56,6 +62,9 @@ namespace SynapseAdmin.Components.Pages
             _displayedUserId = null;
             errorMessage = null;
             isLoading = true;
+            _mediaPage = null;
+            _mediaTotals = null;
+            _mediaTotalsUserId = null;
 
             await TimeZoneService.InitializeAsync();
             if (token.IsCancellationRequested) return;
@@ -170,6 +179,10 @@ namespace SynapseAdmin.Components.Pages
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }
+                if (result.Success && GetDisplayedTarget() == target)
+                {
+                    await ReloadMedia();
+                }
             }
         }
 
@@ -204,6 +217,62 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        /// <summary>
+        /// MudTable ServerData callback: loads one page of the displayed user's uploads (newest first) and, once per
+        /// user or after a change, the totals across all uploads. Responses for a user that is no longer displayed are discarded.
+        /// </summary>
+        private async Task<TableData<UserMediaItemViewModel>> LoadMediaPage(TableState state, CancellationToken token)
+        {
+            var empty = new TableData<UserMediaItemViewModel> { TotalItems = 0, Items = [] };
+            if (GetDisplayedTarget() is not { } target) return empty;
+
+            var pageTask = UserService.GetUserMediaPageAsync(target, state.Page * state.PageSize, state.PageSize, token);
+            var totalsTask = _mediaTotalsUserId == target ? null : UserService.GetUserMediaTotalsAsync(target, token);
+
+            var page = await pageTask;
+            var totals = totalsTask == null ? null : await totalsTask;
+            if (token.IsCancellationRequested || GetDisplayedTarget() != target) return empty;
+
+            if (totals != null)
+            {
+                // Totals are optional: if unavailable, only the server's upload count is shown.
+                _mediaTotals = totals.Success ? totals.Data : null;
+                _mediaTotalsUserId = target;
+            }
+
+            if (!page.Success || page.Data == null)
+            {
+                _mediaPage = null;
+                if (page.Severity != Severity.Normal) Snackbar.Add(page.Message, page.Severity);
+                StateHasChanged();
+                return empty;
+            }
+
+            _mediaPage = page.Data;
+            StateHasChanged();
+            return new TableData<UserMediaItemViewModel>
+            {
+                TotalItems = (int)Math.Min(page.Data.TotalCount, int.MaxValue),
+                Items = page.Data.Items
+            };
+        }
+
+        /// <summary>Reloads the current media page and the totals after an upload was changed or removed.</summary>
+        private async Task ReloadMedia(bool itemRemoved = false)
+        {
+            _mediaTotalsUserId = null;
+            if (mediaTable == null) return;
+
+            // Removing the only item of a later page would leave an empty page; step back instead.
+            if (itemRemoved && _mediaPage is { Items.Count: <= 1 } && mediaTable.CurrentPage > 0)
+            {
+                mediaTable.NavigateTo(Page.Previous);
+                return;
+            }
+
+            await mediaTable.ReloadServerData();
+        }
+
         private async Task QuarantineSingleMedia(string mediaIdPart)
         {
             if (MatrixSession.Gateway == null) return;
@@ -223,7 +292,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    var item = user?.Media?.Media.FirstOrDefault(m => m.MediaId == mediaIdPart);
+                    var item = _mediaPage?.Items.FirstOrDefault(m => m.MediaId == mediaIdPart);
                     if (item != null)
                     {
                         item.QuarantinedBy = "Admin";
@@ -252,7 +321,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    var item = user?.Media?.Media.FirstOrDefault(m => m.MediaId == mediaIdPart);
+                    var item = _mediaPage?.Items.FirstOrDefault(m => m.MediaId == mediaIdPart);
                     if (item != null)
                     {
                         item.QuarantinedBy = null;
@@ -279,16 +348,9 @@ namespace SynapseAdmin.Components.Pages
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }
-                if (result.Success && user?.Media != null)
+                if (result.Success)
                 {
-                    var item = user.Media.Media.FirstOrDefault(m => m.MediaId == mediaIdPart);
-                    if (item != null)
-                    {
-                        user.Media.Media.Remove(item);
-                        user.Media.TotalCount = Math.Max(0, user.Media.TotalCount - 1);
-                        user.Media.TotalSize = Math.Max(0, user.Media.TotalSize - item.MediaLength);
-                        StateHasChanged();
-                    }
+                    await ReloadMedia(itemRemoved: true);
                 }
             }
         }

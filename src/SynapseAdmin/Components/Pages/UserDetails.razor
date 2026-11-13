@@ -150,13 +150,21 @@ else
         </MudTabPanel>
 
         <MudTabPanel Text="@L["Media"]" Icon="@Icons.Material.Filled.PermMedia">
-             @if (user.Media == null)
-            {
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="m-4" />
-            }
-            else
-            {
-                <MudTable Items="user.Media.Media" @ref="mediaTable" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                <div class="d-flex flex-wrap gap-6 mt-4 mb-2">
+                    @if (_mediaTotals != null)
+                    {
+                        <MudText Typo="Typo.body2"><b>@L["UserMediaTotals", _mediaTotals.Count, _mediaTotals.Bytes.FormatSize()]</b></MudText>
+                    }
+                    else if (_mediaPage != null)
+                    {
+                        <MudText Typo="Typo.body2"><b>@L["UserMediaTotalsCountOnly", _mediaPage.TotalCount]</b></MudText>
+                    }
+                    @if (_mediaPage is { Items.Count: > 0 })
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["UserMediaPageSummary", _mediaPage.Offset + 1, _mediaPage.Offset + _mediaPage.Items.Count, _mediaPage.PageBytes.FormatSize()]</MudText>
+                    }
+                </div>
+                <MudTable T="UserMediaItemViewModel" ServerData="LoadMediaPage" @ref="mediaTable" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
                     <HeaderContent>
                         <MudTh>@L["MediaId"]</MudTh>
                         <MudTh>@L["FileName"]</MudTh>
@@ -183,7 +191,7 @@ else
                     </MudTd>
                     <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
                     <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
-                    <MudTd DataLabel="@L["Size"]">@(context.MediaLength / 1024) KB</MudTd>
+                    <MudTd DataLabel="@L["Size"]">@context.MediaLength.FormatSize()</MudTd>
                     <MudTd DataLabel="@L["Created"]">@TimeZoneService.ToLocal(DateTimeOffset.FromUnixTimeMilliseconds(context.CreatedTimestamp)).DateTime.ToString("g")</MudTd>
                     <MudTd DataLabel="@L["Actions"]">
                     <div class="d-flex">
@@ -233,7 +241,6 @@ else
                         <MudTablePager />
                     </PagerContent>
                 </MudTable>
-            }
         </MudTabPanel>
 
         <MudTabPanel Text="@L["ExperimentalFeatures"]" Icon="@Icons.Material.Filled.Science">

@@ -1411,4 +1411,13 @@
   <data name="SelectionChangedActionAborted" xml:space="preserve">
     <value>Die Auswahl hat sich geändert, während die Bestätigung geöffnet war. Die Aktion wurde abgebrochen, es wurde nichts geändert.</value>
   </data>
+  <data name="UserMediaTotals" xml:space="preserve">
+    <value>Gesamt: {0} Uploads, {1}</value>
+  </data>
+  <data name="UserMediaTotalsCountOnly" xml:space="preserve">
+    <value>Gesamt: {0} Uploads</value>
+  </data>
+  <data name="UserMediaPageSummary" xml:space="preserve">
+    <value>Diese Seite: Einträge {0}–{1}, {2}</value>
+  </data>
 </root>

@@ -98,9 +98,16 @@ public class SynapseCompatibleAdminGateway(
         return await resp.Content.ReadFromJsonAsync<SendServerNoticeResponse>(cancellationToken: cancellationToken);
     }
 
-    public override async Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(int limit = 10, string orderBy = "media_length", string dir = "b", CancellationToken cancellationToken = default)
+    internal static string BuildUserMediaStatisticsUrl(int limit, string orderBy, string dir, string? searchTerm)
     {
         var url = $"/_synapse/admin/v1/statistics/users/media?limit={limit}&order_by={orderBy.UrlEncode()}&dir={dir.UrlEncode()}";
+        if (!string.IsNullOrEmpty(searchTerm)) url += $"&search_term={searchTerm.UrlEncode()}";
+        return url;
+    }
+
+    public override async Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(int limit = 10, string orderBy = "media_length", string dir = "b", string? searchTerm = null, CancellationToken cancellationToken = default)
+    {
+        var url = BuildUserMediaStatisticsUrl(limit, orderBy, dir, searchTerm);
         using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -119,9 +126,16 @@ public class SynapseCompatibleAdminGateway(
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMembershipsResponse>($"/_synapse/admin/v1/users/{userId.UrlEncode()}/memberships", cancellationToken: cancellationToken);
     }
 
-    public override async Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Synapse documents <c>from</c> as opaque, but it is an offset (<c>next_token</c> = <c>from</c> + items returned),
+    /// the same as the users and rooms lists, which also page with computed offsets.
+    /// </summary>
+    internal static string BuildUserMediaUrl(string userId, int from, int limit, string orderBy, string dir) =>
+        $"/_synapse/admin/v1/users/{userId.UrlEncode()}/media?from={from}&limit={limit}&order_by={orderBy.UrlEncode()}&dir={dir.UrlEncode()}";
+
+    public override async Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, int from, int limit, string orderBy = "created_ts", string dir = "b", CancellationToken cancellationToken = default)
     {
-        var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/media";
+        var url = BuildUserMediaUrl(userId, from, limit, orderBy, dir);
         using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
         await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
