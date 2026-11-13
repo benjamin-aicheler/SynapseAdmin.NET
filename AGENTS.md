@@ -1,150 +1,151 @@
-# SynapseAdmin.NET - Project Context
+# AGENTS.md
 
 ## Project Overview
-SynapseAdmin.NET is a .NET 10 Blazor Server Web App for administering Synapse (Matrix homeservers). The application uses `LibMatrix` (and its dependency `ArcaneLibs`) as git submodules to interact with the Matrix protocol and is designed to be containerized with Docker.
 
-- **Framework:** .NET 10 Blazor Server (Interactive Server mode)
-- **SDKs:** `LibMatrix` and `ArcaneLibs` (included as git submodules)
-- **Logging:** Serilog (Console and rolling File logging to `logs/` directory)
-- **Deployment:** Docker & Docker Compose
-- **License:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Status:** Active Development; basic auth, dashboard, room/user management (including creation, memberships, search/filtering, room media, and interactive room gallery view), room message history, event reports (with search/filtering), event forensics (raw event inspection), registration tokens, federation destinations (with search/filtering), server notices, background updates management, advanced media maintenance (cache purging, bulk local deletion, and quarantine protection), multi-language support (EN, DE, FR), Tuwunel homeserver support (v1.8.1+), and MudBlazor UI are implemented.
+- **Purpose:** Self-hosted .NET 10 Blazor Server web app for administering Matrix Synapse and compatible homeservers (such as Tuwunel >= 1.8.1) via the Matrix Client-Server and Synapse Admin APIs, bundled with `LibMatrix` and `ArcaneLibs` git submodules and licensed under AGPL-3.0.
+- **Primary users / consumers:** Matrix homeserver administrators only (not general Matrix end users).
+- **Status:** Beta / Active Development (`v1.15.0-beta`) — auth, dashboard, user/room/media management, room gallery, room history, event reports, event forensics, registration tokens, federation destinations, server notices, background updates, bulk media maintenance, localization (EN/DE/FR), Tuwunel >= 1.8.1 support, and MudBlazor themes are implemented (see [SPEC.md](./SPEC.md)).
+- **Owner / team:** Benjamin Aicheler
 
-## Building and Running
-The project uses the standard .NET 10 CLI and Docker:
+## Tech Stack
 
-- **Build:** `dotnet build`
-- **Run (Local):** `dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj`
-- **Run (Docker):** `docker compose up --build`
-- **Logs:** Application logs are written to stdout (viewable via `docker logs`) and persisted to the `logs/` directory within the container.
-- **Test:** `dotnet test` (runs the xUnit unit tests, bUnit component tests and `WebApplicationFactory` integration tests in `tests/SynapseAdmin.Tests/`)
+| Area | Technology | Version |
+|---|---|---|
+| Language | C# (Nullable enabled) | .NET 10 (`net10.0`) |
+| Framework & UI | ASP.NET Core Blazor Server (Interactive Server) + MudBlazor | .NET 10 / MudBlazor `9.12.0` (`MudBlazor.Translations` `3.6.0`) |
+| Matrix SDKs | `LibMatrix` & `ArcaneLibs` (git submodules) | Branch `SynapseAdmin.NET` |
+| Storage & State | No local DB (homeserver is source of truth); `ProtectedLocalStorage`, `IMemoryCache`, file keys (`./keys`), Serilog (`./logs`) | Serilog.AspNetCore `10.0.0` |
+| Package Manager | NuGet (`.NET CLI`) + Git submodules | `.NET 10 SDK` |
+| Testing | xUnit, bUnit, `Microsoft.AspNetCore.Mvc.Testing` | xUnit `2.9.3` / bUnit `2.15.2` |
+| CI/CD | GitHub Actions (`.NET`, `Docker Image CI/CD` + `cosign`, `CodeQL`) & Dependabot | — |
+| Hosting / Runtime | Docker (`mcr.microsoft.com/dotnet/aspnet:10.0`, non-root `app` UID `1654`) & Docker Compose behind TLS reverse proxy | — |
 
-## Development Conventions
-- **N-Tier Architecture:** The application follows an N-Tier architecture pattern.
-    - **Presentation Layer:** Blazor Components (`.razor` and `.razor.cs`). These should exclusively handle UI state, user interaction, and data display.
-    - **Application Layer (Services):** Classes in `src/SynapseAdmin/Services/`. These handle business logic, Matrix protocol orchestration, and mapping data.
-    - **Gateway Layer:** `LibMatrix` SDK and the **Gateway Layer** (`src/SynapseAdmin/Infrastructure/Gateways/`).
-        - **Responsibility:** The Gateway layer is responsible for all "wire-level" concerns, including raw HTTP calls, URI encoding, and JSON deserialization. It MUST return structured DTOs or nullable models to the Application Layer, never raw `HttpResponseMessage` or technical SDK objects that leak protocol details.
-- **Authentication Bridge:** The application uses a "Cookie Bridge" pattern to synchronize authentication between the Blazor circuit and standard ASP.NET Core Controllers.
-    - **SessionBridgeService:** A singleton service that hands off authentication data using random keys. Each key:
-        - is single-use, with consumption claimed atomically, so concurrent requests cannot both redeem it;
-        - expires after 60 seconds;
-        - is bound to the initiating browser's antiforgery request token. A request with a mismatched binding is rejected and does not burn the key.
-    - **AuthCookieService** (`IAuthCookieService`, circuit-scoped): the only entry point for components (`Login`, `NavMenu`). It takes the circuit's token from `AntiforgeryStateProvider`, creates the bridge, and redeems it through `wwwroot/js/auth-bridge.js`.
-    - **AuthController.SignIn:** `POST /Auth/SignIn` with a JSON body `{ key }` and the antiforgery token in the `RequestVerificationToken` header. It validates antiforgery, consumes the bridge and issues the authentication cookie (`.AspNetCore.Cookies`), returning `204`. The caller then navigates with `forceLoad: true`.
-    - **Never** put bridge keys or tokens in URLs or query strings, and do not reintroduce a GET sign-in endpoint.
-    - **MediaController:** Uses the authentication cookie to support native browser streaming for large files.
-        - **Conditional requests (#370):** `Download`, `Preview` and `Avatar` must authorize, restore the session and open the media download *before* evaluating `If-None-Match` (including `*`, and also for `Range` requests). A missing or quarantined object returns `404`, never `304`. Opening the download only costs the upstream response headers (`ResponseHeadersRead`); on a `304` it is disposed unread.
-        - **Byte ranges and cancellation (#372):** a single `bytes` range (with a strongly matching `If-Range`, if any) is forwarded upstream through `IMatrixGateway.OpenMediaAsync`, together with the request's cancellation token. An upstream `206` is relayed by `PartialMediaResult` with its `Content-Range`; `416` is passed through; a `200` (homeserver ignored the range) is served in full. Do not synthesise `206` locally from a non-seekable stream.
-        - **Media transport:** do not use LibMatrix's `GetMediaStreamAsync`/`GetMediaUrlAsync`. They take no token or range, and because the session (and thus the homeserver instance) is per HTTP request, their auth-media probe would issue an extra, never-disposed `GET` on every request. `MatrixGatewayBase.OpenMediaAsync` calls `/_matrix/client/v1/media/download` via `SendUnhandledAsync` and retries `/_matrix/media/v3/download` only on `M_UNRECOGNIZED` (or a bare 404/405), never on `M_NOT_FOUND`. The returned `MediaDownload` owns the `HttpResponseMessage`; always dispose it.
-        - **Cache policy:** protected media is served with `Cache-Control: private, no-cache`, so browsers revalidate on every use and deletion, quarantine or revocation takes effect immediately. Do not reintroduce a `max-age`.
-- **Interfaces:** ALWAYS extract an Interface (in `src/SynapseAdmin/Interfaces/`) for every service to enable unit testing, mocking, and decoupling.
-- **Gateway Pattern:** The application uses a Gateway-based architecture to decouple services from the `LibMatrix` SDK.
-    - **Contract:** Services should only interact with the Matrix server via the `IMatrixGateway` interface (available through `IMatrixSessionService`).
-    - **Responsibility:** Gateways handle protocol-specific quirks and mapping. They ensure that business services remain "protocol-clean."
-    - **SDK Limitations:** If a required Synapse Admin API endpoint is missing from the `LibMatrix` SDK (e.g., Unquarantine Media), it should be implemented directly in `SynapseAdminGateway` using `ClientHttpClient` rather than modifying the submodule. This maintains clean separation and allows for easier SDK updates.
-    - **Authentication:** Unauthenticated operations (Login, Discovery) are handled by `IMatrixAuthGateway`, which acts as a factory for producing authenticated `IMatrixGateway` instances.
-    - **Capability Checks:** To maintain N-Tier decoupling, the Presentation Layer (Razor components) MUST NOT perform direct type checks (e.g., `is SynapseAdminGateway`). Instead, use the `SupportsAdminApi` property on the `IMatrixGateway` interface to conditionally enable/disable admin-specific UI features.
-- **Error Handling:** 
-    - **Pattern:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. This forces the UI to handle success/failure explicitly.
-    - **Silent Cancellation:** Services MUST catch `OperationCanceledException` and return `OperationResult.Cancelled()` (Severity.Normal). UI components MUST check for `Severity.Normal` to suppress error Snackbars during navigation or rapid reloading.
-    - **Safe Messages:** NEVER pass technical exception details (`ex.Message`, stack traces) to `OperationResult.Failure`. Always return a localized, friendly string and log the technical details on the server.
-- **Localization Rule:** 
-    - **Services:** Responsible for generating localized, user-friendly messages for **Business Outcomes** (the result of a protocol or data operation) using `IStringLocalizer`.
-    - **Code-Behind (.razor.cs):** Allowed to inject `IStringLocalizer` ONLY for **Interaction Logic** (e.g., Dialog titles/messages, complex UI-only alerts, or dynamic Page Titles). They should NEVER perform translations for service-level business logic.
-    - **Razor (.razor):** Uses `IStringLocalizer` for **Static Layout** strings (labels, headers, constant button text).
-- **Detail Pages & Destructive Actions:** Blazor reuses a routed page instance when only its route parameter changes (e.g. `/rooms/A` → `/rooms/B`). Detail pages (`RoomDetails`, `UserDetails`) therefore:
-    - On a parameter change, clear the old model, cancel the previous selection's `CancellationTokenSource`, and discard late responses, all before the first `await`.
-    - Make actions target the ID of the entity *currently displayed* (captured before any confirmation), never the route parameter.
-    - Include that target in the confirmation text, and re-check after the confirmation that it is still displayed. Otherwise abort with `SelectionChangedActionAborted`.
+## Setup & Commands
 
-  Follow the same pattern for any new detail page with destructive actions.
-- **Component Tests:** Blazor components are tested with **bUnit** (`tests/SynapseAdmin.Tests/Components/`). `DetailPageTestBase` provides MudBlazor and localization, plus recording `Stub` doubles (a `DispatchProxy`) for services, dialogs and the snackbar. Test classes deriving from `BunitContext` must implement `IAsyncLifetime`, because MudBlazor services are async-disposable only.
-    - **Culture independence:** tests run under the developer's locale (e.g. `de_DE`). Never match hard-coded English UI text; build expected strings with the app's `IStringLocalizer<SharedResources>` and compare them against `WebUtility.HtmlDecode(cut.Markup)` (the renderer leaves non-ASCII characters unescaped, so `HtmlEncode`d expectations fail for e.g. `ä`).
-- **Logging:** ALWAYS inject `ILogger<T>` into services and log exceptions/errors to provide server-side traceability for Matrix API failures.
-- **ViewModels:** Always use dedicated ViewModels (`src/SynapseAdmin/Models/ViewModels/`) to pass data from services to components. Avoid passing raw SDK models to the UI.
-- **Dependency Injection:** Services are registered in `Program.cs` and injected into components using the `[Inject]` attribute.
-- **Coding Style:** Standard .NET 10 idiomatic C#.
-- **Blazor Components:** Always use the code-behind pattern (e.g., `Page.razor` and `Page.razor.cs`) for all Blazor pages and complex components. Do not use inline `@code` blocks.
-- **Submodules:** Core logic is in `LibMatrix/`. Ensure submodules are initialized: `git submodule update --init --recursive`.
-- **Licensing:** All contributions must comply with the AGPLv3 license.
-- **UI/UX Design:** The interface should be modern, professional, and heavily focused on functionality and data density (as an internal admin tool). We will use **MudBlazor** for Material Design components (data grids, dialogs) instead of raw Bootstrap.
-    - **Themes:** Support multiple themes by implementing the `IAppTheme` interface in `src/SynapseAdmin/Infrastructure/Themes/`. Themes are automatically discovered via reflection. User preferences are persisted using `ProtectedLocalStorage`. See [Theme Guide](./THEMING.md).
-    - **Timezone Handling:** Always use `ITimeZoneService` (initialized via JS interop in `MainLayout`) to convert and interpret user-facing timestamps in the browser's local timezone rather than relying on server-local `DateTime.Now` or `TimeZoneInfo.Local`.
+```bash
+# Initialize submodules and restore NuGet dependencies
+git submodule update --init --recursive
+dotnet restore
 
-## Synapse API Compatibility & Brand Support
-- **Inconsistent Types:** Some Synapse Admin APIs (e.g., User Media) return pagination tokens (`next_token`) as JSON Numbers, while the SDK/DTOs expect Strings.
-- **Field Naming Inconsistency:** The Synapse Room Admin API uses the key **`avatar`** for room avatars in its responses, whereas the User Admin API (and most other Matrix APIs) uses **`avatar_url`**.
-- **Timestamp Unit Inconsistency (`creation_ts`):** Synapse returns `creation_ts` in **milliseconds** on the user list endpoint (`/_synapse/admin/v3/users`, mapped via `FromUnixTimeMilliseconds` in `UserMappingExtensions.ToViewModel`), but in **seconds** on the single-user details endpoint (`/_synapse/admin/v2/users/{userId}`, mapped via `FromUnixTimeSeconds` in `UserMappingExtensions.ToDetailViewModel`). Do not unify or alter these two conversions.
-- **Room Size Semantics:** In Synapse's Room List API (`/_synapse/admin/v1/rooms`), `order_by=size` sorts by member count (`joined_members`), not database byte size. Database byte size (`estimated_size`) is only returned by `/_synapse/admin/v1/statistics/database/rooms` (without room names), so `RoomService` caches resolved room names in `IMemoryCache`.
-- **User Media Pagination (#371):** `/_synapse/admin/v1/users/{userId}/media` returns at most `limit` items (default 100). Its `from` is documented as opaque, but it is an item offset (`next_token` = `from` + items returned), like the users and rooms lists. The user media table therefore pages server-side with `from = page × pageSize`, ordered `created_ts`/`b` (newest first). The endpoint returns no byte total. Totals across all uploads come from `/_synapse/admin/v1/statistics/users/media`, searched by the user's **localpart**. Synapse filters with `user_id LIKE '@%' || term || '%:%'` (or a display-name substring), so a full Matrix ID never matches. The term also matches similar users, so the exact `user_id` must be picked from the result. Label page statistics separately from these totals.
-- **Room Media Duplicates (#384):** `/_synapse/admin/v1/room/{roomId}/media` lists one entry per event reference, so the same MXC URI can appear several times in `local` or `remote`. `RoomService` keeps the first occurrence of each URI, and `RoomGalleryGrid` deduplicates again defensively. Compare whole MXC URIs ordinally, never by bare media ID (only unique per server) or case-insensitively. Never key a dictionary on MXC URIs from this endpoint without deduplicating first.
-- **Handling Strategy:** To avoid modifying the `LibMatrix` submodule, use `SynapseCompatibilityJsonOptions` (defined as a `protected static readonly` field in `SynapseCompatibleAdminGateway`, which `SynapseAdminGateway` inherits from) for type coercion. For field naming, ensure local DTOs map the correct keys.
-- **Implementation:** This utilizes `JsonStringConverter` to safely coerce Numbers into Strings during deserialization.
-- **Guideline:** When deserializing endpoints where Synapse returns inconsistent types, use `ClientHttpClient.GetAsync` + `JsonSerializer.DeserializeAsync(..., SynapseCompatibilityJsonOptions)` rather than `ClientHttpClient.GetFromJsonAsync` (as `LibMatrix`'s `MatrixHttpClient` mutates options passed to `GetFromJsonAsync`).
-- **Brand Compatibility (Tuwunel & Compatible Homeservers):** Homeservers such as Tuwunel >= 1.8.1 support Synapse Admin APIs but return `AuthenticatedHomeserverGeneric` instead of `AuthenticatedHomeserverSynapse`. To accommodate them, we use `SynapseCompatibleAdminGateway`, which executes direct `ClientHttpClient` calls rather than relying on LibMatrix's `.Admin` properties. `SynapseAdminGateway` inherits from `SynapseCompatibleAdminGateway` and only overrides SDK-specific methods. We safely probe and identify brand versions in `MatrixAuthGateway` with automated fallback capabilities.
-- **CancellationToken Support in HTTP DELETE Calls:** The custom `MatrixHttpClient` in `LibMatrix` lacks cancellation token overloads on high-level helper methods like `DeleteAsync` or `DeleteAsJsonAsync`. When implementing raw HTTP DELETE requests in custom gateways, instantiate an `HttpRequestMessage(HttpMethod.Delete, url)` with any required payload and invoke the client's public `SendAsync(reqMessage, cancellationToken)` to propagate cancellation cleanly.
+# Start local development server (http://localhost:5235 / https://localhost:7256)
+dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj
 
-## Security
-- **Data Protection:** The application uses ASP.NET Core Data Protection to encrypt sensitive session data (Matrix access tokens). 
-    - **Docker:** Keys are persisted to the host via a volume mount to `./keys` (\`/app/keys\` in the container).
-    - **Host:** Keys are stored in the application's root directory (\`./keys\`).
-- **Encryption at Rest:** Implemented a universal passphrase-based encryption (AES-256-GCM) for DataProtection keys to ensure they are encrypted on disk.
-- **Reverse Proxy & Forwarded Headers:** `ForwardedHeadersMiddleware` only trusts loopback and private network ranges (RFC 1918 / RFC 4193) by default (`ForwardLimit = 1`), or explicit proxies/CIDRs configured via the `TRUSTED_PROXIES` environment variable.
-- **Login Rate Limiting:** Login attempts (`MatrixSessionService`) are protected against brute-force attacks by `ILoginRateLimiter`. `POST /Auth/SignIn` (the cookie bridge) is separately guarded by ASP.NET Core's `"auth"` rate-limiting policy.
-    - **Password login** is throttled per client IP *and* per `(homeserver, account)` across IPs. The cross-IP bucket is intentional protection against distributed brute force.
-    - **Token login** is throttled per client IP only. Access tokens are high-entropy, so a destination-wide bucket adds no protection; it would only let any client lock everyone else out of token login to the same homeserver (#368). Do not reintroduce a homeserver-only key.
-    - **Client identity:** never read `IHttpContextAccessor` directly for the client IP in interactive code, because `HttpContext` is not guaranteed inside Blazor circuit event handlers. Use `IClientIdentityProvider` instead. Its circuit-scoped `ClientIdentityProvider` is filled by `ClientIdentityCircuitHandler` when a circuit opens or reconnects, and falls back to the ambient `HttpContext` outside circuits. If no IP is known, attempts share the `unknown` bucket and a warning is logged. Do not use per-circuit random fallbacks: they let an attacker bypass throttling by opening new circuits.
-- **Homeserver Destination Policy (SSRF / cleartext protection):** All unauthenticated homeserver traffic (discovery and password login) goes through `HomeserverDiscoveryClient` (gateway layer), never through LibMatrix's `HomeserverResolverService`/`HomeserverProviderService`. Those LibMatrix services follow `.well-known` delegation and redirects without any checks, and LibMatrix's static `MatrixHttpClient` cannot be configured from outside. `IHomeserverDestinationPolicy` (`Infrastructure/Security/HomeserverDestinationPolicy.cs`, configured via `HOMESERVER_ALLOWLIST`) works as follows:
-    - It enforces HTTPS unless an allowlist entry is written as `http://host:port`.
-    - It refuses internal addresses (loopback, link-local, RFC 1918, CGNAT, ULA) unless they are allowlisted. This check runs on every hop and, through a `SocketsHttpHandler.ConnectCallback`, on every resolved address.
-    - A non-empty allowlist is a hard gate on the homeserver entered by the user.
+# Build and run with Docker (local build vs pre-built GHCR image)
+docker compose -f docker-compose.build.yml up --build
+docker compose up -d
 
-  `MatrixAuthGateway` builds the LibMatrix `AuthenticatedHomeserver*` instance directly from the validated `WellKnownUris`. Do not reintroduce `hsProvider.GetAuthenticatedWithToken`/`Login`/`GetRemoteHomeserver` on the auth path. Policy rejections surface as `HomeserverNotAllowedException`, which `MatrixSessionService` maps to the localized `HomeserverNotAllowed` message. Known limitation: after login, token-bearing calls use LibMatrix's static client. Those URLs are validated, but the addresses they resolve to are not re-checked at connect time.
+# Build & static type/nullability check (C# compiler)
+dotnet build
 
-## Git & GitHub Workflow
-We strictly follow the **GitHub Flow**. Direct commits to the `main` branch are prohibited.
+# Run all unit, bUnit component, and integration tests
+dotnet test
 
-### 1. Branching
-- **Always update:** Before starting, sync your local `main`: `git checkout main && git pull origin main`.
-- **Task Isolation:** Create a new branch for every task (Issue, Feature, Bugfix).
-- **Issue Association:** If a task is started and the user has not provided an existing GitHub issue number, ask the user if they want to provide a number or if an issue should be created. An issue is not mandatory if the user declines.
-- **Naming Convention:**
-    - Features: `ai/feature/issue-<number>-<description>` (or omit `issue-<number>-` if no issue is associated)
-    - Bugfixes: `ai/bugfix/issue-<number>-<description>` (or omit `issue-<number>-` if no issue is associated)
-    - *Example:* `git checkout -b ai/feature/issue-42-add-login`
+# Run a single test class or test method
+dotnet test --filter "FullyQualifiedName~TestClassOrMethodName"
+```
 
-### 2. Commits
-- **Conventional Commits:** Use the [Conventional Commits](https://www.conventionalcommits.org/) specification (e.g., `feat:`, `fix:`, `docs:`, `refactor:`).
-- **Atomic & Focused:** Keep commits small and focused on a single change.
-- **Issue Linking:** Link GitHub issues in the commit message (e.g., `Closes #42` or `Fixes #42`) to trigger automatic closing on merge.
+**Prerequisites:** .NET 10 SDK (or Docker + Docker Compose); initialized git submodules (`LibMatrix/`). For Docker bind mounts (`./logs`, `./keys`), directories must be writable by UID `1654` (`chown -R 1654:1654 logs keys`), and `DP_PASSPHRASE` should be set in production.
 
-### 3. Pull Requests & Verification
-- **Local Build & Test Verification:** ALWAYS run `dotnet build` and `dotnet test` locally and ensure both pass before pushing your commits to the remote branch.
-- **Pushing:** Push your branch to the remote: `git push -u origin <branch-name>`.
-- **Creation:** Generate a Pull Request against `main` (e.g., `gh pr create`).
-- **Description:** Provide a clear title and reference the issue in the PR description (e.g., "Resolves #42").
+## Project Structure
 
-### 4. Constraints & Cleanup
-- **No Force Push:** Never `git push --force` on shared branches.
-- **Conflict Resolution:** Resolve merge conflicts locally in your feature branch before updating the PR.
-- **Cleanup:** Delete the local feature branch after the PR is merged.
+```text
+/
+├── SynapseAdmin.NET.slnx             # .NET 10 solution file
+├── src/SynapseAdmin/                 # Main Blazor Server + MVC web application
+│   ├── Components/                   # Presentation layer: Pages/, Layout/, Shared/, dialogs (.razor + .razor.cs)
+│   ├── Controllers/                  # HTTP endpoints: AuthController, MediaController, CultureController
+│   ├── Services/                     # Application layer: Matrix orchestration, session/auth, UI state
+│   ├── Interfaces/                   # Contracts for every service and gateway (Gateways/)
+│   ├── Infrastructure/               # Gateways/, Security/, DataProtection/, Serialization/, Themes/, Helpers/
+│   ├── Models/                       # OperationResult, ViewModels/, Requests/, Responses/
+│   ├── Extensions/                   # LoggingExtensions, FormatExtensions, Mapping/
+│   ├── Resources/                    # SharedResources*.resx (EN, DE, FR)
+│   ├── wwwroot/js/                   # auth-bridge.js, gallery-interop.js, timezone-interop.js
+│   ├── Dockerfile                    # Multi-stage .NET 10 build running as non-root `app`
+│   └── Program.cs                    # DI registration and ASP.NET Core middleware pipeline
+├── tests/SynapseAdmin.Tests/         # xUnit unit tests, bUnit tests (Components/), WebApplicationFactory tests
+├── LibMatrix/                        # Matrix SDK + ArcaneLibs git submodules (DO NOT modify for app quirks)
+├── reviews/                          # Timestamped code review reports
+├── docker-compose.yml                # Production GHCR compose config
+├── docker-compose.build.yml          # Local source build compose config
+├── .github/workflows/                # dotnet.yml, docker-image.yml, codeql.yml
+└── README.md                         # User & deployment documentation
+```
 
-## Key Files
-- `SynapseAdmin.NET.slnx`: New .NET 10 solution file.
-- `src/SynapseAdmin/`: Main web application source code.
-- `tests/SynapseAdmin.Tests/`: xUnit test project (unit tests, bUnit component tests in `Components/`, and `WebApplicationFactory` integration tests).
-- `LibMatrix/`: Matrix SDK submodule.
-- `docker-compose.yml`: Root-level Docker Compose configuration.
-- `src/SynapseAdmin/Dockerfile`: Multi-stage .NET 10 Dockerfile.
-- `README.md`: Project documentation and attribution.
+For full system design, data flows, and component boundaries see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## Automated Code Review Workflow
-You can ask the AI agent to perform a code review on a specific branch, commit, or set of files.
+## Code Conventions
 
-### Process:
-1. **Template:** Use `CODEREVIEWTEMPLATE.md` as the baseline for all reviews.
-2. **Analysis:** The agent will inspect the requested files against the template criteria (Security, Bugs, Performance, Architecture, Error Handling) specifically keeping Blazor Server, .NET 10, and MudBlazor conventions in mind.
-3. **Report Generation:** The agent will fill out the template with its findings.
-4. **Saving:** The completed report MUST be saved in the `reviews/` directory with a timestamped filename (e.g., `reviews/YYYY-MM-DD_HH-MM-SS_review.md`).
-5. **Action:** The agent will summarize the Action Items in the chat and ask if you would like it to implement the High/Medium priority fixes.
+- **N-Tier Separation:** Presentation (`.razor` / `.razor.cs`) handles UI state, interaction, and ViewModel display only. Application Services (`Services/`) handle business logic, Matrix orchestration, and ViewModel mapping. Gateways (`Infrastructure/Gateways/`) handle all wire-level HTTP, URI encoding, and JSON concerns and return structured DTOs/nullable models—never raw `HttpResponseMessage` or protocol-leaking SDK objects.
+- **Interfaces & DI:** Always extract an interface in `src/SynapseAdmin/Interfaces/` for every service. Register services in `Program.cs` and inject them into components using `[Inject]`.
+- **Gateway Pattern & Capability Checks:** Services talk to Matrix only via `IMatrixGateway` (from `IMatrixSessionService`); unauthenticated login/discovery uses `IMatrixAuthGateway` (`HomeserverDiscoveryClient`), which acts as a factory for authenticated `IMatrixGateway` instances. Implement missing Synapse Admin endpoints in `SynapseCompatibleAdminGateway` using `ClientHttpClient`—never modify `LibMatrix/`. In Razor components, check `IMatrixGateway.SupportsAdminApi` (never `is SynapseAdminGateway`).
+- **Blazor & MudBlazor UI:** Use standard .NET 10 idiomatic C# and MudBlazor components (not raw Bootstrap) focused on data density. Always use code-behind (`.razor` + `.razor.cs`) with no inline `@code` blocks, and bind strictly to `Models/ViewModels/`—never pass raw SDK models to the UI.
+- **Error Handling & Silent Cancellation:** Standardize all service methods to return `OperationResult` or `OperationResult<T>`. Catch `OperationCanceledException` and return `OperationResult.Cancelled()` (`Severity.Normal`); UI components must check `Severity.Normal` to suppress error snackbars on navigation/reload. Never pass `ex.Message` or stack traces to `OperationResult.Failure`; log technical details server-side and return localized strings.
+- **Logging:** Inject `ILogger<T>` into services, log exceptions/errors for traceability, and sanitize untrusted strings with `.SanitizeForLogging()` (`LoggingExtensions`). Serilog writes to stdout (`docker logs`) and rolling files in `logs/`.
+- **Localization (`EN`, `DE`, `FR`):** Services localize **Business Outcomes** via `IStringLocalizer<SharedResources>`; `.razor.cs` injects `IStringLocalizer` only for **Interaction Logic** (dialog titles/messages, UI-only alerts, dynamic page titles), never service-level business text; `.razor` uses `IStringLocalizer` for **Static Layout** strings. See [LOCALIZATION.md](./LOCALIZATION.md).
+- **Detail Pages & Destructive Actions:** Blazor reuses routed detail pages (`RoomDetails`, `UserDetails`) when only the route parameter changes (e.g., `/rooms/A` → `/rooms/B`). On parameter change, clear the old model, cancel the previous `CancellationTokenSource`, and discard late responses before the first `await`. Capture the *currently displayed* entity ID before confirmation (never read the route parameter), include it in the confirmation prompt, and re-verify it is still displayed afterward; otherwise abort with `SelectionChangedActionAborted`.
+- **Timezone & Themes:** Always convert/interpret user-facing timestamps via `ITimeZoneService` (initialized via JS interop in `MainLayout`), never `DateTime.Now` or `TimeZoneInfo.Local`. Add themes by implementing `IAppTheme` in `src/SynapseAdmin/Infrastructure/Themes/` (reflection-discovered, persisted in `ProtectedLocalStorage`; see [THEMING.md](./THEMING.md)).
+- **bUnit Component Tests:** Tests in `tests/SynapseAdmin.Tests/Components/` extend `DetailPageTestBase` (MudBlazor + localization + recording `Stub` `DispatchProxy` doubles). Any class deriving from `BunitContext` must implement `IAsyncLifetime` (MudBlazor services are async-disposable only). Keep tests culture-independent (tests may run under `de_DE`): build expected strings via `IStringLocalizer<SharedResources>` and compare against `WebUtility.HtmlDecode(cut.Markup)` (Blazor leaves non-ASCII characters like `ä` unescaped).
+- **Licensing:** All contributions must comply with AGPL-3.0.
+
+## Workflow
+
+We strictly follow **GitHub Flow** (direct commits to `main` are prohibited):
+
+- **Before starting:** Sync `main` (`git checkout main && git pull origin main`). Read [SPEC.md](./SPEC.md), [ARCHITECTURE.md](./ARCHITECTURE.md), and if an active task is in progress, [PLAN.md](./PLAN.md) / [TODO.md](./TODO.md).
+- **Feature Lifecycle (`SPEC → PLAN → TODO`):** [SPEC.md](./SPEC.md) is the living system specification—extend it for new features first (tag new additions `[Planned]` until implemented). For non-trivial changes, fill single-task [PLAN.md](./PLAN.md) (`Draft` → `Approved`), then populate [TODO.md](./TODO.md) and execute one task at a time (ignore `PLAN.md` / `TODO.md` unless `PLAN.md` is active in `Approved` or `In Progress`). When finished (before PR merge or when starting the next task), finalize `[Planned]` updates in [SPEC.md](./SPEC.md) (and [ARCHITECTURE.md](./ARCHITECTURE.md) if structure/flows changed) and clear/reset [PLAN.md](./PLAN.md) and [TODO.md](./TODO.md) back to their blank templates.
+- **Branching:** Create a dedicated branch per task (`ai/feature/issue-<number>-<description>` or `ai/bugfix/issue-<number>-<description>`, omitting `issue-<number>-` if no issue is linked). If no GitHub issue number was provided, ask the user whether to provide one or create one (optional if declined).
+- **Commits:** Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `refactor:`). Keep commits atomic and link issues (`Closes #42`, `Fixes #42`).
+- **Pre-push verification & PRs:** Always run `dotnet build` and `dotnet test` locally and verify both pass before pushing (`git push -u origin <branch-name>`). Open a PR against `main` (`gh pr create`) referencing the issue (`Resolves #42`). Resolve conflicts locally and delete the local branch after merge.
+- **Automated Code Review:** When reviewing code, use [CODEREVIEWTEMPLATE.md](./CODEREVIEWTEMPLATE.md) (checking Security, Bugs, Performance, Architecture, Error Handling for Blazor/.NET 10/MudBlazor), save the report to `reviews/YYYY-MM-DD_HH-MM-SS_review.md`, summarize Action Items in chat, and ask before implementing High/Medium fixes.
+
+## Boundaries
+
+### ✅ Always
+- Extract an interface in `Interfaces/` for every new service and return `OperationResult` / `OperationResult<T>`.
+- Propagate `CancellationToken` through services and gateways (for raw HTTP `DELETE`, instantiate `HttpRequestMessage(HttpMethod.Delete, url)` and call `ClientHttpClient.SendAsync(reqMessage, cancellationToken)` because `LibMatrix`'s `DeleteAsync`/`DeleteAsJsonAsync` lack token overloads).
+- Dispose `MediaDownload` (owns the `HttpResponseMessage`).
+- Run `dotnet build` and `dotnet test` before pushing commits.
+
+### ⚠️ Ask first
+- Before creating a new GitHub issue when none was provided, or before implementing High/Medium fixes after generating a code review report.
+- Before adding NuGet dependencies, modifying `.github/workflows/`, changing Docker security settings, or updating the `LibMatrix/` submodule.
+
+### 🚫 Never
+- Commit or push directly to `main`, or run `git push --force` on shared branches.
+- Commit secrets, credentials, access tokens, `DP_PASSPHRASE` production values, or real user PII.
+- Modify the `LibMatrix/` submodule to work around Synapse Admin API gaps or quirks.
+- Put bridge keys or tokens in URLs/query strings, or reintroduce a GET sign-in endpoint.
+- Expose raw `ex.Message`, stack traces, or `HomeserverNotAllowedException` text to the UI.
+- Read `IHttpContextAccessor` directly for client IP inside Blazor circuit handlers, or use per-circuit random rate-limit keys.
+- Use `LibMatrix`'s `HomeserverResolverService`/`HomeserverProviderService` or `hsProvider.GetAuthenticatedWithToken`/`Login`/`GetRemoteHomeserver` on the auth path, or `GetMediaStreamAsync`/`GetMediaUrlAsync` for media downloads (no token/range; triggers an extra undisposed probe `GET` per request).
+- Synthesize HTTP `206` locally from a non-seekable stream, or reintroduce `max-age` on protected media.
+- Use `DateTime.Now`/`TimeZoneInfo.Local`, inline `@code` blocks, concrete gateway type checks in UI, or hard-coded English strings in bUnit tests.
+
+## Security & Data Protection
+
+- **Cookie Bridge (`SessionBridgeService` → `AuthCookieService` → `AuthController.SignIn`):** Singleton `SessionBridgeService` creates single-use, 60-second keys bound to the circuit's `AntiforgeryStateProvider` token; circuit-scoped `IAuthCookieService` (`AuthCookieService`, the only entry point for `Login` and `NavMenu`) redeems them via `wwwroot/js/auth-bridge.js` (`POST /Auth/SignIn` with JSON `{ key }` and `RequestVerificationToken` header, returning `204` + `.AspNetCore.Cookies`, followed by `forceLoad: true`). Consumption is atomic (`Interlocked`); a mismatched binding rejects the request **without burning the key**.
+- **Data Protection at Rest:** Keys persist in `./keys` (`/app/keys` in Docker) and are encrypted with AES-256-GCM (PBKDF2-SHA256) using `DP_PASSPHRASE` (`AesXmlEncryptor` / `AesXmlDecryptor`).
+- **Reverse Proxy & Throttling:** `ForwardedHeadersMiddleware` (`ForwardLimit = 1`) trusts loopback + RFC 1918/4193 ranges by default, or `TRUSTED_PROXIES`. `ILoginRateLimiter` throttles password logins per IP *and* cross-IP `(homeserver, account)`, and token logins **per IP only** (#368—never reintroduce a homeserver-only bucket). `POST /Auth/SignIn` is separately guarded by ASP.NET Core's `"auth"` rate limiter. Always get client IP via `IClientIdentityProvider` (`ClientIdentityCircuitHandler` populates `ClientIdentityProvider` on open/reconnect, falling back to ambient `HttpContext` outside circuits; missing IP falls back to shared `"unknown"` bucket with a warning).
+- **SSRF / Cleartext Policy (`IHomeserverDestinationPolicy`):** `HomeserverDiscoveryClient` enforces HTTPS (unless `http://host:port` is in `HOMESERVER_ALLOWLIST`) and refuses internal/private addresses (`loopback`, `link-local`, RFC 1918, CGNAT, ULA) across `.well-known` hops, redirects, and resolved socket IPs (`SocketsHttpHandler.ConnectCallback`). A non-empty allowlist is a hard gate on entry hosts (misconfigured entries fail closed); `MatrixSessionService` maps `HomeserverNotAllowedException` to localized `HomeserverNotAllowed`. `MatrixAuthGateway` constructs `AuthenticatedHomeserver*` directly from validated `WellKnownUris`. *Known limitation:* post-login token-bearing calls use `LibMatrix`'s static `MatrixHttpClient` (validated base URLs, but resolved IPs are not re-checked at connect time).
+- **Media Streaming (`MediaController`):** `Download`, `Preview`, and `Avatar` (cookie-authenticated native browser streaming for large files) must authorize, restore session, and open `IMatrixGateway.OpenMediaAsync` (`ResponseHeadersRead`) **before** evaluating `If-None-Match` (including `*` and `Range` requests, #370)—missing/quarantined media returns `404`, never `304`, and `304` disposes the unread stream. Forward single `bytes` ranges (with strong `If-Range` match) upstream through `IMatrixGateway.OpenMediaAsync` (#372): relay `206` via `PartialMediaResult` with `Content-Range`, pass through `416`, or serve `200` (homeserver ignored range) in full. `MatrixGatewayBase.OpenMediaAsync` calls `/_matrix/client/v1/media/download` via `SendUnhandledAsync` and falls back to `/_matrix/media/v3/download` only on `M_UNRECOGNIZED` (or bare `404`/`405`), never on `M_NOT_FOUND`. Serve protected media with `Cache-Control: private, no-cache` so deletion, quarantine, or revocation takes effect immediately.
+
+## Known Pitfalls
+
+- **`GetFromJsonAsync` Option Mutation:** `LibMatrix`'s `MatrixHttpClient` mutates `JsonSerializerOptions` passed to `GetFromJsonAsync`. On endpoints with inconsistent types (e.g., numeric vs string `next_token`), always use `ClientHttpClient.GetAsync` + `JsonSerializer.DeserializeAsync(..., SynapseCompatibilityJsonOptions)` (`protected static readonly` field in `SynapseCompatibleAdminGateway`, inherited by `SynapseAdminGateway`, using `JsonStringConverter`).
+- **Synapse Field & Timestamp Quirks:** Room Admin API uses `avatar` while User Admin/CS APIs use `avatar_url`. On `/_synapse/admin/v3/users`, `creation_ts` is in **milliseconds** (`FromUnixTimeMilliseconds` in `UserMappingExtensions.ToViewModel`); on `/_synapse/admin/v2/users/{userId}`, it is in **seconds** (`FromUnixTimeSeconds` in `UserMappingExtensions.ToDetailViewModel`). **Do not unify or alter these two conversions.**
+- **Room Size Semantics:** `/_synapse/admin/v1/rooms` `order_by=size` sorts by `joined_members` (member count), not DB bytes. DB byte size (`estimated_size`) comes from `/_synapse/admin/v1/statistics/database/rooms` without room names, so `RoomService` caches resolved names in `IMemoryCache`.
+- **User Media Pagination (#371):** `/_synapse/admin/v1/users/{userId}/media` `from` is an item offset (`next_token` = `from` + returned count, max `limit` default 100); page server-side with `from = page × pageSize` (`created_ts`/`b`). Totals across all uploads come from `/_synapse/admin/v1/statistics/users/media` searched by **localpart** (Synapse filters `user_id LIKE '@%' || term || '%:%'`, so full Matrix IDs never match and exact `user_id` must be picked from results); label page stats separately from totals.
+- **Room Media Duplicates (#384):** `/_synapse/admin/v1/room/{roomId}/media` emits one entry per event reference (same MXC URI can appear in `local` or `remote`). `RoomService` keeps first occurrence and `RoomGalleryGrid` deduplicates defensively. Compare whole MXC URIs ordinally (never bare media ID or case-insensitively), and never key a dictionary on raw MXC URIs from this endpoint without deduplicating first.
+- **Tuwunel & Generic Fallback:** Compatible servers (Tuwunel >= 1.8.1) return `AuthenticatedHomeserverGeneric`, so `MatrixAuthGateway` probes federation version + `/_synapse/admin/v1/server_version` and wraps them in `SynapseCompatibleAdminGateway` (`SynapseAdminGateway` inherits from `SynapseCompatibleAdminGateway`, overriding only SDK-specific methods as an `[Obsolete]` fallback).
+
+## Further Documentation
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) – system context, N-tier design, flows, ADRs, and risks
+- [SPEC.md](./SPEC.md) – living system specification (baseline requirements and acceptance criteria; extended per feature)
+- [README.md](./README.md) – installation, Docker, reverse proxy, and scaling guide
+- [THEMING.md](./THEMING.md) – adding reflection-discovered MudBlazor `IAppTheme` themes
+- [LOCALIZATION.md](./LOCALIZATION.md) – adding `.resx` languages and UI cultures
+- [CODEREVIEWTEMPLATE.md](./CODEREVIEWTEMPLATE.md) – checklist for automated code reviews
+- [PLAN.md](./PLAN.md) & [TODO.md](./TODO.md) – single-task implementation plan and execution checklist (cleared/reset per task)
+- [synapse-admin-api-2026-04-18.md](./synapse-admin-api-2026-04-18.md) – Synapse Admin API reference
