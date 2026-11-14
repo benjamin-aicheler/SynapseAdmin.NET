@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using SynapseAdmin.Infrastructure.Helpers;
 
 namespace SynapseAdmin.Controllers;
 
@@ -8,11 +9,14 @@ public class CultureController : Controller
 {
     public IActionResult Set(string culture, string redirectUri)
     {
-        if (culture != null)
+        // Only persist cultures the app supports: anything else would be ignored by request localization
+        // anyway, and malformed names would make RequestCulture throw (#394).
+        var supportedCulture = SupportedCultures.Normalize(culture);
+        if (supportedCulture != null)
         {
             HttpContext.Response.Cookies.Append(
                 CookieRequestCultureProvider.DefaultCookieName,
-                CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture, culture)),
+                CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(supportedCulture, supportedCulture)),
                 new CookieOptions
                 {
                     Expires = DateTimeOffset.UtcNow.AddYears(1),
