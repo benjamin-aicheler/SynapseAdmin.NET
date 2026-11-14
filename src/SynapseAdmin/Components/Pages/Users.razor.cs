@@ -15,10 +15,14 @@ namespace SynapseAdmin.Components.Pages
         public ISnackbar Snackbar { get; set; } = null!;
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
+        [Inject]
+        public ITimeZoneService TimeZoneService { get; set; } = null!;
 
         private MudTable<UserListViewModel>? table;
         private int? totalUsers;
         private string? _searchTerm;
+
+        protected override Task OnInitializedAsync() => TimeZoneService.InitializeAsync();
 
         private async Task ReloadTable()
         {

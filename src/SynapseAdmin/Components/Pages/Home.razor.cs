@@ -19,6 +19,9 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IEventReportService EventReportService { get; set; } = null!;
 
+        [Inject]
+        public ITimeZoneService TimeZoneService { get; set; } = null!;
+
         private bool isSynapse;
         private int totalUsers;
         private int totalRooms;
@@ -33,6 +36,7 @@ namespace SynapseAdmin.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            await TimeZoneService.InitializeAsync();
             if (MatrixSession.IsLoggedIn)
             {
                 // We check if the gateway is Synapse

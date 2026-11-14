@@ -55,13 +55,13 @@ else
                 }
             </MudTd>
             <MudTd DataLabel="@L["LastRetry"]">
-                @(context.RetryLastTsDateTime.HasValue ? context.RetryLastTsDateTime.Value.ToString("g") : "-")
+                @(context.RetryLastTsDateTime is { } retryLast ? TimeZoneService.ToLocal(retryLast).ToString("g") : "-")
             </MudTd>
             <MudTd DataLabel="@L["RetryInterval"]">
                 @(context.RetryInterval > 0 ? context.RetryIntervalTimeSpan.ToString("c") : "-")
             </MudTd>
             <MudTd DataLabel="@L["FailureTime"]">
-                @(context.FailureTsDateTime?.ToString("g") ?? "-")
+                @(context.FailureTsDateTime is { } failure ? TimeZoneService.ToLocal(failure).ToString("g") : "-")
             </MudTd>
             <MudTd DataLabel="@L["Actions"]">
                 <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => ResetConnection(context.Destination))" Disabled="!context.FailureTsDateTime.HasValue">@L["ResetConnection"]</MudButton>

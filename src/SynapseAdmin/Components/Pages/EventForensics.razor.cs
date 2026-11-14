@@ -20,6 +20,9 @@ public partial class EventForensics : IDisposable
     [Inject]
     public IJSRuntime JSRuntime { get; set; } = null!;
 
+    [Inject]
+    public ITimeZoneService TimeZoneService { get; set; } = null!;
+
     [SupplyParameterFromQuery(Name = "eventId")]
     public string? EventIdParam { get; set; }
 
@@ -28,6 +31,8 @@ public partial class EventForensics : IDisposable
     private bool isLoading;
     private EventForensicsViewModel? eventData;
     private readonly CancellationTokenSource _cts = new();
+
+    protected override Task OnInitializedAsync() => TimeZoneService.InitializeAsync();
 
     protected override async Task OnParametersSetAsync()
     {

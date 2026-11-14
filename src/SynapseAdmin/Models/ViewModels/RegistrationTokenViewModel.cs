@@ -8,5 +8,5 @@ public class RegistrationTokenViewModel
     public int Pending { get; set; }
     public long? ExpiryTime { get; set; }
     
-    public DateTime? ExpiryTimeDateTime => ExpiryTime.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ExpiryTime.Value).DateTime : null;
+    public DateTimeOffset? ExpiryTimeDateTime => ExpiryTime.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ExpiryTime.Value) : null;
 }

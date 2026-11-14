@@ -18,6 +18,8 @@ namespace SynapseAdmin.Components.Pages
         public IDialogService DialogService { get; set; } = null!;
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = null!;
+        [Inject]
+        public ITimeZoneService TimeZoneService { get; set; } = null!;
 
         private List<RegistrationTokenViewModel> tokens = new();
         private bool isLoading = true;
@@ -25,6 +27,7 @@ namespace SynapseAdmin.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            await TimeZoneService.InitializeAsync();
             await LoadTokens();
         }
 
@@ -70,7 +73,8 @@ namespace SynapseAdmin.Components.Pages
                 { "IsEdit", true },
                 { "ExistingToken", tokenObj.Token },
                 { "ExistingUsesAllowed", tokenObj.UsesAllowed },
-                { "ExistingExpiryDate", tokenObj.ExpiryTimeDateTime }
+                // The dialog edits wall-clock time in the user's time zone.
+                { "ExistingExpiryDate", tokenObj.ExpiryTimeDateTime is { } expiry ? TimeZoneService.ToLocal(expiry).DateTime : null }
             };
 
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
