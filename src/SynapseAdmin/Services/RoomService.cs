@@ -502,7 +502,8 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             var result = await Gateway.GetPublicRoomsAsync(limit, since, searchTerm, token);
-            if (result == null) return OperationResult<PublicRoomDirectoryViewModel>.Failure(L["ErrorFetchingRoomDirectory"]);
+            // Collection read: a null result is an empty directory, not an error (#395, H-12).
+            if (result == null) return OperationResult<PublicRoomDirectoryViewModel>.Ok(new PublicRoomDirectoryViewModel());
             var vm = new PublicRoomDirectoryViewModel
             {
                 NextBatch = result.NextBatch,
@@ -625,7 +626,8 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             var result = await Gateway.GetLocalRoomAliasesAsync(roomId, token);
-            if (result == null) return OperationResult<List<string>>.Failure(L["ErrorFetchingRoomAliases"]);
+            // Collection read: a null result means no aliases, not an error (#395, H-12).
+            if (result == null) return OperationResult<List<string>>.Ok([]);
             return OperationResult<List<string>>.Ok(result);
         }
         catch (OperationCanceledException)
