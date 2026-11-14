@@ -18,6 +18,7 @@ using SynapseAdmin.Infrastructure.DataProtection;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Infrastructure.Gateways;
 using SynapseAdmin.Infrastructure.Security;
+using SynapseAdmin.Infrastructure.Helpers;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -209,9 +210,9 @@ if (!app.Environment.IsDevelopment())
     }
 }
 
-var supportedCultures = new[] { "en-US", "de-DE", "fr-FR" };
+var supportedCultures = SupportedCultures.All.ToArray();
 var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture(supportedCultures[0])
+    .SetDefaultCulture(SupportedCultures.Default)
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
