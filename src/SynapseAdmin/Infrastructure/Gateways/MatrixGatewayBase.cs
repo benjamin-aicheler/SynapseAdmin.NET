@@ -30,37 +30,6 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     // --- Standard Matrix CS API Implementation ---
     
-    public virtual async Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5 * 1024 * 1024, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await using var media = await OpenMediaAsync(mxcUrl, cancellationToken: cancellationToken);
-            if (media.Status != MediaDownloadStatus.Full) return null;
-            var responseStream = media.Content;
-            using var ms = new MemoryStream();
-            var buffer = new byte[8192];
-            int read;
-            long totalRead = 0;
-
-            while ((read = await responseStream.ReadAsync(buffer, cancellationToken)) > 0)
-            {
-                totalRead += read;
-                if (totalRead > maxBytes) return null;
-                await ms.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-            }
-
-            return ms.ToArray();
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     /// <summary>
     /// Opens a media download, forwarding <paramref name="range"/> and <paramref name="cancellationToken"/> to the
     /// homeserver (#372). Only the response headers are read; the caller owns (and must dispose) the result.

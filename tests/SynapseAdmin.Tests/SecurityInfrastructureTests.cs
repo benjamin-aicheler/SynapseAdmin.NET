@@ -828,7 +828,6 @@ public class SecurityInfrastructureTests
         public Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseVersionResponse?> GetSynapseVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5242880, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<MediaDownload> OpenMediaAsync(string mxcUri, MediaByteRange? range = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();

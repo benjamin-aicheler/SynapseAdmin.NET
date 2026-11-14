@@ -80,7 +80,6 @@ public interface IMatrixGateway
     Task<SynapseVersionResponse?> GetSynapseVersionAsync(CancellationToken cancellationToken = default);
 
     // --- Media (Standard/Admin) ---
-    Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5 * 1024 * 1024, CancellationToken cancellationToken = default);
     /// <summary>Opens a media download, forwarding an optional byte range. The caller must dispose the result.</summary>
     Task<MediaDownload> OpenMediaAsync(string mxcUri, MediaByteRange? range = null, CancellationToken cancellationToken = default);
     Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
