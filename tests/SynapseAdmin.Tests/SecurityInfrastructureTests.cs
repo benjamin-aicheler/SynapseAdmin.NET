@@ -183,6 +183,42 @@ public class SecurityInfrastructureTests
         Assert.Equal("TooManyLoginAttempts", (await clientA.LoginWithTokenAsync(homeserver, "syt_valid")).Message);
     }
 
+    /// <summary>#395 (H-10): a failed token login (e.g. while switching accounts) keeps the current session.</summary>
+    [Fact]
+    public async Task FailedTokenLogin_KeepsExistingSession()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var authGateway = new TokenAuthGateway(validToken: "syt_valid");
+        const string homeserver = "https://matrix.example.com";
+        var session = CreateSessionService(authGateway, limiter, ClientAt("192.0.2.3"));
+        Assert.True((await session.LoginWithTokenAsync(homeserver, "syt_valid")).Success);
+        var existing = session.Gateway;
+
+        var result = await session.LoginWithTokenAsync(homeserver, "syt_wrong");
+
+        Assert.Equal("LoginFailed", result.Message);
+        Assert.True(session.IsLoggedIn);
+        Assert.Same(existing, session.Gateway);
+    }
+
+    /// <summary>Restoring a session replaces it, so a failed restore still clears the gateway.</summary>
+    [Fact]
+    public async Task FailedSessionRestore_StillClearsGateway()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var authGateway = new TokenAuthGateway(validToken: "syt_valid");
+        const string homeserver = "https://matrix.example.com";
+        var session = CreateSessionService(authGateway, limiter, ClientAt("192.0.2.4"));
+        Assert.True((await session.LoginWithTokenAsync(homeserver, "syt_valid")).Success);
+
+        var result = await session.RestoreSessionAsync(homeserver, "syt_revoked", force: true);
+
+        Assert.False(result.Success);
+        Assert.False(session.IsLoggedIn);
+    }
+
     [Fact]
     public async Task InteractiveLogin_ClientsWithoutHttpContext_UseTheirCircuitIp_AndDoNotShareBucket()
     {
