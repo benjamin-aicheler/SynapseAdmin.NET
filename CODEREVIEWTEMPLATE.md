@@ -46,9 +46,9 @@
 ## 🏗️ 4. Code Quality & Architecture
 
 *Focus: Adherence to SynapseAdmin.NET N-Tier architecture, SOLID/DRY principles, localization rules, MudBlazor/theming conventions, and unit test coverage:*
-* *Presentation Layer (`.razor` / `.razor.cs`): Code-behind pattern required (no inline `@code` blocks), binds only to `ViewModels` (no raw SDK/DTO models), checks capabilities via `IMatrixGateway.SupportsAdminApi` (never `is SynapseAdminGateway`), uses MudBlazor components & `IAppTheme`.*
+* *Presentation Layer (`.razor` / `.razor.cs`): Code-behind pattern required (no inline `@code` blocks), binds only to `ViewModels` (no raw SDK/DTO models), checks capabilities via `IMatrixGateway.SupportsAdminApi` (never a concrete gateway type check), uses MudBlazor components & `IAppTheme`.*
 * *Application Layer (`Services/` & `Interfaces/`): Every service has a matching interface in `Interfaces/` and communicates only through `IMatrixGateway` / `IMatrixAuthGateway`.*
-* *Gateway Layer (`Infrastructure/Gateways/`): Encapsulates all wire-level HTTP, URI encoding, and JSON concerns; returns structured DTOs/models (never raw `HttpResponseMessage`); maintains `SynapseCompatibleAdminGateway` (Tuwunel) vs. `SynapseAdminGateway` separation without modifying the `LibMatrix` submodule.*
+* *Gateway Layer (`Infrastructure/Gateways/`): Encapsulates all wire-level HTTP, URI encoding, and JSON concerns; returns structured DTOs/models (never raw `HttpResponseMessage`); implements Synapse Admin endpoints in `SynapseCompatibleAdminGateway` (Synapse and Tuwunel) without modifying the `LibMatrix` submodule.*
 * *Localization (`EN`, `DE`, `FR`): Services localize business outcomes; `.razor.cs` localizes interaction logic only (dialogs, dynamic titles); `.razor` localizes static layout text.*
 
 **Assessment & Remarks:**

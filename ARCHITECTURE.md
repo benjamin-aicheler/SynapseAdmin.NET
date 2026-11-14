@@ -249,7 +249,7 @@ sequenceDiagram
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
-| 0001 | Isolate `LibMatrix` / `ArcaneLibs` submodules behind `IMatrixGateway` and `SynapseCompatibleAdminGateway` (superseding obsolete `SynapseAdminGateway`) to support Synapse, Tuwunel >= 1.8.1, and API quirks (`JsonStringConverter`) without modifying submodules. | Accepted | 2026 |
+| 0001 | Isolate `LibMatrix` / `ArcaneLibs` submodules behind `IMatrixGateway` and `SynapseCompatibleAdminGateway` (superseding the former SDK-based `SynapseAdminGateway`, removed in #397) to support Synapse, Tuwunel >= 1.8.1, and API quirks (`JsonStringConverter`) without modifying submodules. | Accepted | 2026 |
 | 0002 | Synchronize Blazor Interactive Server sessions with ASP.NET Core MVC auth cookies via a 60s single-use, antiforgery-bound `SessionBridgeService` (`POST /Auth/SignIn`), never passing secrets or bridge keys in URLs. | Accepted | 2026 |
 | 0003 | Route all unauthenticated discovery and password login through `HomeserverDiscoveryClient` + `IHomeserverDestinationPolicy` (`HOMESERVER_ALLOWLIST`) with connect-time IP validation (`SocketsHttpHandler.ConnectCallback`), bypassing `LibMatrix`'s unvalidated resolver. | Accepted | 2026 |
 | 0004 | Encrypt ASP.NET Core Data Protection keys on disk using PBKDF2-SHA256 + AES-256-GCM (`AesXmlEncryptor`/`AesXmlDecryptor`) keyed by `DP_PASSPHRASE` with no external database. | Accepted | 2026 |
@@ -265,7 +265,6 @@ sequenceDiagram
 | Manual git submodule updates | Dependabot cannot update `LibMatrix/` or `ArcaneLibs/` (`.github/dependabot.yml`), risking stale SDK dependencies. | Periodically review and update the `LibMatrix` submodule manually. |
 | Coupling to undocumented Synapse / Tuwunel API quirks | Upstream changes to `next_token` types, `creation_ts` units (ms vs s across v3/v2), `avatar` naming, or localpart media-stats filtering could break endpoints. | Isolated inside `SynapseCompatibleAdminGateway` and mapping extensions, covered by serialization, pagination, and deduplication unit tests. |
 | External Google Fonts CDN link (`App.razor`) | Browser requests `fonts.googleapis.com` for Roboto; air-gapped or strict-CSP environments will fall back to system fonts or log CSP violations. | Accepted for now (offline/air-gapped environments are not currently targeted); can self-host Roboto CSS/woff2 assets in `wwwroot/` later if needed. |
-| Retained `[Obsolete]` `SynapseAdminGateway` | Increases maintenance surface alongside `SynapseCompatibleAdminGateway`. | Evaluate removing `SynapseAdminGateway` once `SynapseCompatibleAdminGateway` parity is fully proven in production. |
 
 ## 11. Glossary
 
