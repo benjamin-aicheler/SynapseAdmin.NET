@@ -32,7 +32,8 @@ public class MemoryLoginRateLimitStore(IMemoryCache cache) : ILoginRateLimitStor
         }
     }
 
-    public bool IsAllowed(IReadOnlyList<string> keys, int maxAttempts)
+    /// <summary>Checks the counters without incrementing them. Test inspection only; not part of the store contract.</summary>
+    internal bool IsAllowed(IReadOnlyList<string> keys, int maxAttempts)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -47,19 +48,6 @@ public class MemoryLoginRateLimitStore(IMemoryCache cache) : ILoginRateLimitStor
             }
 
             return true;
-        }
-    }
-
-    public void Increment(IReadOnlyList<string> keys, TimeSpan windowDuration)
-    {
-        var now = DateTimeOffset.UtcNow;
-
-        lock (_syncLock)
-        {
-            foreach (var key in keys)
-            {
-                IncrementBucketCore(key, now, windowDuration);
-            }
         }
     }
 

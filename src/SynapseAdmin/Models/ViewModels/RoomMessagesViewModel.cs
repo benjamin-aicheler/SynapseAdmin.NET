@@ -3,7 +3,6 @@ namespace SynapseAdmin.Models.ViewModels;
 public class RoomMessagesViewModel
 {
     public List<RoomMessageItemViewModel> Messages { get; set; } = [];
-    public string? StartToken { get; set; }
     public string? EndToken { get; set; }
 }
 

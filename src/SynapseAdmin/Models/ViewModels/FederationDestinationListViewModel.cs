@@ -9,6 +9,5 @@ public class FederationDestinationListViewModel
     public TimeSpan RetryIntervalTimeSpan => TimeSpan.FromMilliseconds(RetryInterval);
     public long? FailureTs { get; set; }
     public DateTimeOffset? FailureTsDateTime => FailureTs.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(FailureTs.Value) : null;
-    public string? FailureReason { get; set; }
     public long? LastSuccessfulStreamOrdering { get; set; }
 }

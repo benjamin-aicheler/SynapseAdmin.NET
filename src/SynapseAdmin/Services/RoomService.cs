@@ -364,7 +364,6 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
             var vm = new RoomMessagesViewModel
             {
-                StartToken = result.Start,
                 EndToken = result.End,
                 Messages = result.Chunk
                     .Where(m => m.Type == "m.room.message")

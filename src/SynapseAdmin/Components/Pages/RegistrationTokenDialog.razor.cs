@@ -26,7 +26,6 @@ namespace SynapseAdmin.Components.Pages
         [Parameter]
         public DateTime? ExistingExpiryDate { get; set; }
 
-        private MudForm? form;
         private bool success = true;
         
         private string? token;

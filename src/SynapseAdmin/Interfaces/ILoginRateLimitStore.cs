@@ -13,16 +13,6 @@ public interface ILoginRateLimitStore
     bool TryAcquire(IReadOnlyList<string> keys, int maxAttempts, TimeSpan windowDuration);
 
     /// <summary>
-    /// Checks whether all specified keys are currently below <paramref name="maxAttempts"/> without incrementing.
-    /// </summary>
-    bool IsAllowed(IReadOnlyList<string> keys, int maxAttempts);
-
-    /// <summary>
-    /// Atomically increments all specified keys within <paramref name="windowDuration"/>.
-    /// </summary>
-    void Increment(IReadOnlyList<string> keys, TimeSpan windowDuration);
-
-    /// <summary>
     /// Clears rate-limit counters for all specified keys.
     /// </summary>
     void Reset(IReadOnlyList<string> keys);

@@ -36,15 +36,14 @@ public class SecurityInfrastructureTests
     public void LoginRateLimiter_BlocksAfterFiveFailedAttempts_PerIpAndIdentifier_AndResets()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var limiter = new LoginRateLimiter(cache);
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
 
         const string ip = "192.0.2.10";
         const string identifier = "https://matrix.example.com|@Admin:example.com";
 
         for (var i = 0; i < 5; i++)
         {
-            Assert.True(limiter.IsAllowed(ip, identifier));
-            limiter.RecordFailedAttempt(ip, identifier);
+            Assert.True(limiter.TryAcquire(ip, identifier));
         }
 
         // Blocked by both IP and case-normalized identifier
@@ -63,7 +62,7 @@ public class SecurityInfrastructureTests
     public async Task LoginRateLimiter_ParallelTryAcquire_AllowsAtMostFiveSlotsUnderConcurrency()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        ILoginRateLimiter limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
 
         const string ip = "192.0.2.55";
         const string identifier = "https://matrix.example.com|@Admin:example.com";
@@ -864,7 +863,6 @@ public class SecurityInfrastructureTests
         public Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseVersionResponse?> GetSynapseVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<byte[]?> DownloadMediaAsync(string mxcUrl, long maxBytes = 5242880, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<MediaDownload> OpenMediaAsync(string mxcUri, MediaByteRange? range = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default) => throw new NotImplementedException();
