@@ -1,0 +1,25 @@
+# Formatting reference for SynapseAdmin.NET (decision H-01, #396).
+# Records the existing code style only: no analyzer severities are set here, so the build output is unchanged.
+# The LibMatrix/ and ArcaneLibs/ submodules have their own .editorconfig (root = true) and are not affected.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,razor,js,css}]
+indent_size = 4
+
+[*.cs]
+csharp_new_line_before_open_brace = all
+dotnet_sort_system_directives_first = false
+
+[*.{json,yml,yaml,csproj,props,targets,slnx,xml,resx}]
+indent_size = 2
+
+# Two trailing spaces are a line break in Markdown.
+[*.md]
+trim_trailing_whitespace = false

@@ -195,7 +195,7 @@ None of the items below may be deleted by an executing agent. Each needs an expl
   - **09a:** `Services/**`, `Controllers/**`, `Program.cs`
   - **09b:** `Components/**/*.razor.cs`
   - **09c:** `Infrastructure/**`, `Models/**`, `Extensions/**`, `Interfaces/**`
-- **Exact Scope:** Run `dotnet format whitespace src/SynapseAdmin/SynapseAdmin.csproj --include <folder>` for the task's folders only, then inspect the diff. Accept only whitespace changes (trailing spaces on blank lines, indentation). Revert any hunk that changes brace placement, line breaks inside expressions or blank-line count. **Prerequisite (human decision H-01):** confirm that no `.editorconfig` should be introduced first, since an `.editorconfig` would change what "correct" formatting means.
+- **Exact Scope:** Run `dotnet format whitespace src/SynapseAdmin/SynapseAdmin.csproj --include <folder>` for the task's folders only, then inspect the diff. Formatting follows the repo-root `.editorconfig` (decision H-01, #396): LF, UTF-8, 4-space indent, braces on their own line, trim trailing whitespace, final newline. Accept only whitespace changes: trailing spaces on blank lines, indentation, and a missing final newline (10 files had none at audit time). Revert any hunk that changes brace placement, line breaks inside expressions or blank-line count.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus `git diff --ignore-all-space --stat` for the task is **empty**, plus A1 reports 0 `IDE0055` in the task's folders.
 
@@ -351,6 +351,15 @@ None of the items below may be deleted by an executing agent. Each needs an expl
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus the new integration test passes.
 
+### P2-19: Extract `IMatrixAuthStateService` from `MatrixAuthenticationStateProvider` (decision H-14, #396)
+- **Target Files:** new `Interfaces/IMatrixAuthStateService.cs`, `Services/MatrixAuthenticationStateProvider.cs`, `Program.cs` (144-145), `Components/Layout/NavMenu.razor.cs` (11), `Components/Pages/Login.razor.cs` (13)
+- **Exact Scope:**
+  - Add an interface with exactly the members the two components use today: `GetAuthenticationStateAsync()`, `LoginAsync(...)`, `LoginWithTokenAsync(...)`, `LogoutAsync(NavigationManager?)`, `GetAccessToken()`, `GetUserId()`, `GetUsername()`, `GetHomeserver()`, with the same signatures. The provider implements it.
+  - Register it as an alias for the **same scoped instance**: `AddScoped<IMatrixAuthStateService>(sp => (MatrixAuthenticationStateProvider)sp.GetRequiredService<AuthenticationStateProvider>())`. **Keep** `AddScoped<AuthenticationStateProvider, MatrixAuthenticationStateProvider>()`, because Blazor resolves the base type. Remove the concrete-type alias only if `grep` shows no remaining consumer of the concrete type.
+  - Switch `NavMenu` and `Login` to inject the interface. No logic changes.
+- **Risk Level:** Low
+- **Done Criteria:** SDC, plus a `WebApplicationFactory` test or a DI test asserting that `IMatrixAuthStateService` and `AuthenticationStateProvider` resolve to the **same** instance within one scope, plus `grep -rn "MatrixAuthenticationStateProvider" src/SynapseAdmin/Components` is empty.
+
 ---
 
 ## 5. Phase 3: Cross-Module Deduplication (Medium Risk)
@@ -459,7 +468,7 @@ These issues came up during the audit. Fixing them **changes behavior**, so they
 
 | ID | Category | Finding | Location | Note |
 |---|---|---|---|---|
-| H-01 | Config | No `.editorconfig` or analyzer configuration. Formatting and analyzer findings have no agreed baseline. | repo root | Decide before P1-09. Adding one, or adding `dotnet format --verify-no-changes` to CI, needs approval (AGENTS.md: ask before modifying workflows). |
+| H-01 | Config | No `.editorconfig` or analyzer configuration. Formatting and analyzer findings have no agreed baseline. | repo root | **Decided (#396):** minimal repo-root `.editorconfig` recording the existing style. No analyzer severities, no CI formatting step. P1-09 formats against it. |
 | H-02 | Convention breach (#393, fix in #400) | User-facing timestamps are rendered in **UTC/server time** without `ITimeZoneService`: `Home.razor:74`, `Users.razor:74`, `EventReports.razor:54`, `FederationDestinations.razor:58,64`, `RegistrationTokens.razor:47`, `EventForensics.razor:124`. | Components | Violates the AGENTS.md "Timezone" rule, and the fix changes displayed values. |
 | H-03 | Bug (#393, fix in #400) | `RegistrationTokenDialog.razor.cs:52` converts `DateTime` to `DateTimeOffset` implicitly, which uses the **server's** `TimeZoneInfo.Local`. `ExistingExpiryDate` comes from `FromUnixTimeMilliseconds(...).DateTime` (UTC wall time, `Kind=Unspecified`), so expiries shift when the server TZ ≠ UTC. | `RegistrationTokenDialog.razor.cs:52`, `RegistrationTokenViewModel.cs:11` | Same family as H-02. |
 | H-04 | Inconsistent formatting | Two byte-size formatters with different output: `FormatExtensions.FormatSize` (1024-based, up to EB, `0.#`, current culture) vs `RoomGalleryGrid.FormatFileSize` (KB/MB only, `F1`). | `Extensions/FormatExtensions.cs`, `RoomGalleryGrid.razor.cs:310` | Consolidating them changes what users see. |
@@ -472,17 +481,17 @@ These issues came up during the audit. Fixing them **changes behavior**, so they
 | H-11 | Redundant guard | `MediaService.OpenMediaAsync` / `GetMediaMetadataAsync` check `!sessionService.IsLoggedIn \|\| Gateway == null`. In production `IsLoggedIn ≡ Gateway != null`, but `DispatchProxy` stubs in tests return `false` for an unconfigured `IsLoggedIn`. | `MediaService.cs:18,39` | Simplifying it may change test-double behavior. |
 | H-12 | Inconsistent null semantics | Gateway `null` results map to `Ok(empty)` for lists (`GetRoomListAsync`, `GetUserListAsync`, `GetTopMediaUsersAsync`, `GetUserMembershipsAsync`, …) but to `Failure` for others (`GetPublicRoomsAsync`, `GetLocalRoomAliasesAsync`, `PurgeRoomHistoryAsync`, …). | Services | Document the intended contract before P3-11. |
 | H-13 | Boundary validation (#394, fix in #399) | `CultureController.Set` persists any `culture` string in a cookie for 1 year without checking it against the supported list (`en-US`, `de-DE`, `fr-FR`), which is duplicated in `Program.cs:212` and `LanguageSelector.razor:2-4`. `new RequestCulture(culture)` can throw `CultureNotFoundException` for malformed names, which would surface as an unhandled error. | `CultureController.cs`, `Program.cs:212`, `LanguageSelector.razor` | Validation and a shared culture list are a behavior change (invalid input → 400/redirect). |
-| H-14 | Architecture convention | `NavMenu` and `Login` inject the concrete `MatrixAuthenticationStateProvider`, which has no interface (AGENTS.md: "Always extract an interface"). It is registered twice (`Program.cs:143-144`). | `NavMenu.razor.cs:11`, `Login.razor.cs`, `Program.cs` | An interface extraction is a DI and contract change. |
-| H-15 | Config drift | Hard-coded timeouts, limits and lifetimes are spread across classes, and they are not configurable: gateway cache 15 min/1 h, discovery 10 min, room-name cache 30 min/2 h, purge cache 24 h, discovery `ConnectTimeout` 10 s / `Timeout` 30 s / 1 MiB buffer, login limiter 5/min, `/Auth` limiter 10/min, auth cookie 1 day, culture cookie 1 year, purge polling 5 s × 5, shadow-login 1 h, `DownloadMediaAsync` 5 MiB, `HomeserverDiscoveryClient` device name and LibMatrix `AppName` (both `"SynapseAdmin.NET"`). | multiple | Naming them as constants is in scope (P1-11 pattern). Turning them into config keys is a **feature** and needs SPEC.md. |
-| H-16 | Duplicate header | `X-Content-Type-Options: nosniff` is appended globally (`Program.cs:193`) and set again per response in `MediaController` (168, 198). | `Program.cs`, `MediaController.cs` | Harmless (the controller overwrites). Removing either copy is a security-review decision. |
+| H-14 | Architecture convention | `NavMenu` and `Login` inject the concrete `MatrixAuthenticationStateProvider`, which has no interface (AGENTS.md: "Always extract an interface"). It is registered twice (`Program.cs:143-144`). | `NavMenu.razor.cs:11`, `Login.razor.cs`, `Program.cs` | **Decided (#396):** extract `IMatrixAuthStateService` as task **P2-19**. The double registration is intentional (Blazor resolves the base type) and stays. |
+| H-15 | Config drift | Hard-coded timeouts, limits and lifetimes are spread across classes, and they are not configurable: gateway cache 15 min/1 h, discovery 10 min, room-name cache 30 min/2 h, purge cache 24 h, discovery `ConnectTimeout` 10 s / `Timeout` 30 s / 1 MiB buffer, login limiter 5/min, `/Auth` limiter 10/min, auth cookie 1 day, culture cookie 1 year, purge polling 5 s × 5, shadow-login 1 h, `DownloadMediaAsync` 5 MiB, `HomeserverDiscoveryClient` device name and LibMatrix `AppName` (both `"SynapseAdmin.NET"`). | multiple | **Decided (#396):** constants only (P1-11 pattern). None becomes configuration. Adding a config key later is a feature and needs a SPEC.md entry. |
+| H-16 | Duplicate header | `X-Content-Type-Options: nosniff` is appended globally (`Program.cs:193`) and set again per response in `MediaController` (168, 198). | `Program.cs`, `MediaController.cs` | **Decided (#396):** keep both as defense in depth for user-uploaded media. A comment in `MediaController` marks the copy as deliberate. Only one header is sent. |
 | H-17 | Dead-code decisions | D-01 … D-09 in §2.1. | — | — |
 
 ---
 
 ## 7. Recommended Execution Order
 
-1. **Phase 1:** P1-01 → P1-02 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-08 → (H-01 decision) → P1-09a/b/c → P1-10 → P1-11
-2. **Phase 2, infrastructure first:** P2-10 → P2-07 → P2-06 → P2-05 → P2-08a/b/c → P2-09 → P2-01 → P2-02 → P2-03 → P2-04 → P2-16 → P2-17 → P2-18
+1. **Phase 1:** P1-01 → P1-02 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-08 → P1-09a/b/c → P1-10 → P1-11
+2. **Phase 2, infrastructure first:** P2-10 → P2-07 → P2-06 → P2-05 → P2-08a/b/c → P2-09 → P2-01 → P2-02 → P2-03 → P2-04 → P2-16 → P2-17 → P2-18 → P2-19
 3. **Phase 2, components:** P2-12 → P2-11 → P2-13 → P2-14 → P2-15
 4. **Phase 3:** P3-10 → P3-05 → P3-06 → P3-04 → P3-03 → P3-01 → P3-02 → P3-09 → P3-08 → P3-07a/b/c → (owner approval) P3-11a–f → P3-12
 
