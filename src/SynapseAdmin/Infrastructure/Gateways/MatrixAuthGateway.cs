@@ -150,7 +150,8 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                     synapseVersion = versionInfo.ServerVersion;
                 }
             }
-            catch
+            // Probe failures are soft, but a cancelled request must not fall through and get cached (#391).
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
             {
                 // Soft fail on version probe
             }
@@ -207,7 +208,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                     }
                 }
             }
-            catch
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
             {
                 // Soft fail on federation version probe
             }
@@ -233,14 +234,14 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                                 version = versionInfo.ServerVersion;
                             }
                         }
-                        catch { }
+                        catch (Exception) when (!cancellationToken.IsCancellationRequested) { }
                     }
                     else
                     {
                         supportsAdmin = false;
                     }
                 }
-                catch
+                catch (Exception) when (!cancellationToken.IsCancellationRequested)
                 {
                     supportsAdmin = false;
                 }
