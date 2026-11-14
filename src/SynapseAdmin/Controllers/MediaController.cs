@@ -165,6 +165,8 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         var finalFileName = safeFilename ?? mediaId;
         var finalMimeType = safeMimeType ?? "application/octet-stream";
 
+        // Deliberately repeats the global middleware header: user-uploaded media must stay protected even if
+        // Program.cs changes. Indexer assignment replaces the value, so only one header is sent (H-16, #396).
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         
         return MediaResult(media!, finalMimeType, entityTag, finalFileName);
@@ -194,7 +196,9 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
             }
         }
 
-        // Add defensive headers for content-sniffing prevention
+        // Add defensive headers for content-sniffing prevention.
+        // Deliberately repeats the global middleware header: user-uploaded media must stay protected even if
+        // Program.cs changes. Indexer assignment replaces the value, so only one header is sent (H-16, #396).
         Response.Headers["X-Content-Type-Options"] = "nosniff";
 
         var finalMimeType = safeMimeType ?? "image/jpeg";
