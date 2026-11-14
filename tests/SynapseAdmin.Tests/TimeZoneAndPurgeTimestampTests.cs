@@ -19,6 +19,83 @@ namespace SynapseAdmin.Tests;
 
 public class TimeZoneAndPurgeTimestampTests
 {
+    // Issue #393: a zone without DST, chosen so it differs from both UTC (CI) and Central Europe (dev machines),
+    // which would mask a conversion through the server's TimeZoneInfo.Local.
+    private const string UserZone = "Asia/Tokyo";
+
+    [Fact]
+    public async Task RegistrationTokenDialog_Submit_InterpretsPickedExpiryInUserTimeZone()
+    {
+        await using var timeZone = new TimeZoneService(new StubJsRuntime(UserZone), NullLogger<TimeZoneService>.Instance);
+        var dialogProxy = (RecordingDialogProxy)(object)DispatchProxy.Create<IMudDialogInstance, RecordingDialogProxy>();
+        var dialog = await CreateTokenDialogAsync(timeZone, (IMudDialogInstance)(object)dialogProxy, isEdit: false, existingExpiry: null);
+
+        // The picker yields midnight of the chosen day, as wall-clock time.
+        SetField(dialog, "expiryDate", new DateTime(2026, 12, 1));
+        InvokePrivate(dialog, "Submit");
+
+        var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
+        // 2026-12-01 00:00 in Tokyo (UTC+9) -> 2026-11-30 15:00 UTC
+        Assert.Equal(new DateTimeOffset(2026, 11, 30, 15, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds(), token.ExpiryTime);
+    }
+
+    [Fact]
+    public async Task RegistrationTokenDialog_EditWithoutChanges_KeepsExistingExpiryInstant()
+    {
+        await using var timeZone = new TimeZoneService(new StubJsRuntime(UserZone), NullLogger<TimeZoneService>.Instance);
+        await timeZone.InitializeAsync();
+        var existing = new RegistrationTokenViewModel { ExpiryTime = new DateTimeOffset(2026, 5, 4, 22, 30, 0, TimeSpan.Zero).ToUnixTimeMilliseconds() };
+        var dialogProxy = (RecordingDialogProxy)(object)DispatchProxy.Create<IMudDialogInstance, RecordingDialogProxy>();
+
+        // RegistrationTokens passes the stored instant as wall-clock time in the user's zone.
+        var dialog = await CreateTokenDialogAsync(timeZone, (IMudDialogInstance)(object)dialogProxy, isEdit: true,
+            existingExpiry: timeZone.ToLocal(existing.ExpiryTimeDateTime!.Value).DateTime);
+        InvokePrivate(dialog, "Submit");
+
+        var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
+        Assert.Equal(existing.ExpiryTime, token.ExpiryTime);
+    }
+
+    [Fact]
+    public void TimestampViewModels_ExposeUtcInstants()
+    {
+        const long ms = 1_780_000_000_000L;
+        var expected = DateTimeOffset.FromUnixTimeMilliseconds(ms);
+
+        Assert.Equal(expected, new EventReportListViewModel { ReceivedTs = ms }.ReceivedTsDateTime);
+        Assert.Equal(expected, new FederationDestinationListViewModel { RetryLastTs = ms }.RetryLastTsDateTime);
+        Assert.Equal(expected, new FederationDestinationListViewModel { FailureTs = ms }.FailureTsDateTime);
+        Assert.Equal(expected, new RegistrationTokenViewModel { ExpiryTime = ms }.ExpiryTimeDateTime);
+        Assert.Equal(TimeSpan.Zero, new EventReportListViewModel { ReceivedTs = ms }.ReceivedTsDateTime.Offset);
+        Assert.Null(new FederationDestinationListViewModel { RetryLastTs = 0 }.RetryLastTsDateTime);
+        Assert.Null(new RegistrationTokenViewModel().ExpiryTimeDateTime);
+    }
+
+#pragma warning disable BL0005
+    private static async Task<RegistrationTokenDialog> CreateTokenDialogAsync(
+        ITimeZoneService timeZone, IMudDialogInstance mudDialog, bool isEdit, DateTime? existingExpiry)
+    {
+        var dialog = new RegistrationTokenDialog
+        {
+            TimeZoneService = timeZone,
+            IsEdit = isEdit,
+            ExistingToken = isEdit ? "token" : null,
+            ExistingExpiryDate = existingExpiry
+        };
+        typeof(RegistrationTokenDialog).GetProperty("MudDialog", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(dialog, mudDialog);
+        await (Task)typeof(RegistrationTokenDialog).GetMethod("OnInitializedAsync", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .Invoke(dialog, null)!;
+        return dialog;
+    }
+#pragma warning restore BL0005
+
+    private static void SetField(object instance, string name, object? value) =>
+        instance.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(instance, value);
+
+    private static void InvokePrivate(object instance, string name) =>
+        instance.GetType().GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(instance, null);
+
     [Fact]
     public async Task InitializeAsync_WithValidIanaTimeZone_ComputesPurgeTimestampInUserZone()
     {

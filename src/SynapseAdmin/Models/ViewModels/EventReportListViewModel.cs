@@ -4,7 +4,7 @@ public class EventReportListViewModel
 {
     public string Id { get; set; } = string.Empty;
     public long ReceivedTs { get; set; }
-    public DateTime ReceivedTsDateTime => DateTimeOffset.FromUnixTimeMilliseconds(ReceivedTs).DateTime;
+    public DateTimeOffset ReceivedTsDateTime => DateTimeOffset.FromUnixTimeMilliseconds(ReceivedTs);
     public string UserId { get; set; } = string.Empty;
     public string RoomId { get; set; } = string.Empty;
     public string EventId { get; set; } = string.Empty;

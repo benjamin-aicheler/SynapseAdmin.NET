@@ -121,7 +121,7 @@ else
                         <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Timestamp"]</MudText>
                         <div class="mt-1">
                             <MudText Typo="Typo.body2">
-                                @(eventData.Timestamp?.ToString("g") ?? "-")
+                                @(eventData.Timestamp is { } timestamp ? TimeZoneService.ToLocal(timestamp).ToString("g") : "-")
                             </MudText>
                         </div>
                     </MudItem>

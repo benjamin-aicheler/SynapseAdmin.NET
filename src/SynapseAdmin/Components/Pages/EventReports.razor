@@ -51,7 +51,7 @@ else
             <MudTd DataLabel="@L["Room"]">@(string.IsNullOrEmpty(context.CanonicalAlias) ? context.RoomId : context.CanonicalAlias)</MudTd>
             <MudTd DataLabel="@L["Reason"]">@(string.IsNullOrEmpty(context.Reason) ? "-" : context.Reason)</MudTd>
             <MudTd DataLabel="@L["Score"]">@context.Score</MudTd>
-            <MudTd DataLabel="@L["ReportedAt"]">@context.ReceivedTsDateTime.ToString("g")</MudTd>
+            <MudTd DataLabel="@L["ReportedAt"]">@TimeZoneService.ToLocal(context.ReceivedTsDateTime).ToString("g")</MudTd>
             <MudTd DataLabel="@L["Actions"]">
                 <div class="d-flex align-center gap-1">
                     @if (!string.IsNullOrEmpty(context.EventId))

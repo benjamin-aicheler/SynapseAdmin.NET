@@ -44,7 +44,7 @@ else
             </MudTd>
             <MudTd DataLabel="@L["Pending"]">@context.Pending</MudTd>
             <MudTd DataLabel="@L["ExpiryDate"]">
-                @(context.ExpiryTimeDateTime.HasValue ? context.ExpiryTimeDateTime.Value.ToString("g") : L["Never"])
+                @(context.ExpiryTimeDateTime is { } expiry ? TimeZoneService.ToLocal(expiry).ToString("g") : L["Never"])
             </MudTd>
             <MudTd DataLabel="@L["Actions"]">
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="@(() => OpenEditDialog(context))" />

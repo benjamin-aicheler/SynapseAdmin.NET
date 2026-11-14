@@ -71,7 +71,7 @@ else
                     <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["Deactivated"]</MudChip>
                 }
             </MudTd>
-            <MudTd DataLabel="@L["Created"]">@context.CreationTsDateTime.ToString("g")</MudTd>
+            <MudTd DataLabel="@L["Created"]">@TimeZoneService.ToLocal(context.CreationTsDateTime).ToString("g")</MudTd>
             <MudTd DataLabel="@L["Actions"]">
                 <MudButton Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
             </MudTd>

@@ -19,10 +19,15 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
 
+        [Inject]
+        public ITimeZoneService TimeZoneService { get; set; } = null!;
+
         private MudTable<EventReportListViewModel>? table;
         private int? totalReports;
         private string? _searchTerm;
         private readonly CancellationTokenSource _cts = new();
+
+        protected override Task OnInitializedAsync() => TimeZoneService.InitializeAsync();
 
         private async Task ReloadTable()
         {

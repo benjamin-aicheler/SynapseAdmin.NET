@@ -71,7 +71,7 @@ else if (isSynapse)
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@L["UserId"]">@context.UserId</MudTd>
-                    <MudTd DataLabel="@L["Created"]">@context.CreationTsDateTime.ToString("g")</MudTd>
+                    <MudTd DataLabel="@L["Created"]">@TimeZoneService.ToLocal(context.CreationTsDateTime).ToString("g")</MudTd>
                     <MudTd DataLabel="@L["Actions"]">
                         <MudButton Href="@($"/users/{Uri.EscapeDataString(context.UserId)}")" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info">@L["Details"]</MudButton>
                     </MudTd>
