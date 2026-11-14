@@ -113,7 +113,7 @@
                                     @(string.IsNullOrEmpty(item.MediaType) ? "Unknown" : item.MediaType.Split(';')[0])
                                 </MudText>
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                    @(item.MediaLength > 0 ? FormatFileSize(item.MediaLength) : "")
+                                    @(item.MediaLength > 0 ? item.MediaLength.FormatSize() : "")
                                 </MudText>
                             </div>
                         </div>
