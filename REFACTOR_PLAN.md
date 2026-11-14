@@ -15,11 +15,11 @@
 | Tests | 212 / 212 pass (xUnit + bUnit + WebApplicationFactory), also under `LANG=de_DE.UTF-8`. |
 | Formatting reference | Repo-root `.editorconfig` (formatting only, no analyzer severities). No lint or formatting step in CI. |
 | Unused usings (IDE0005) | 16 in `src/`, 1 in `tests/`. |
-| Formatting (IDE0055) | 95 locations in 36 files, almost all whitespace-only lines with trailing spaces. 9 `.cs`/`.razor` files lack a final newline. |
+| Formatting (IDE0055) | 95 locations in 36 files: 93 are whitespace-only (mostly trailing spaces on blank lines), 2 are brace placement in `Program.cs`. 9 files lack a final newline: 3 `.razor.cs` (fixed by `dotnet format`) and 6 `.razor` markup files (`dotnet format` doesn't process markup). |
 | Swallowed exceptions | 8 catch-all blocks swallow exceptions without logging: clipboard calls, JS disposal, theme discovery, a polling cleanup (see §6.1 O-01). |
-| Duplicated service boilerplate | 49 `if (Gateway == null) return …NotAuthenticated` guards, 59 `catch (OperationCanceledException)` blocks. |
-| Duplicated UI boilerplate | 57 `if (result.Severity != Severity.Normal) Snackbar.Add(...)` blocks across 21 component files. |
-| Cross-module duplicates | MIME-type classification (4 copies, semantics differ), media preview launcher (3), local-user check (3), claim-type strings (3 files), `SortDirection → dir` mapping (4, **two intended defaults**), test localizer stubs (7: 5 identical + 2 identical formatting variants). |
+| Duplicated service boilerplate | In the result-returning services (all except `MatrixSessionService`): 49 `Gateway == null → NotAuthenticated` guards (51 once P1-12 lands) and 51 outer `OperationCanceledException → Cancelled()` ladders. A raw `grep` finds 59 `catch (OperationCanceledException)` blocks; the other 8 are 4 in `MatrixSessionService`, 2 inner rethrows in `UserService` and 2 inner silent catches in `RoomService`. |
+| Duplicated UI boilerplate | 57 `Severity != Severity.Normal` checks in 21 component files. 55 of them (in 20 files) report through `ISnackbar`; the 2 in `Login.razor.cs` redirect or set an inline alert instead. |
+| Cross-module duplicates | MIME-type classification (5 copies: 4 in C#, 1 in `MediaPreviewDialog.razor` markup; semantics differ), media preview launcher (3), local-user check (3), claim-type strings (3 files), `SortDirection → dir` mapping (4, **two intended defaults**), test localizer stubs (7: 5 identical + 2 identical formatting variants). |
 
 ### Test-coupling warning (applies to all component tasks)
 
@@ -86,7 +86,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 | `dotnet build --no-incremental` | 0 errors. 151 warnings, **all** in `LibMatrix/**` and `ArcaneLibs/**`. |
 | `dotnet test` | 212 passed, 0 failed, 0 skipped. |
 | A1 `IDE0005` | 16 (src) + 1 (tests) |
-| A1 `IDE0055` | 95 |
+| A1 `IDE0055` | 95 (93 whitespace-only, 2 brace placement in `Program.cs`) |
 | A1 `IDE0036` / `IDE0040` / `IDE0044` | 2 / 3 / 3 |
 | A2 `CA1805` | 9 |
 | A2 `CA1869` | 1 (`EventForensicsService.cs:60`) |
@@ -165,8 +165,8 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Done Criteria:** SDC.
 
 ### P1-06: Replace redundant fully qualified type names (services, controllers and components)
-- **Target Files:** `Services/RoomService.cs` (`System.Text.Json.Nodes.JsonNode` / `JsonValue` at 643, 646: add `using System.Text.Json.Nodes;`), `Components/Pages/RoomDetails.razor.cs:26` (`Microsoft.Extensions.Logging.ILogger<>` is implicit), `Controllers/MediaController.cs:153` (`Infrastructure.Helpers.MediaHelper`: add `using SynapseAdmin.Infrastructure.Helpers;`), `Components/Pages/UserDetails.razor.cs:204-205` (`System.Net.WebUtility`)
-- **Exact Scope:** Type-name shortening only. No other edits.
+- **Target Files:** `Services/RoomService.cs` (`System.Text.Json.Nodes.JsonNode` / `JsonValue` at 643, 646: add `using System.Text.Json.Nodes;`), `Components/Pages/RoomDetails.razor.cs:26` (`Microsoft.Extensions.Logging.ILogger<>` is implicit), `Controllers/MediaController.cs:153` (`Infrastructure.Helpers.MediaHelper`: add `using SynapseAdmin.Infrastructure.Helpers;`), `Components/Pages/UserDetails.razor.cs:204-205` (`System.Net.WebUtility`: add `using System.Net;`, which `ImplicitUsings` doesn't provide)
+- **Exact Scope:** Type-name shortening plus the `using` directives named above. No other edits.
 - **Risk Level:** Low
 - **Done Criteria:** SDC.
 
@@ -186,14 +186,26 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus A1 and A2 report 0 `IDE0036` / `IDE0040` / `IDE0044` / `CA1805` in the target files.
 
-### P1-09a / P1-09b / P1-09c: Whitespace normalization (IDE0055)
+### P1-09a / P1-09b / P1-09c: Whitespace normalization (IDE0055, C# files)
 - **Target Files:**
-  - **09a:** `Services/**`, `Controllers/**`, `Program.cs` (31 diagnostics)
-  - **09b:** `Components/**/*.razor.cs` (43 diagnostics)
+  - **09a:** `Services/**`, `Controllers/**` (29 diagnostics). `Program.cs` is handled by P1-09d.
+  - **09b:** `Components/**/*.razor.cs` (43 diagnostics, plus the missing final newline in `LanguageSelector.razor.cs`, `Pages/Error.razor.cs` and `RedirectToLogin.razor.cs`)
   - **09c:** `Infrastructure/**`, `Models/**` (21 diagnostics; `Extensions/**` and `Interfaces/**` have none)
-- **Exact Scope:** Run `dotnet format whitespace src/SynapseAdmin/SynapseAdmin.csproj --include <folder>` for the task's folders only, then inspect the diff. Formatting follows the repo-root `.editorconfig`: LF, UTF-8, 4-space indent, braces on their own line, trim trailing whitespace, final newline. Accept only whitespace changes: trailing spaces on blank lines, indentation, and a missing final newline. Revert any hunk that changes brace placement, line breaks inside expressions or blank-line count.
+- **Exact Scope:** Run `dotnet format whitespace src/SynapseAdmin/SynapseAdmin.csproj --include <folder>` for the task's folders only, then inspect the diff. Formatting follows the repo-root `.editorconfig`. In these folders every finding is whitespace-only (trailing spaces on blank lines, indentation, a missing final newline); a trial run at `836c091` changed nothing else. If a hunk changes anything other than whitespace, revert it and report it instead of committing it.
 - **Risk Level:** Low
-- **Done Criteria:** SDC, plus `git diff --ignore-all-space --stat` for the task is **empty**, plus A1 reports 0 `IDE0055` in the task's folders.
+- **Done Criteria:** SDC, plus `git diff --ignore-all-space --stat` for the task is **empty** (whitespace and final-newline changes are invisible to it), plus A1 reports 0 `IDE0055` in the task's folders.
+
+### P1-09d: Brace placement in `Program.cs` (IDE0055, layout change)
+- **Target Files:** `src/SynapseAdmin/Program.cs` (lines 112, 148)
+- **Exact Scope:** The only two IDE0055 findings that are not whitespace: `new RoryLibMatrixConfiguration {` (112) and `.AddCookie(options => {` (148) put the opening brace at the end of the line. Move each brace to its own line, as `csharp_new_line_before_open_brace = all` requires (exactly what `dotnet format whitespace` produces for this file). Nothing else in the file changes; in particular don't touch middleware order or option values. This task is allowed to change layout, so the empty `git diff --ignore-all-space` check from P1-09a–c doesn't apply.
+- **Risk Level:** Low
+- **Done Criteria:** SDC, plus A1 reports 0 `IDE0055` in `Program.cs`, plus `git diff --ignore-all-space` shows exactly two hunks, each moving one `{` to the next line (4 insertions, 2 deletions).
+
+### P1-09e: Add the missing final newline to `.razor` markup files
+- **Target Files:** `Components/LanguageSelector.razor`, `Components/Layout/MainLayout.razor`, `Components/Layout/NavMenu.razor`, `Components/Pages/NotFound.razor`, `Components/Pages/RegistrationTokenDialog.razor`, `Components/_Imports.razor`
+- **Exact Scope:** Append a single `\n` to each file (`dotnet format` doesn't process `.razor` markup, so this is a manual edit, e.g. `printf '\n' >> <file>`). No other change. Razor components trim leading and trailing whitespace, so the rendered output is unchanged.
+- **Risk Level:** Low
+- **Done Criteria:** SDC, plus `for f in $(git ls-files src tests | grep -E '\.(cs|razor)$'); do [ -n "$(tail -c1 "$f")" ] && echo "$f"; done` prints nothing, plus `git diff --ignore-all-space --stat` is empty.
 
 ### P1-10: Convert HTML comments in `.razor` markup to Razor comments
 - **Target Files:** `Components/Shared/RoomGalleryGrid.razor` (lines 6, 39, 53, 58, 60, 75, 104, 123, 168), `Components/Pages/BackgroundUpdates.razor` (38, 77, 116, 125, 141), `Components/Pages/MediaMaintenance.razor` (24, 55), `Components/Pages/EventForensics.razor` (60, 132)
@@ -286,7 +298,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Exact Scope:** Move the object initializers verbatim into extension methods. Services keep their try/catch, their `null`-result handling (see §6.2 S-02) and their `OperationResult` handling. Don't merge with existing mappings. **Never touch** the `creation_ts` seconds/milliseconds conversions (AGENTS.md "Do not unify").
 - **Characterize first:** Add a mapping test per moved mapper to `MappingExtensionsTests.cs` (property-by-property, including `null` → `[]` defaults).
 - **Risk Level:** Low
-- **Done Criteria:** SDC, plus the new mapping tests pass, plus no `new …ViewModel {` initializer remains in the touched service methods.
+- **Done Criteria:** SDC, plus the new mapping tests pass, plus no `new …ViewModel {` initializer remains in the listed line ranges. Out of scope: the outer `new UserMediaPageViewModel { Offset, TotalCount, Items }` in `UserService.GetUserMediaPageAsync` (135-149) is page orchestration, not a DTO mapping, and stays in the service; only its `Items` element mapping (139-148) moves.
 
 ### P2-09: `MatrixAuthenticationStateProvider`: extract the authenticated-state factory
 - **Target Files:** `Services/MatrixAuthenticationStateProvider.cs`, new `tests/SynapseAdmin.Tests/AuthenticationStateFactoryTests.cs`
@@ -372,20 +384,22 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 ### P3-01: Shared MIME-type classification helper
 - **Depends on:** P2-14, P2-17 (and O-02, if it has been fixed by then)
-- **Target Files:** `Infrastructure/Helpers/MediaHelper.cs`, `Components/Shared/RoomGalleryGrid.razor.cs` (283-299), `Components/Pages/RoomDetails.razor.cs` (377-387), `Components/Pages/UserDetails.razor.cs` (377-381), `Controllers/MediaController.cs` (`RequiresSandbox` from P2-17), `tests/SynapseAdmin.Tests/HelperAndOperationResultTests.cs`
+- **Target Files:** `Infrastructure/Helpers/MediaHelper.cs`, `Components/Shared/RoomGalleryGrid.razor.cs` (283-299), `Components/Pages/RoomDetails.razor.cs` (377-387), `Components/Pages/UserDetails.razor.cs` (377-381), `Controllers/MediaController.cs` (`RequiresSandbox` from P2-17), `Components/Pages/MediaPreviewDialog.razor` (7, 11, 18), `tests/SynapseAdmin.Tests/HelperAndOperationResultTests.cs`, new bUnit test `tests/SynapseAdmin.Tests/Components/MediaPreviewDialogTests.cs`
 - **Exact Scope:** Add `MediaHelper.HasTopLevelType(string? mime, string type, StringComparison comparison)` plus `IsImage` / `IsVideo` / `IsAudio` overloads that take a `StringComparison`. Migrate call sites **with their current comparison**:
   - The gallery passes `OrdinalIgnoreCase`.
   - `RoomDetails` and `UserDetails` pass `CurrentCulture` (today's `StartsWith(string)` default).
   - `MediaController` passes whatever `RequiresSandbox` uses at that point (`CurrentCulture` today, `Ordinal` once O-02 is fixed).
-  - Null policy stays at each call site: `RoomDetails.IsPreviewable` returns **true** for null, `UserDetails.IsPreviewable` returns **false**.
+  - `MediaPreviewDialog.razor` (markup: `MediaType?.StartsWith("image/") == true`, and the same for `video/` and `audio/`) passes `CurrentCulture`. Call `MediaHelper` directly from the markup (its namespace is already imported via `_Imports.razor`) or through private code-behind wrappers in `MediaPreviewDialog.razor.cs`. Don't add an `@code` block.
+  - Null policy stays at each call site: `RoomDetails.IsPreviewable` returns **true** for null, while `UserDetails.IsPreviewable` and `MediaPreviewDialog` return **false** (a null `MediaType` falls through to the dialog's `else` branch).
   - Keep the private `IsPreviewable` / `IsImageType` / `IsVideoType` / `IsAudioType` wrappers, because `.razor` files call them.
 - **Risk Level:** Medium
-- **Done Criteria:** SDC, plus new tests cover all comparison × null combinations, plus no `StartsWith("image/")` / `"video/"` / `"audio/"` remains outside `MediaHelper`.
+- **Characterize first:** A bUnit test for `MediaPreviewDialog` that renders `image/png`, `video/mp4`, `audio/ogg`, `application/pdf` and `null`, and asserts which element (`img` / `video` / `audio` / fallback) appears.
+- **Done Criteria:** SDC, plus new tests cover all comparison × null combinations, plus `grep -rnE 'StartsWith\("(image|video|audio)/"' src --include=*.cs --include=*.razor` matches nothing outside `MediaHelper.cs` (5 files match at `836c091`).
 
 ### P3-02: Shared media-preview launcher
 - **Depends on:** P2-12, P2-13, P2-14
 - **Target Files:** new `Components/Shared/MediaPreviewLauncher.cs` (static helper or `IDialogService` extension), `Components/Pages/RoomDetails.razor.cs` (`ShowPreview`, 389-403), `Components/Pages/UserDetails.razor.cs` (`ShowPreview`, 383-398), `Components/Shared/RoomGalleryGrid.razor.cs` (`GetPreviewUrl` 278-281, `ShowPreview` 310-322)
-- **Exact Scope:** All three build `"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(type ?? "")}"` and show `MediaPreviewDialog` with the same `DialogOptions` and parameters. Extract `BuildPreviewUrl(string mxc, string? mediaType)` and `ShowMediaPreviewAsync(this IDialogService, string mxc, string? uploadName, string mediaId, string? mediaType, string fallbackTitle)`. The URL, title fallback (`UploadName ?? MediaId` for the parameter and `UploadName ?? L["MediaPreview"]` for the dialog title) and options must stay identical. `UserDetails` keeps resolving the MXC before calling.
+- **Exact Scope:** All three build `"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(type ?? "")}"` and show `MediaPreviewDialog` with the same `DialogOptions` and parameters. Extract `BuildPreviewUrl(string mxc, string? mediaType)` and `ShowMediaPreviewAsync(this IDialogService, string mxc, string? uploadName, string mediaId, string? mediaType, string fallbackTitle)`. The URL, title fallback (`UploadName ?? MediaId` for the parameter and `UploadName ?? L["MediaPreview"]` for the dialog title) and options must stay identical. `UserDetails` keeps resolving the MXC before calling. `RoomGalleryGrid.GetPreviewUrl` stays as a private wrapper that delegates to `BuildPreviewUrl`, because `RoomGalleryGrid.razor` calls it directly (lines 78, 83, 91).
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus a unit test for `BuildPreviewUrl` with characters that need escaping, plus `grep -rn "Media/Preview?mxc" src` matches only the helper.
 
@@ -420,15 +434,16 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 ### P3-07a / P3-07b / P3-07c: Snackbar result helper
 - **Depends on:** P2-11 to P2-14 for the files they touch
 - **Target Files:**
-  - **07a:** new `Extensions/SnackbarExtensions.cs` + tests, then migrate `Components/Pages/RoomDetails.razor.cs` (11 sites)
+  - **07a:** new `Extensions/SnackbarExtensions.cs` + tests, then migrate `Components/Pages/RoomDetails.razor.cs` (11 sites at `836c091`; 10 after P2-12 merges the two delete handlers)
   - **07b:** migrate `UserDetails.razor.cs` (10), `Shared/RoomGalleryGrid.razor.cs` (6), `RegistrationTokens.razor.cs` (4), `RoomAliasesDialog.razor.cs` (3), `BackgroundUpdates.razor.cs` (3)
-  - **07c:** migrate the remaining 15 files (20 sites) listed by `grep -rc "Severity != Severity.Normal" src/SynapseAdmin/Components`
+  - **07c:** migrate the remaining 14 files (18 sites) listed by `grep -rc "Severity != Severity.Normal" src/SynapseAdmin/Components`, **excluding `Pages/Login.razor.cs`**
+  - **Not migrated:** `Pages/Login.razor.cs` (76, 81). It has no `ISnackbar`: one site redirects to `/login?Error=SessionBridgeFailed`, the other sets the inline `MudAlert` state (`errorMessage` / `errorSeverity`). Moving either to a snackbar would change behavior.
 - **Exact Scope:** Two helpers, because the code base mixes two semantics:
   - `ShowResult(this ISnackbar, OperationResult r)` shows **success and failure** when `r.Severity != Normal`.
   - `ShowFailure(this ISnackbar, OperationResult r)` shows **only** `!r.Success && r.Severity != Normal` (for example `Users`, `Rooms`, `RoomGalleryGrid.razor.cs:233`, `RoomDetails.razor.cs:201`, `FederationDestinations.razor.cs:72`).
   - Migrate each site to the helper that matches its current condition exactly. Sites that also set `errorMessage` (`LoadRoomDetails`, `LoadUserDetails`) keep that assignment.
 - **Risk Level:** Medium (many sites; the wrong helper silently drops or adds a success toast)
-- **Done Criteria:** SDC, plus helper unit tests for {Success, Failure, Cancelled} × {ShowResult, ShowFailure}, plus the snackbar-stub assertions in the existing bUnit tests are unchanged.
+- **Done Criteria:** SDC, plus helper unit tests for {Success, Failure, Cancelled} × {ShowResult, ShowFailure}, plus the snackbar-stub assertions in the existing bUnit tests are unchanged, plus after 07c `grep -rn "Severity != Severity.Normal" src/SynapseAdmin/Components` matches only the 2 sites in `Login.razor.cs`, and `Login.razor.cs` is unchanged.
 
 ### P3-08: Shared clipboard helper
 - **Target Files:** new `Extensions/JsRuntimeExtensions.cs`, `Components/Pages/RegistrationTokens.razor.cs` (`CopyToClipboard`, from 119), `Components/Pages/UserDetails.razor.cs` (194-202), `Components/Pages/EventForensics.razor.cs` (75-83)
@@ -453,20 +468,23 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 ### P3-11 (approval-gated): Service-layer result boilerplate helper
 - **Status:** **Do not start without explicit owner approval.** It may count as a "paradigm rewrite" under REFACTOR_RULES §2.
 - **Depends on:** P1-12
-- **Target Files (one sub-task per service, executed separately):** **11a** `MediaService`, **11b** `RegistrationTokenService`, **11c** `EventReportService` + `FederationService`, **11d** `BackgroundUpdatesService`, **11e** `UserService` (split in two if > 200 lines), **11f** `RoomService` (split in two), plus a new `Services/GatewayServiceBase.cs`
-- **Exact Scope:** 49 `Gateway == null → NotAuthenticated` guards and 59 `OperationCanceledException → Cancelled()` / `Exception → LogError + Failure(L[key])` ladders. A protected helper such as `Task<OperationResult<T>> RunAsync<T>(Func<IMatrixGateway, Task<OperationResult<T>>> body, string failureKey, Action<ILogger, Exception> log)` would remove them. It must preserve, per method:
+- **Target Files (one sub-task per service, executed separately):** **11a** `MediaService`, **11b** `RegistrationTokenService`, **11c** `EventReportService` + `FederationService`, **11d** `BackgroundUpdatesService`, **11e** `UserService` (split in two if > 200 lines), **11f** `RoomService` (split in two), **11g** `EventForensicsService`, plus a new `Services/GatewayServiceBase.cs`
+- **Exact Scope:** After P1-12, the target services contain 51 `Gateway == null → NotAuthenticated` guards and 51 outer `OperationCanceledException → Cancelled()` / `Exception → LogError + Failure(L[key])` ladders (49 guards at `836c091`, before P1-12 converts the 2 `MediaService` checks). A protected helper such as `Task<OperationResult<T>> RunAsync<T>(Func<IMatrixGateway, Task<OperationResult<T>>> body, string failureKey, Action<ILogger, Exception> log)` would remove them. It must preserve, per method:
   - the exact log template and arguments
   - the failure key
   - pre-`try` validation order (`UserService.GetUserDetailsAsync` remote check, the `EventForensicsService` triple guard, the `MediaService` blank-MXC guards)
   - the null-result contract (§6.2 S-02): `null` → `Ok(empty)` for collection reads, `null` → `Failure` for single-resource reads and operations. All services follow it, so the helper can take it as a parameter per method kind.
+  - **11g specifics:** `EventForensicsService.FetchEventAsync` (24-36) has three ordered pre-checks (`Gateway == null` → `NotAuthenticated`, `!SupportsAdminApi` → `EventForensicsApiRequired`, blank event ID → `EventIdRequired`), trims the ID before the `try`, and returns `EventNotFound` with `Severity.Warning` for a missing event. All of that stays as it is.
+- **Out of scope** (not the same pattern, leave untouched): `MatrixSessionService` (4 `OperationCanceledException` catches with login/session semantics, see §6.2 S-03), the 2 inner rethrows in `UserService.GetUserDetailsAsync` (69, 86) and the 2 inner silent catches in `RoomService` (197, 331) that protect per-item fan-out.
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus a per-service characterization suite (gateway null, gateway throws OCE, gateway throws, gateway returns null, success) is written before migration and is green after.
 
 ### P3-12 (optional, low value): `DialogOptions` presets
-- **Target Files:** new `Components/Shared/DialogPresets.cs`, plus the 10 `new DialogOptions { … }` sites (`grep -rn "new DialogOptions" src`)
+- **Depends on:** P3-02
+- **Target Files:** new `Components/Shared/DialogPresets.cs`, plus the `new DialogOptions { … }` sites listed by `grep -rn "new DialogOptions" src`: 10 sites in 6 files at `836c091`. P3-02 replaces the 3 `ShowPreview` copies with one in `MediaPreviewLauncher.cs`, so expect **8 sites in 6 files** when this task starts.
 - **Exact Scope:** Factory **methods** (`DialogPresets.Small()`, `Medium()`, `SmallWithCloseButton()`, `MediumWithCloseButton()`) that return new instances. Don't share instances, because MudBlazor may mutate options. Keep the existing combinations exactly: `RoomDirectory` uses `CloseButton = true` without `CloseOnEscapeKey`.
 - **Risk Level:** Low
-- **Done Criteria:** SDC.
+- **Done Criteria:** SDC, plus a unit test that two calls of each preset return different instances with the expected property values.
 
 ---
 
@@ -476,7 +494,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 | ID | Finding | Location | Plan |
 |---|---|---|---|
-| O-01 | Catch-all blocks that swallow exceptions without logging: theme type instantiation, three clipboard calls, a polling-cleanup fallback. (The two JS disposal catches in `RoomGalleryGrid` and the one in `TimeZoneService` get Debug logging in P2-15.) | `Services/ThemeService.cs:128`, `Components/Pages/EventForensics.razor.cs:80`, `UserDetails.razor.cs:199`, `RegistrationTokens.razor.cs:126`, `RoomDetails.razor.cs:521` | Adding Debug logging is behavior-neutral and can follow the P2-15 pattern. Narrowing the caught types is a behavior change and needs a separate decision. |
+| O-01 | Catch-all blocks that swallow exceptions without logging: theme type instantiation, three clipboard calls, a polling-cleanup fallback. (The two JS disposal catches in `RoomGalleryGrid` and the one in `TimeZoneService` get Debug logging in P2-15.) | `Services/ThemeService.cs:128`, `Components/Pages/EventForensics.razor.cs:80`, `UserDetails.razor.cs:199`, `RegistrationTokens.razor.cs:126`, `RoomDetails.razor.cs:521` | Needs a small logging design and owner approval; it is **not** a copy of P2-15, because only `RoomDetails` already has an instance logger. `ThemeService.DiscoverThemesStatic` (112-132) is `private static` (it would need a static logger, or a logger passed in). `EventForensics`, `UserDetails` and `RegistrationTokens` inject no `ILogger`, and P3-08 moves their three clipboard catches into `JsRuntimeExtensions.TryCopyToClipboardAsync`, so log there (or after P3-08) rather than in the components. Never log clipboard contents, access tokens or raw event JSON. Narrowing the caught types is a behavior change and needs a separate decision. |
 | O-02 | `MediaController.Preview` decides whether to apply the CSP sandbox with culture-sensitive, case-sensitive `StartsWith("image/")` etc. Culture-aware comparison ignores some zero-width and soft-hyphen characters, so a crafted MIME string could count as "safe inline" while evading the exact `"image/svg+xml"` check. | `Controllers/MediaController.cs:208-212` | Tracked in GitHub issue #392. Fix right after P2-17 by switching `RequiresSandbox` to `StringComparison.Ordinal` (the value is already lower-cased) and flipping the corresponding table test. |
 
 ### 6.2 Standing decisions (constraints for every task)
@@ -496,12 +514,12 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 ## 7. Recommended Execution Order
 
-1. **Phase 1:** P1-01 → P1-02 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-08 → P1-09a/b/c → P1-10 → P1-11 → P1-12
+1. **Phase 1:** P1-01 → P1-02 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-08 → P1-09a/b/c → P1-09d → P1-09e → P1-10 → P1-11 → P1-12
 2. **Phase 2, infrastructure first:** P2-10 → P2-07 → P2-06 → P2-05 → P2-08a/b/c → P2-09 → P2-01 → P2-02 → P2-03 → P2-04 → P2-16 → P2-17 → **O-02 fix** → P2-18 → P2-19
 3. **Phase 2, components:** P2-12 → P2-11 → P2-13 → P2-14 → P2-15
-4. **Phase 3:** P3-10 → P3-05 → P3-06 → P3-04 → P3-03 → P3-01 → P3-02 → P3-09 → P3-08 → P3-07a/b/c → (owner approval) P3-11a–f → P3-12
+4. **Phase 3:** P3-10 → P3-05 → P3-06 → P3-04 → P3-03 → P3-01 → P3-02 → P3-09 → P3-08 → P3-07a/b/c → (owner approval) P3-11a–g → P3-12
 
-Per AGENTS.md workflow: each task (or a small, same-phase group of tasks) gets its own branch, e.g. `ai/feature/refactor-p1-01-unused-usings`, a Conventional Commit (`refactor: …`), local `dotnet build` + `dotnet test`, and a PR against `main`. **Line numbers** are exact for the revision in the header. Once tasks land, later line numbers drift; every location also names its method or member, so it can be found again.
+Per AGENTS.md workflow: each task (or a small, same-phase group of tasks) gets its own branch, e.g. `ai/feature/refactor-p1-01-unused-usings`, a Conventional Commit (`refactor: …`), local `dotnet build` + `dotnet test`, and a PR against `main`. **Counts and line numbers** are exact for the revision in the header; where a task depends on an earlier one, the expected count after that prerequisite is stated explicitly. Once tasks land, later line numbers drift; every location also names its method or member, so it can be found again.
 
 ---
 
