@@ -307,13 +307,6 @@ namespace SynapseAdmin.Components.Shared
             return Icons.Material.Filled.InsertDriveFile;
         }
 
-        private static string FormatFileSize(long bytes)
-        {
-            if (bytes < 1024) return $"{bytes} B";
-            if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
-            return $"{bytes / (1024.0 * 1024.0):F1} MB";
-        }
-
         private async Task ShowPreview(RoomMediaItemViewModel media)
         {
             var previewUrl = GetPreviewUrl(media);

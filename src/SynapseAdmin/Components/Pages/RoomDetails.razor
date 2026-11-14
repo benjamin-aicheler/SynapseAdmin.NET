@@ -333,7 +333,7 @@ else
                                 </MudTd>
                                 <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
                                 <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
-                                <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
+                                <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? context.MediaLength.FormatSize() : "")</MudTd>
                                 <MudTd DataLabel="@L["Actions"]">
                                     <div class="d-flex">
                                         @if (!context.IsQuarantined)
@@ -412,7 +412,7 @@ else
                                 </MudTd>
                                 <MudTd DataLabel="@L["FileName"]">@context.UploadName</MudTd>
                                 <MudTd DataLabel="@L["Type"]">@context.MediaType</MudTd>
-                                <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? $"{(context.MediaLength / 1024)} KB" : "")</MudTd>
+                                <MudTd DataLabel="@L["Size"]">@(context.MediaLength > 0 ? context.MediaLength.FormatSize() : "")</MudTd>
                                 <MudTd DataLabel="@L["Actions"]">
                                     <div class="d-flex">
                                         @if (!context.IsQuarantined)

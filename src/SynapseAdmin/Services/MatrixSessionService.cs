@@ -99,6 +99,8 @@ public class MatrixSessionService(
             return OperationResult.Failure(L["TooManyLoginAttempts"]);
         }
 
+        // Like password login, a failed attempt leaves an existing session untouched: Gateway is only
+        // replaced once the new token has been verified (#395, H-10).
         try
         {
             // Resolve homeserver via gateway
@@ -112,19 +114,16 @@ public class MatrixSessionService(
         }
         catch (OperationCanceledException)
         {
-            Gateway = null;
             return OperationResult.Cancelled();
         }
         catch (HomeserverNotAllowedException ex)
         {
             logger.LogWarning("Token login to {Homeserver} refused by homeserver destination policy: {Reason}", homeserver.SanitizeForLogging(), ex.Message.SanitizeForLogging());
-            Gateway = null;
             return OperationResult.Failure(L["HomeserverNotAllowed"]);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Login with token failed for {Homeserver}", homeserver.SanitizeForLogging());
-            Gateway = null;
 
             if (IsUpstreamRateLimit(ex))
             {

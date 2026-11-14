@@ -72,7 +72,7 @@ public static class MediaHelper
     public static string GetMediaIdFromMxc(string? mxc)
     {
         if (string.IsNullOrEmpty(mxc)) return "media";
-        if (!mxc.StartsWith("mxc://")) return mxc;
+        if (!mxc.StartsWith("mxc://", StringComparison.OrdinalIgnoreCase)) return mxc;
         
         var parts = mxc.Split('/');
         return parts.Last();
