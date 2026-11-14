@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using SynapseAdmin.Interfaces;
 
@@ -15,19 +14,17 @@ public class LoginRateLimiter : ILoginRateLimiter
         _store = store;
     }
 
-    internal LoginRateLimiter(IMemoryCache cache)
-        : this(new MemoryLoginRateLimitStore(cache))
-    {
-    }
-
     public bool TryAcquire(string? clientIp, string? identifier = null) =>
         _store.TryAcquire(BuildKeys(clientIp, identifier), MaxAttemptsPerWindow, WindowDuration);
 
-    public bool IsAllowed(string? clientIp, string? identifier = null) =>
-        _store.IsAllowed(BuildKeys(clientIp, identifier), MaxAttemptsPerWindow);
-
-    public void RecordFailedAttempt(string? clientIp, string? identifier = null) =>
-        _store.Increment(BuildKeys(clientIp, identifier), WindowDuration);
+    /// <summary>
+    /// Whether another attempt would currently be allowed, without consuming one. Test inspection only; it needs
+    /// the in-memory store, because <see cref="ILoginRateLimitStore"/> deliberately has no read-only check.
+    /// </summary>
+    internal bool IsAllowed(string? clientIp, string? identifier = null) =>
+        _store is MemoryLoginRateLimitStore memoryStore
+            ? memoryStore.IsAllowed(BuildKeys(clientIp, identifier), MaxAttemptsPerWindow)
+            : throw new NotSupportedException("IsAllowed is only available with the in-memory store.");
 
     public void ResetAttempts(string? clientIp, string? identifier = null) =>
         _store.Reset(BuildKeys(clientIp, identifier));
