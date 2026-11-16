@@ -48,7 +48,7 @@ public sealed class AuthCookieService(
             logger.LogWarning("The sign-in endpoint rejected the session bridge exchange.");
             return OperationResult.Failure(L["ErrorSessionBridgeFailed"]);
         }
-        catch (Exception ex) when (ex is OperationCanceledException or JSDisconnectedException or TaskCanceledException)
+        catch (Exception ex) when (ex is OperationCanceledException or JSDisconnectedException)
         {
             return OperationResult.Cancelled();
         }
