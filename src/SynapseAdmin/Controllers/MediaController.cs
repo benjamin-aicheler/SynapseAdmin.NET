@@ -204,18 +204,28 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
 
         var finalMimeType = safeMimeType ?? "image/jpeg";
 
-        // Validate previewable MIME types (images, videos, audio).
-        // Disallow active web content (HTML, SVG, Javascript) from unconfined inline execution.
-        bool isSafeInlineType = finalMimeType.StartsWith("image/") ||
-                                finalMimeType.StartsWith("video/") ||
-                                finalMimeType.StartsWith("audio/");
-
-        if (finalMimeType == "image/svg+xml" || finalMimeType == "text/html" || !isSafeInlineType)
+        if (RequiresSandbox(finalMimeType))
         {
             // For SVG or any non-standard preview type, enforce an isolated sandbox CSP
             Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
         }
 
         return MediaResult(media!, finalMimeType, entityTag, downloadFileName: null);
+    }
+
+    /// <summary>
+    /// Whether a preview of <paramref name="finalMimeType"/> (lower-cased, without parameters) needs the sandbox CSP:
+    /// SVG, HTML and anything that isn't image/, video/ or audio/. The prefix checks are culture-sensitive, which is
+    /// open finding O-02 (#392).
+    /// </summary>
+    internal static bool RequiresSandbox(string finalMimeType)
+    {
+        // Validate previewable MIME types (images, videos, audio).
+        // Disallow active web content (HTML, SVG, Javascript) from unconfined inline execution.
+        bool isSafeInlineType = finalMimeType.StartsWith("image/") ||
+                                finalMimeType.StartsWith("video/") ||
+                                finalMimeType.StartsWith("audio/");
+
+        return finalMimeType == "image/svg+xml" || finalMimeType == "text/html" || !isSafeInlineType;
     }
 }

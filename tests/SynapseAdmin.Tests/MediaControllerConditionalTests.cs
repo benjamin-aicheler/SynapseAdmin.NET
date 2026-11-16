@@ -42,6 +42,9 @@ public class MediaControllerConditionalTests
                 Content = new TrackingStream([1, 2, 3, 4])
             });
 
+        public Func<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> MetadataResult { get; set; } =
+            () => OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure("no metadata");
+
         public List<TrackingStream> OpenedStreams { get; } = [];
         public int StreamFetchCount { get; private set; }
         public int MetadataFetchCount { get; private set; }
@@ -57,7 +60,7 @@ public class MediaControllerConditionalTests
         public Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc, CancellationToken token = default)
         {
             MetadataFetchCount++;
-            return Task.FromResult(OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure("no metadata"));
+            return Task.FromResult(MetadataResult());
         }
 
         public Task<OperationResult> QuarantineMediaAsync(string mxc, CancellationToken token = default) => throw new NotImplementedException();
@@ -225,4 +228,68 @@ public class MediaControllerConditionalTests
         Assert.IsType<FileStreamResult>(result);
         Assert.Equal(ExpectedCacheControl, controller.Response.Headers.CacheControl.ToString());
     }
+
+    // ---- Preview sandbox CSP ----------------------------------------------------------------------
+
+    private const string SandboxCsp = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+
+    /// <summary>
+    /// Preview cuts the MIME type at ';', trims and lower-cases it, then sends the sandbox CSP for SVG, HTML and
+    /// anything that isn't image/, video/ or audio/.
+    /// </summary>
+    [Theory]
+    [InlineData("image/png", "image/png", false)]
+    [InlineData("image/svg+xml", "image/svg+xml", true)]
+    [InlineData("text/html", "text/html", true)]
+    [InlineData("video/mp4", "video/mp4", false)]
+    [InlineData("audio/ogg", "audio/ogg", false)]
+    [InlineData("application/pdf", "application/pdf", true)]
+    [InlineData("IMAGE/PNG", "image/png", false)]
+    [InlineData(" Image/SVG+XML ; charset=utf-8", "image/svg+xml", true)]
+    public async Task Preview_SandboxesActiveAndUnknownTypes(string mimeType, string contentType, bool sandboxed)
+    {
+        var controller = CreateController(null);
+
+        var file = Assert.IsType<FileStreamResult>(await controller.Preview(Mxc, mimeType));
+
+        Assert.Equal(contentType, file.ContentType);
+        Assert.Equal(sandboxed ? SandboxCsp : "", controller.Response.Headers.ContentSecurityPolicy.ToString());
+    }
+
+    /// <summary>Without a MIME type parameter, Preview classifies the metadata type; without metadata, image/jpeg.</summary>
+    [Theory]
+    [InlineData("Image/SVG+XML; charset=utf-8", "image/svg+xml", true)]
+    [InlineData("video/mp4", "video/mp4", false)]
+    [InlineData(null, "image/jpeg", false)]
+    public async Task Preview_WithoutMimeType_ClassifiesTheMetadataType(string? mediaType, string contentType, bool sandboxed)
+    {
+        if (mediaType != null)
+        {
+            _media.MetadataResult = () => OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Ok(
+                new SynapseAdminMediaMetadataResponse.MediaInfo { MediaType = mediaType });
+        }
+
+        var controller = CreateController(null);
+
+        var file = Assert.IsType<FileStreamResult>(await controller.Preview(Mxc));
+
+        Assert.Equal(contentType, file.ContentType);
+        Assert.Equal(sandboxed ? SandboxCsp : "", controller.Response.Headers.ContentSecurityPolicy.ToString());
+    }
+
+    /// <summary>
+    /// The classification on its own. It doesn't normalize: "IMAGE/PNG" needs the sandbox (the controller lower-cases
+    /// first). The prefix checks are culture-sensitive, so a leading soft hyphen hides SVG from the exact comparison
+    /// (O-02, #392). The O-02 fix flips that row.
+    /// </summary>
+    [Theory]
+    [InlineData("image/png", false)]
+    [InlineData("image/svg+xml", true)]
+    [InlineData("text/html", true)]
+    [InlineData("video/mp4", false)]
+    [InlineData("application/pdf", true)]
+    [InlineData("IMAGE/PNG", true)]
+    [InlineData("\u00ADimage/svg+xml", false)]
+    public void RequiresSandbox_MatchesTheTable(string finalMimeType, bool expected) =>
+        Assert.Equal(expected, MediaController.RequiresSandbox(finalMimeType));
 }
