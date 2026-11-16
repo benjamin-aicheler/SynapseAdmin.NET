@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Services;

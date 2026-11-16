@@ -1,11 +1,9 @@
 using LibMatrix.Homeservers;
-using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
 using System.Text.Json;
 using ArcaneLibs.Extensions;
 using SynapseAdmin.Infrastructure.Serialization;
-using System.Net.Http.Json;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 

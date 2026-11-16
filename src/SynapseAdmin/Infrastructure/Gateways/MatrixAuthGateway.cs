@@ -7,7 +7,6 @@ using LibMatrix.Services;
 using Microsoft.Extensions.Caching.Memory;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
-using SynapseAdmin.Models.Requests;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 
