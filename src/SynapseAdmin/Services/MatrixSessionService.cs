@@ -57,7 +57,7 @@ public class MatrixSessionService(
             var loginResponse = await authGateway.LoginAsync(homeserver!, username!, password);
             Gateway = await authGateway.GetAuthenticatedAsync(homeserver!, loginResponse.AccessToken);
             loginRateLimiter.ResetAttempts(clientIp, rateLimitId);
-            
+
             logger.LogInformation("User {Username} successfully logged into {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"]);
         }
@@ -108,7 +108,7 @@ public class MatrixSessionService(
 
             Gateway = await authGateway.GetAuthenticatedAsync(homeserver!, accessToken);
             loginRateLimiter.ResetAttempts(clientIp);
-            
+
             logger.LogInformation("Session successfully logged in via token for user {UserId} on {Homeserver}", Gateway.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok(L["LoginSuccessful"]);
         }
@@ -136,8 +136,8 @@ public class MatrixSessionService(
 
     public async Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken, bool force = false)
     {
-        if (!force && Gateway != null && 
-            Gateway.HomeserverUrl == homeserver && 
+        if (!force && Gateway != null &&
+            Gateway.HomeserverUrl == homeserver &&
             Gateway.AccessToken == accessToken)
         {
             return OperationResult.Ok();
@@ -149,7 +149,7 @@ public class MatrixSessionService(
             await authGateway.ResolveHomeserverAsync(homeserver);
 
             Gateway = await authGateway.GetAuthenticatedAsync(homeserver, accessToken);
-            
+
             logger.LogDebug("Session successfully restored for user {UserId} on {Homeserver}", Gateway.UserId.SanitizeForLogging(), homeserver.SanitizeForLogging());
             return OperationResult.Ok();
         }

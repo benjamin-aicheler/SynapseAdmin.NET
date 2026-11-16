@@ -73,7 +73,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             var r = await Gateway.GetRoomDetailsAsync(roomId, token);
-            
+
             if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
 
             CacheRoomName(roomId, r.Name);
@@ -89,7 +89,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var media = await mediaTask;
 
             var vm = r.ToDetailViewModel();
-            
+
             if (!vm.IsTombstoned || string.IsNullOrEmpty(vm.ReplacementRoom))
             {
                 var tombstone = stateEvents?.Events
@@ -143,7 +143,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 Local = UniqueMxcs(media.Local).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
                 Remote = UniqueMxcs(media.Remote).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
             };
-            
+
             return OperationResult<RoomDetailViewModel>.Ok(vm);
         }
         catch (OperationCanceledException)

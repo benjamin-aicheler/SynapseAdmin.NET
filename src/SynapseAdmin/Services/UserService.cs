@@ -28,7 +28,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             var dir = direction == SortDirection.Descending ? "b" : "f";
             var result = await Gateway.GetUserListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
-            
+
             var vms = result.Users.ToViewModels();
 
             return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((result.Total, vms));
@@ -333,7 +333,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             };
 
             var result = await Gateway.UpdateUserAsync(model.UserId, req, token);
-            
+
             if (result == null) return OperationResult.Failure(L["ErrorCreatingUser"]);
 
             logger.LogInformation("Successfully created user {UserId}", model.UserId.SanitizeForLogging());
@@ -357,7 +357,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         try
         {
             var result = await Gateway.GetUserMembershipsAsync(userId, token);
-            
+
             if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
 
             var vms = result.Memberships.Select(kvp => new UserMembershipViewModel

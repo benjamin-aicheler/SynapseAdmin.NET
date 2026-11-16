@@ -20,7 +20,7 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
         try
         {
             var sdkTokens = await Gateway.GetRegistrationTokensAsync(cancellationToken);
-            
+
             var vms = sdkTokens.ToViewModels();
 
             return OperationResult<List<RegistrationTokenViewModel>>.Ok(vms);
@@ -48,9 +48,9 @@ public class RegistrationTokenService(IMatrixSessionService sessionService, ILog
                 UsesAllowed = viewModel.UsesAllowed,
                 ExpiryTime = viewModel.ExpiryTime
             };
-            
+
             var result = await Gateway.CreateRegistrationTokenAsync(req, cancellationToken);
-            
+
             if (result == null) return OperationResult.Failure(L["ErrorCreatingToken"]);
 
             logger.LogInformation("Successfully created registration token");

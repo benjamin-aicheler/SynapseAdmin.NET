@@ -87,7 +87,7 @@ public class AuthController(
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         logger.LogInformation("SignOut initiated for user {UserId}", userId.SanitizeForLogging());
-        
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return LocalRedirect("~/");
     }
