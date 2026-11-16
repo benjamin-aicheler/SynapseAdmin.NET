@@ -24,6 +24,7 @@ namespace SynapseAdmin.Tests;
 /// gateway's own <c>EnsureSuccessStatusCode</c>: <see cref="MatrixException"/> for a Matrix JSON error body,
 /// <see cref="HttpRequestException"/> for any other body.
 /// Also the four raw DELETEs: the exact request (method, target, Content-Type, body) and the same error behavior.
+/// Also the seven POST/PUTs that send <c>{}</c> and read no response body: the exact request and the same error behavior.
 /// </summary>
 public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -165,6 +166,82 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
 
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => DeleteMethod(method).Call(_gateway));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    public static TheoryData<string> EmptyBodyMethods => new()
+    {
+        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByUserIdAsync),
+        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByRoomIdAsync),
+        nameof(SynapseCompatibleAdminGateway.ResetFederationConnectionTimeoutAsync),
+        nameof(SynapseCompatibleAdminGateway.QuarantineMediaAsync),
+        nameof(SynapseCompatibleAdminGateway.UnquarantineMediaAsync),
+        nameof(SynapseCompatibleAdminGateway.ProtectMediaAsync),
+        nameof(SynapseCompatibleAdminGateway.UnprotectMediaAsync),
+    };
+
+    // Each POST/PUT that sends an empty JSON object and reads no response body, with fixed arguments and the exact
+    // request it sends. Protect/unprotect ignore serverName, so it doesn't appear in their targets.
+    private static (CapturedRequest Request, Func<SynapseCompatibleAdminGateway, Task> Call) EmptyBodyMethod(string name) => name switch
+    {
+        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByUserIdAsync) => (
+            EmptyJsonObject("PUT", "/_synapse/admin/v1/user/%40alice%3aexample.com/media/quarantine"),
+            g => g.QuarantineMediaByUserIdAsync("@alice:example.com")),
+        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByRoomIdAsync) => (
+            EmptyJsonObject("PUT", "/_synapse/admin/v1/room/!room%3aexample.com/media/quarantine"),
+            g => g.QuarantineMediaByRoomIdAsync("!room:example.com")),
+        nameof(SynapseCompatibleAdminGateway.ResetFederationConnectionTimeoutAsync) => (
+            EmptyJsonObject("POST", "/_synapse/admin/v1/federation/destinations/matrix.example.org%3a8448/reset_connection"),
+            g => g.ResetFederationConnectionTimeoutAsync("matrix.example.org:8448")),
+        nameof(SynapseCompatibleAdminGateway.QuarantineMediaAsync) => (
+            EmptyJsonObject("PUT", "/_synapse/admin/v1/media/quarantine/example.com/media-a"),
+            g => g.QuarantineMediaAsync("example.com", "media-a")),
+        nameof(SynapseCompatibleAdminGateway.UnquarantineMediaAsync) => (
+            EmptyJsonObject("POST", "/_synapse/admin/v1/media/unquarantine/example.com/media-a"),
+            g => g.UnquarantineMediaAsync("example.com", "media-a")),
+        nameof(SynapseCompatibleAdminGateway.ProtectMediaAsync) => (
+            EmptyJsonObject("POST", "/_synapse/admin/v1/media/protect/media-a"),
+            g => g.ProtectMediaAsync("remote.example", "media-a")),
+        nameof(SynapseCompatibleAdminGateway.UnprotectMediaAsync) => (
+            EmptyJsonObject("POST", "/_synapse/admin/v1/media/unprotect/media-a"),
+            g => g.UnprotectMediaAsync("remote.example", "media-a")),
+        _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+    };
+
+    private static CapturedRequest EmptyJsonObject(string method, string target) =>
+        new(method, target, "application/json; charset=utf-8", "{}");
+
+    [Theory]
+    [MemberData(nameof(EmptyBodyMethods))]
+    public async Task EmptyBody_SendsTheSameRequest(string method)
+    {
+        var (request, call) = EmptyBodyMethod(method);
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await call(_gateway);
+
+        Assert.Equal(request, Assert.Single(_homeserver.Requests));
+    }
+
+    [Theory]
+    [MemberData(nameof(EmptyBodyMethods))]
+    public async Task EmptyBody_MatrixErrorResponse_ThrowsMatrixException(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_FORBIDDEN", error = "You are not a server admin" }, statusCode: 403);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => EmptyBodyMethod(method).Call(_gateway));
+
+        Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(EmptyBodyMethods))]
+    public async Task EmptyBody_NonJsonErrorResponse_ThrowsHttpRequestException(string method)
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => EmptyBodyMethod(method).Call(_gateway));
 
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
