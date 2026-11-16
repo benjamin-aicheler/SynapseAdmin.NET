@@ -136,16 +136,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             {
                 Offset = offset,
                 TotalCount = result?.Total ?? 0,
-                Items = (result?.Media ?? []).Select(m => new UserMediaItemViewModel
-                {
-                    MediaId = m.MediaId,
-                    UploadName = m.UploadName,
-                    MediaType = m.MediaType,
-                    MediaLength = m.MediaLength,
-                    CreatedTimestamp = m.CreatedTimestamp,
-                    QuarantinedBy = m.QuarantinedBy,
-                    SafeFromQuarantine = m.SafeFromQuarantine
-                }).ToList()
+                Items = (result?.Media ?? []).Select(m => m.ToViewModel()).ToList()
             };
             return OperationResult<UserMediaPageViewModel>.Ok(page);
         }
@@ -297,13 +288,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             var result = await Gateway.GetUserMediaStatisticsAsync(count, cancellationToken: token);
             if (result == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Ok([]);
 
-            var vms = result.Users.Select(u => new UserMediaStatisticsViewModel
-            {
-                UserId = u.UserId,
-                DisplayName = u.DisplayName,
-                MediaCount = u.MediaCount,
-                TotalSize = u.MediaLength
-            }).ToList();
+            var vms = result.Users.Select(u => u.ToViewModel()).ToList();
 
             return OperationResult<List<UserMediaStatisticsViewModel>>.Ok(vms);
         }
@@ -360,11 +345,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
             if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
 
-            var vms = result.Memberships.Select(kvp => new UserMembershipViewModel
-            {
-                RoomId = kvp.Key,
-                Membership = kvp.Value
-            }).ToList();
+            var vms = result.ToViewModels();
 
             return OperationResult<List<UserMembershipViewModel>>.Ok(vms);
         }

@@ -45,4 +45,38 @@ public static class UserMappingExtensions
             ExpirationTs = user.ExpirationTs
         };
     }
+
+    public static UserMediaItemViewModel ToViewModel(this SynapseAdminUserMediaResult.MediaInfo media)
+    {
+        return new UserMediaItemViewModel
+        {
+            MediaId = media.MediaId,
+            UploadName = media.UploadName,
+            MediaType = media.MediaType,
+            MediaLength = media.MediaLength,
+            CreatedTimestamp = media.CreatedTimestamp,
+            QuarantinedBy = media.QuarantinedBy,
+            SafeFromQuarantine = media.SafeFromQuarantine
+        };
+    }
+
+    public static UserMediaStatisticsViewModel ToViewModel(this UserMediaStatisticsResponse.UserMediaStatistic user)
+    {
+        return new UserMediaStatisticsViewModel
+        {
+            UserId = user.UserId,
+            DisplayName = user.DisplayName,
+            MediaCount = user.MediaCount,
+            TotalSize = user.MediaLength
+        };
+    }
+
+    public static List<UserMembershipViewModel> ToViewModels(this SynapseAdminUserMembershipsResponse response)
+    {
+        return response.Memberships.Select(kvp => new UserMembershipViewModel
+        {
+            RoomId = kvp.Key,
+            Membership = kvp.Value
+        }).ToList();
+    }
 }

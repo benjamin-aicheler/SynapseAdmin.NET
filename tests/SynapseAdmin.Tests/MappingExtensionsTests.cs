@@ -291,6 +291,32 @@ public class MappingExtensionsTests
         AssertMapsMemberships(dto?.Memberships ?? [], result.Data!);
     }
 
+    [Fact]
+    public void UserMediaItemMapping_MapsAllProperties()
+    {
+        var dto = JsonSerializer.Deserialize<SynapseAdminUserMediaResult>(UserMediaJson)!;
+
+        AssertMapsUserMedia(dto.Media, dto.Media.Select(m => m.ToViewModel()));
+    }
+
+    [Fact]
+    public void UserMediaStatisticMapping_MapsAllProperties()
+    {
+        var dto = JsonSerializer.Deserialize<UserMediaStatisticsResponse>(UserMediaStatisticsJson)!;
+
+        AssertMapsMediaStatistics(dto.Users, dto.Users.Select(u => u.ToViewModel()));
+    }
+
+    [Theory]
+    [InlineData(UserMembershipsJson)]
+    [InlineData("{}")]
+    public void UserMembershipsMapping_MapsAllEntries(string json)
+    {
+        var dto = JsonSerializer.Deserialize<SynapseAdminUserMembershipsResponse>(json)!;
+
+        AssertMapsMemberships(dto.Memberships, dto.ToViewModels());
+    }
+
     private static UserService CreateUserService<T>(string gatewayMethod, T? gatewayResult) where T : class
     {
         var gateway = Stub.Create<IMatrixGateway>(s => s.On(gatewayMethod, _ => Task.FromResult(gatewayResult)));
