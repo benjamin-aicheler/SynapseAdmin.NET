@@ -212,7 +212,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     public virtual async Task QuarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
     {
-        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        var mxc = MxcUri.Parse(mxcUri);
         await QuarantineMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
@@ -220,7 +220,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     public virtual async Task UnquarantineMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
     {
-        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        var mxc = MxcUri.Parse(mxcUri);
         await UnquarantineMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
@@ -228,21 +228,21 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     public virtual async Task DeleteMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
     {
-        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        var mxc = MxcUri.Parse(mxcUri);
         await DeleteMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
     public abstract Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     public virtual async Task ProtectMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
     {
-        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        var mxc = MxcUri.Parse(mxcUri);
         await ProtectMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
     public abstract Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default);
     public virtual async Task UnprotectMediaAsync(string mxcUri, CancellationToken cancellationToken = default)
     {
-        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        var mxc = MxcUri.Parse(mxcUri);
         await UnprotectMediaAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
@@ -252,10 +252,10 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     // --- Room Directory (Standard CS API) ---
     public virtual async Task<MatrixPublicRoomDirectoryResult?> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
-        LibMatrix.Homeservers.RoomDirectoryFilter? filter = null;
+        RoomDirectoryFilter? filter = null;
         if (!string.IsNullOrEmpty(searchTerm))
         {
-            filter = new LibMatrix.Homeservers.RoomDirectoryFilter
+            filter = new RoomDirectoryFilter
             {
                 GenericSearchTerm = searchTerm
             };
@@ -293,8 +293,8 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public virtual async Task SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken cancellationToken = default)
     {
         var vis = visibility.ToLowerInvariant() == "public"
-            ? LibMatrix.Homeservers.RoomDirectoryVisibilityResponse.VisibilityValue.Public
-            : LibMatrix.Homeservers.RoomDirectoryVisibilityResponse.VisibilityValue.Private;
+            ? RoomDirectoryVisibilityResponse.VisibilityValue.Public
+            : RoomDirectoryVisibilityResponse.VisibilityValue.Private;
         await Homeserver.SetRoomDirectoryVisibilityAsync(roomId, vis);
     }
 
