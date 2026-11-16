@@ -2,11 +2,14 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Infrastructure.Gateways;
 using SynapseAdmin.Infrastructure.Security;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Responses;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -258,11 +261,91 @@ public class HomeserverDestinationPolicyTests
         Assert.Equal("M_LIMIT_EXCEEDED", ex.ErrorCode);
     }
 
+    // ---- Discovery URL normalization and failure logging ----------------------------------------
+
+    /// <summary>
+    /// The entered, the delegated client and the delegated server URL are each reduced to scheme, authority and path,
+    /// without trailing slashes. Query and fragment are dropped, and follow-up requests are built from the result.
+    /// </summary>
+    [Fact]
+    public async Task Discover_NormalizesEnteredAndDelegatedUrls()
+    {
+        using var target = new LoopbackServer(req => req.Path == "/fed/_matrix/federation/v1/version"
+            ? (200, """{"server":{"name":"Synapse","version":"1.120.0"}}""", null)
+            : (404, "{}", null));
+        using var entry = new LoopbackServer(req => req.Path switch
+        {
+            "/.well-known/matrix/client" => (200, $$$"""{"m.homeserver":{"base_url":"{{{target.BaseUrl}}}/client/?via=wk#top"}}""", null),
+            "/.well-known/matrix/server" => (200, $$$"""{"m.server":"{{{target.BaseUrl}}}/fed/?via=wk"}""", null),
+            _ => (404, "{}", null)
+        });
+        using var discovery = CreateDiscoveryClient($"http://127.0.0.1:{entry.Port},http://127.0.0.1:{target.Port}");
+
+        var endpoints = await discovery.DiscoverAsync($"{entry.BaseUrl}/?via=entry");
+
+        Assert.Equal(new HomeserverEndpoints($"{target.BaseUrl}/client", $"{target.BaseUrl}/fed", "Synapse", "1.120.0"), endpoints);
+        Assert.Equal(["/.well-known/matrix/client", "/.well-known/matrix/server"], entry.Requests.Select(r => r.Path));
+        Assert.Equal(["/fed/_matrix/federation/v1/version"], target.Requests.Select(r => r.Path));
+    }
+
+    /// <summary>
+    /// A failed discovery request (unreadable JSON, too many redirects) is logged at Debug level with the exception and
+    /// the sanitized URL. The long entry path shows the sanitizer at work: it truncates after 1024 characters.
+    /// </summary>
+    [Fact]
+    public async Task Discover_LogsFailedRequestsAtDebugWithSanitizedUrl()
+    {
+        using var entry = new LoopbackServer(req =>
+            req.Path.EndsWith("/.well-known/matrix/client", StringComparison.Ordinal) ? (200, "not json", null)
+            : req.Path.EndsWith("/_matrix/client/versions", StringComparison.Ordinal) ? (302, "", req.Path)
+            : (404, "{}", null));
+        var logger = new RecordingLogger();
+        using var discovery = CreateDiscoveryClient($"http://127.0.0.1:{entry.Port}", logger);
+        var entryUrl = $"{entry.BaseUrl}/{new string('a', 1100)}";
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => discovery.DiscoverAsync(entryUrl));
+
+        Assert.Collection(logger.Entries,
+            e => AssertDiscoveryFailureLogged<JsonException>(e, $"{entryUrl}/.well-known/matrix/client"),
+            e => AssertDiscoveryFailureLogged<HttpRequestException>(e, $"{entryUrl}/_matrix/client/versions"));
+    }
+
+    private static void AssertDiscoveryFailureLogged<TException>(LogEntry entry, string url) where TException : Exception
+    {
+        Assert.Equal(LogLevel.Debug, entry.Level);
+        Assert.Equal("Discovery request to {Url} failed", entry.Properties["{OriginalFormat}"]);
+        Assert.Equal(url[..1024] + "...(truncated)", entry.Properties["Url"]);
+        Assert.IsType<TException>(entry.Exception);
+    }
+
     private static MatrixAuthGateway CreateGateway(string? allowlist)
     {
         var policy = HomeserverDestinationPolicy.FromConfiguration(allowlist);
         var discovery = new HomeserverDiscoveryClient(policy, NullLogger<HomeserverDiscoveryClient>.Instance);
         return new MatrixAuthGateway(discovery, new MemoryCache(new MemoryCacheOptions()));
+    }
+
+    private static HomeserverDiscoveryClient CreateDiscoveryClient(string allowlist, ILogger<HomeserverDiscoveryClient>? logger = null) =>
+        new(HomeserverDestinationPolicy.FromConfiguration(allowlist), logger ?? NullLogger<HomeserverDiscoveryClient>.Instance);
+
+    private sealed record LogEntry(LogLevel Level, IReadOnlyDictionary<string, object?> Properties, Exception? Exception);
+
+    /// <summary>Records every entry with its structured properties; all levels are enabled.</summary>
+    private sealed class RecordingLogger : ILogger<HomeserverDiscoveryClient>
+    {
+        private readonly ConcurrentQueue<LogEntry> _entries = new();
+
+        public IReadOnlyCollection<LogEntry> Entries => _entries.ToArray();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            var properties = state as IEnumerable<KeyValuePair<string, object?>> ?? [];
+            _entries.Enqueue(new LogEntry(logLevel, properties.ToDictionary(p => p.Key, p => p.Value), exception));
+        }
     }
 
     private sealed record RecordedRequest(string Method, string Path, string Body);
