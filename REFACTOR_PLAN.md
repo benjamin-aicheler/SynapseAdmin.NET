@@ -229,7 +229,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 ## 4. Phase 2: Module-Level Simplification (Low–Medium Risk)
 
-> Each task stays inside one module. Under REFACTOR_RULES §4.2, write **characterization tests first** wherever "Characterize first" is listed, commit them, and confirm they pass **before** the production change. Three harnesses exist for gateway-level tests against a real HTTP server: the Kestrel fake homeservers in `MediaRangeForwardingTests`, `MatrixAuthGatewayProbeTests` and (since P2-01) `SynapseCompatibleGatewayCharacterizationTests`, which records every request's method, raw target, `Content-Type` and body.
+> Each task stays inside one module. Under REFACTOR_RULES §4.2, write **characterization tests first** wherever "Characterize first" is listed, commit them, and confirm they pass **before** the production change. Four harnesses exist for gateway-level tests against a real HTTP server: the Kestrel fake homeservers in `MediaRangeForwardingTests`, `MatrixAuthGatewayProbeTests` (since P2-04a with configurable probe answers and the ordered request paths) and `SynapseCompatibleGatewayCharacterizationTests` (since P2-01; records every request's method, raw target, `Content-Type` and body), plus the raw `LoopbackServer` in `HomeserverDestinationPolicyTests` (since P2-16 with a debug-enabled `RecordingLogger` for the discovery client).
 >
 > Where "Characterize first" names a helper, mapper or factory that only exists after the change (as in P2-08a–c, P2-09, P2-11's `ApplyPurgeStatus` and P2-17's `RequiresSandbox`), characterize the current behavior through the existing API in the test commit, and add the helper-level test in the refactor commit. Both commits go into the same PR, test commit first.
 
@@ -266,6 +266,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Characterize first:** `MatrixAuthGatewayProbeTests` already covers admin detection on a Tuwunel-like server and cancellation during a probe. Add, before restructuring: a server reporting `"Synapse"` via federation, a non-admin server (admin probe 404 → `GenericMatrixGateway`), and table tests for `IsTuwunelAdminCapable`: `"1.8.1"`→true, `"1.8.0"`→false, `"1.9.0-dev"`→true, `"-1.0"`→true (dash at index 0, unparseable), `"abc"`→true, `"1.8"`→false. Extract the version check as a verbatim copy first, and assert it before switching callers.
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus the new tests pass, plus A2 reports no `CA1508` in this file, plus the method body is < 60 lines.
+- **Executed as two PRs** (the whole task measured ~363 changed lines): **P2-04a** adds the characterization tests and `IsTuwunelAdminCapable` (verbatim copy, asserted, then the caller switched); **P2-04b** extracts the three probes and removes the CA1508 check, production only. The done criteria apply after P2-04b. `ProbeSynapseVersionAsync` has a single result, so it returns a `string`, not a tuple.
 
 ### P2-05: `RoomService.GetRoomDetailsAsync`: extract pure mapping helpers
 - **Target Files:** `Services/RoomService.cs`, `tests/SynapseAdmin.Tests/RoomMediaDeduplicationTests.cs` (or a new `RoomDetailsMappingTests.cs`)
@@ -349,15 +350,16 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Done Criteria:** SDC, plus the target files contain no empty `catch { }` / `catch` block.
 
 ### P2-16: `HomeserverDiscoveryClient`: extract URL normalization and the failure log (security-sensitive)
-- **Target Files:** `Infrastructure/Gateways/HomeserverDiscoveryClient.cs`
+- **Target Files:** `Infrastructure/Gateways/HomeserverDiscoveryClient.cs`, `tests/SynapseAdmin.Tests/HomeserverDestinationPolicyTests.cs` (new cases)
 - **Exact Scope:** `uri.GetLeftPart(UriPartial.Path).TrimEnd('/')` appears 3 times (68, 89, 105). Extract `private static string ToBase(Uri)`. The identical debug-log block in `TryGetJsonAsync` / `IsSuccessAsync` (246-249, 265-268) becomes `private void LogDiscoveryFailure(Exception, string url)`. **Don't** touch exception filters, policy calls (`EnsureEntryAllowed`, `EnsureHopAllowed`, `IsAddressAllowed`), `ConnectAsync`, redirect handling or the DTO classes.
+- **Characterize first:** The existing suite only guards the `entryBase` normalization, and its `NullLogger` never reaches the debug log. Pin the delegated client and server normalization (path, trailing slash, query, fragment: exact `HomeserverEndpoints` and request paths) and both debug logs (debug-enabled recording logger; an entry path over 1024 characters shows that `SanitizeForLogging` still truncates the URL).
 - **Risk Level:** Medium (SSRF boundary; needs extra review)
 - **Done Criteria:** SDC, plus `SecurityInfrastructureTests` and `HomeserverDestinationPolicyTests` pass, plus a reviewer confirms that the order of policy checks in the diff is unchanged.
 
 ### P2-17: `MediaController`: extract the pure inline-safety check (security-sensitive)
 - **Target Files:** `Controllers/MediaController.cs`, `tests/SynapseAdmin.Tests/MediaControllerConditionalTests.cs` (new cases)
 - **Exact Scope:** Extract the classification at 208-212 (`isSafeInlineType` plus the `image/svg+xml` / `text/html` checks) into `internal static bool RequiresSandbox(string finalMimeType)` with **identical** semantics, including the current culture-sensitive `StartsWith(string)`. The CSP header value and its placement (215) stay unchanged. Fixing the comparison is open finding O-02 (§6.1), which follows directly after this task.
-- **Characterize first:** Table tests for `image/png`→false, `image/svg+xml`→true, `text/html`→true, `video/mp4`→false, `application/pdf`→true, `IMAGE/PNG`→true (case-sensitive today).
+- **Characterize first:** Table tests for `image/png`→false, `image/svg+xml`→true, `text/html`→true, `video/mp4`→false, `application/pdf`→true, `IMAGE/PNG`→true (case-sensitive today), plus `"\u00ADimage/svg+xml"`→false: the culture-sensitive prefix check ignores the soft hyphen, so this row pins the current comparison (an accidental `Ordinal` fails only this row). Through `Preview` the type is lower-cased first, so `IMAGE/PNG` gets no CSP there.
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus the new table tests pass.
 
@@ -498,7 +500,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 | ID | Finding | Location | Plan |
 |---|---|---|---|
 | O-01 | Catch-all blocks that swallow exceptions without logging: theme type instantiation, three clipboard calls, a polling-cleanup fallback. (The two JS disposal catches in `RoomGalleryGrid` and the one in `TimeZoneService` get Debug logging in P2-15.) | `Services/ThemeService.cs:128`, `Components/Pages/EventForensics.razor.cs:80`, `UserDetails.razor.cs:199`, `RegistrationTokens.razor.cs:126`, `RoomDetails.razor.cs:521` | Needs a small logging design and owner approval; it is **not** a copy of P2-15, because only `RoomDetails` already has an instance logger. `ThemeService.DiscoverThemesStatic` (112-132) is `private static` (it would need a static logger, or a logger passed in). `EventForensics`, `UserDetails` and `RegistrationTokens` inject no `ILogger`, and P3-08 moves their three clipboard catches into `JsRuntimeExtensions.TryCopyToClipboardAsync`, so log there (or after P3-08) rather than in the components. Never log clipboard contents, access tokens or raw event JSON. Narrowing the caught types is a behavior change and needs a separate decision. |
-| O-02 | `MediaController.Preview` decides whether to apply the CSP sandbox with culture-sensitive, case-sensitive `StartsWith("image/")` etc. Culture-aware comparison ignores some zero-width and soft-hyphen characters, so a crafted MIME string could count as "safe inline" while evading the exact `"image/svg+xml"` check. | `Controllers/MediaController.cs:208-212` | Tracked in GitHub issue #392. Fix right after P2-17 by switching `RequiresSandbox` to `StringComparison.Ordinal` (the value is already lower-cased) and flipping the corresponding table test. |
+| O-02 | `MediaController.Preview` decides whether to apply the CSP sandbox with culture-sensitive, case-sensitive `StartsWith("image/")` etc. Culture-aware comparison ignores some zero-width and soft-hyphen characters, so a crafted MIME string could count as "safe inline" while evading the exact `"image/svg+xml"` check. | `Controllers/MediaController.cs:208-212` | Tracked in GitHub issue #392. Fix right after P2-17 by switching `RequiresSandbox` to `StringComparison.Ordinal` (the value is already lower-cased) and flipping the `"\u00ADimage/svg+xml"` row of `RequiresSandbox_MatchesTheTable` to `true`. It is the only row that changes: `IMAGE/PNG` stays `true` under `Ordinal`. |
 
 ### 6.2 Standing decisions (constraints for every task)
 
@@ -518,7 +520,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 ## 7. Recommended Execution Order
 
 1. **Phase 1:** P1-01 → P1-02 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-08 → P1-09a/b/c → P1-09d → P1-09e → P1-10 → P1-11 → P1-12
-2. **Phase 2, infrastructure first:** P2-10 → P2-07 → P2-06 → P2-05 → P2-08a/b/c → P2-09 → P2-01 → P2-02 → P2-03 → P2-04 → P2-16 → P2-17 → **O-02 fix** → P2-18 → P2-19
+2. **Phase 2, infrastructure first:** P2-10 → P2-07 → P2-06 → P2-05 → P2-08a/b/c → P2-09 → P2-01 → P2-02 → P2-03 → P2-04a/b → P2-16 → P2-17 → **O-02 fix** → P2-18 → P2-19
 3. **Phase 2, components:** P2-12 → P2-11 → P2-13 → P2-14 → P2-15
 4. **Phase 3:** P3-10 → P3-05 → P3-06 → P3-04 → P3-03 → P3-01 → P3-02 → P3-09 → P3-08 → P3-07a/b/c → (owner approval) P3-11a–g → P3-12
 
