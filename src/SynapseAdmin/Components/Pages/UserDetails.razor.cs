@@ -4,6 +4,7 @@ using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Infrastructure.Helpers;
+using System.Net;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -201,8 +202,8 @@ namespace SynapseAdmin.Components.Pages
                     Snackbar.Add(result.Message, result.Severity);
                 }
 
-                var encodedLabel = System.Net.WebUtility.HtmlEncode(L["AccessToken"]);
-                var encodedToken = System.Net.WebUtility.HtmlEncode(result.Data);
+                var encodedLabel = WebUtility.HtmlEncode(L["AccessToken"]);
+                var encodedToken = WebUtility.HtmlEncode(result.Data);
 
                 await DialogService.ShowMessageBoxAsync(
                     L["LoginAsUserShadow"],

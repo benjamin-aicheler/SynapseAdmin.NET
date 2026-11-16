@@ -8,6 +8,7 @@ using MudBlazor;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Extensions.Mapping;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
@@ -640,9 +641,9 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    private static string? GetSafeString(System.Text.Json.Nodes.JsonNode? node)
+    private static string? GetSafeString(JsonNode? node)
     {
         if (node is null) return null;
-        return node is System.Text.Json.Nodes.JsonValue val && val.TryGetValue<string>(out var str) ? str : node.ToString();
+        return node is JsonValue val && val.TryGetValue<string>(out var str) ? str : node.ToString();
     }
 }

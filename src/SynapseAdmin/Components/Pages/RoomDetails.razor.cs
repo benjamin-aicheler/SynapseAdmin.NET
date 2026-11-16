@@ -23,7 +23,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public ITimeZoneService TimeZoneService { get; set; } = null!;
         [Inject]
-        public Microsoft.Extensions.Logging.ILogger<RoomDetails> Logger { get; set; } = null!;
+        public ILogger<RoomDetails> Logger { get; set; } = null!;
 
         [Parameter]
         public string RoomId { get; set; } = string.Empty;
