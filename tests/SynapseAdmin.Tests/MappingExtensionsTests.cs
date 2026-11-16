@@ -1,6 +1,15 @@
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Extensions.Mapping;
+using SynapseAdmin.Interfaces;
+using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
+using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
+using SynapseAdmin.Services;
+using SynapseAdmin.Tests.Components;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -163,5 +172,55 @@ public class MappingExtensionsTests
         Assert.Equal(1, regTokenVm.Pending);
         Assert.Equal(2, regTokenVm.Completed);
         Assert.Equal(1800000000000L, regTokenVm.ExpiryTime);
+    }
+
+    // Every property of the first room has a distinct non-default value, so a missing or swapped assignment fails.
+    private const string PublicRoomDirectoryJson = """
+        {
+          "chunk": [
+            { "avatar_url": "mxc://example.com/avatar", "canonical_alias": "#lobby:example.com", "guest_can_join": true,
+              "join_rule": "public", "name": "Lobby", "num_joined_members": 42, "room_id": "!lobby:example.com",
+              "topic": "Welcome", "world_readable": true },
+            { "room_id": "!bare:example.com" }
+          ],
+          "next_batch": "next-token", "prev_batch": "prev-token", "total_room_count_estimate": 7
+        }
+        """;
+
+    [Theory]
+    [InlineData(PublicRoomDirectoryJson)]
+    [InlineData("{}")]
+    public async Task PublicRoomDirectory_RoomServiceMapsAllProperties(string json)
+    {
+        var dto = JsonSerializer.Deserialize<MatrixPublicRoomDirectoryResult>(json)!;
+        var gateway = Stub.Create<IMatrixGateway>(s =>
+            s.On(nameof(IMatrixGateway.GetPublicRoomsAsync), _ => Task.FromResult<MatrixPublicRoomDirectoryResult?>(dto)));
+        var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
+        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
+            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+
+        var result = await new RoomService(session, NullLogger<RoomService>.Instance, localizer, cache).GetPublicRoomsAsync(10);
+
+        Assert.True(result.Success);
+        AssertMapsPublicRoomDirectory(dto, result.Data!);
+    }
+
+    [Theory]
+    [InlineData(PublicRoomDirectoryJson)]
+    [InlineData("{}")]
+    public void PublicRoomDirectoryMapping_MapsAllProperties(string json)
+    {
+        var dto = JsonSerializer.Deserialize<MatrixPublicRoomDirectoryResult>(json)!;
+
+        AssertMapsPublicRoomDirectory(dto, dto.ToViewModel());
+    }
+
+    private static void AssertMapsPublicRoomDirectory(MatrixPublicRoomDirectoryResult dto, PublicRoomDirectoryViewModel vm)
+    {
+        Assert.Equal((dto.NextBatch, dto.PrevBatch, dto.TotalRoomCountEstimate), (vm.NextBatch, vm.PrevBatch, vm.TotalRoomCountEstimate));
+        Assert.Equal(
+            dto.Chunk.Select(c => (c.AvatarUrl, c.CanonicalAlias, c.GuestCanJoin, c.JoinRule, c.Name, c.NumJoinedMembers, c.RoomId, c.Topic, c.WorldReadable)),
+            vm.Chunk.Select(c => (c.AvatarUrl, c.CanonicalAlias, c.GuestCanJoin, c.JoinRule, c.Name, c.NumJoinedMembers, c.RoomId, c.Topic, c.WorldReadable)));
     }
 }

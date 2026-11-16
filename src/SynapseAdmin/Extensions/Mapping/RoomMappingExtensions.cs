@@ -30,6 +30,28 @@ public static class RoomMappingExtensions
         return rooms.Select(ToViewModel).ToList();
     }
 
+    public static PublicRoomDirectoryViewModel ToViewModel(this MatrixPublicRoomDirectoryResult result)
+    {
+        return new PublicRoomDirectoryViewModel
+        {
+            NextBatch = result.NextBatch,
+            PrevBatch = result.PrevBatch,
+            TotalRoomCountEstimate = result.TotalRoomCountEstimate,
+            Chunk = result.Chunk.Select(c => new PublicRoomItemViewModel
+            {
+                AvatarUrl = c.AvatarUrl,
+                CanonicalAlias = c.CanonicalAlias,
+                GuestCanJoin = c.GuestCanJoin,
+                JoinRule = c.JoinRule,
+                Name = c.Name,
+                NumJoinedMembers = c.NumJoinedMembers,
+                RoomId = c.RoomId,
+                Topic = c.Topic,
+                WorldReadable = c.WorldReadable
+            }).ToList()
+        };
+    }
+
     public static RoomDetailViewModel ToDetailViewModel(this SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom room)
     {
         return new RoomDetailViewModel
