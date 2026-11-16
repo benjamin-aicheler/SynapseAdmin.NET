@@ -209,8 +209,8 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 ### P1-10: Convert HTML comments in `.razor` markup to Razor comments
 - **Target Files:** `Components/Shared/RoomGalleryGrid.razor` (lines 6, 39, 53, 58, 60, 75, 104, 123, 168), `Components/Pages/BackgroundUpdates.razor` (38, 77, 116, 125, 141), `Components/Pages/MediaMaintenance.razor` (24, 55), `Components/Pages/EventForensics.razor` (60, 132)
-- **Exact Scope:** `<!-- text -->` becomes `@* text *@` (18 comments). Comment text stays the same. This removes developer comments from the HTML sent to browsers. No element or attribute changes.
-- **Risk Level:** Low (rendered markup loses the comment nodes; no logic change)
+- **Exact Scope:** `<!-- text -->` becomes `@* text *@` (18 comments). Comment text stays the same. No element or attribute changes. The Razor component compiler already strips HTML comments, so these comments never reach the browser. `@* *@` is the idiomatic `.razor` comment, and Razor's syntax guarantees it is stripped. In the generated code, the conversion only shortens 6 whitespace-only text nodes between block or flex children (no visible change); the other 12 comments have no effect on the output (#424).
+- **Risk Level:** Low (no logic change; rendered markup differs only in inter-element whitespace)
 - **Done Criteria:** SDC, plus `grep -rn "<!--" --include=*.razor src` is empty.
 
 ### P1-11: Name the purge-polling and navigation magic values as private constants
