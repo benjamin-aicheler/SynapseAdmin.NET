@@ -381,7 +381,7 @@ namespace SynapseAdmin.Components.Pages
                 // For room media we often don't have the mime type upfront. 
                 // We'll allow previewing by default if it's missing, 
                 // the preview dialog handles the error if it's not actually an image/video/audio.
-                return true; 
+                return true;
             }
             return mimeType.StartsWith("image/") || mimeType.StartsWith("video/") || mimeType.StartsWith("audio/");
         }
@@ -390,7 +390,7 @@ namespace SynapseAdmin.Components.Pages
         {
             var mxc = media.MediaId;
             var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
-            
+
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
             var parameters = new DialogParameters
             {
@@ -413,7 +413,7 @@ namespace SynapseAdmin.Components.Pages
         {
             StopPolling();
             if (string.IsNullOrEmpty(activePurgeId)) return;
-            
+
             _pollingCts = new CancellationTokenSource();
             var token = _pollingCts.Token;
             var purgeId = activePurgeId;
@@ -482,7 +482,7 @@ namespace SynapseAdmin.Components.Pages
                             consecutiveFailures++;
                             var errMsg = result.Message ?? "Unknown error";
                             Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, errMsg.SanitizeForLogging());
-                            
+
                             if (consecutiveFailures >= 5)
                             {
                                 await InvokeAsync(() =>
@@ -496,7 +496,7 @@ namespace SynapseAdmin.Components.Pages
                                 break;
                             }
                         }
-                        
+
                         await Task.Delay(5000, token);
                     }
                 }

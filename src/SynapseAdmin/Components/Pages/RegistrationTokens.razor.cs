@@ -8,13 +8,13 @@ namespace SynapseAdmin.Components.Pages
 {
     public partial class RegistrationTokens : IDisposable
     {
-        [Inject] 
+        [Inject]
         public IMatrixSessionService MatrixSession { get; set; } = null!;
-        [Inject] 
+        [Inject]
         public IRegistrationTokenService RegistrationTokenService { get; set; } = null!;
-        [Inject] 
+        [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
-        [Inject] 
+        [Inject]
         public IDialogService DialogService { get; set; } = null!;
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = null!;

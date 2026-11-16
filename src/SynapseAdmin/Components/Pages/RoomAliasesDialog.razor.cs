@@ -65,7 +65,7 @@ namespace SynapseAdmin.Components.Pages
         {
             if (string.IsNullOrEmpty(val)) return null;
             if (!val.StartsWith('#')) return L["MustStartWithHash"].Value;
-            
+
             // Ordinal and case-sensitive: Synapse compares the alias server name exactly (#395, H-08).
             var serverName = MatrixSession.Gateway?.ServerName;
             if (!string.IsNullOrEmpty(serverName) && !val.EndsWith($":{serverName}", StringComparison.Ordinal))

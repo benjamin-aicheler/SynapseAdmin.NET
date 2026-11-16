@@ -110,10 +110,10 @@ namespace SynapseAdmin.Components.Pages
         private async Task ResetConnection(string destination)
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["ResetConnectionTitle"], 
-                string.Format(L["ResetConnectionConfirmation"], destination), 
+                L["ResetConnectionTitle"],
+                string.Format(L["ResetConnectionConfirmation"], destination),
                 yesText: L["Reset"], cancelText: L["Cancel"]);
-                
+
             if (confirmed == true)
             {
                 var result = await FederationService.ResetConnectionTimeoutAsync(destination, _cts.Token);

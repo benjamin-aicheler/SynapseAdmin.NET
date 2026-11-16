@@ -56,19 +56,19 @@ namespace SynapseAdmin.Components.Pages
             var orderBy = state.SortLabel ?? "name";
 
             var result = await UserService.GetUserListAsync(offset, state.PageSize, orderBy, state.SortDirection, _searchTerm, token: token);
-            
+
             if (result.Success && result.Data != default)
             {
                 totalUsers = result.Data.Total;
                 StateHasChanged();
                 return new TableData<UserListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Users };
             }
-            
+
             if (!result.Success && result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
-            
+
             return new TableData<UserListViewModel>() { TotalItems = 0, Items = new List<UserListViewModel>() };
         }
 
