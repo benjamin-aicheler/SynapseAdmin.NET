@@ -336,4 +336,41 @@ public class MappingExtensionsTests
 
     private static void AssertMapsMemberships(Dictionary<string, string> dto, IEnumerable<UserMembershipViewModel> vm) =>
         Assert.Equal(dto.Select(kvp => (kvp.Key, kvp.Value)), vm.Select(m => (m.RoomId, m.Membership)));
+
+    // As above. "{}" leaves current_updates null, which must map to an empty dictionary.
+    private const string BackgroundUpdatesStatusJson = """
+        {
+          "enabled": true,
+          "current_updates": {
+            "main": { "name": "populate_stats_process_rooms", "total_item_count": 50, "total_duration_ms": 1234.5, "average_items_per_ms": 0.25 },
+            "state": { "name": "bare_update" }
+          }
+        }
+        """;
+
+    [Theory]
+    [InlineData(BackgroundUpdatesStatusJson)]
+    [InlineData("{}")]
+    public async Task BackgroundUpdatesStatus_ServiceMapsAllProperties(string json)
+    {
+        var dto = JsonSerializer.Deserialize<SynapseAdminBackgroundUpdatesStatusResponse>(json)!;
+        var gateway = Stub.Create<IMatrixGateway>(s => s.On(nameof(IMatrixGateway.GetBackgroundUpdatesStatusAsync),
+            _ => Task.FromResult<SynapseAdminBackgroundUpdatesStatusResponse?>(dto)));
+        var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
+        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
+            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+
+        var result = await new BackgroundUpdatesService(session, NullLogger<BackgroundUpdatesService>.Instance, localizer).GetStatusAsync();
+
+        Assert.True(result.Success);
+        AssertMapsBackgroundUpdatesStatus(dto, result.Data!);
+    }
+
+    private static void AssertMapsBackgroundUpdatesStatus(SynapseAdminBackgroundUpdatesStatusResponse dto, BackgroundUpdatesStatusViewModel vm)
+    {
+        Assert.Equal(dto.Enabled, vm.Enabled);
+        Assert.Equal(
+            (dto.CurrentUpdates ?? []).Select(kvp => (kvp.Key, kvp.Value.Name, kvp.Value.TotalItemCount, kvp.Value.TotalDurationMs, kvp.Value.AverageItemsPerMs)),
+            vm.CurrentUpdates.Select(kvp => (kvp.Key, kvp.Value.Name, kvp.Value.TotalItemCount, kvp.Value.TotalDurationMs, kvp.Value.AverageItemsPerMs)));
+    }
 }
