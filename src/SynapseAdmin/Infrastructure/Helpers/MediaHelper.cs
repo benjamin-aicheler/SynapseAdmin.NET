@@ -57,10 +57,10 @@ public static class MediaHelper
     public static string GetExtensionFromMediaType(string? mediaType)
     {
         if (string.IsNullOrEmpty(mediaType)) return ".bin";
-        
+
         // Handle types with parameters (e.g. text/html; charset=utf-8)
         var cleanType = mediaType.Split(';')[0].Trim().ToLowerInvariant();
-        
+
         if (MediaTypeToExtension.TryGetValue(cleanType, out var extension))
         {
             return extension;
@@ -73,7 +73,7 @@ public static class MediaHelper
     {
         if (string.IsNullOrEmpty(mxc)) return "media";
         if (!mxc.StartsWith("mxc://", StringComparison.OrdinalIgnoreCase)) return mxc;
-        
+
         var parts = mxc.Split('/');
         return parts.Last();
     }

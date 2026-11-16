@@ -14,8 +14,8 @@ public class UserCreateViewModel
     public string Password { get; set; } = string.Empty;
 
     public string? DisplayName { get; set; }
-    
+
     public bool Admin { get; set; }
-    
+
     public bool Deactivated { get; set; }
 }

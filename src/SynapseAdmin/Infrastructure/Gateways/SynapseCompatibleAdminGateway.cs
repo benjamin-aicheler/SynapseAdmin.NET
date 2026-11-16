@@ -236,7 +236,7 @@ public class SynapseCompatibleAdminGateway(
         if (!string.IsNullOrEmpty(filter)) query.Add($"filter={filter.UrlEncode()}");
         if (!string.IsNullOrEmpty(to)) query.Add($"to={to.UrlEncode()}");
         if (query.Count > 0) url += "?" + string.Join("&", query);
-        
+
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomMessagesResponse>(url, cancellationToken: cancellationToken);
     }
 

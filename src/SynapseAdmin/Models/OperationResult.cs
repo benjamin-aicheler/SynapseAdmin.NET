@@ -10,7 +10,7 @@ public class OperationResult
 
     public static OperationResult Ok(string message = "") => new() { Success = true, Message = message, Severity = Severity.Success };
     public static OperationResult Failure(string message, Severity severity = Severity.Error) => new() { Success = false, Message = message, Severity = severity };
-    
+
     /// <summary>
     /// Returns a failure result with Severity.Normal, which indicates a silent failure (e.g., cancellation).
     /// UI components should check for this to avoid showing error messages.
@@ -24,7 +24,7 @@ public class OperationResult<T> : OperationResult
 
     public static OperationResult<T> Ok(T data, string message = "") => new() { Success = true, Data = data, Message = message, Severity = Severity.Success };
     public static new OperationResult<T> Failure(string message, Severity severity = Severity.Error) => new() { Success = false, Message = message, Severity = severity };
-    
+
     /// <summary>
     /// Returns a failure result with Severity.Normal, which indicates a silent failure (e.g., cancellation).
     /// </summary>

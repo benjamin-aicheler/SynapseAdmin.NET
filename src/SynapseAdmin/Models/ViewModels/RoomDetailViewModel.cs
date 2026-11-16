@@ -18,11 +18,11 @@ public class RoomDetailViewModel
     public string? HistoryVisibility { get; set; }
     public string? RoomType { get; set; }
     public bool Forgotten { get; set; }
-    
+
     // We could add memberships or state here later
     public bool IsTombstoned { get; set; }
     public string? ReplacementRoom { get; set; }
-    
+
     public List<RoomMemberViewModel> Members { get; set; } = [];
     public List<RoomStateEventViewModel> StateEvents { get; set; } = [];
     public RoomMediaViewModel? Media { get; set; }
