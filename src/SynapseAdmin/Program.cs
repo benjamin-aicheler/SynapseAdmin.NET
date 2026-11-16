@@ -109,7 +109,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     }
 });
 
-builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration {
+builder.Services.AddRoryLibMatrixServices(new RoryLibMatrixConfiguration
+{
     AppName = "SynapseAdmin.NET"
 });
 
@@ -145,7 +146,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, MatrixAuthenticationStat
 builder.Services.AddScoped<MatrixAuthenticationStateProvider>(sp => (MatrixAuthenticationStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options => {
+    .AddCookie(options =>
+    {
         options.LoginPath = "/login";
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
