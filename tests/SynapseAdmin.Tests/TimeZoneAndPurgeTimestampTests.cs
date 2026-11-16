@@ -8,7 +8,6 @@ using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
-using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
