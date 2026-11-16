@@ -1,7 +1,6 @@
 using MudBlazor;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Interfaces;
