@@ -44,6 +44,17 @@ public class SynapseCompatibleAdminGateway(
         return await JsonSerializer.DeserializeAsync<T>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
     }
 
+    /// <summary>
+    /// Raw DELETE with an optional body. LibMatrix's DeleteAsync/DeleteAsJsonAsync have no CancellationToken overload,
+    /// so the request is built here and sent through ClientHttpClient.SendAsync.
+    /// </summary>
+    private async Task SendDeleteAsync(string url, HttpContent? content, CancellationToken cancellationToken)
+    {
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
     // --- User Management ---
 
     public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
@@ -203,12 +214,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v2/rooms/{roomId.UrlEncode()}";
-        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url)
-        {
-            Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json")
-        };
-        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await SendDeleteAsync(url, new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json"), cancellationToken);
     }
 
     public override async Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default)
@@ -295,9 +301,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/event_reports/{reportId.UrlEncode()}";
-        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
-        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await SendDeleteAsync(url, null, cancellationToken);
     }
 
     // --- Event Forensics ---
@@ -346,9 +350,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteRegistrationTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/registration_tokens/{token.UrlEncode()}";
-        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
-        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await SendDeleteAsync(url, null, cancellationToken);
     }
 
     // --- Server Admin ---
@@ -390,9 +392,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url);
-        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await SendDeleteAsync(url, null, cancellationToken);
     }
 
     public override async Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
