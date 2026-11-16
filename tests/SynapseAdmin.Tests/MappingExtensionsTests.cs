@@ -223,4 +223,91 @@ public class MappingExtensionsTests
             dto.Chunk.Select(c => (c.AvatarUrl, c.CanonicalAlias, c.GuestCanJoin, c.JoinRule, c.Name, c.NumJoinedMembers, c.RoomId, c.Topic, c.WorldReadable)),
             vm.Chunk.Select(c => (c.AvatarUrl, c.CanonicalAlias, c.GuestCanJoin, c.JoinRule, c.Name, c.NumJoinedMembers, c.RoomId, c.Topic, c.WorldReadable)));
     }
+
+    // As above: the first entry of each fixture has distinct non-default values, so a missing or swapped assignment fails.
+    private const string UserMediaJson = """
+        {
+          "media": [
+            { "created_ts": 1700000000001, "last_access_ts": 1700000000002, "media_id": "media-a", "media_length": 4096,
+              "media_type": "image/png", "quarantined_by": "@admin:example.com", "safe_from_quarantine": true, "upload_name": "cat.png" },
+            { "media_id": "media-bare" }
+          ],
+          "total": 5
+        }
+        """;
+
+    private const string UserMediaStatisticsJson = """
+        {
+          "users": [
+            { "displayname": "Alice", "media_count": 3, "media_length": 4096, "user_id": "@alice:example.com" },
+            { "user_id": "@bare:example.com" }
+          ],
+          "total": 2
+        }
+        """;
+
+    private const string UserMembershipsJson = """{ "memberships": { "!a:example.com": "join", "!b:example.com": "leave" } }""";
+
+    [Theory]
+    [InlineData(UserMediaJson)]
+    [InlineData("{}")]
+    [InlineData("null")]
+    public async Task UserMediaPage_UserServiceMapsAllProperties(string json)
+    {
+        var dto = JsonSerializer.Deserialize<SynapseAdminUserMediaResult>(json);
+
+        var result = await CreateUserService(nameof(IMatrixGateway.GetUserMediaAsync), dto).GetUserMediaPageAsync("@alice:example.com", 3, 10);
+
+        Assert.True(result.Success);
+        Assert.Equal((3, dto?.Total ?? 0L), (result.Data!.Offset, result.Data.TotalCount));
+        AssertMapsUserMedia(dto?.Media ?? [], result.Data.Items);
+    }
+
+    [Theory]
+    [InlineData(UserMediaStatisticsJson)]
+    [InlineData("{}")]
+    [InlineData("null")]
+    public async Task TopMediaUsers_UserServiceMapsAllProperties(string json)
+    {
+        var dto = JsonSerializer.Deserialize<UserMediaStatisticsResponse>(json);
+
+        var result = await CreateUserService(nameof(IMatrixGateway.GetUserMediaStatisticsAsync), dto).GetTopMediaUsersAsync();
+
+        Assert.True(result.Success);
+        AssertMapsMediaStatistics(dto?.Users ?? [], result.Data!);
+    }
+
+    [Theory]
+    [InlineData(UserMembershipsJson)]
+    [InlineData("{}")]
+    [InlineData("null")]
+    public async Task UserMemberships_UserServiceMapsAllEntries(string json)
+    {
+        var dto = JsonSerializer.Deserialize<SynapseAdminUserMembershipsResponse>(json);
+
+        var result = await CreateUserService(nameof(IMatrixGateway.GetUserMembershipsAsync), dto).GetUserMembershipsAsync("@alice:example.com");
+
+        Assert.True(result.Success);
+        AssertMapsMemberships(dto?.Memberships ?? [], result.Data!);
+    }
+
+    private static UserService CreateUserService<T>(string gatewayMethod, T? gatewayResult) where T : class
+    {
+        var gateway = Stub.Create<IMatrixGateway>(s => s.On(gatewayMethod, _ => Task.FromResult(gatewayResult)));
+        var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
+        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
+            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+        return new UserService(session, NullLogger<UserService>.Instance, localizer);
+    }
+
+    private static void AssertMapsUserMedia(IEnumerable<SynapseAdminUserMediaResult.MediaInfo> dto, IEnumerable<UserMediaItemViewModel> vm) =>
+        Assert.Equal(
+            dto.Select(m => (m.MediaId, m.UploadName, m.MediaType, m.MediaLength, m.CreatedTimestamp, m.QuarantinedBy, m.SafeFromQuarantine)),
+            vm.Select(m => (m.MediaId, m.UploadName, m.MediaType, m.MediaLength, m.CreatedTimestamp, m.QuarantinedBy, m.SafeFromQuarantine)));
+
+    private static void AssertMapsMediaStatistics(IEnumerable<UserMediaStatisticsResponse.UserMediaStatistic> dto, IEnumerable<UserMediaStatisticsViewModel> vm) =>
+        Assert.Equal(dto.Select(u => (u.UserId, u.DisplayName, u.MediaCount, u.MediaLength)), vm.Select(u => (u.UserId, u.DisplayName, u.MediaCount, u.TotalSize)));
+
+    private static void AssertMapsMemberships(Dictionary<string, string> dto, IEnumerable<UserMembershipViewModel> vm) =>
+        Assert.Equal(dto.Select(kvp => (kvp.Key, kvp.Value)), vm.Select(m => (m.RoomId, m.Membership)));
 }
