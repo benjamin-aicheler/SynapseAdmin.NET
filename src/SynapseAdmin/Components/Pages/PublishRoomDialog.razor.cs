@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
-using SynapseAdmin.Resources;
 
 namespace SynapseAdmin.Components.Pages
 {
