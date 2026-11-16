@@ -139,102 +139,133 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 
         if (authenticatedHomeserver is AuthenticatedHomeserverSynapse synapse)
         {
-            string synapseVersion = "Unknown";
-            try
-            {
-                var versionInfo = await synapse.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>(
-                    "/_synapse/admin/v1/server_version", cancellationToken: cancellationToken);
-                if (versionInfo != null && !string.IsNullOrEmpty(versionInfo.ServerVersion))
-                {
-                    synapseVersion = versionInfo.ServerVersion;
-                }
-            }
-            // Probe failures are soft, but a cancelled request must not fall through and get cached (#391).
-            catch (Exception) when (!cancellationToken.IsCancellationRequested)
-            {
-                // Soft fail on version probe
-            }
+            var synapseVersion = await ProbeSynapseVersionAsync(synapse, cancellationToken);
 
             // Switch Synapse to using SynapseCompatibleAdminGateway so it is thoroughly exercised and validated
             return new SynapseCompatibleAdminGateway(synapse, "Synapse", synapseVersion);
         }
 
-        if (authenticatedHomeserver is AuthenticatedHomeserverGeneric generic)
+        // 1. Try to get federation version
+        var (brand, version, brandResolved, supportsAdmin) = await ProbeFederationVersionAsync(authenticatedHomeserver, cancellationToken);
+
+        // 2. Double-check with an active probe to /_synapse/admin/v1/server_version
+        // Only run the active probe if:
+        // - We didn't resolve a brand (e.g. federation disabled), so we fallback to testing the endpoint
+        // - Or we identified a compatible brand (Synapse or Tuwunel >= 1.8.1) and want to make sure it's active
+        if (!brandResolved || supportsAdmin)
         {
-            string brand = "Generic";
-            string version = "Unknown";
-            bool supportsAdmin = false;
+            (supportsAdmin, version) = await ProbeAdminApiAsync(authenticatedHomeserver, version, cancellationToken);
+        }
 
-            bool brandResolved = false;
-
-            // 1. Try to get federation version
-            try
-            {
-                var federationVersion = await generic.ClientHttpClient.GetFromJsonAsync<LibMatrix.Responses.Federation.ServerVersionResponse>(
-                    "/_matrix/federation/v1/version", null, cancellationToken);
-                if (federationVersion?.Server != null)
-                {
-                    brand = federationVersion.Server.Name ?? "Generic";
-                    version = federationVersion.Server.Version ?? "Unknown";
-                    brandResolved = true;
-
-                    // If it is known to support Synapse Admin API
-                    if (brand.Equals("tuwunel", StringComparison.OrdinalIgnoreCase))
-                    {
-                        supportsAdmin = IsTuwunelAdminCapable(version);
-                    }
-                    else if (brand.Equals("synapse", StringComparison.OrdinalIgnoreCase))
-                    {
-                        supportsAdmin = true;
-                    }
-                }
-            }
-            catch (Exception) when (!cancellationToken.IsCancellationRequested)
-            {
-                // Soft fail on federation version probe
-            }
-
-            // 2. Double-check with an active probe to /_synapse/admin/v1/server_version
-            // Only run the active probe if:
-            // - We didn't resolve a brand (e.g. federation disabled), so we fallback to testing the endpoint
-            // - Or we identified a compatible brand (Synapse or Tuwunel >= 1.8.1) and want to make sure it's active
-            if (!brandResolved || supportsAdmin)
-            {
-                try
-                {
-                    using var response = await generic.ClientHttpClient.GetAsync("/_synapse/admin/v1/server_version", cancellationToken);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        supportsAdmin = true;
-
-                        try
-                        {
-                            var versionInfo = await response.Content.ReadFromJsonAsync<SynapseVersionResponse>(cancellationToken: cancellationToken);
-                            if (versionInfo != null)
-                            {
-                                version = versionInfo.ServerVersion;
-                            }
-                        }
-                        catch (Exception) when (!cancellationToken.IsCancellationRequested) { }
-                    }
-                    else
-                    {
-                        supportsAdmin = false;
-                    }
-                }
-                catch (Exception) when (!cancellationToken.IsCancellationRequested)
-                {
-                    supportsAdmin = false;
-                }
-            }
-
-            if (supportsAdmin)
-            {
-                return new SynapseCompatibleAdminGateway(generic, brand, version);
-            }
+        if (supportsAdmin)
+        {
+            return new SynapseCompatibleAdminGateway(authenticatedHomeserver, brand, version);
         }
 
         return new GenericMatrixGateway(authenticatedHomeserver);
+    }
+
+    /// <summary>Reads the Synapse version from the admin API. Returns "Unknown" if the probe fails or reports none.</summary>
+    private static async Task<string> ProbeSynapseVersionAsync(AuthenticatedHomeserverSynapse synapse, CancellationToken cancellationToken)
+    {
+        string synapseVersion = "Unknown";
+        try
+        {
+            var versionInfo = await synapse.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>(
+                "/_synapse/admin/v1/server_version", cancellationToken: cancellationToken);
+            if (versionInfo != null && !string.IsNullOrEmpty(versionInfo.ServerVersion))
+            {
+                synapseVersion = versionInfo.ServerVersion;
+            }
+        }
+        // Probe failures are soft, but a cancelled request must not fall through and get cached (#391).
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Soft fail on version probe
+        }
+
+        return synapseVersion;
+    }
+
+    /// <summary>
+    /// Reads brand and version from <c>/_matrix/federation/v1/version</c>. <c>SupportsAdmin</c> is set for brands known
+    /// to support the Synapse Admin API (Synapse, Tuwunel >= 1.8.1); the active probe then confirms it.
+    /// </summary>
+    private static async Task<(string Brand, string Version, bool BrandResolved, bool SupportsAdmin)> ProbeFederationVersionAsync(
+        AuthenticatedHomeserverGeneric homeserver, CancellationToken cancellationToken)
+    {
+        string brand = "Generic";
+        string version = "Unknown";
+        bool supportsAdmin = false;
+
+        bool brandResolved = false;
+
+        try
+        {
+            var federationVersion = await homeserver.ClientHttpClient.GetFromJsonAsync<LibMatrix.Responses.Federation.ServerVersionResponse>(
+                "/_matrix/federation/v1/version", null, cancellationToken);
+            if (federationVersion?.Server != null)
+            {
+                brand = federationVersion.Server.Name ?? "Generic";
+                version = federationVersion.Server.Version ?? "Unknown";
+                brandResolved = true;
+
+                // If it is known to support Synapse Admin API
+                if (brand.Equals("tuwunel", StringComparison.OrdinalIgnoreCase))
+                {
+                    supportsAdmin = IsTuwunelAdminCapable(version);
+                }
+                else if (brand.Equals("synapse", StringComparison.OrdinalIgnoreCase))
+                {
+                    supportsAdmin = true;
+                }
+            }
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Soft fail on federation version probe
+        }
+
+        return (brand, version, brandResolved, supportsAdmin);
+    }
+
+    /// <summary>
+    /// Active probe of <c>/_synapse/admin/v1/server_version</c>. A success status means the admin API is available; if
+    /// the body parses, its <c>server_version</c> replaces <paramref name="version"/>, even when empty. Any other
+    /// status or failure means no admin API.
+    /// </summary>
+    private static async Task<(bool SupportsAdmin, string Version)> ProbeAdminApiAsync(
+        AuthenticatedHomeserverGeneric homeserver, string version, CancellationToken cancellationToken)
+    {
+        bool supportsAdmin;
+        try
+        {
+            using var response = await homeserver.ClientHttpClient.GetAsync("/_synapse/admin/v1/server_version", cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                supportsAdmin = true;
+
+                try
+                {
+                    var versionInfo = await response.Content.ReadFromJsonAsync<SynapseVersionResponse>(cancellationToken: cancellationToken);
+                    if (versionInfo != null)
+                    {
+                        version = versionInfo.ServerVersion;
+                    }
+                }
+                catch (Exception) when (!cancellationToken.IsCancellationRequested) { }
+            }
+            else
+            {
+                supportsAdmin = false;
+            }
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            supportsAdmin = false;
+        }
+
+        return (supportsAdmin, version);
     }
 
     /// <summary>
