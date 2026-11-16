@@ -32,6 +32,18 @@ public class SynapseCompatibleAdminGateway(
         Converters = { new JsonStringConverter() }
     };
 
+    /// <summary>
+    /// GET and deserialize with <see cref="SynapseCompatibilityJsonOptions"/>. Never switch this to GetFromJsonAsync:
+    /// LibMatrix's MatrixHttpClient mutates the options it is given.
+    /// </summary>
+    private async Task<T?> GetWithCompatibilityOptionsAsync<T>(string url, CancellationToken cancellationToken)
+    {
+        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        return await JsonSerializer.DeserializeAsync<T>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
+    }
+
     // --- User Management ---
 
     public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
@@ -48,10 +60,7 @@ public class SynapseCompatibleAdminGateway(
                 url += $"&name={searchTerm.UrlEncode()}";
             }
         }
-        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminUserListResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
+        return await GetWithCompatibilityOptionsAsync<SynapseAdminUserListResult>(url, cancellationToken);
     }
 
     public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default)
@@ -108,10 +117,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(int limit = 10, string orderBy = "media_length", string dir = "b", string? searchTerm = null, CancellationToken cancellationToken = default)
     {
         var url = BuildUserMediaStatisticsUrl(limit, orderBy, dir, searchTerm);
-        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<UserMediaStatisticsResponse>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
+        return await GetWithCompatibilityOptionsAsync<UserMediaStatisticsResponse>(url, cancellationToken);
     }
 
     public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, object request, CancellationToken cancellationToken = default)
@@ -136,10 +142,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, int from, int limit, string orderBy = "created_ts", string dir = "b", CancellationToken cancellationToken = default)
     {
         var url = BuildUserMediaUrl(userId, from, limit, orderBy, dir);
-        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminUserMediaResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
+        return await GetWithCompatibilityOptionsAsync<SynapseAdminUserMediaResult>(url, cancellationToken);
     }
 
     public override async Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default)
@@ -260,10 +263,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/federation/destinations?from={offset}&limit={limit}&dir={direction.UrlEncode()}";
-        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminDestinationListResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
+        return await GetWithCompatibilityOptionsAsync<SynapseAdminDestinationListResult>(url, cancellationToken);
     }
 
     public override async Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default)
@@ -289,10 +289,7 @@ public class SynapseCompatibleAdminGateway(
                 url += $"&user_id={searchTerm.UrlEncode()}";
             }
         }
-        using var response = await Homeserver.ClientHttpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        return await JsonSerializer.DeserializeAsync<SynapseAdminEventReportListResult>(contentStream, SynapseCompatibilityJsonOptions, cancellationToken);
+        return await GetWithCompatibilityOptionsAsync<SynapseAdminEventReportListResult>(url, cancellationToken);
     }
 
     public override async Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default)
