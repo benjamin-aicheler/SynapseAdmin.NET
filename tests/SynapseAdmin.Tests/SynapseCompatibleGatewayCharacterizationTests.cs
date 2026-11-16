@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SynapseAdmin.Infrastructure.Gateways;
+using SynapseAdmin.Models.Requests;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -22,6 +23,7 @@ namespace SynapseAdmin.Tests;
 /// <c>next_token</c>, and how non-success responses surface. LibMatrix's <c>MatrixHttpClient</c> throws before the
 /// gateway's own <c>EnsureSuccessStatusCode</c>: <see cref="MatrixException"/> for a Matrix JSON error body,
 /// <see cref="HttpRequestException"/> for any other body.
+/// Also the four raw DELETEs: the exact request (method, target, Content-Type, body) and the same error behavior.
 /// </summary>
 public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -104,13 +106,80 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
 
-    /// <summary>A Kestrel server that records every request target (path and query, as sent) and answers with <see cref="Respond"/>.</summary>
+    public static TheoryData<string> DeleteMethods => new()
+    {
+        nameof(SynapseCompatibleAdminGateway.DeleteRoomAsync),
+        nameof(SynapseCompatibleAdminGateway.DeleteEventReportAsync),
+        nameof(SynapseCompatibleAdminGateway.DeleteRegistrationTokenAsync),
+        nameof(SynapseCompatibleAdminGateway.DeleteMediaAsync),
+    };
+
+    // Each raw DELETE with fixed arguments and the exact request it sends. The room body uses default (not web)
+    // serializer options: declared property order, nulls written.
+    private static (CapturedRequest Request, Func<SynapseCompatibleAdminGateway, Task> Call) DeleteMethod(string name) => name switch
+    {
+        nameof(SynapseCompatibleAdminGateway.DeleteRoomAsync) => (
+            new("DELETE", "/_synapse/admin/v2/rooms/!room%3aexample.com", "application/json; charset=utf-8",
+                """{"new_room_user_id":"@admin:example.com","room_name":null,"block":true,"purge":false,"message":"Moved"}"""),
+            g => g.DeleteRoomAsync("!room:example.com",
+                new SynapseAdminRoomDeleteRequest { NewRoomUserId = "@admin:example.com", Block = true, Purge = false, Message = "Moved" })),
+        nameof(SynapseCompatibleAdminGateway.DeleteEventReportAsync) => (
+            new("DELETE", "/_synapse/admin/v1/event_reports/42", null, ""),
+            g => g.DeleteEventReportAsync("42")),
+        nameof(SynapseCompatibleAdminGateway.DeleteRegistrationTokenAsync) => (
+            new("DELETE", "/_synapse/admin/v1/registration_tokens/invite%2b1", null, ""),
+            g => g.DeleteRegistrationTokenAsync("invite+1")),
+        nameof(SynapseCompatibleAdminGateway.DeleteMediaAsync) => (
+            new("DELETE", "/_synapse/admin/v1/media/example.com/media-a", null, ""),
+            g => g.DeleteMediaAsync("example.com", "media-a")),
+        _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+    };
+
+    [Theory]
+    [MemberData(nameof(DeleteMethods))]
+    public async Task Delete_SendsTheSameRequest(string method)
+    {
+        var (request, call) = DeleteMethod(method);
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await call(_gateway);
+
+        Assert.Equal(request, Assert.Single(_homeserver.Requests));
+    }
+
+    [Theory]
+    [MemberData(nameof(DeleteMethods))]
+    public async Task Delete_MatrixErrorResponse_ThrowsMatrixException(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "Not found" }, statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => DeleteMethod(method).Call(_gateway));
+
+        Assert.Equal("M_NOT_FOUND", ex.ErrorCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(DeleteMethods))]
+    public async Task Delete_NonJsonErrorResponse_ThrowsHttpRequestException(string method)
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => DeleteMethod(method).Call(_gateway));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    /// <summary>One request as the server received it. <see cref="Target"/> is the path and query exactly as sent.</summary>
+    private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);
+
+    /// <summary>A Kestrel server that records every request (any HTTP method) and answers with <see cref="Respond"/>.</summary>
     private sealed class FakeHomeserver : IAsyncDisposable
     {
         private WebApplication? _app;
 
         public string Url { get; private set; } = null!;
-        public ConcurrentQueue<string> RequestTargets { get; } = new();
+        public ConcurrentQueue<CapturedRequest> Requests { get; } = new();
+        public IEnumerable<string> RequestTargets => Requests.Select(r => r.Target);
         public Func<IResult> Respond { get; set; } = () => Results.NotFound();
 
         public async Task StartAsync()
@@ -120,9 +189,11 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
             builder.Logging.ClearProviders();
             _app = builder.Build();
 
-            _app.MapGet("/{**path}", (Func<HttpContext, IResult>)(context =>
+            _app.Map("/{**path}", (Func<HttpContext, Task<IResult>>)(async context =>
             {
-                RequestTargets.Enqueue(context.Features.Get<IHttpRequestFeature>()!.RawTarget);
+                using var reader = new StreamReader(context.Request.Body);
+                Requests.Enqueue(new CapturedRequest(context.Request.Method, context.Features.Get<IHttpRequestFeature>()!.RawTarget,
+                    context.Request.ContentType, await reader.ReadToEndAsync()));
                 return Respond();
             }));
 
