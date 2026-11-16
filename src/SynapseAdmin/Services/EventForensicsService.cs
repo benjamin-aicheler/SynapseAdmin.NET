@@ -16,6 +16,8 @@ public class EventForensicsService(
     ILogger<EventForensicsService> logger,
     IStringLocalizer<SharedResources> L) : IEventForensicsService
 {
+    private static readonly JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
+
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
     public async Task<OperationResult<EventForensicsViewModel>> FetchEventAsync(string eventId, CancellationToken cancellationToken = default)
@@ -56,7 +58,7 @@ public class EventForensicsService(
                 }
             }
 
-            var formattedJson = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
+            var formattedJson = JsonSerializer.Serialize(response, IndentedJson);
 
             var vm = new EventForensicsViewModel
             {
