@@ -21,8 +21,8 @@ public partial class BackgroundUpdates : IDisposable
 
     private BackgroundUpdatesStatusViewModel? statusResponse;
     private bool isLoading = true;
-    private bool isToggling = false;
-    private bool isTriggering = false;
+    private bool isToggling;
+    private bool isTriggering;
 
     private readonly CancellationTokenSource _cts = new();
 

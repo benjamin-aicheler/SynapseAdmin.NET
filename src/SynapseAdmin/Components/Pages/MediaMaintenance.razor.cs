@@ -22,8 +22,8 @@ public partial class MediaMaintenance : IDisposable
     private int deleteLocalDays = 90;
     private int deleteLocalSizeMb = 10;
     private bool keepProfiles = true;
-    private bool confirmUnboundedSize = false;
-    private bool isWorking = false;
+    private bool confirmUnboundedSize;
+    private bool isWorking;
 
     private readonly CancellationTokenSource _cts = new();
 

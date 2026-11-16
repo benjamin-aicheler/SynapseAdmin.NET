@@ -22,11 +22,11 @@ namespace SynapseAdmin.Components.Pages
         [SupplyParameterFromQuery]
         public string? Error { get; set; }
 
-        private LoginViewModel loginModel = new();
+        private readonly LoginViewModel loginModel = new();
         private string? errorMessage;
         private Severity errorSeverity = Severity.Error;
         private bool isSubmitting;
-        private string usernamePlaceholder = "@user:matrix.org";
+        private readonly string usernamePlaceholder = "@user:matrix.org";
 
         protected override void OnInitialized()
         {

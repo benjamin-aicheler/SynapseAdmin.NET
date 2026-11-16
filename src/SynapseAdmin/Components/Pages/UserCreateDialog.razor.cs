@@ -7,12 +7,12 @@ namespace SynapseAdmin.Components.Pages;
 
 public partial class UserCreateDialog : IDisposable
 {
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Inject] private IUserService UserService { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
-    private UserCreateViewModel model = new();
+    private readonly UserCreateViewModel model = new();
     private MudForm form = default!;
     private bool success;
     private bool loading;
