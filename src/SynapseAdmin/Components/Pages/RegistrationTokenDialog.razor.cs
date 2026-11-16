@@ -8,7 +8,7 @@ namespace SynapseAdmin.Components.Pages
     public partial class RegistrationTokenDialog
     {
         [CascadingParameter] 
-        IMudDialogInstance MudDialog { get; set; } = null!;
+        private IMudDialogInstance MudDialog { get; set; } = null!;
 
         [Parameter]
         public bool IsEdit { get; set; } = false;

@@ -25,9 +25,9 @@ namespace SynapseAdmin.Components.Shared
         private DotNetObjectReference<RoomGalleryGrid>? _dotnetRef;
 
         private bool _isLoadingInitial = true;
-        private bool _isBatchLoading = false;
-        private bool _hasMoreToLoad = false;
-        private int _batchGeneration = 0;
+        private bool _isBatchLoading;
+        private bool _hasMoreToLoad;
+        private int _batchGeneration;
         private const int PageSize = 20;
 
         private string _searchTerm = string.Empty;

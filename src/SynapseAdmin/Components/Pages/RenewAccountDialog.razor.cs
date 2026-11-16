@@ -7,7 +7,7 @@ namespace SynapseAdmin.Components.Pages;
 
 public partial class RenewAccountDialog : IDisposable
 {
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Inject] private IUserService UserService { get; set; } = default!;
     [Inject] private ITimeZoneService TimeZoneService { get; set; } = default!;

@@ -16,7 +16,7 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
 
     private IAppTheme _currentThemeInstance = new DefaultTheme();
     private bool _isDarkMode = true;
-    private bool _isInitialized = false;
+    private bool _isInitialized;
 
     public MudTheme CurrentTheme => _currentThemeInstance.Theme;
     public string CurrentThemeId => _currentThemeInstance.Id;

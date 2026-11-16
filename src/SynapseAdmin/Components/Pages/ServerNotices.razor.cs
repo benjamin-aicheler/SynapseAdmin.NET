@@ -15,7 +15,7 @@ namespace SynapseAdmin.Components.Pages
 
         private MudForm? form;
         private bool success;
-        private bool isSending = false;
+        private bool isSending;
         
         private string targetUserId = string.Empty;
         private string noticeMessage = string.Empty;
