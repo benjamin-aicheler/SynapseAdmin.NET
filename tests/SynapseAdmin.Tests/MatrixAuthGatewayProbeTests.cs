@@ -141,6 +141,11 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
         Assert.Equal(probed, _homeserver.RequestPaths.Contains(AdminVersionPath));
     }
 
+    [Theory]
+    [MemberData(nameof(TuwunelVersions))]
+    public void IsTuwunelAdminCapable_MatchesTheVersionTable(string version, bool expected) =>
+        Assert.Equal(expected, MatrixAuthGateway.IsTuwunelAdminCapable(version));
+
     /// <summary>
     /// Discovery already identified Synapse: no federation probe, always the admin gateway, and the version falls back
     /// to "Unknown" when the admin probe fails or reports an empty version.
