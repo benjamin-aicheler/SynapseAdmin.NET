@@ -15,7 +15,7 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
 
     public async Task<OperationResult<MediaDownload>> OpenMediaAsync(string mxc, MediaByteRange? range = null, CancellationToken token = default)
     {
-        if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<MediaDownload>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<MediaDownload>.Failure(L["NotAuthenticated"]);
         if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<MediaDownload>.Failure(L["ErrorFetchingMedia"]);
 
         try
@@ -36,7 +36,7 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
 
     public async Task<OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>> GetMediaMetadataAsync(string mxc, CancellationToken token = default)
     {
-        if (!sessionService.IsLoggedIn || Gateway == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["NotAuthenticated"]);
+        if (Gateway == null) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["NotAuthenticated"]);
         if (string.IsNullOrWhiteSpace(mxc)) return OperationResult<SynapseAdminMediaMetadataResponse.MediaInfo>.Failure(L["ErrorFetchingMedia"]);
 
         try
