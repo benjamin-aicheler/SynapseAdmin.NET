@@ -377,22 +377,15 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     .Where(m => m.Type == "m.room.message")
                     .Select(m =>
                     {
-                        if (m.Content is not { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } contentJson)
-                        {
-                            return new RoomMessageItemViewModel
-                            {
-                                EventId = m.EventId,
-                                Sender = m.Sender,
-                                OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
-                                Type = m.Type,
-                                StateKey = m.StateKey
-                            };
-                        }
-
+                        string? content = null;
                         string? body = null;
-                        if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
+                        if (m.Content is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } contentJson)
                         {
-                            body = bodyProp.GetString();
+                            if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
+                            {
+                                body = bodyProp.GetString();
+                            }
+                            content = contentJson.GetRawText();
                         }
 
                         return new RoomMessageItemViewModel
@@ -402,7 +395,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                             OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
                             Type = m.Type,
                             StateKey = m.StateKey,
-                            Content = contentJson.GetRawText(),
+                            Content = content,
                             Body = body
                         };
                     }).ToList()
