@@ -1,4 +1,5 @@
 using LibMatrix.Homeservers;
+using LibMatrix.StructuredData;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
 using System.Text.Json;
@@ -370,7 +371,7 @@ public class SynapseCompatibleAdminGateway(
 
     public override async Task<SynapseAdminMediaMetadataResponse.MediaInfo?> GetMediaMetadataAsync(string mxcUri, CancellationToken cancellationToken = default)
     {
-        var mxc = LibMatrix.StructuredData.MxcUri.Parse(mxcUri);
+        var mxc = MxcUri.Parse(mxcUri);
         return await GetMediaMetadataAsync(mxc.ServerName, mxc.MediaId, cancellationToken);
     }
 
