@@ -55,6 +55,20 @@ public class SynapseCompatibleAdminGateway(
         resp.EnsureSuccessStatusCode();
     }
 
+    /// <summary>POST an empty JSON object (<c>{}</c>) to an endpoint whose response body is not read.</summary>
+    private async Task PostEmptyAsync(string url, CancellationToken cancellationToken)
+    {
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>PUT an empty JSON object (<c>{}</c>) to an endpoint whose response body is not read.</summary>
+    private async Task PutEmptyAsync(string url, CancellationToken cancellationToken)
+    {
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
     // --- User Management ---
 
     public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
@@ -89,8 +103,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task QuarantineMediaByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/user/{userId.UrlEncode()}/media/quarantine";
-        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await PutEmptyAsync(url, cancellationToken);
     }
 
     public override async Task<LoginResponse> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken cancellationToken = default)
@@ -220,8 +233,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/room/{roomId.UrlEncode()}/media/quarantine";
-        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await PutEmptyAsync(url, cancellationToken);
     }
 
     public override async Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default)
@@ -275,8 +287,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/federation/destinations/{destination.UrlEncode()}/reset_connection";
-        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await PostEmptyAsync(url, cancellationToken);
     }
 
     // --- Event Reports ---
@@ -378,15 +389,13 @@ public class SynapseCompatibleAdminGateway(
     public override async Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/quarantine/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await PutEmptyAsync(url, cancellationToken);
     }
 
     public override async Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/unquarantine/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await PostEmptyAsync(url, cancellationToken);
     }
 
     public override async Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
@@ -398,15 +407,13 @@ public class SynapseCompatibleAdminGateway(
     public override async Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/protect/{mediaId.UrlEncode()}";
-        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await PostEmptyAsync(url, cancellationToken);
     }
 
     public override async Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/unprotect/{mediaId.UrlEncode()}";
-        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
+        await PostEmptyAsync(url, cancellationToken);
     }
 
     public override async Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default)
