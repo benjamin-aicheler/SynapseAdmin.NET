@@ -23,10 +23,17 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
     };
 
+    private static readonly MemoryCacheEntryOptions ActivePurgeCacheOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+    };
+
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
+    private string? HomeserverCacheScope => Gateway?.HomeserverUrl?.TrimEnd('/').ToLowerInvariant();
+
     private string GetRoomNameCacheKey(string roomId) =>
-        $"room_name:{Gateway?.HomeserverUrl?.TrimEnd('/').ToLowerInvariant()}:{roomId}";
+        $"room_name:{HomeserverCacheScope}:{roomId}";
 
     private void CacheRoomName(string roomId, string? name)
     {
@@ -414,13 +421,8 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         }
     }
 
-    private static readonly MemoryCacheEntryOptions ActivePurgeCacheOptions = new()
-    {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
-    };
-
     private string GetActivePurgeCacheKey(string roomId) =>
-        $"active_purge:{Gateway?.HomeserverUrl?.TrimEnd('/').ToLowerInvariant()}:{roomId}";
+        $"active_purge:{HomeserverCacheScope}:{roomId}";
 
     public string? GetActivePurgeId(string roomId)
     {
