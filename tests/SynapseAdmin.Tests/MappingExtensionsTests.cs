@@ -366,6 +366,16 @@ public class MappingExtensionsTests
         AssertMapsBackgroundUpdatesStatus(dto, result.Data!);
     }
 
+    [Theory]
+    [InlineData(BackgroundUpdatesStatusJson)]
+    [InlineData("{}")]
+    public void BackgroundUpdatesStatusMapping_MapsAllProperties(string json)
+    {
+        var dto = JsonSerializer.Deserialize<SynapseAdminBackgroundUpdatesStatusResponse>(json)!;
+
+        AssertMapsBackgroundUpdatesStatus(dto, dto.ToViewModel());
+    }
+
     private static void AssertMapsBackgroundUpdatesStatus(SynapseAdminBackgroundUpdatesStatusResponse dto, BackgroundUpdatesStatusViewModel vm)
     {
         Assert.Equal(dto.Enabled, vm.Enabled);

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
@@ -22,19 +23,7 @@ public class BackgroundUpdatesService(
         {
             var status = await Gateway.GetBackgroundUpdatesStatusAsync(token);
             if (status == null) return OperationResult<BackgroundUpdatesStatusViewModel>.Failure(L["ErrorFetchingBackgroundUpdatesStatus"]);
-            var vm = new BackgroundUpdatesStatusViewModel
-            {
-                Enabled = status.Enabled,
-                CurrentUpdates = status.CurrentUpdates?.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => new CurrentBackgroundUpdateViewModel
-                    {
-                        Name = kvp.Value.Name,
-                        TotalItemCount = kvp.Value.TotalItemCount,
-                        TotalDurationMs = kvp.Value.TotalDurationMs,
-                        AverageItemsPerMs = kvp.Value.AverageItemsPerMs
-                    }) ?? []
-            };
+            var vm = status.ToViewModel();
             return OperationResult<BackgroundUpdatesStatusViewModel>.Ok(vm);
         }
         catch (OperationCanceledException)
