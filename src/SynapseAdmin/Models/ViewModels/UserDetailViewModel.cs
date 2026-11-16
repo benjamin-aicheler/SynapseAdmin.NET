@@ -17,9 +17,9 @@ public class UserDetailViewModel
     public string AppserviceId { get; set; } = string.Empty;
     public long? ExpirationTs { get; set; }
     public DateTimeOffset? ExpirationTsDateTime => ExpirationTs.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ExpirationTs.Value) : null;
-    
+
     // Threepids, external ids etc could be added here as flattened properties or specific VMs
-    
+
     public List<UserMembershipViewModel> Memberships { get; set; } = [];
     public List<UserExperimentalFeatureViewModel>? ExperimentalFeatures { get; set; }
 }

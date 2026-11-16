@@ -13,6 +13,6 @@ public class RoomMessageItemViewModel
     public DateTimeOffset OriginServerTs { get; set; }
     public string Type { get; set; } = string.Empty;
     public string? StateKey { get; set; }
-    public string? Content { get; set; } 
+    public string? Content { get; set; }
     public string? Body { get; set; }
 }

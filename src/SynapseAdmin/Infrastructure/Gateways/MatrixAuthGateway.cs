@@ -136,7 +136,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                 ? new AuthenticatedHomeserverSynapse(homeserverUrl, wellKnownUris, null, accessToken)
                 : new AuthenticatedHomeserverGeneric(homeserverUrl, wellKnownUris, null, accessToken);
         await authenticatedHomeserver.Initialise();
-        
+
         if (authenticatedHomeserver is AuthenticatedHomeserverSynapse synapse)
         {
             string synapseVersion = "Unknown";
@@ -158,7 +158,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
             // Switch Synapse to using SynapseCompatibleAdminGateway so it is thoroughly exercised and validated
             return new SynapseCompatibleAdminGateway(synapse, "Synapse", synapseVersion);
         }
-        
+
         if (authenticatedHomeserver is AuthenticatedHomeserverGeneric generic)
         {
             string brand = "Generic";
@@ -224,7 +224,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                     if (response.IsSuccessStatusCode)
                     {
                         supportsAdmin = true;
-                        
+
                         try
                         {
                             var versionInfo = await response.Content.ReadFromJsonAsync<SynapseVersionResponse>(cancellationToken: cancellationToken);
@@ -251,7 +251,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                 return new SynapseCompatibleAdminGateway(generic, brand, version);
             }
         }
-        
+
         return new GenericMatrixGateway(authenticatedHomeserver);
     }
 }

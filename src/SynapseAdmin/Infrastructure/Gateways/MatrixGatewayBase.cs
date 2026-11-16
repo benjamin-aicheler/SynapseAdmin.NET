@@ -29,7 +29,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public virtual string ServerVersion => "Unknown";
 
     // --- Standard Matrix CS API Implementation ---
-    
+
     /// <summary>
     /// Opens a media download, forwarding <paramref name="range"/> and <paramref name="cancellationToken"/> to the
     /// homeserver (#372). Only the response headers are read; the caller owns (and must dispose) the result.
