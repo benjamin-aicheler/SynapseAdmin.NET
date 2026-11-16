@@ -181,25 +181,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                     // If it is known to support Synapse Admin API
                     if (brand.Equals("tuwunel", StringComparison.OrdinalIgnoreCase))
                     {
-                        var cleanVersion = version;
-                        var dashIdx = cleanVersion.IndexOf('-');
-                        if (dashIdx > 0)
-                        {
-                            cleanVersion = cleanVersion.Substring(0, dashIdx);
-                        }
-
-                        if (System.Version.TryParse(cleanVersion, out var parsedVersion))
-                        {
-                            if (parsedVersion >= new System.Version(1, 8, 1))
-                            {
-                                supportsAdmin = true;
-                            }
-                        }
-                        else
-                        {
-                            // If version format is unknown or couldn't be parsed, let the active probe verify support
-                            supportsAdmin = true;
-                        }
+                        supportsAdmin = IsTuwunelAdminCapable(version);
                     }
                     else if (brand.Equals("synapse", StringComparison.OrdinalIgnoreCase))
                     {
@@ -253,5 +235,36 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         }
 
         return new GenericMatrixGateway(authenticatedHomeserver);
+    }
+
+    /// <summary>
+    /// Whether a Tuwunel version is new enough for the Synapse Admin API (>= 1.8.1). A suffix after the first <c>-</c>
+    /// is dropped, except when the dash is the first character. An unparseable version counts as capable, so the
+    /// active probe decides.
+    /// </summary>
+    internal static bool IsTuwunelAdminCapable(string version)
+    {
+        bool supportsAdmin = false;
+        var cleanVersion = version;
+        var dashIdx = cleanVersion.IndexOf('-');
+        if (dashIdx > 0)
+        {
+            cleanVersion = cleanVersion.Substring(0, dashIdx);
+        }
+
+        if (System.Version.TryParse(cleanVersion, out var parsedVersion))
+        {
+            if (parsedVersion >= new System.Version(1, 8, 1))
+            {
+                supportsAdmin = true;
+            }
+        }
+        else
+        {
+            // If version format is unknown or couldn't be parsed, let the active probe verify support
+            supportsAdmin = true;
+        }
+
+        return supportsAdmin;
     }
 }
