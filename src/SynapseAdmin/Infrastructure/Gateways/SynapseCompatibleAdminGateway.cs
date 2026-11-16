@@ -2,6 +2,7 @@ using LibMatrix.Homeservers;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
+using System.Text;
 using System.Text.Json;
 using ArcaneLibs.Extensions;
 using SynapseAdmin.Infrastructure.Serialization;
@@ -201,7 +202,7 @@ public class SynapseCompatibleAdminGateway(
         var url = $"/_synapse/admin/v2/rooms/{roomId.UrlEncode()}";
         using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url)
         {
-            Content = new StringContent(JsonSerializer.Serialize(request), System.Text.Encoding.UTF8, "application/json")
+            Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json")
         };
         using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
         resp.EnsureSuccessStatusCode();
