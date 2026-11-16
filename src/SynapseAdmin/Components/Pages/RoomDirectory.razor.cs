@@ -128,7 +128,7 @@ namespace SynapseAdmin.Components.Pages
             var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
             var dialog = await DialogService.ShowAsync<RoomAliasesDialog>(L["ManageAliases"], parameters, options);
             await dialog.Result;
-            
+
             // Reload directory in case the canonical alias was modified or aliases changed
             await LoadDataAsync();
         }

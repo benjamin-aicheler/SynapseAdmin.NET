@@ -16,7 +16,7 @@ namespace SynapseAdmin.Components.Pages
         private MudForm? form;
         private bool success;
         private bool isSending;
-        
+
         private string targetUserId = string.Empty;
         private string noticeMessage = string.Empty;
         private readonly CancellationTokenSource _cts = new();
@@ -25,14 +25,14 @@ namespace SynapseAdmin.Components.Pages
         {
             isSending = true;
             StateHasChanged();
-            
+
             var result = await UserService.SendServerNoticeAsync(targetUserId, noticeMessage, _cts.Token);
-            
+
             if (result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
-            
+
             if (result.Success)
             {
                 // Reset form

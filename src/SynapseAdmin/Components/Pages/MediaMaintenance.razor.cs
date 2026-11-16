@@ -91,7 +91,7 @@ public partial class MediaMaintenance : IDisposable
             {
                 var timeSpan = TimeSpan.FromDays(deleteLocalDays);
                 var beforeTs = DateTimeOffset.UtcNow.Subtract(timeSpan).ToUnixTimeMilliseconds();
-                
+
                 var sizeGtBytes = (long)deleteLocalSizeMb * 1024 * 1024;
 
                 var result = await MediaService.DeleteLocalMediaAsync(beforeTs, sizeGtBytes, keepProfiles, _cts.Token);

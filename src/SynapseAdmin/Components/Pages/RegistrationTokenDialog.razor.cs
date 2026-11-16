@@ -7,7 +7,7 @@ namespace SynapseAdmin.Components.Pages
 {
     public partial class RegistrationTokenDialog
     {
-        [CascadingParameter] 
+        [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = null!;
 
         [Parameter]
@@ -27,7 +27,7 @@ namespace SynapseAdmin.Components.Pages
         public DateTime? ExistingExpiryDate { get; set; }
 
         private bool success = true;
-        
+
         private string? token;
         private int? usesAllowed;
         private DateTime? expiryDate;

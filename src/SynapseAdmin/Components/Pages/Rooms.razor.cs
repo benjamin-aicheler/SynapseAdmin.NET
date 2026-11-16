@@ -38,19 +38,19 @@ namespace SynapseAdmin.Components.Pages
             var orderBy = state.SortLabel ?? "name";
 
             var result = await RoomService.GetRoomListAsync(offset, state.PageSize, orderBy, state.SortDirection, _searchTerm, token: token);
-            
+
             if (result.Success && result.Data != default)
             {
                 totalRooms = result.Data.Total;
                 StateHasChanged();
                 return new TableData<RoomListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Rooms };
             }
-            
+
             if (!result.Success && result.Severity != Severity.Normal)
             {
                 Snackbar.Add(result.Message, result.Severity);
             }
-            
+
             return new TableData<RoomListViewModel>() { TotalItems = 0, Items = new List<RoomListViewModel>() };
         }
 

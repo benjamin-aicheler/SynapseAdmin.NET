@@ -11,9 +11,9 @@ public partial class LanguageSelector : ComponentBase
     {
         var uri = new Uri(Navigation.Uri)
             .GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
-        
+
         var query = $"?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(uri)}";
-        
+
         Navigation.NavigateTo("/Culture/Set" + query, forceLoad: true);
     }
 }

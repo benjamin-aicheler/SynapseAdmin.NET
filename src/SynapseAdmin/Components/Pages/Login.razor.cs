@@ -12,7 +12,7 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public MatrixAuthenticationStateProvider AuthProvider { get; set; } = null!;
 
-        [Inject] 
+        [Inject]
         public NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
@@ -57,12 +57,12 @@ namespace SynapseAdmin.Components.Pages
             {
                 result = await AuthProvider.LoginWithTokenAsync(loginModel.Homeserver, loginModel.AccessToken);
             }
-            
+
             if (result.Success)
             {
                 var homeserver = loginModel.Homeserver;
-                var token = loginModel.Method == LoginMethod.Password 
-                    ? AuthProvider.GetAccessToken() 
+                var token = loginModel.Method == LoginMethod.Password
+                    ? AuthProvider.GetAccessToken()
                     : loginModel.AccessToken;
                 var userId = AuthProvider.GetUserId();
                 var username = AuthProvider.GetUsername();

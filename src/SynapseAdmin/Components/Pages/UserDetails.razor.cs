@@ -276,7 +276,7 @@ namespace SynapseAdmin.Components.Pages
         {
             if (MatrixSession.Gateway == null) return;
             var mxc = MediaHelper.ToMxcUri(mediaIdPart, MatrixSession.Gateway.ServerName);
-            
+
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["QuarantineMediaTitle"],
                 L["QuarantineMediaConfirmation"],
