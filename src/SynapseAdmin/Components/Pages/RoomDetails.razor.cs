@@ -28,6 +28,14 @@ namespace SynapseAdmin.Components.Pages
         [Parameter]
         public string RoomId { get; set; } = string.Empty;
 
+        private const string PurgeStatusActive = "active";
+        private const string PurgeStatusComplete = "complete";
+        private const string PurgeStatusFailed = "failed";
+        private const int PurgeStatusPollIntervalMs = 5000;
+        private const int MaxConsecutivePurgeStatusFailures = 5;
+        private const int MessageHistoryPageSize = 50;
+        private const string RoomListPath = "/rooms";
+
         private RoomDetailViewModel? room;
         private RoomMessagesViewModel? messages;
         private bool loadingMessages;
@@ -183,7 +191,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task LoadMessages(string roomId, string? from, CancellationToken token)
         {
             loadingMessages = true;
-            var result = await RoomService.GetRoomMessagesAsync(roomId, from: from, limit: 50, dir: "b", token: token);
+            var result = await RoomService.GetRoomMessagesAsync(roomId, from: from, limit: MessageHistoryPageSize, dir: "b", token: token);
             if (token.IsCancellationRequested || roomId != _loadedRoomId) return;
 
             if (result.Success && result.Data != null)
@@ -223,7 +231,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    Navigation.NavigateTo("/rooms");
+                    Navigation.NavigateTo(RoomListPath);
                 }
             }
         }
@@ -246,7 +254,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    Navigation.NavigateTo("/rooms");
+                    Navigation.NavigateTo(RoomListPath);
                 }
             }
         }
@@ -439,7 +447,7 @@ namespace SynapseAdmin.Components.Pages
                                 if (token.IsCancellationRequested) return;
                                 activePurgeStatus = status;
 
-                                if (status == "complete")
+                                if (status == PurgeStatusComplete)
                                 {
                                     RoomService.ClearActivePurgeId(roomId);
                                     activePurgeId = null;
@@ -450,7 +458,7 @@ namespace SynapseAdmin.Components.Pages
                                     return;
                                 }
 
-                                if (status == "failed")
+                                if (status == PurgeStatusFailed)
                                 {
                                     RoomService.ClearActivePurgeId(roomId);
                                     activePurgeId = null;
@@ -483,7 +491,7 @@ namespace SynapseAdmin.Components.Pages
                             var errMsg = result.Message ?? "Unknown error";
                             Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, errMsg.SanitizeForLogging());
 
-                            if (consecutiveFailures >= 5)
+                            if (consecutiveFailures >= MaxConsecutivePurgeStatusFailures)
                             {
                                 await InvokeAsync(() =>
                                 {
@@ -497,7 +505,7 @@ namespace SynapseAdmin.Components.Pages
                             }
                         }
 
-                        await Task.Delay(5000, token);
+                        await Task.Delay(PurgeStatusPollIntervalMs, token);
                     }
                 }
                 catch (OperationCanceledException)
@@ -556,7 +564,7 @@ namespace SynapseAdmin.Components.Pages
                 && GetDisplayedTarget() == target)
             {
                 activePurgeId = newPurgeId;
-                activePurgeStatus = "active";
+                activePurgeStatus = PurgeStatusActive;
                 StartPolling(target);
                 StateHasChanged();
             }
