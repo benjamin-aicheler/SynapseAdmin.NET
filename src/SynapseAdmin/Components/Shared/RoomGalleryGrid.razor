@@ -2,7 +2,7 @@
 @implements IAsyncDisposable
 
 <div class="room-gallery-container">
-    <!-- Filter Header -->
+    @* Filter Header *@
     <MudPaper Elevation="1" Class="pa-4 mb-4">
         <MudGrid Class="align-center">
             <MudItem xs="12" sm="4" md="4">
@@ -35,7 +35,7 @@
         </MudGrid>
     </MudPaper>
 
-    <!-- Initial Loading State -->
+    @* Initial Loading State *@
     @if (_isLoadingInitial)
     {
         <div class="d-flex flex-column align-center justify-center py-12">
@@ -49,14 +49,14 @@
     }
     else
     {
-        <!-- Responsive Grid -->
+        @* Responsive Grid *@
         <div class="gallery-grid">
             @foreach (var item in _displayedMedia)
             {
                 <MudCard Elevation="3" Class="gallery-card d-flex flex-column">
-                    <!-- Thumbnail / Preview Box -->
+                    @* Thumbnail / Preview Box *@
                     <div class="gallery-card-preview d-flex align-center justify-center">
-                        <!-- Badges -->
+                        @* Badges *@
                         <div class="gallery-card-badges d-flex gap-1">
                             @if (item.IsQuarantined)
                             {
@@ -71,7 +71,7 @@
                             </MudChip>
                         </div>
 
-                        <!-- Content Render based on mime type -->
+                        @* Content Render based on mime type *@
                         @if (IsImageType(item.MediaType))
                         {
                             <img src="@GetPreviewUrl(item)" alt="@(item.UploadName ?? item.MediaId)" class="gallery-img-preview" loading="lazy" @onclick="() => ShowPreview(item)" />
@@ -100,7 +100,7 @@
                         }
                     </div>
 
-                    <!-- Card Body -->
+                    @* Card Body *@
                     <MudCardContent Class="pa-3 flex-grow-1 d-flex flex-column justify-space-between">
                         <div>
                             <MudTooltip Text="@(item.UploadName ?? item.MediaId)">
@@ -119,7 +119,7 @@
                         </div>
                     </MudCardContent>
 
-                    <!-- Card Actions -->
+                    @* Card Actions *@
                     <MudCardActions Class="pa-2 d-flex justify-space-between align-center border-top">
                         <div class="d-flex">
                             @if (!item.IsQuarantined)
@@ -164,7 +164,7 @@
         </div>
     }
 
-    <!-- Infinite Scroll Sentinel & Loader -->
+    @* Infinite Scroll Sentinel & Loader *@
     <div @ref="_sentinelElement" class="d-flex align-center justify-center py-6">
         @if (!_isLoadingInitial && _hasMoreToLoad)
         {

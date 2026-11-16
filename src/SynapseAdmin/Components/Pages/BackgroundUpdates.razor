@@ -35,7 +35,7 @@ else if (isLoading && statusResponse == null)
 else
 {
     <MudGrid>
-        <!-- Status Card -->
+        @* Status Card *@
         <MudItem xs="12" md="6">
             <MudCard Elevation="3" Style="height: 100%;">
                 <MudCardHeader>
@@ -74,7 +74,7 @@ else
             </MudCard>
         </MudItem>
 
-        <!-- Active Updates Card -->
+        @* Active Updates Card *@
         <MudItem xs="12" md="6">
             <MudCard Elevation="3" Style="height: 100%;">
                 <MudCardHeader>
@@ -113,7 +113,7 @@ else
             </MudCard>
         </MudItem>
 
-        <!-- Manual Jobs Trigger Card -->
+        @* Manual Jobs Trigger Card *@
         <MudItem xs="12">
             <MudCard Elevation="3">
                 <MudCardHeader>
@@ -122,7 +122,7 @@ else
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <!-- Job 1 -->
+                    @* Job 1 *@
                     <div class="d-flex align-center justify-space-between py-4 border-bottom">
                         <div style="max-width: 80%;">
                             <MudText Typo="Typo.subtitle1" Class="fw-bold">@L["RecalculateRoomStats"]</MudText>
@@ -138,7 +138,7 @@ else
 
                     <MudDivider />
 
-                    <!-- Job 2 -->
+                    @* Job 2 *@
                     <div class="d-flex align-center justify-space-between py-4">
                         <div style="max-width: 80%;">
                             <MudText Typo="Typo.subtitle1" Class="fw-bold">@L["RegenerateUserDirectory"]</MudText>
