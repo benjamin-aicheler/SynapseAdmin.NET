@@ -65,7 +65,7 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
         }
 
         _policy.EnsureEntryAllowed(entry);
-        var entryBase = entry.GetLeftPart(UriPartial.Path).TrimEnd('/');
+        var entryBase = ToBase(entry);
 
         // Client-server API: .well-known/matrix/client delegation, otherwise the entered URL itself.
         string? clientUrl = null;
@@ -86,7 +86,7 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
 
         var clientUri = ParseHopUri(clientUrl);
         _policy.EnsureHopAllowed(clientUri);
-        clientUrl = clientUri.GetLeftPart(UriPartial.Path).TrimEnd('/');
+        clientUrl = ToBase(clientUri);
 
         // Federation: .well-known/matrix/server delegation, otherwise the client URL.
         var serverCandidate = clientUrl;
@@ -102,7 +102,7 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
 
         var serverUri = ParseHopUri(serverCandidate);
         _policy.EnsureHopAllowed(serverUri);
-        serverCandidate = serverUri.GetLeftPart(UriPartial.Path).TrimEnd('/');
+        serverCandidate = ToBase(serverUri);
 
         var federationVersion = await TryGetJsonAsync<FederationVersionDto>($"{serverCandidate}/_matrix/federation/v1/version", cancellationToken);
         var serverUrl = federationVersion is not null ? serverCandidate : null;
@@ -243,11 +243,7 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
         catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException or SocketException or IOException or UriFormatException ||
                                    (ex is TaskCanceledException && !cancellationToken.IsCancellationRequested))
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug(ex, "Discovery request to {Url} failed", url.SanitizeForLogging());
-            }
-
+            LogDiscoveryFailure(ex, url);
             return null;
         }
     }
@@ -262,12 +258,16 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
         catch (Exception ex) when (ex is HttpRequestException or SocketException or IOException or UriFormatException ||
                                    (ex is TaskCanceledException && !cancellationToken.IsCancellationRequested))
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug(ex, "Discovery request to {Url} failed", url.SanitizeForLogging());
-            }
-
+            LogDiscoveryFailure(ex, url);
             return false;
+        }
+    }
+
+    private void LogDiscoveryFailure(Exception ex, string url)
+    {
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug(ex, "Discovery request to {Url} failed", url.SanitizeForLogging());
         }
     }
 
@@ -280,6 +280,9 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
 
         return uri;
     }
+
+    /// <summary>Scheme, authority and path of <paramref name="uri"/>: no query, no fragment, no trailing slashes.</summary>
+    private static string ToBase(Uri uri) => uri.GetLeftPart(UriPartial.Path).TrimEnd('/');
 
     private static HomeserverNotAllowedException? FindPolicyRejection(Exception? ex)
     {
