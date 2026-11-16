@@ -510,24 +510,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var result = await Gateway.GetPublicRoomsAsync(limit, since, searchTerm, token);
             // Collection read: a null result is an empty directory, not an error (#395, H-12).
             if (result == null) return OperationResult<PublicRoomDirectoryViewModel>.Ok(new PublicRoomDirectoryViewModel());
-            var vm = new PublicRoomDirectoryViewModel
-            {
-                NextBatch = result.NextBatch,
-                PrevBatch = result.PrevBatch,
-                TotalRoomCountEstimate = result.TotalRoomCountEstimate,
-                Chunk = result.Chunk.Select(c => new PublicRoomItemViewModel
-                {
-                    AvatarUrl = c.AvatarUrl,
-                    CanonicalAlias = c.CanonicalAlias,
-                    GuestCanJoin = c.GuestCanJoin,
-                    JoinRule = c.JoinRule,
-                    Name = c.Name,
-                    NumJoinedMembers = c.NumJoinedMembers,
-                    RoomId = c.RoomId,
-                    Topic = c.Topic,
-                    WorldReadable = c.WorldReadable
-                }).ToList()
-            };
+            var vm = result.ToViewModel();
             return OperationResult<PublicRoomDirectoryViewModel>.Ok(vm);
         }
         catch (OperationCanceledException)

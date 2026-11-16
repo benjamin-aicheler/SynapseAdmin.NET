@@ -206,6 +206,16 @@ public class MappingExtensionsTests
         AssertMapsPublicRoomDirectory(dto, result.Data!);
     }
 
+    [Theory]
+    [InlineData(PublicRoomDirectoryJson)]
+    [InlineData("{}")]
+    public void PublicRoomDirectoryMapping_MapsAllProperties(string json)
+    {
+        var dto = JsonSerializer.Deserialize<MatrixPublicRoomDirectoryResult>(json)!;
+
+        AssertMapsPublicRoomDirectory(dto, dto.ToViewModel());
+    }
+
     private static void AssertMapsPublicRoomDirectory(MatrixPublicRoomDirectoryResult dto, PublicRoomDirectoryViewModel vm)
     {
         Assert.Equal((dto.NextBatch, dto.PrevBatch, dto.TotalRoomCountEstimate), (vm.NextBatch, vm.PrevBatch, vm.TotalRoomCountEstimate));
