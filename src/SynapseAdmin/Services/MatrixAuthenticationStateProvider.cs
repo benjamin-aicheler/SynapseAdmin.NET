@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using SynapseAdmin.Models;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Extensions;
 
 namespace SynapseAdmin.Services;
@@ -47,17 +48,7 @@ public class MatrixAuthenticationStateProvider(
                         logger.LogInformation("Blazor session restored for user {UserId}, but authentication cookie is missing. Synchronization will be handled by UI components.", sessionService.Gateway.UserId.SanitizeForLogging());
                     }
 
-                    var claims = new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
-                        new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                        new Claim("Homeserver", sessionService.Gateway.HomeserverUrl),
-                        new Claim("AccessToken", sessionService.Gateway.AccessToken)
-                    };
-
-                    var identity = new ClaimsIdentity(claims, "MatrixAuth");
-                    var principal = new ClaimsPrincipal(identity);
-                    _cachedState = new AuthenticationState(principal);
+                    _cachedState = CreateAuthenticatedState(sessionService.Gateway);
                     return _cachedState;
                 }
                 else
@@ -91,18 +82,7 @@ public class MatrixAuthenticationStateProvider(
             await localStorage.SetAsync(StorageKey_Homeserver, homeserver);
             await localStorage.SetAsync(StorageKey_AccessToken, sessionService.Gateway.AccessToken);
 
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
-                new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                new Claim("Homeserver", sessionService.Gateway.HomeserverUrl),
-                new Claim("AccessToken", sessionService.Gateway.AccessToken)
-            };
-
-            var identity = new ClaimsIdentity(claims, "MatrixAuth");
-            var principal = new ClaimsPrincipal(identity);
-
-            _cachedState = new AuthenticationState(principal);
+            _cachedState = CreateAuthenticatedState(sessionService.Gateway);
             NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
             return result;
         }
@@ -119,23 +99,30 @@ public class MatrixAuthenticationStateProvider(
             await localStorage.SetAsync(StorageKey_Homeserver, homeserver);
             await localStorage.SetAsync(StorageKey_AccessToken, accessToken);
 
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
-                new Claim(ClaimTypes.Name, sessionService.Gateway.Username),
-                new Claim("Homeserver", sessionService.Gateway.HomeserverUrl),
-                new Claim("AccessToken", sessionService.Gateway.AccessToken)
-            };
-
-            var identity = new ClaimsIdentity(claims, "MatrixAuth");
-            var principal = new ClaimsPrincipal(identity);
-
-            _cachedState = new AuthenticationState(principal);
+            _cachedState = CreateAuthenticatedState(sessionService.Gateway);
             NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
             return result;
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// The authenticated state for a session: four claims taken from the gateway and authentication type "MatrixAuth".
+    /// </summary>
+    internal static AuthenticationState CreateAuthenticatedState(IMatrixGateway gateway)
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, gateway.UserId),
+            new Claim(ClaimTypes.Name, gateway.Username),
+            new Claim("Homeserver", gateway.HomeserverUrl),
+            new Claim("AccessToken", gateway.AccessToken)
+        };
+
+        var identity = new ClaimsIdentity(claims, "MatrixAuth");
+        var principal = new ClaimsPrincipal(identity);
+        return new AuthenticationState(principal);
     }
 
     public string? GetAccessToken() => sessionService.Gateway?.AccessToken;

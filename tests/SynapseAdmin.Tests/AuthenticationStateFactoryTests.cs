@@ -56,6 +56,12 @@ public sealed class AuthenticationStateFactoryTests
         AssertAuthenticatedState(await provider.GetAuthenticationStateAsync());
     }
 
+    [Fact]
+    public void CreateAuthenticatedState_HasTheFourGatewayClaims()
+    {
+        AssertAuthenticatedState(MatrixAuthenticationStateProvider.CreateAuthenticatedState(CreateGateway()));
+    }
+
     private static void AssertAuthenticatedState(AuthenticationState state)
     {
         Assert.True(state.User.Identity!.IsAuthenticated);
