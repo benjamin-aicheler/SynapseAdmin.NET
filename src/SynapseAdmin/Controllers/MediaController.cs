@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
@@ -150,7 +151,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         var (earlyResult, media, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Download", cancellationToken);
         if (earlyResult != null) return earlyResult;
 
-        var mediaId = Infrastructure.Helpers.MediaHelper.GetMediaIdFromMxc(mxc);
+        var mediaId = MediaHelper.GetMediaIdFromMxc(mxc);
         
         // If no MIME type was provided, try to get it from metadata
         if (string.IsNullOrEmpty(safeMimeType))
