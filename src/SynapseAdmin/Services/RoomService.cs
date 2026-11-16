@@ -96,55 +96,9 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             var media = await mediaTask;
 
             var vm = r.ToDetailViewModel();
-
-            if (!vm.IsTombstoned || string.IsNullOrEmpty(vm.ReplacementRoom))
-            {
-                var tombstone = stateEvents?.Events
-                    .FirstOrDefault(x => x.Type == "m.room.tombstone");
-                if (tombstone != null)
-                {
-                    vm.IsTombstoned = true;
-                    if (tombstone.RawContent != null && tombstone.RawContent.TryGetPropertyValue("replacement_room", out var replacementNode))
-                    {
-                        vm.ReplacementRoom = GetSafeString(replacementNode);
-                    }
-                }
-            }
-            var memberStateEvents = stateEvents?.Events
-                .Where(e => e.Type == "m.room.member" && !string.IsNullOrEmpty(e.StateKey))
-                .GroupBy(e => e.StateKey!)
-                .ToDictionary(g => g.Key, g => g.First());
-
-            vm.Members = members?.Members.Select(userId =>
-            {
-                var memberVm = new RoomMemberViewModel { UserId = userId };
-                if (memberStateEvents != null && memberStateEvents.TryGetValue(userId, out var memberEvent))
-                {
-                    if (memberEvent.RawContent != null)
-                    {
-                        if (memberEvent.RawContent.TryGetPropertyValue("displayname", out var dnNode))
-                        {
-                            memberVm.DisplayName = GetSafeString(dnNode);
-                        }
-                        if (memberEvent.RawContent.TryGetPropertyValue("avatar_url", out var avNode))
-                        {
-                            memberVm.AvatarUrl = GetSafeString(avNode);
-                        }
-                        if (memberEvent.RawContent.TryGetPropertyValue("membership", out var msNode))
-                        {
-                            memberVm.Membership = GetSafeString(msNode);
-                        }
-                    }
-                }
-                return memberVm;
-            }).ToList() ?? [];
-            vm.StateEvents = stateEvents?.Events.Select(e => new RoomStateEventViewModel
-            {
-                Type = e.Type,
-                StateKey = e.StateKey,
-                Sender = e.Sender,
-                RawContent = e.RawContent?.ToJsonString()
-            }).ToList() ?? [];
+            ApplyTombstone(vm, stateEvents);
+            vm.Members = MapMembers(members, stateEvents);
+            vm.StateEvents = MapStateEvents(stateEvents);
             vm.Media = media == null ? null : new RoomMediaViewModel
             {
                 Local = UniqueMxcs(media.Local).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
@@ -163,6 +117,63 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             return OperationResult<RoomDetailViewModel>.Failure(L["ErrorFetchingRoomDetails"]);
         }
     }
+
+    private static void ApplyTombstone(RoomDetailViewModel vm, SynapseAdminRoomStateResult? stateEvents)
+    {
+        if (!vm.IsTombstoned || string.IsNullOrEmpty(vm.ReplacementRoom))
+        {
+            var tombstone = stateEvents?.Events
+                .FirstOrDefault(x => x.Type == "m.room.tombstone");
+            if (tombstone != null)
+            {
+                vm.IsTombstoned = true;
+                if (tombstone.RawContent != null && tombstone.RawContent.TryGetPropertyValue("replacement_room", out var replacementNode))
+                {
+                    vm.ReplacementRoom = GetSafeString(replacementNode);
+                }
+            }
+        }
+    }
+
+    private static List<RoomMemberViewModel> MapMembers(SynapseAdminRoomMemberListResult? members, SynapseAdminRoomStateResult? stateEvents)
+    {
+        var memberStateEvents = stateEvents?.Events
+            .Where(e => e.Type == "m.room.member" && !string.IsNullOrEmpty(e.StateKey))
+            .GroupBy(e => e.StateKey!)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        return members?.Members.Select(userId =>
+        {
+            var memberVm = new RoomMemberViewModel { UserId = userId };
+            if (memberStateEvents == null || !memberStateEvents.TryGetValue(userId, out var memberEvent) || memberEvent.RawContent == null)
+            {
+                return memberVm;
+            }
+
+            if (memberEvent.RawContent.TryGetPropertyValue("displayname", out var dnNode))
+            {
+                memberVm.DisplayName = GetSafeString(dnNode);
+            }
+            if (memberEvent.RawContent.TryGetPropertyValue("avatar_url", out var avNode))
+            {
+                memberVm.AvatarUrl = GetSafeString(avNode);
+            }
+            if (memberEvent.RawContent.TryGetPropertyValue("membership", out var msNode))
+            {
+                memberVm.Membership = GetSafeString(msNode);
+            }
+            return memberVm;
+        }).ToList() ?? [];
+    }
+
+    private static List<RoomStateEventViewModel> MapStateEvents(SynapseAdminRoomStateResult? stateEvents) =>
+        stateEvents?.Events.Select(e => new RoomStateEventViewModel
+        {
+            Type = e.Type,
+            StateKey = e.StateKey,
+            Sender = e.Sender,
+            RawContent = e.RawContent?.ToJsonString()
+        }).ToList() ?? [];
 
     /// <summary>
     /// Synapse's room media list contains one entry per event reference, so the same MXC URI can
