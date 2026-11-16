@@ -140,19 +140,19 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     public async Task<IActionResult> Download(string mxc, string? filename = null, string? mimeType = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(mxc)) return BadRequest();
-        
+
         // Sanitize parameters
         var safeFilename = !string.IsNullOrEmpty(filename) ? Path.GetFileName(filename) : null;
         var safeMimeType = mimeType?.Split(';')[0].Trim(); // Only take the main type, ignore params/injections
 
-        logger.LogInformation("Download request for MXC {Mxc} (file: {Filename}, mime: {MimeType}) from user {UserId}", 
+        logger.LogInformation("Download request for MXC {Mxc} (file: {Filename}, mime: {MimeType}) from user {UserId}",
             mxc.SanitizeForLogging(), safeFilename.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
         var (earlyResult, media, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Download", cancellationToken);
         if (earlyResult != null) return earlyResult;
 
         var mediaId = MediaHelper.GetMediaIdFromMxc(mxc);
-        
+
         // If no MIME type was provided, try to get it from metadata
         if (string.IsNullOrEmpty(safeMimeType))
         {
@@ -169,7 +169,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         // Deliberately repeats the global middleware header: user-uploaded media must stay protected even if
         // Program.cs changes. Indexer assignment replaces the value, so only one header is sent (H-16, #396).
         Response.Headers["X-Content-Type-Options"] = "nosniff";
-        
+
         return MediaResult(media!, finalMimeType, entityTag, finalFileName);
     }
 
@@ -181,7 +181,7 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
         // Sanitize parameters
         var safeMimeType = mimeType?.Split(';')[0].Trim().ToLowerInvariant();
 
-        logger.LogDebug("Preview request for MXC {Mxc} (mime: {MimeType}) from user {UserId}", 
+        logger.LogDebug("Preview request for MXC {Mxc} (mime: {MimeType}) from user {UserId}",
             mxc.SanitizeForLogging(), safeMimeType.SanitizeForLogging(), UserId.SanitizeForLogging());
 
         var (earlyResult, media, entityTag) = await OpenAuthorizedMediaAsync(mxc, "Preview", cancellationToken);

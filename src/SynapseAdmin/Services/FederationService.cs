@@ -23,7 +23,7 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
             var dir = direction == SortDirection.Ascending ? "f" : "b";
             var result = await Gateway.GetFederationDestinationListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((0, []));
-            
+
             var vms = result.Destinations.ToViewModels();
 
             return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((result.Total, vms));

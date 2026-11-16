@@ -23,7 +23,7 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
             var dir = direction == SortDirection.Ascending ? "f" : "b";
             var result = await Gateway.GetEventReportListAsync(offset, limit, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((0, []));
-            
+
             var vms = result.Reports.ToViewModels();
 
             return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((result.Total, vms));

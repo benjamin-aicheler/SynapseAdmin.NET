@@ -34,14 +34,14 @@ public class MatrixAuthenticationStateProvider(
             {
                 // We have a stored session, restore it
                 var restoreResult = await sessionService.RestoreSessionAsync(homeserverResult.Value, tokenResult.Value);
-                
+
                 if (restoreResult.Success && sessionService.IsLoggedIn && sessionService.Gateway != null)
                 {
                     // PROACTIVE SYNC: Check if the cookie exists. 
                     // Standard controllers need the cookie to work.
                     var httpContext = httpContextAccessor.HttpContext;
                     var isCookieAuthenticated = httpContext?.User?.Identity?.IsAuthenticated ?? false;
-                    
+
                     if (!isCookieAuthenticated)
                     {
                         logger.LogInformation("Blazor session restored for user {UserId}, but authentication cookie is missing. Synchronization will be handled by UI components.", sessionService.Gateway.UserId.SanitizeForLogging());
@@ -85,12 +85,12 @@ public class MatrixAuthenticationStateProvider(
     public async Task<OperationResult> LoginAsync(string homeserver, string username, string password)
     {
         var result = await sessionService.LoginAsync(homeserver, username, password);
-        
+
         if (result.Success && sessionService.IsLoggedIn && sessionService.Gateway != null)
         {
             await localStorage.SetAsync(StorageKey_Homeserver, homeserver);
             await localStorage.SetAsync(StorageKey_AccessToken, sessionService.Gateway.AccessToken);
-            
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, sessionService.Gateway.UserId),
@@ -101,12 +101,12 @@ public class MatrixAuthenticationStateProvider(
 
             var identity = new ClaimsIdentity(claims, "MatrixAuth");
             var principal = new ClaimsPrincipal(identity);
-            
+
             _cachedState = new AuthenticationState(principal);
             NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
             return result;
         }
-        
+
         return result;
     }
 
@@ -155,7 +155,7 @@ public class MatrixAuthenticationStateProvider(
         {
             logger.LogWarning(ex, "Failed to clear local storage during logout.");
         }
-        
+
         _cachedState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
 
