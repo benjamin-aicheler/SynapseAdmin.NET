@@ -1,15 +1,14 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -42,8 +41,7 @@ public sealed class RoomDetailsMappingTests : IDisposable
             .On(nameof(IMatrixGateway.GetRoomMembersAsync), _ => Task.FromResult(_members))
             .On(nameof(IMatrixGateway.GetRoomStateAsync), _ => Task.FromResult(_state)));
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
-        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
-            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+        var localizer = new KeyLocalizer();
         _rooms = new RoomService(session, NullLogger<RoomService>.Instance, localizer, _cache);
     }
 

@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 using SynapseAdmin.Models;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -21,13 +20,6 @@ public class AuthCookieServiceTests
     private sealed class FixedAntiforgeryStateProvider(AntiforgeryRequestToken? token) : AntiforgeryStateProvider
     {
         public override AntiforgeryRequestToken? GetAntiforgeryToken() => token;
-    }
-
-    private sealed class KeyLocalizer : IStringLocalizer<SharedResources>
-    {
-        public LocalizedString this[string name] => new(name, name);
-        public LocalizedString this[string name, params object[] arguments] => new(name, name);
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
     }
 
     private readonly MemoryCache _cache = new(new MemoryCacheOptions());

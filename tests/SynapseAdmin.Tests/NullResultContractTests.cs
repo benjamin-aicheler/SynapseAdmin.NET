@@ -1,11 +1,10 @@
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -70,12 +69,5 @@ public sealed class NullResultContractTests : IDisposable
         var result = await _rooms.PurgeRoomHistoryAsync("!room:example.com", new SynapseAdmin.Models.ViewModels.PurgeHistoryViewModel());
 
         Assert.False(result.Success);
-    }
-
-    private sealed class KeyLocalizer : IStringLocalizer<SharedResources>
-    {
-        public LocalizedString this[string name] => new(name, name);
-        public LocalizedString this[string name, params object[] arguments] => new(name, name);
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
     }
 }

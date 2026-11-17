@@ -1,6 +1,5 @@
 using System.Reflection;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -10,8 +9,8 @@ using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -228,7 +227,7 @@ public class TimeZoneAndPurgeTimestampTests
         var roomService = new RoomService(
             new StubSessionService(gateway),
             NullLogger<RoomService>.Instance,
-            new StubStringLocalizer(),
+            new FormattingKeyLocalizer(),
             cache);
 
         var result = await roomService.PurgeRoomHistoryAsync(
@@ -336,13 +335,6 @@ public class TimeZoneAndPurgeTimestampTests
         public Task<OperationResult> RestoreSessionAsync(string homeserver, string accessToken, bool force = false) => throw new NotImplementedException();
         public Task<string?> GetServerVersionAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public void Logout() => throw new NotImplementedException();
-    }
-
-    private sealed class StubStringLocalizer : IStringLocalizer<SharedResources>
-    {
-        public LocalizedString this[string name] => new(name, name, resourceNotFound: false);
-        public LocalizedString this[string name, params object[] arguments] => new(name, string.Format(name, arguments), resourceNotFound: false);
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
     }
 
     private sealed class StubJsRuntime(string timeZoneId) : IJSRuntime

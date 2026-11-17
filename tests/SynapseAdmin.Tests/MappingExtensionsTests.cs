@@ -1,15 +1,14 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -196,8 +195,7 @@ public class MappingExtensionsTests
         var gateway = Stub.Create<IMatrixGateway>(s =>
             s.On(nameof(IMatrixGateway.GetPublicRoomsAsync), _ => Task.FromResult<MatrixPublicRoomDirectoryResult?>(dto)));
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
-        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
-            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+        var localizer = new KeyLocalizer();
         using var cache = new MemoryCache(new MemoryCacheOptions());
 
         var result = await new RoomService(session, NullLogger<RoomService>.Instance, localizer, cache).GetPublicRoomsAsync(10);
@@ -321,8 +319,7 @@ public class MappingExtensionsTests
     {
         var gateway = Stub.Create<IMatrixGateway>(s => s.On(gatewayMethod, _ => Task.FromResult(gatewayResult)));
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
-        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
-            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+        var localizer = new KeyLocalizer();
         return new UserService(session, NullLogger<UserService>.Instance, localizer);
     }
 
@@ -357,8 +354,7 @@ public class MappingExtensionsTests
         var gateway = Stub.Create<IMatrixGateway>(s => s.On(nameof(IMatrixGateway.GetBackgroundUpdatesStatusAsync),
             _ => Task.FromResult<SynapseAdminBackgroundUpdatesStatusResponse?>(dto)));
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
-        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
-            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+        var localizer = new KeyLocalizer();
 
         var result = await new BackgroundUpdatesService(session, NullLogger<BackgroundUpdatesService>.Instance, localizer).GetStatusAsync();
 

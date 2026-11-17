@@ -14,7 +14,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SynapseAdmin.Controllers;
@@ -27,9 +26,9 @@ using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -102,7 +101,7 @@ public class SecurityInfrastructureTests
         var httpContext = new DefaultHttpContext();
         httpContext.Connection.RemoteIpAddress = IPAddress.Parse("192.0.2.99");
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
-        var localizer = new FakeAuthStringLocalizer();
+        var localizer = new FormattingKeyLocalizer();
 
         const int concurrentRequests = 25;
 
@@ -130,7 +129,7 @@ public class SecurityInfrastructureTests
 
     private static MatrixSessionService CreateSessionService(
         IMatrixAuthGateway authGateway, ILoginRateLimiter limiter, IClientIdentityProvider clientIdentity) =>
-        new(authGateway, limiter, clientIdentity, NullLogger<MatrixSessionService>.Instance, new FakeAuthStringLocalizer());
+        new(authGateway, limiter, clientIdentity, NullLogger<MatrixSessionService>.Instance, new FormattingKeyLocalizer());
 
     private static IClientIdentityProvider ClientAt(string ip)
     {
@@ -1031,15 +1030,5 @@ public class SecurityInfrastructureTests
 
             return Task.FromResult(Stub.Create<IMatrixGateway>(s => s.On("get_UserId", _ => "@admin:example.com")));
         }
-    }
-
-    private sealed class FakeAuthStringLocalizer : IStringLocalizer<SharedResources>
-    {
-        public LocalizedString this[string name] => new(name, name, resourceNotFound: false);
-
-        public LocalizedString this[string name, params object[] arguments] =>
-            new(name, string.Format(name, arguments), resourceNotFound: false);
-
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
     }
 }
