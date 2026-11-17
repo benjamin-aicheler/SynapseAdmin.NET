@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -320,6 +321,23 @@ public class SecurityInfrastructureTests
         // Different circuits (scopes) get different identities.
         using var otherScope = factory.Services.CreateScope();
         Assert.NotSame(concrete, otherScope.ServiceProvider.GetRequiredService<ClientIdentityProvider>());
+    }
+
+    /// <summary>
+    /// Blazor's <see cref="AuthenticationStateProvider"/> is the Matrix provider, one instance per circuit (scope).
+    /// </summary>
+    [Fact]
+    public async Task AuthStateProvider_IsOneMatrixProviderPerCircuitScope()
+    {
+        await using var factory = CreateAppFactory();
+
+        using var scope = factory.Services.CreateScope();
+        var state = scope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
+        Assert.IsType<MatrixAuthenticationStateProvider>(state);
+        Assert.Same(state, scope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>());
+
+        using var otherScope = factory.Services.CreateScope();
+        Assert.NotSame(state, otherScope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>());
     }
 
     private const string BrowserBinding = "antiforgery-request-token-of-browser-a";
