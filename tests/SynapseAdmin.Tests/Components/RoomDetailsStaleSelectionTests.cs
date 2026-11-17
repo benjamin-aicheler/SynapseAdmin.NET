@@ -1,10 +1,13 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
 using Xunit;
 
 namespace SynapseAdmin.Tests.Components;
@@ -234,5 +237,122 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
 
         Assert.Equal(1, data.TotalItems);
         Assert.Equal(expectedMediaId, Assert.Single(data.Items!).MediaId);
+    }
+
+    // ---- Purge status polling --------------------------------------------------------------------
+
+    private IStringLocalizer<SharedResources> Localizer => Services.GetRequiredService<IStringLocalizer<SharedResources>>();
+
+    private IReadOnlyList<object?[]> StatusCalls => _rooms.CallsTo(nameof(IRoomService.GetPurgeHistoryStatusAsync));
+    private IReadOnlyList<object?[]> ClearCalls => _rooms.CallsTo(nameof(IRoomService.ClearActivePurgeId));
+    private IReadOnlyList<object?[]> SnackbarCalls => SnackbarStub.CallsTo(nameof(ISnackbar.Add));
+
+    private static OperationResult<SynapseAdminPurgeHistoryStatusResponse> PurgeStatus(string status, string? error = null) =>
+        OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Ok(new SynapseAdminPurgeHistoryStatusResponse { Status = status, Error = error });
+
+    /// <summary>Room A has a tracked purge; polling starts once the room is loaded and asks <paramref name="status"/>.</summary>
+    private IRenderedComponent<RoomDetails> RenderPurgingRoom(Func<Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>> status)
+    {
+        _rooms
+            .On(nameof(IRoomService.GetActivePurgeId), args => (string)args[0]! == RoomA ? "purge-a" : null)
+            .On(nameof(IRoomService.GetPurgeHistoryStatusAsync), _ => status());
+        var cut = RenderRoom(RoomA);
+        cut.WaitForAssertion(() => Assert.Contains("Alpha Lounge", cut.Markup));
+        return cut;
+    }
+
+    private void AssertPurgeClearedAndReported(IRenderedComponent<RoomDetails> cut, string message, Severity severity)
+    {
+        cut.WaitForAssertion(() => Assert.NotEmpty(SnackbarCalls));
+        cut.WaitForAssertion(() => Assert.DoesNotContain(Localizer["PurgeInProgress"].Value, cut.Markup));
+        Assert.Equal(RoomA, Assert.Single(ClearCalls)[0]);
+        var snackbar = Assert.Single(SnackbarCalls);
+        Assert.Equal(message, snackbar[0]);
+        Assert.Equal(severity, snackbar[1]);
+    }
+
+    [Fact]
+    public void CompletePurgeStatus_ClearsThePurge_AndReportsSuccess()
+    {
+        var cut = RenderPurgingRoom(() => Task.FromResult(PurgeStatus("complete")));
+
+        AssertPurgeClearedAndReported(cut, Localizer["PurgeCompleted"].Value, Severity.Success);
+        Assert.Equal("purge-a", Assert.Single(StatusCalls)[0]);
+    }
+
+    /// <summary>A failed purge is reported with its error text, or "Unknown error" if it has none.</summary>
+    [Theory]
+    [InlineData("disk full", "disk full")]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    public void FailedPurgeStatus_ClearsThePurge_AndReportsTheError(string? error, string? shownError)
+    {
+        var cut = RenderPurgingRoom(() => Task.FromResult(PurgeStatus("failed", error)));
+
+        var message = string.Format(Localizer["PurgeFailed"].Value, shownError ?? Localizer["UnknownError"].Value);
+        AssertPurgeClearedAndReported(cut, message, Severity.Error);
+    }
+
+    [Fact]
+    public void ActivePurgeStatus_KeepsThePurge_AndShowsItAsRunning()
+    {
+        var cut = RenderPurgingRoom(() => Task.FromResult(PurgeStatus("active")));
+
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".mud-alert .mud-progress-circular")));
+        Assert.Empty(ClearCalls);
+        Assert.Empty(SnackbarCalls);
+    }
+
+    [Fact]
+    public void ThrowingStatusRequest_ClearsThePurge_AndReportsTheError()
+    {
+        var cut = RenderPurgingRoom(() =>
+            Task.FromException<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>(new InvalidOperationException("boom")));
+
+        AssertPurgeClearedAndReported(cut, Localizer["ErrorFetchingPurgeStatus"].Value, Severity.Error);
+    }
+
+    /// <summary>Navigating away stops polling: a late "complete" for room A's purge changes nothing.</summary>
+    [Fact]
+    public async Task NavigationDuringStatusRequest_IgnoresTheLateStatus()
+    {
+        var requested = Pending<bool>();
+        var pending = Pending<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>();
+        var cut = RenderPurgingRoom(() =>
+        {
+            requested.TrySetResult(true);
+            return pending.Task;
+        });
+        await requested.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Contains(Localizer["PurgeInProgress"].Value, cut.Markup);
+
+        Navigate(cut, RoomB);
+        cut.WaitForAssertion(() => Assert.Contains("Bravo Lounge", cut.Markup));
+        pending.SetResult(PurgeStatus("complete"));
+        await Task.Delay(500);
+
+        Assert.Empty(ClearCalls);
+        Assert.Empty(SnackbarCalls);
+        Assert.Single(StatusCalls);
+    }
+
+    /// <summary>
+    /// Failed status requests are retried every 5 s; the fifth failure in a row clears the purge and reports it. Takes
+    /// about 20 s, because the poll interval is a constant.
+    /// </summary>
+    [Fact]
+    public void FiveFailedStatusRequestsInARow_ClearThePurge_AndReportTheError()
+    {
+        (int Clears, int Snackbars)? beforeFifthRequest = null;
+        var cut = RenderPurgingRoom(() =>
+        {
+            if (StatusCalls.Count == 5) beforeFifthRequest = (ClearCalls.Count, SnackbarCalls.Count);
+            return Task.FromResult(OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure("status unavailable"));
+        });
+
+        cut.WaitForAssertion(() => Assert.Single(ClearCalls), TimeSpan.FromSeconds(30));
+        Assert.Equal((0, 0), beforeFifthRequest);
+        Assert.Equal(5, StatusCalls.Count);
+        AssertPurgeClearedAndReported(cut, Localizer["ErrorFetchingPurgeStatus"].Value, Severity.Error);
     }
 }
