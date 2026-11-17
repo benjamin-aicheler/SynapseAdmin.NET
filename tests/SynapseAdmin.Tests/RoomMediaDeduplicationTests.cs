@@ -1,13 +1,12 @@
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -24,13 +23,6 @@ public sealed class RoomMediaDeduplicationTests : IDisposable
     private const string RemoteC = "mxc://remote.org/saasegzsrtulgxzoupfacixe"; // differs only in case
     private const string LocalA = "mxc://example.com/local-a";
     private const string LocalB = "mxc://example.com/local-b";
-
-    private sealed class KeyLocalizer : IStringLocalizer<SharedResources>
-    {
-        public LocalizedString this[string name] => new(name, name);
-        public LocalizedString this[string name, params object[] arguments] => new(name, name);
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
-    }
 
     private readonly Stub _gateway;
     private readonly MemoryCache _cache = new(new MemoryCacheOptions());

@@ -1,12 +1,11 @@
 using System.Text.Json;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -69,8 +68,7 @@ public sealed class EventForensicsServiceTests
             .On("get_SupportsAdminApi", _ => true)
             .On("FetchEventAsync", _ => Task.FromResult(JsonSerializer.Deserialize<SynapseAdminFetchEventResponse>(FetchEventJson))));
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
-        var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s =>
-            s.On("get_Item", args => new LocalizedString((string)args[0]!, (string)args[0]!)));
+        var localizer = new KeyLocalizer();
 
         return new EventForensicsService(session, NullLogger<EventForensicsService>.Instance, localizer);
     }

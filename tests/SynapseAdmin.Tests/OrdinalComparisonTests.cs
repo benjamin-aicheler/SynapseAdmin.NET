@@ -1,11 +1,10 @@
 using System.Reflection;
-using Microsoft.Extensions.Localization;
 using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -52,12 +51,5 @@ public class OrdinalComparisonTests
         return (string?)typeof(RoomAliasesDialog)
             .GetMethod("ValidateAliasFormat", BindingFlags.NonPublic | BindingFlags.Instance)!
             .Invoke(dialog, [alias]);
-    }
-
-    private sealed class KeyLocalizer : IStringLocalizer<SharedResources>
-    {
-        public LocalizedString this[string name] => new(name, name);
-        public LocalizedString this[string name, params object[] arguments] => new(name, name);
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
     }
 }

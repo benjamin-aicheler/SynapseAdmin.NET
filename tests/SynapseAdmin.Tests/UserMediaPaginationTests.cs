@@ -1,14 +1,13 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Infrastructure.Gateways;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
-using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -18,13 +17,6 @@ public class UserMediaPaginationTests
 {
     private const string UserId = "@bob:example.com";
     private const int UploadCount = 150;
-
-    private sealed class KeyLocalizer : IStringLocalizer<SharedResources>
-    {
-        public LocalizedString this[string name] => new(name, name);
-        public LocalizedString this[string name, params object[] arguments] => new(name, name);
-        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
-    }
 
     /// <summary>Exposes the gateway's protected JSON options and internal URL builders.</summary>
     private abstract class GatewayProbe : SynapseCompatibleAdminGateway
