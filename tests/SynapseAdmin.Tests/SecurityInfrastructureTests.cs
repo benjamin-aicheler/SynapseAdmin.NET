@@ -3,6 +3,8 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using SynapseAdmin.Controllers;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.DataProtection;
@@ -696,6 +699,69 @@ public class SecurityInfrastructureTests
         Assert.Equal(
             "default-src 'none'; style-src 'unsafe-inline'; sandbox",
             svgPreviewResponse.Headers.GetValues("Content-Security-Policy").Single());
+    }
+
+    /// <summary>
+    /// Without a cookie, /Media gets a bare 401 instead of a login redirect. Pages are mapped anonymously and render
+    /// without prerendering, so /rooms serves the app shell and the circuit sends the browser to the login page.
+    /// </summary>
+    [Fact]
+    public async Task Unauthenticated_MediaGets401_PagesServeTheAppShell()
+    {
+        await using var factory = CreateAppFactory();
+        using var client = CreateBrowserClient(factory);
+
+        using var media = await client.GetAsync("/Media/Preview?mxc=x");
+        Assert.Equal(HttpStatusCode.Unauthorized, media.StatusCode);
+        Assert.Null(media.Headers.Location);
+
+        using var page = await client.GetAsync("/rooms");
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        Assert.Null(page.Headers.Location);
+    }
+
+    private const string LoginRedirectUri = "https://localhost/login?ReturnUrl=%2Fx";
+    private const string AccessDeniedRedirectUri = "https://localhost/Account/AccessDenied?ReturnUrl=%2Fx";
+
+    /// <summary>
+    /// The configured cookie events: under /Media (whole segments, any case) a challenge is 401 and a forbid is 403;
+    /// on any other path both redirect to the URI the handler passes in. Only /Media endpoints carry [Authorize] and
+    /// none of them forbids, so the redirect branches and the forbid event are raised directly.
+    /// </summary>
+    [Theory]
+    [InlineData("/Media/Preview", true)]
+    [InlineData("/media/download", true)]
+    [InlineData("/Media", true)]
+    [InlineData("/rooms", false)]
+    [InlineData("/media-maintenance", false)]
+    public async Task CookieEvents_MediaGetsStatusCodes_OtherPathsRedirect(string path, bool media)
+    {
+        await using var factory = CreateAppFactory();
+        var options = factory.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+            .Get(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        var login = await RaiseCookieEventAsync(options.Events.RedirectToLogin, options, path, LoginRedirectUri);
+        var denied = await RaiseCookieEventAsync(options.Events.RedirectToAccessDenied, options, path, AccessDeniedRedirectUri);
+
+        Assert.Equal(media ? StatusCodes.Status401Unauthorized : StatusCodes.Status302Found, login.StatusCode);
+        Assert.Equal(media ? "" : LoginRedirectUri, login.Headers.Location.ToString());
+        Assert.Equal(media ? StatusCodes.Status403Forbidden : StatusCodes.Status302Found, denied.StatusCode);
+        Assert.Equal(media ? "" : AccessDeniedRedirectUri, denied.Headers.Location.ToString());
+    }
+
+    private static async Task<HttpResponse> RaiseCookieEventAsync(
+        Func<RedirectContext<CookieAuthenticationOptions>, Task> raise, CookieAuthenticationOptions options, string path,
+        string redirectUri)
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Path = path;
+        var scheme = new AuthenticationScheme(
+            CookieAuthenticationDefaults.AuthenticationScheme, null, typeof(CookieAuthenticationHandler));
+
+        await raise(new RedirectContext<CookieAuthenticationOptions>(
+            httpContext, scheme, options, new AuthenticationProperties(), redirectUri));
+
+        return httpContext.Response;
     }
 
     [Fact]

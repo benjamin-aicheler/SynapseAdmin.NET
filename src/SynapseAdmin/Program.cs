@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 using System.Net;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MudBlazor.Translations;
 using Serilog;
@@ -154,26 +155,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Events = new CookieAuthenticationEvents
         {
-            OnRedirectToLogin = context =>
-            {
-                if (context.Request.Path.StartsWithSegments("/Media"))
-                {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    return Task.CompletedTask;
-                }
-                context.Response.Redirect(context.RedirectUri);
-                return Task.CompletedTask;
-            },
-            OnRedirectToAccessDenied = context =>
-            {
-                if (context.Request.Path.StartsWithSegments("/Media"))
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return Task.CompletedTask;
-                }
-                context.Response.Redirect(context.RedirectUri);
-                return Task.CompletedTask;
-            }
+            OnRedirectToLogin = context => RedirectOrStatus(context, StatusCodes.Status401Unauthorized),
+            OnRedirectToAccessDenied = context => RedirectOrStatus(context, StatusCodes.Status403Forbidden)
         };
     });
 builder.Services.AddAuthorization();
@@ -235,5 +218,18 @@ app.MapRazorComponents<App>()
     .AllowAnonymous();
 
 app.Run();
+
+// /Media requests answer a challenge or forbid with a bare status code; every other path redirects to the cookie
+// handler's login or access-denied URI.
+static Task RedirectOrStatus(RedirectContext<CookieAuthenticationOptions> context, int status)
+{
+    if (context.Request.Path.StartsWithSegments("/Media"))
+    {
+        context.Response.StatusCode = status;
+        return Task.CompletedTask;
+    }
+    context.Response.Redirect(context.RedirectUri);
+    return Task.CompletedTask;
+}
 
 public partial class Program;
