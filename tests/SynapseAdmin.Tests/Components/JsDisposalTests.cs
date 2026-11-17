@@ -1,6 +1,6 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Interfaces;
@@ -13,12 +13,15 @@ namespace SynapseAdmin.Tests.Components;
 
 /// <summary>
 /// Disposing JS interop objects fails once the circuit is gone. The gallery and the time zone service swallow those
-/// failures, so their own disposal always completes.
+/// failures, so their own disposal always completes, and log each one at Debug level.
 /// </summary>
 public class JsDisposalTests : DetailPageTestBase
 {
+    private readonly RecordingLogger<RoomGalleryGrid> _galleryLogger = new();
+
     public JsDisposalTests()
     {
+        Services.AddSingleton<ILogger<RoomGalleryGrid>>(_galleryLogger);
         Services.AddSingleton(Stub.Create<IRoomService>(s => s.On(nameof(IRoomService.GetMediaMetadataBatchAsync), args =>
             Task.FromResult(OperationResult<List<RoomMediaItemViewModel>>.Ok(((List<string>)args[0]!)
                 .Select(id => new RoomMediaItemViewModel { MediaId = id }).ToList())))));
@@ -36,24 +39,52 @@ public class JsDisposalTests : DetailPageTestBase
             .Add(x => x.RoomId, "!room:hs")
             .Add(x => x.Media, new RoomMediaViewModel { Local = [new() { MediaId = "mxc://hs/a" }] }));
         cut.WaitForAssertion(() => Assert.Contains("initInfiniteScroll", module.Calls));
+        var entriesBefore = _galleryLogger.Entries.Count;
 
         // Called directly: bUnit's own component disposal swallows exceptions, which would hide a rethrow.
         await cut.InvokeAsync(async () => await cut.Instance.DisposeAsync());
 
         Assert.Equal(["dispose"], observer.Calls);
         Assert.Equal(["initInfiniteScroll", "DisposeAsync"], module.Calls);
+        Assert.Collection(_galleryLogger.Entries.Skip(entriesBefore),
+            entry => AssertDisposalFailureLogged(entry, "Infinite scroll observer disposal failed (circuit likely gone)"),
+            entry => AssertDisposalFailureLogged(entry, "Gallery JS module disposal failed (circuit likely gone)"));
     }
 
     [Fact]
     public async Task TimeZoneService_Disposal_SwallowsAFailingModuleDisposal()
     {
         var module = new DisconnectedJsObject(new() { ["getBrowserTimeZone"] = "UTC" });
-        var service = new TimeZoneService(new ModuleJsRuntime(module), NullLogger<TimeZoneService>.Instance);
+        var logger = new RecordingLogger<TimeZoneService>();
+        var service = new TimeZoneService(new ModuleJsRuntime(module), logger);
         await service.InitializeAsync();
+        var entriesBefore = logger.Entries.Count;
 
         await service.DisposeAsync();
 
         Assert.Equal(["getBrowserTimeZone", "DisposeAsync"], module.Calls);
+        AssertDisposalFailureLogged(
+            Assert.Single(logger.Entries.Skip(entriesBefore)), "Time zone JS module disposal failed (circuit likely gone)");
+    }
+
+    private static void AssertDisposalFailureLogged((LogLevel Level, Exception? Exception, string Message) entry, string message)
+    {
+        Assert.Equal(LogLevel.Debug, entry.Level);
+        Assert.Equal("circuit gone", Assert.IsType<JSDisconnectedException>(entry.Exception).Message);
+        Assert.Equal(message, entry.Message);
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<(LogLevel Level, Exception? Exception, string Message)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) =>
+            Entries.Add((logLevel, exception, formatter(state, exception)));
     }
 
     /// <summary>Answers the calls in <paramref name="results"/>; any other call and its disposal fail like a lost circuit.</summary>
