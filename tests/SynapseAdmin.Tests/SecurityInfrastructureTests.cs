@@ -325,6 +325,8 @@ public class SecurityInfrastructureTests
 
     /// <summary>
     /// Blazor's <see cref="AuthenticationStateProvider"/> is the Matrix provider, one instance per circuit (scope).
+    /// <see cref="IMatrixAuthStateService"/> resolves to that same instance, so a login or logout in Login or NavMenu
+    /// notifies the cascading authentication state.
     /// </summary>
     [Fact]
     public async Task AuthStateProvider_IsOneMatrixProviderPerCircuitScope()
@@ -335,9 +337,12 @@ public class SecurityInfrastructureTests
         var state = scope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
         Assert.IsType<MatrixAuthenticationStateProvider>(state);
         Assert.Same(state, scope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>());
+        Assert.Same(state, scope.ServiceProvider.GetRequiredService<IMatrixAuthStateService>());
 
         using var otherScope = factory.Services.CreateScope();
-        Assert.NotSame(state, otherScope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>());
+        var otherState = otherScope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
+        Assert.NotSame(state, otherState);
+        Assert.Same(otherState, otherScope.ServiceProvider.GetRequiredService<IMatrixAuthStateService>());
     }
 
     private const string BrowserBinding = "antiforgery-request-token-of-browser-a";

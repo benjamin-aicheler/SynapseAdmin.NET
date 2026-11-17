@@ -7,7 +7,7 @@ namespace SynapseAdmin.Components.Layout;
 
 public partial class NavMenu : ComponentBase
 {
-    [Inject] private Services.MatrixAuthenticationStateProvider AuthProvider { get; set; } = default!;
+    [Inject] private IMatrixAuthStateService AuthProvider { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
     [Inject] private IAuthCookieService AuthCookie { get; set; } = default!;

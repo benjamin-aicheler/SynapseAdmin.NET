@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using SynapseAdmin.Services;
 using SynapseAdmin.Models.ViewModels;
 using MudBlazor;
 using SynapseAdmin.Models;
@@ -10,7 +9,7 @@ namespace SynapseAdmin.Components.Pages
     public partial class Login
     {
         [Inject]
-        public MatrixAuthenticationStateProvider AuthProvider { get; set; } = null!;
+        public IMatrixAuthStateService AuthProvider { get; set; } = null!;
 
         [Inject]
         public NavigationManager Navigation { get; set; } = null!;
