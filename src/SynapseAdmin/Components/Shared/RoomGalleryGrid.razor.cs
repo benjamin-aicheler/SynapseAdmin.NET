@@ -29,10 +29,17 @@ namespace SynapseAdmin.Components.Shared
         private bool _hasMoreToLoad;
         private int _batchGeneration;
         private const int PageSize = 20;
+        private const string FilterAll = "all";
+        private const string SourceFilterLocal = "local";
+        private const string SourceFilterRemote = "remote";
+        private const string TypeFilterImage = "image";
+        private const string TypeFilterVideo = "video";
+        private const string TypeFilterAudio = "audio";
+        private const string TypeFilterFile = "file";
 
         private string _searchTerm = string.Empty;
-        private string _sourceFilter = "local"; // all, local, remote
-        private string _typeFilter = "all";   // all, image, video, audio, file
+        private string _sourceFilter = SourceFilterLocal; // all, local, remote
+        private string _typeFilter = FilterAll; // all, image, video, audio, file
 
         private readonly List<RoomMediaItemViewModel> _allMedia = [];
         private List<RoomMediaItemViewModel> _filteredMedia = [];
@@ -109,24 +116,8 @@ namespace SynapseAdmin.Components.Shared
             {
                 // A room can reference the same MXC URI several times (issue #384): show each once.
                 var seen = new HashSet<string>(StringComparer.Ordinal);
-                if (mediaModel.Local != null)
-                {
-                    foreach (var item in mediaModel.Local)
-                    {
-                        if (string.IsNullOrEmpty(item.MediaId) || !seen.Add(item.MediaId)) continue;
-                        item.IsLocal = true;
-                        _allMedia.Add(item);
-                    }
-                }
-                if (mediaModel.Remote != null)
-                {
-                    foreach (var item in mediaModel.Remote)
-                    {
-                        if (string.IsNullOrEmpty(item.MediaId) || !seen.Add(item.MediaId)) continue;
-                        item.IsLocal = false;
-                        _allMedia.Add(item);
-                    }
-                }
+                AddUnique(mediaModel.Local, isLocal: true, seen);
+                AddUnique(mediaModel.Remote, isLocal: false, seen);
             }
 
             ApplyFiltersAndResetDisplay();
@@ -142,6 +133,21 @@ namespace SynapseAdmin.Components.Shared
             }
         }
 
+        /// <summary>
+        /// Adds the items whose MXC URI is not in <paramref name="seen"/> yet (skipping items without one) and marks
+        /// them local or remote.
+        /// </summary>
+        private void AddUnique(IEnumerable<RoomMediaItemViewModel>? items, bool isLocal, HashSet<string> seen)
+        {
+            if (items == null) return;
+            foreach (var item in items)
+            {
+                if (string.IsNullOrEmpty(item.MediaId) || !seen.Add(item.MediaId)) continue;
+                item.IsLocal = isLocal;
+                _allMedia.Add(item);
+            }
+        }
+
         private void ApplyFiltersAndResetDisplay()
         {
             _batchGeneration++;
@@ -149,18 +155,18 @@ namespace SynapseAdmin.Components.Shared
 
             IEnumerable<RoomMediaItemViewModel> query = _allMedia;
 
-            if (_sourceFilter == "local")
+            if (_sourceFilter == SourceFilterLocal)
                 query = query.Where(x => x.IsLocal);
-            else if (_sourceFilter == "remote")
+            else if (_sourceFilter == SourceFilterRemote)
                 query = query.Where(x => !x.IsLocal);
 
-            if (_typeFilter == "image")
+            if (_typeFilter == TypeFilterImage)
                 query = query.Where(x => IsImageType(x.MediaType));
-            else if (_typeFilter == "video")
+            else if (_typeFilter == TypeFilterVideo)
                 query = query.Where(x => IsVideoType(x.MediaType));
-            else if (_typeFilter == "audio")
+            else if (_typeFilter == TypeFilterAudio)
                 query = query.Where(x => IsAudioType(x.MediaType));
-            else if (_typeFilter == "file")
+            else if (_typeFilter == TypeFilterFile)
                 query = query.Where(x => !IsImageType(x.MediaType) && !IsVideoType(x.MediaType) && !IsAudioType(x.MediaType));
 
             if (!string.IsNullOrWhiteSpace(_searchTerm))
@@ -262,14 +268,14 @@ namespace SynapseAdmin.Components.Shared
 
         private async Task OnSourceFilterChanged(string val)
         {
-            _sourceFilter = string.IsNullOrEmpty(val) ? "all" : val;
+            _sourceFilter = string.IsNullOrEmpty(val) ? FilterAll : val;
             ApplyFiltersAndResetDisplay();
             await LoadNextBatch();
         }
 
         private async Task OnTypeFilterChanged(string val)
         {
-            _typeFilter = string.IsNullOrEmpty(val) ? "all" : val;
+            _typeFilter = string.IsNullOrEmpty(val) ? FilterAll : val;
             ApplyFiltersAndResetDisplay();
             await LoadNextBatch();
         }

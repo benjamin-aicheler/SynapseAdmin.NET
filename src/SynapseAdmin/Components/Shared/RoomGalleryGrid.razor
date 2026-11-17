@@ -14,9 +14,9 @@
                 <div class="d-flex align-center gap-2">
                     <MudText Typo="Typo.subtitle2" Class="mr-1">@L["FilterSource"]:</MudText>
                     <MudChipSet T="string" SelectedValue="@_sourceFilter" SelectedValueChanged="@OnSourceFilterChanged" CheckMark="true" SelectionMode="SelectionMode.SingleSelection">
-                        <MudChip Value="@("all")" Text="@L["AllMedia"]" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" />
-                        <MudChip Value="@("local")" Text="@L["LocalMedia"]" Color="Color.Info" Variant="Variant.Filled" Default="true" Size="Size.Small" />
-                        <MudChip Value="@("remote")" Text="@L["RemoteMedia"]" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@FilterAll" Text="@L["AllMedia"]" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@SourceFilterLocal" Text="@L["LocalMedia"]" Color="Color.Info" Variant="Variant.Filled" Default="true" Size="Size.Small" />
+                        <MudChip Value="@SourceFilterRemote" Text="@L["RemoteMedia"]" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small" />
                     </MudChipSet>
                 </div>
             </MudItem>
@@ -24,11 +24,11 @@
                 <div class="d-flex align-center gap-2">
                     <MudText Typo="Typo.subtitle2" Class="mr-1">@L["FilterType"]:</MudText>
                     <MudChipSet T="string" SelectedValue="@_typeFilter" SelectedValueChanged="@OnTypeFilterChanged" CheckMark="true" SelectionMode="SelectionMode.SingleSelection">
-                        <MudChip Value="@("all")" Text="@L["AllMedia"]" Color="Color.Primary" Variant="Variant.Filled" Default="true" Size="Size.Small" />
-                        <MudChip Value="@("image")" Text="@L["Images"]" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" />
-                        <MudChip Value="@("video")" Text="@L["Videos"]" Color="Color.Warning" Variant="Variant.Filled" Size="Size.Small" />
-                        <MudChip Value="@("audio")" Text="@L["Audio"]" Color="Color.Tertiary" Variant="Variant.Filled" Size="Size.Small" />
-                        <MudChip Value="@("file")" Text="@L["Files"]" Color="Color.Default" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@FilterAll" Text="@L["AllMedia"]" Color="Color.Primary" Variant="Variant.Filled" Default="true" Size="Size.Small" />
+                        <MudChip Value="@TypeFilterImage" Text="@L["Images"]" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@TypeFilterVideo" Text="@L["Videos"]" Color="Color.Warning" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@TypeFilterAudio" Text="@L["Audio"]" Color="Color.Tertiary" Variant="Variant.Filled" Size="Size.Small" />
+                        <MudChip Value="@TypeFilterFile" Text="@L["Files"]" Color="Color.Default" Variant="Variant.Filled" Size="Size.Small" />
                     </MudChipSet>
                 </div>
             </MudItem>
