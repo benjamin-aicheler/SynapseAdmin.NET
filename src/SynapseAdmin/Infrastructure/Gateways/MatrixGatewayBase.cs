@@ -25,8 +25,8 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public string AccessToken => Homeserver.AccessToken;
 
     public virtual bool SupportsAdminApi => false;
-    public virtual string ServerBrand => "Generic";
-    public virtual string ServerVersion => "Unknown";
+    public virtual string ServerBrand => GatewayConstants.GenericBrand;
+    public virtual string ServerVersion => GatewayConstants.UnknownVersion;
 
     // --- Standard Matrix CS API Implementation ---
 

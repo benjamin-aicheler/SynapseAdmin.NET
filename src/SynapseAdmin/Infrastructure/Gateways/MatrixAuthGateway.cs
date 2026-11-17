@@ -132,7 +132,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         // Construct the SDK homeserver from the validated URLs instead of HomeserverProviderService,
         // which would re-run LibMatrix's unchecked .well-known resolution.
         AuthenticatedHomeserverGeneric authenticatedHomeserver =
-            string.Equals(endpoints.ServerSoftwareName, "Synapse", StringComparison.OrdinalIgnoreCase)
+            string.Equals(endpoints.ServerSoftwareName, GatewayConstants.SynapseBrand, StringComparison.OrdinalIgnoreCase)
                 ? new AuthenticatedHomeserverSynapse(homeserverUrl, wellKnownUris, null, accessToken)
                 : new AuthenticatedHomeserverGeneric(homeserverUrl, wellKnownUris, null, accessToken);
         await authenticatedHomeserver.Initialise();
@@ -142,7 +142,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
             var synapseVersion = await ProbeSynapseVersionAsync(synapse, cancellationToken);
 
             // Switch Synapse to using SynapseCompatibleAdminGateway so it is thoroughly exercised and validated
-            return new SynapseCompatibleAdminGateway(synapse, "Synapse", synapseVersion);
+            return new SynapseCompatibleAdminGateway(synapse, GatewayConstants.SynapseBrand, synapseVersion);
         }
 
         // 1. Try to get federation version
@@ -165,14 +165,14 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         return new GenericMatrixGateway(authenticatedHomeserver);
     }
 
-    /// <summary>Reads the Synapse version from the admin API. Returns "Unknown" if the probe fails or reports none.</summary>
+    /// <summary>Reads the Synapse version from the admin API. Returns <see cref="GatewayConstants.UnknownVersion"/> if the probe fails or reports none.</summary>
     private static async Task<string> ProbeSynapseVersionAsync(AuthenticatedHomeserverSynapse synapse, CancellationToken cancellationToken)
     {
-        string synapseVersion = "Unknown";
+        string synapseVersion = GatewayConstants.UnknownVersion;
         try
         {
             var versionInfo = await synapse.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>(
-                "/_synapse/admin/v1/server_version", cancellationToken: cancellationToken);
+                GatewayConstants.ServerVersionPath, cancellationToken: cancellationToken);
             if (versionInfo != null && !string.IsNullOrEmpty(versionInfo.ServerVersion))
             {
                 synapseVersion = versionInfo.ServerVersion;
@@ -194,8 +194,8 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
     private static async Task<(string Brand, string Version, bool BrandResolved, bool SupportsAdmin)> ProbeFederationVersionAsync(
         AuthenticatedHomeserverGeneric homeserver, CancellationToken cancellationToken)
     {
-        string brand = "Generic";
-        string version = "Unknown";
+        string brand = GatewayConstants.GenericBrand;
+        string version = GatewayConstants.UnknownVersion;
         bool supportsAdmin = false;
 
         bool brandResolved = false;
@@ -206,8 +206,8 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                 "/_matrix/federation/v1/version", null, cancellationToken);
             if (federationVersion?.Server != null)
             {
-                brand = federationVersion.Server.Name ?? "Generic";
-                version = federationVersion.Server.Version ?? "Unknown";
+                brand = federationVersion.Server.Name ?? GatewayConstants.GenericBrand;
+                version = federationVersion.Server.Version ?? GatewayConstants.UnknownVersion;
                 brandResolved = true;
 
                 // If it is known to support Synapse Admin API
@@ -240,7 +240,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         bool supportsAdmin;
         try
         {
-            using var response = await homeserver.ClientHttpClient.GetAsync("/_synapse/admin/v1/server_version", cancellationToken);
+            using var response = await homeserver.ClientHttpClient.GetAsync(GatewayConstants.ServerVersionPath, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
                 supportsAdmin = true;
