@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
 
@@ -83,13 +84,8 @@ public partial class EventForensics : IDisposable
         }
     }
 
-    private bool IsLocalUser(string? userId)
-    {
-        if (string.IsNullOrEmpty(userId)) return false;
-        var serverName = MatrixSession.Gateway?.ServerName;
-        if (string.IsNullOrEmpty(serverName)) return false;
-        return userId.EndsWith($":{serverName}", StringComparison.OrdinalIgnoreCase);
-    }
+    private bool IsLocalUser(string? userId) =>
+        MatrixIdHelper.IsOnServer(userId, MatrixSession.Gateway?.ServerName);
 
     public void Dispose()
     {
