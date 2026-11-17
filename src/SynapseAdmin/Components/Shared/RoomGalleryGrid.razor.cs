@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Components.Pages;
+using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
 
@@ -288,19 +289,19 @@ namespace SynapseAdmin.Components.Shared
         private static bool IsImageType(string? mimeType)
         {
             if (string.IsNullOrEmpty(mimeType)) return false;
-            return mimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+            return MediaHelper.IsImage(mimeType, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsVideoType(string? mimeType)
         {
             if (string.IsNullOrEmpty(mimeType)) return false;
-            return mimeType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
+            return MediaHelper.IsVideo(mimeType, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsAudioType(string? mimeType)
         {
             if (string.IsNullOrEmpty(mimeType)) return false;
-            return mimeType.StartsWith("audio/", StringComparison.OrdinalIgnoreCase);
+            return MediaHelper.IsAudio(mimeType, StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetFileIcon(string? mimeType)

@@ -69,6 +69,21 @@ public static class MediaHelper
         return ".bin";
     }
 
+    /// <summary>
+    /// Whether <paramref name="mediaType"/> starts with the top-level type <paramref name="type"/> and a slash (for example
+    /// <c>image</c> in <c>image/png</c>), compared with <paramref name="comparison"/>. False for null. Each caller keeps
+    /// its own comparison: the media tables and the preview dialog compare culture-aware, the gallery ignores case, and
+    /// the preview sandbox decision is ordinal.
+    /// </summary>
+    public static bool HasTopLevelType(string? mediaType, string type, StringComparison comparison) =>
+        mediaType != null && mediaType.StartsWith(type + "/", comparison);
+
+    public static bool IsImage(string? mediaType, StringComparison comparison) => HasTopLevelType(mediaType, "image", comparison);
+
+    public static bool IsVideo(string? mediaType, StringComparison comparison) => HasTopLevelType(mediaType, "video", comparison);
+
+    public static bool IsAudio(string? mediaType, StringComparison comparison) => HasTopLevelType(mediaType, "audio", comparison);
+
     public static string GetMediaIdFromMxc(string? mxc)
     {
         if (string.IsNullOrEmpty(mxc)) return "media";

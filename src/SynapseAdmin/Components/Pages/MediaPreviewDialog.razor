@@ -4,18 +4,18 @@
     </TitleContent>
     <DialogContent>
         <div class="d-flex justify-center align-center" style="min-height: 200px; max-height: 70vh; overflow: auto;">
-            @if (MediaType?.StartsWith("image/") == true)
+            @if (MediaHelper.IsImage(MediaType, StringComparison.CurrentCulture))
             {
                 <img src="@PreviewUrl" style="max-width: 100%; height: auto;" alt="@Title" />
             }
-            else if (MediaType?.StartsWith("video/") == true)
+            else if (MediaHelper.IsVideo(MediaType, StringComparison.CurrentCulture))
             {
                 <video controls style="max-width: 100%; height: auto;">
                     <source src="@PreviewUrl" type="@MediaType">
                     @L["VideoNotSupported"]
                 </video>
             }
-            else if (MediaType?.StartsWith("audio/") == true)
+            else if (MediaHelper.IsAudio(MediaType, StringComparison.CurrentCulture))
             {
                 <audio controls style="width: 100%;">
                     <source src="@PreviewUrl" type="@MediaType">

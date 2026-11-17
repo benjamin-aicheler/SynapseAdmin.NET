@@ -373,7 +373,9 @@ namespace SynapseAdmin.Components.Pages
                 // the preview dialog handles the error if it's not actually an image/video/audio.
                 return true;
             }
-            return mimeType.StartsWith("image/") || mimeType.StartsWith("video/") || mimeType.StartsWith("audio/");
+            return MediaHelper.IsImage(mimeType, StringComparison.CurrentCulture) ||
+                   MediaHelper.IsVideo(mimeType, StringComparison.CurrentCulture) ||
+                   MediaHelper.IsAudio(mimeType, StringComparison.CurrentCulture);
         }
 
         private async Task ShowPreview(RoomMediaItemViewModel media)

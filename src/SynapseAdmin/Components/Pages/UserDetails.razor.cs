@@ -382,7 +382,9 @@ namespace SynapseAdmin.Components.Pages
         private bool IsPreviewable(string? mimeType)
         {
             if (string.IsNullOrEmpty(mimeType)) return false;
-            return mimeType.StartsWith("image/") || mimeType.StartsWith("video/") || mimeType.StartsWith("audio/");
+            return MediaHelper.IsImage(mimeType, StringComparison.CurrentCulture) ||
+                   MediaHelper.IsVideo(mimeType, StringComparison.CurrentCulture) ||
+                   MediaHelper.IsAudio(mimeType, StringComparison.CurrentCulture);
         }
 
         private async Task ShowPreview(UserMediaItemViewModel media)
