@@ -279,8 +279,8 @@ public class MediaControllerConditionalTests
 
     /// <summary>
     /// The classification on its own. It doesn't normalize: "IMAGE/PNG" needs the sandbox (the controller lower-cases
-    /// first). The prefix checks are culture-sensitive, so a leading soft hyphen hides SVG from the exact comparison
-    /// (O-02, #392). The O-02 fix flips that row.
+    /// first). The prefix checks are ordinal, so a leading soft hyphen doesn't pass as image/ and the type gets the
+    /// sandbox (O-02, #392).
     /// </summary>
     [Theory]
     [InlineData("image/png", false)]
@@ -289,7 +289,7 @@ public class MediaControllerConditionalTests
     [InlineData("video/mp4", false)]
     [InlineData("application/pdf", true)]
     [InlineData("IMAGE/PNG", true)]
-    [InlineData("\u00ADimage/svg+xml", false)]
+    [InlineData("\u00ADimage/svg+xml", true)]
     public void RequiresSandbox_MatchesTheTable(string finalMimeType, bool expected) =>
         Assert.Equal(expected, MediaController.RequiresSandbox(finalMimeType));
 }
