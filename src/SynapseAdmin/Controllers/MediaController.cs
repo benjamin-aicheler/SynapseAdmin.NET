@@ -224,9 +224,9 @@ public class MediaController(IMediaService mediaService, IMatrixSessionService s
     {
         // Validate previewable MIME types (images, videos, audio).
         // Disallow active web content (HTML, SVG, Javascript) from unconfined inline execution.
-        bool isSafeInlineType = finalMimeType.StartsWith("image/", StringComparison.Ordinal) ||
-                                finalMimeType.StartsWith("video/", StringComparison.Ordinal) ||
-                                finalMimeType.StartsWith("audio/", StringComparison.Ordinal);
+        bool isSafeInlineType = MediaHelper.IsImage(finalMimeType, StringComparison.Ordinal) ||
+                                MediaHelper.IsVideo(finalMimeType, StringComparison.Ordinal) ||
+                                MediaHelper.IsAudio(finalMimeType, StringComparison.Ordinal);
 
         return finalMimeType == "image/svg+xml" || finalMimeType == "text/html" || !isSafeInlineType;
     }

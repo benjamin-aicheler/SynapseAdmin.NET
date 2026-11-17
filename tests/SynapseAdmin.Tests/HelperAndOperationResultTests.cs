@@ -32,6 +32,41 @@ public class HelperAndOperationResultTests
         Assert.Equal(string.Empty, MediaHelper.ToMxcUri(null, "example.com"));
     }
 
+    private static readonly string SoftHyphen = ((char)0xAD).ToString();
+
+    public static TheoryData<string?, bool, bool, bool> TopLevelTypeCases => new()
+    {
+        // media type, then whether it has the top-level type "image" under Ordinal, OrdinalIgnoreCase and CurrentCulture
+        { null, false, false, false },
+        { "", false, false, false },
+        { "image/png", true, true, true },
+        { "IMAGE/PNG", false, true, false },
+        { SoftHyphen + "image/png", false, false, true }, // a culture-aware comparison ignores the soft hyphen
+        { "image", false, false, false },
+        { "video/mp4", false, false, false },
+    };
+
+    [Theory]
+    [MemberData(nameof(TopLevelTypeCases))]
+    public void HasTopLevelType_UsesTheGivenComparison(string? mediaType, bool ordinal, bool ignoreCase, bool currentCulture) =>
+        Assert.Equal(
+            (ordinal, ignoreCase, currentCulture),
+            (MediaHelper.HasTopLevelType(mediaType, "image", StringComparison.Ordinal),
+             MediaHelper.HasTopLevelType(mediaType, "image", StringComparison.OrdinalIgnoreCase),
+             MediaHelper.HasTopLevelType(mediaType, "image", StringComparison.CurrentCulture)));
+
+    [Theory]
+    [InlineData("image/png", true, false, false)]
+    [InlineData("video/mp4", false, true, false)]
+    [InlineData("audio/ogg", false, false, true)]
+    [InlineData("text/plain", false, false, false)]
+    public void IsImageVideoAudio_CheckTheirOwnTopLevelType(string mediaType, bool image, bool video, bool audio) =>
+        Assert.Equal(
+            (image, video, audio),
+            (MediaHelper.IsImage(mediaType, StringComparison.Ordinal),
+             MediaHelper.IsVideo(mediaType, StringComparison.Ordinal),
+             MediaHelper.IsAudio(mediaType, StringComparison.Ordinal)));
+
     [Theory]
     [InlineData(0L, "0 B")]
     [InlineData(512L, "512 B")]
