@@ -20,7 +20,7 @@ public class FederationService(IMatrixSessionService sessionService, ILogger<Fed
 
         try
         {
-            var dir = direction == SortDirection.Ascending ? "f" : "b";
+            var dir = direction.ToSynapseDir(whenUnsorted: "b");
             var result = await Gateway.GetFederationDestinationListAsync(offset, limit, dir, token);
             if (result == null) return OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)>.Ok((0, []));
 

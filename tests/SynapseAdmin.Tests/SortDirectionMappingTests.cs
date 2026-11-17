@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Services;
@@ -69,4 +70,14 @@ public sealed class SortDirectionMappingTests : IDisposable
         var call = Assert.Single(stub.CallsTo(gatewayMethod));
         Assert.Equal(expectedDir, call[dirIndex]);
     }
+
+    [Theory]
+    [InlineData(SortDirection.None, "f", "f")]
+    [InlineData(SortDirection.None, "b", "b")]
+    [InlineData(SortDirection.Ascending, "f", "f")]
+    [InlineData(SortDirection.Ascending, "b", "f")]
+    [InlineData(SortDirection.Descending, "f", "b")]
+    [InlineData(SortDirection.Descending, "b", "b")]
+    public void ToSynapseDir_MapsSortedDirections_AndFallsBackWhenUnsorted(SortDirection direction, string whenUnsorted, string expected) =>
+        Assert.Equal(expected, direction.ToSynapseDir(whenUnsorted));
 }

@@ -20,7 +20,7 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
 
         try
         {
-            var dir = direction == SortDirection.Ascending ? "f" : "b";
+            var dir = direction.ToSynapseDir(whenUnsorted: "b");
             var result = await Gateway.GetEventReportListAsync(offset, limit, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((0, []));
 
