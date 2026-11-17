@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Infrastructure.Security;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Controllers;
@@ -56,8 +57,8 @@ public class AuthController(
         {
             new(ClaimTypes.NameIdentifier, data.UserId),
             new(ClaimTypes.Name, data.Username),
-            new("Homeserver", data.Homeserver),
-            new("AccessToken", data.AccessToken)
+            new(MatrixClaimTypes.Homeserver, data.Homeserver),
+            new(MatrixClaimTypes.AccessToken, data.AccessToken)
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

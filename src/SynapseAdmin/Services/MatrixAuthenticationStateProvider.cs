@@ -6,6 +6,7 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Infrastructure.Security;
 
 namespace SynapseAdmin.Services;
 
@@ -116,8 +117,8 @@ public class MatrixAuthenticationStateProvider(
         {
             new Claim(ClaimTypes.NameIdentifier, gateway.UserId),
             new Claim(ClaimTypes.Name, gateway.Username),
-            new Claim("Homeserver", gateway.HomeserverUrl),
-            new Claim("AccessToken", gateway.AccessToken)
+            new Claim(MatrixClaimTypes.Homeserver, gateway.HomeserverUrl),
+            new Claim(MatrixClaimTypes.AccessToken, gateway.AccessToken)
         };
 
         var identity = new ClaimsIdentity(claims, "MatrixAuth");
