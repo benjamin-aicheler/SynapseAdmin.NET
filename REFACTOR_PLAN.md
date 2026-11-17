@@ -358,8 +358,8 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 ### P2-17: `MediaController`: extract the pure inline-safety check (security-sensitive)
 - **Target Files:** `Controllers/MediaController.cs`, `tests/SynapseAdmin.Tests/MediaControllerConditionalTests.cs` (new cases)
-- **Exact Scope:** Extract the classification at 208-212 (`isSafeInlineType` plus the `image/svg+xml` / `text/html` checks) into `internal static bool RequiresSandbox(string finalMimeType)` with **identical** semantics, including the current culture-sensitive `StartsWith(string)`. The CSP header value and its placement (215) stay unchanged. Fixing the comparison is open finding O-02 (§6.1), which follows directly after this task.
-- **Characterize first:** Table tests for `image/png`→false, `image/svg+xml`→true, `text/html`→true, `video/mp4`→false, `application/pdf`→true, `IMAGE/PNG`→true (case-sensitive today), plus `"\u00ADimage/svg+xml"`→false: the culture-sensitive prefix check ignores the soft hyphen, so this row pins the current comparison (an accidental `Ordinal` fails only this row). Through `Preview` the type is lower-cased first, so `IMAGE/PNG` gets no CSP there.
+- **Exact Scope:** Extract the classification at 208-212 (`isSafeInlineType` plus the `image/svg+xml` / `text/html` checks) into `internal static bool RequiresSandbox(string finalMimeType)` with **identical** semantics, including the current culture-sensitive `StartsWith(string)`. The CSP header value and its placement (215) stay unchanged. The comparison was fixed directly after this task as O-02 (Appendix A, PR #448).
+- **Characterize first:** Table tests for `image/png`→false, `image/svg+xml`→true, `text/html`→true, `video/mp4`→false, `application/pdf`→true, `IMAGE/PNG`→true (case-sensitive today), plus `"\u00ADimage/svg+xml"`→false: the culture-sensitive prefix check ignores the soft hyphen, so this row pins the current comparison (an accidental `Ordinal` fails only this row). Through `Preview` the type is lower-cased first, so `IMAGE/PNG` gets no CSP there. The O-02 fix (PR #448) flipped the soft-hyphen row to `true`.
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus the new table tests pass.
 
@@ -387,12 +387,12 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 > Start a Phase 3 task only after the Phase 1/2 tasks for every module it touches are merged. Each task introduces **one** shared utility and migrates its call sites. Where the call-site count would push the diff over 200 lines, the task is split.
 
 ### P3-01: Shared MIME-type classification helper
-- **Depends on:** P2-14, P2-17 (and O-02, if it has been fixed by then)
+- **Depends on:** P2-14, P2-17, O-02 (fixed in PR #448)
 - **Target Files:** `Infrastructure/Helpers/MediaHelper.cs`, `Components/Shared/RoomGalleryGrid.razor.cs` (283-299), `Components/Pages/RoomDetails.razor.cs` (377-387), `Components/Pages/UserDetails.razor.cs` (377-381), `Controllers/MediaController.cs` (`RequiresSandbox` from P2-17), `Components/Pages/MediaPreviewDialog.razor` (7, 11, 18), `tests/SynapseAdmin.Tests/HelperAndOperationResultTests.cs`, new bUnit test `tests/SynapseAdmin.Tests/Components/MediaPreviewDialogTests.cs`
 - **Exact Scope:** Add `MediaHelper.HasTopLevelType(string? mime, string type, StringComparison comparison)` plus `IsImage` / `IsVideo` / `IsAudio` overloads that take a `StringComparison`. Migrate call sites **with their current comparison**:
   - The gallery passes `OrdinalIgnoreCase`.
   - `RoomDetails` and `UserDetails` pass `CurrentCulture` (today's `StartsWith(string)` default).
-  - `MediaController` passes whatever `RequiresSandbox` uses at that point (`CurrentCulture` today, `Ordinal` once O-02 is fixed).
+  - `MediaController` passes `Ordinal`, which `RequiresSandbox` uses since the O-02 fix.
   - `MediaPreviewDialog.razor` (markup: `MediaType?.StartsWith("image/") == true`, and the same for `video/` and `audio/`) passes `CurrentCulture`. Call `MediaHelper` directly from the markup (its namespace is already imported via `_Imports.razor`) or through private code-behind wrappers in `MediaPreviewDialog.razor.cs`. Don't add an `@code` block.
   - Null policy stays at each call site: `RoomDetails.IsPreviewable` returns **true** for null, while `UserDetails.IsPreviewable` and `MediaPreviewDialog` return **false** (a null `MediaType` falls through to the dialog's `else` branch).
   - Keep the private `IsPreviewable` / `IsImageType` / `IsVideoType` / `IsAudioType` wrappers, because `.razor` files call them.
@@ -500,7 +500,6 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 | ID | Finding | Location | Plan |
 |---|---|---|---|
 | O-01 | Catch-all blocks that swallow exceptions without logging: theme type instantiation, three clipboard calls, a polling-cleanup fallback. (The two JS disposal catches in `RoomGalleryGrid` and the one in `TimeZoneService` get Debug logging in P2-15.) | `Services/ThemeService.cs:128`, `Components/Pages/EventForensics.razor.cs:80`, `UserDetails.razor.cs:199`, `RegistrationTokens.razor.cs:126`, `RoomDetails.razor.cs:521` | Needs a small logging design and owner approval; it is **not** a copy of P2-15, because only `RoomDetails` already has an instance logger. `ThemeService.DiscoverThemesStatic` (112-132) is `private static` (it would need a static logger, or a logger passed in). `EventForensics`, `UserDetails` and `RegistrationTokens` inject no `ILogger`, and P3-08 moves their three clipboard catches into `JsRuntimeExtensions.TryCopyToClipboardAsync`, so log there (or after P3-08) rather than in the components. Never log clipboard contents, access tokens or raw event JSON. Narrowing the caught types is a behavior change and needs a separate decision. |
-| O-02 | `MediaController.Preview` decides whether to apply the CSP sandbox with culture-sensitive, case-sensitive `StartsWith("image/")` etc. Culture-aware comparison ignores some zero-width and soft-hyphen characters, so a crafted MIME string could count as "safe inline" while evading the exact `"image/svg+xml"` check. | `Controllers/MediaController.cs:208-212` | Tracked in GitHub issue #392. Fix right after P2-17 by switching `RequiresSandbox` to `StringComparison.Ordinal` (the value is already lower-cased) and flipping the `"\u00ADimage/svg+xml"` row of `RequiresSandbox_MatchesTheTable` to `true`. It is the only row that changes: `IMAGE/PNG` stays `true` under `Ordinal`. |
 
 ### 6.2 Standing decisions (constraints for every task)
 
@@ -530,7 +529,7 @@ Per AGENTS.md workflow: each task (or a small, same-phase group of tasks) gets i
 
 ## Appendix A: Findings resolved since the audit
 
-Fixed or decided between the audit (`e34a2f3`) and `836c091`. Kept for traceability; nothing here needs action.
+Fixed or decided between the audit (`e34a2f3`) and `836c091`, plus open findings from §6.1 resolved later (O-02). Kept for traceability; nothing here needs action.
 
 | ID | Finding | Resolution | Ref |
 |---|---|---|---|
@@ -557,3 +556,4 @@ Fixed or decided between the audit (`e34a2f3`) and `836c091`. Kept for traceabil
 | D-07 | Unused `NavigationManager` injection in `UserDetails` | Removed | #397, PR #403 |
 | D-08 | Unused `MudForm` reference in `RegistrationTokenDialog` | Removed | #397, PR #403 |
 | D-09 | Unreferenced `Files` resource key | Was the label of a missing gallery filter chip; chip added | #397, PR #403 |
+| O-02 | Preview CSP sandbox decision used culture-sensitive MIME prefix checks, so a leading soft hyphen hid SVG from the exact check | `RequiresSandbox` compares the `image/` / `video/` / `audio/` prefixes ordinally; the soft-hyphen table row now expects the sandbox | #392, PR #448 |
