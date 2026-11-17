@@ -49,7 +49,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         try
         {
             if (orderBy == "room_id") orderBy = "alphabetical";
-            var dir = direction == SortDirection.Descending ? "b" : "f";
+            var dir = direction.ToSynapseDir(whenUnsorted: "f");
             var result = await Gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
 

@@ -25,7 +25,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
         try
         {
-            var dir = direction == SortDirection.Descending ? "b" : "f";
+            var dir = direction.ToSynapseDir(whenUnsorted: "f");
             var result = await Gateway.GetUserListAsync(offset, limit, orderBy, dir, searchTerm, token);
             if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
 
