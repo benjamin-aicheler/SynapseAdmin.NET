@@ -272,10 +272,27 @@ namespace SynapseAdmin.Components.Pages
             await mediaTable.ReloadServerData();
         }
 
+        /// <summary>The MXC URI of one of the user's uploads, or null without a session.</summary>
+        private string? ResolveMxc(string mediaId)
+        {
+            if (MatrixSession.Gateway == null) return null;
+            return MediaHelper.ToMxcUri(mediaId, MatrixSession.Gateway.ServerName);
+        }
+
+        /// <summary>Applies <paramref name="patch"/> to the upload if it is on the shown page, and re-renders.</summary>
+        private void PatchMediaItem(string mediaId, Action<UserMediaItemViewModel> patch)
+        {
+            var item = _mediaPage?.Items.FirstOrDefault(m => m.MediaId == mediaId);
+            if (item != null)
+            {
+                patch(item);
+                StateHasChanged();
+            }
+        }
+
         private async Task QuarantineSingleMedia(string mediaIdPart)
         {
-            if (MatrixSession.Gateway == null) return;
-            var mxc = MediaHelper.ToMxcUri(mediaIdPart, MatrixSession.Gateway.ServerName);
+            if (ResolveMxc(mediaIdPart) is not { } mxc) return;
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["QuarantineMediaTitle"],
@@ -291,20 +308,14 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    var item = _mediaPage?.Items.FirstOrDefault(m => m.MediaId == mediaIdPart);
-                    if (item != null)
-                    {
-                        item.QuarantinedBy = "Admin";
-                        StateHasChanged();
-                    }
+                    PatchMediaItem(mediaIdPart, item => item.QuarantinedBy = "Admin");
                 }
             }
         }
 
         private async Task UnquarantineSingleMedia(string mediaIdPart)
         {
-            if (MatrixSession.Gateway == null) return;
-            var mxc = MediaHelper.ToMxcUri(mediaIdPart, MatrixSession.Gateway.ServerName);
+            if (ResolveMxc(mediaIdPart) is not { } mxc) return;
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["UnquarantineMediaTitle"],
@@ -320,20 +331,14 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    var item = _mediaPage?.Items.FirstOrDefault(m => m.MediaId == mediaIdPart);
-                    if (item != null)
-                    {
-                        item.QuarantinedBy = null;
-                        StateHasChanged();
-                    }
+                    PatchMediaItem(mediaIdPart, item => item.QuarantinedBy = null);
                 }
             }
         }
 
         private async Task DeleteSingleMedia(string mediaIdPart)
         {
-            if (MatrixSession.Gateway == null) return;
-            var mxc = MediaHelper.ToMxcUri(mediaIdPart, MatrixSession.Gateway.ServerName);
+            if (ResolveMxc(mediaIdPart) is not { } mxc) return;
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["DeleteMediaTitle"],
@@ -356,8 +361,7 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task ToggleMediaProtection(UserMediaItemViewModel media)
         {
-            if (MatrixSession.Gateway == null) return;
-            var mxc = MediaHelper.ToMxcUri(media.MediaId, MatrixSession.Gateway.ServerName);
+            if (ResolveMxc(media.MediaId) is not { } mxc) return;
 
             var result = media.SafeFromQuarantine
                 ? await MediaService.UnprotectMediaAsync(mxc, _cts.Token)
@@ -383,8 +387,7 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task ShowPreview(UserMediaItemViewModel media)
         {
-            if (MatrixSession.Gateway == null) return;
-            var mxc = MediaHelper.ToMxcUri(media.MediaId, MatrixSession.Gateway.ServerName);
+            if (ResolveMxc(media.MediaId) is not { } mxc) return;
             var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
 
             var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
