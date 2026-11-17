@@ -13,7 +13,7 @@ public class MatrixAuthenticationStateProvider(
     ProtectedLocalStorage localStorage,
     IMatrixSessionService sessionService,
     IHttpContextAccessor httpContextAccessor,
-    ILogger<MatrixAuthenticationStateProvider> logger) : AuthenticationStateProvider
+    ILogger<MatrixAuthenticationStateProvider> logger) : AuthenticationStateProvider, IMatrixAuthStateService
 {
     private const string StorageKey_Homeserver = "matrix_homeserver";
     private const string StorageKey_AccessToken = "matrix_access_token";

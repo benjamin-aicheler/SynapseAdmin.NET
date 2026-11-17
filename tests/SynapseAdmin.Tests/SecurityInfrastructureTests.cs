@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -320,6 +321,28 @@ public class SecurityInfrastructureTests
         // Different circuits (scopes) get different identities.
         using var otherScope = factory.Services.CreateScope();
         Assert.NotSame(concrete, otherScope.ServiceProvider.GetRequiredService<ClientIdentityProvider>());
+    }
+
+    /// <summary>
+    /// Blazor's <see cref="AuthenticationStateProvider"/> is the Matrix provider, one instance per circuit (scope).
+    /// <see cref="IMatrixAuthStateService"/> resolves to that same instance, so a login or logout in Login or NavMenu
+    /// notifies the cascading authentication state.
+    /// </summary>
+    [Fact]
+    public async Task AuthStateProvider_IsOneMatrixProviderPerCircuitScope()
+    {
+        await using var factory = CreateAppFactory();
+
+        using var scope = factory.Services.CreateScope();
+        var state = scope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
+        Assert.IsType<MatrixAuthenticationStateProvider>(state);
+        Assert.Same(state, scope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>());
+        Assert.Same(state, scope.ServiceProvider.GetRequiredService<IMatrixAuthStateService>());
+
+        using var otherScope = factory.Services.CreateScope();
+        var otherState = otherScope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
+        Assert.NotSame(state, otherState);
+        Assert.Same(otherState, otherScope.ServiceProvider.GetRequiredService<IMatrixAuthStateService>());
     }
 
     private const string BrowserBinding = "antiforgery-request-token-of-browser-a";
