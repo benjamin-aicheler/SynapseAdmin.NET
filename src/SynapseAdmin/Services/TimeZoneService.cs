@@ -93,9 +93,9 @@ public class TimeZoneService(IJSRuntime jsRuntime, ILogger<TimeZoneService> logg
             {
                 await _jsModule.DisposeAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore disposal errors when circuit is already disconnected
+                logger.LogDebug(ex, "Time zone JS module disposal failed (circuit likely gone)");
             }
         }
 

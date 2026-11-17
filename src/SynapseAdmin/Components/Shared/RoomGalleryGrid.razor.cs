@@ -424,7 +424,10 @@ namespace SynapseAdmin.Components.Shared
                     await _scrollObserver.InvokeVoidAsync("dispose");
                     await _scrollObserver.DisposeAsync();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.LogDebug(ex, "Infinite scroll observer disposal failed (circuit likely gone)");
+                }
             }
 
             if (_jsModule != null)
@@ -433,7 +436,10 @@ namespace SynapseAdmin.Components.Shared
                 {
                     await _jsModule.DisposeAsync();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.LogDebug(ex, "Gallery JS module disposal failed (circuit likely gone)");
+                }
             }
 
             _dotnetRef?.Dispose();

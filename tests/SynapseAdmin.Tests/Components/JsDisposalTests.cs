@@ -1,0 +1,122 @@
+using Bunit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
+using SynapseAdmin.Components.Shared;
+using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models;
+using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Services;
+using Xunit;
+
+namespace SynapseAdmin.Tests.Components;
+
+/// <summary>
+/// Disposing JS interop objects fails once the circuit is gone. The gallery and the time zone service swallow those
+/// failures, so their own disposal always completes, and log each one at Debug level.
+/// </summary>
+public class JsDisposalTests : DetailPageTestBase
+{
+    private readonly RecordingLogger<RoomGalleryGrid> _galleryLogger = new();
+
+    public JsDisposalTests()
+    {
+        Services.AddSingleton<ILogger<RoomGalleryGrid>>(_galleryLogger);
+        Services.AddSingleton(Stub.Create<IRoomService>(s => s.On(nameof(IRoomService.GetMediaMetadataBatchAsync), args =>
+            Task.FromResult(OperationResult<List<RoomMediaItemViewModel>>.Ok(((List<string>)args[0]!)
+                .Select(id => new RoomMediaItemViewModel { MediaId = id }).ToList())))));
+    }
+
+    /// <summary>The observer's "dispose" call fails, then the module's disposal fails; both are attempted.</summary>
+    [Fact]
+    public async Task RoomGalleryGrid_Disposal_SwallowsFailingJsDisposals()
+    {
+        var observer = new DisconnectedJsObject([]);
+        var module = new DisconnectedJsObject(new() { ["initInfiniteScroll"] = observer });
+        // bUnit's own module references can't fail on disposal, so this runtime hands out the failing module.
+        Services.AddSingleton<IJSRuntime>(new ModuleJsRuntime(module));
+        var cut = Render<RoomGalleryGrid>(p => p
+            .Add(x => x.RoomId, "!room:hs")
+            .Add(x => x.Media, new RoomMediaViewModel { Local = [new() { MediaId = "mxc://hs/a" }] }));
+        cut.WaitForAssertion(() => Assert.Contains("initInfiniteScroll", module.Calls));
+        var entriesBefore = _galleryLogger.Entries.Count;
+
+        // Called directly: bUnit's own component disposal swallows exceptions, which would hide a rethrow.
+        await cut.InvokeAsync(async () => await cut.Instance.DisposeAsync());
+
+        Assert.Equal(["dispose"], observer.Calls);
+        Assert.Equal(["initInfiniteScroll", "DisposeAsync"], module.Calls);
+        Assert.Collection(_galleryLogger.Entries.Skip(entriesBefore),
+            entry => AssertDisposalFailureLogged(entry, "Infinite scroll observer disposal failed (circuit likely gone)"),
+            entry => AssertDisposalFailureLogged(entry, "Gallery JS module disposal failed (circuit likely gone)"));
+    }
+
+    [Fact]
+    public async Task TimeZoneService_Disposal_SwallowsAFailingModuleDisposal()
+    {
+        var module = new DisconnectedJsObject(new() { ["getBrowserTimeZone"] = "UTC" });
+        var logger = new RecordingLogger<TimeZoneService>();
+        var service = new TimeZoneService(new ModuleJsRuntime(module), logger);
+        await service.InitializeAsync();
+        var entriesBefore = logger.Entries.Count;
+
+        await service.DisposeAsync();
+
+        Assert.Equal(["getBrowserTimeZone", "DisposeAsync"], module.Calls);
+        AssertDisposalFailureLogged(
+            Assert.Single(logger.Entries.Skip(entriesBefore)), "Time zone JS module disposal failed (circuit likely gone)");
+    }
+
+    private static void AssertDisposalFailureLogged((LogLevel Level, Exception? Exception, string Message) entry, string message)
+    {
+        Assert.Equal(LogLevel.Debug, entry.Level);
+        Assert.Equal("circuit gone", Assert.IsType<JSDisconnectedException>(entry.Exception).Message);
+        Assert.Equal(message, entry.Message);
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<(LogLevel Level, Exception? Exception, string Message)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) =>
+            Entries.Add((logLevel, exception, formatter(state, exception)));
+    }
+
+    /// <summary>Answers the calls in <paramref name="results"/>; any other call and its disposal fail like a lost circuit.</summary>
+    private sealed class DisconnectedJsObject(Dictionary<string, object> results) : IJSObjectReference
+    {
+        public List<string> Calls { get; } = [];
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
+            InvokeAsync<TValue>(identifier, CancellationToken.None, args);
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
+        {
+            Calls.Add(identifier);
+            return results.TryGetValue(identifier, out var result)
+                ? ValueTask.FromResult((TValue)result)
+                : ValueTask.FromException<TValue>(new JSDisconnectedException("circuit gone"));
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Calls.Add(nameof(DisposeAsync));
+            return ValueTask.FromException(new JSDisconnectedException("circuit gone"));
+        }
+    }
+
+    /// <summary>Imports return <paramref name="module"/>; any other call returns a default, like bUnit's loose mode.</summary>
+    private sealed class ModuleJsRuntime(IJSObjectReference module) : IJSRuntime
+    {
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
+            InvokeAsync<TValue>(identifier, CancellationToken.None, args);
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
+            ValueTask.FromResult(identifier == "import" ? (TValue)module : default!);
+    }
+}
