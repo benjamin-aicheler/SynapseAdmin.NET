@@ -27,9 +27,9 @@ Several tests reach into components **by member name via reflection** (`DetailPa
 
 | Component | Private methods invoked by name | Private fields / properties accessed by name |
 |---|---|---|
-| `RoomDetails` | `DeleteRoom`, `DeleteAndBlockRoom`, `QuarantineMedia`, `BlockRoom`, `LoadLocalMedia`, `LoadRemoteMedia` | `room` |
-| `UserDetails` | `DeactivateUser`, `QuarantineAllMedia`, `LoginAsUser`, `LoadMediaPage` | `user`, `_displayedUserId`, `_mediaPage` |
-| `RoomGalleryGrid` | `OnSourceFilterChanged` (values `"local"`, `"remote"`, `"all"`), `OnTypeFilterChanged` (value `"file"`) | `_displayedMedia` |
+| `RoomDetails` | `DeleteRoom`, `DeleteAndBlockRoom`, `QuarantineMedia`, `BlockRoom`, `LoadLocalMedia`, `LoadRemoteMedia`; since P2-12 also `QuarantineSingleMedia`, `UnquarantineSingleMedia`, `DeleteSingleMedia`, `ToggleMediaProtection` | `room` |
+| `UserDetails` | `DeactivateUser`, `QuarantineAllMedia`, `LoginAsUser`, `LoadMediaPage`; since P2-13 also `QuarantineSingleMedia`, `UnquarantineSingleMedia`, `DeleteSingleMedia`, `ToggleMediaProtection`, `ShowPreview` | `user`, `_displayedUserId`, `_mediaPage` |
+| `RoomGalleryGrid` | `OnSourceFilterChanged` (values `"local"`, `"remote"`, `"all"`; since P2-14 also `null`), `OnTypeFilterChanged` (value `"file"`; since P2-14 also `null`) | `_displayedMedia` |
 | `RegistrationTokenDialog` | `OnInitializedAsync`, `Submit` | `MudDialog` (property), `expiryDate` |
 | `RoomAliasesDialog` | `ValidateAliasFormat` | `L` (injected property) |
 
@@ -324,28 +324,34 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Characterize first:** Using a `Pending<T>()` status source and a short delay override (only if one can be injected without changing production code; otherwise test `ApplyPurgeStatus` directly through `InvokeHandler`), cover "complete", "failed" with and without an error, and 5 consecutive failures.
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus `StartPolling` is < 60 lines, plus every §0 reflection-accessed name is unchanged.
+- **Executed as two PRs** (the whole task measured 305 changed lines): **P2-11a** adds 8 test cases through the real polling loop, because no delay override can be injected: "complete", "failed" (with, without and with an empty error), "active", a throwing status request, navigation during a pending request, and 5 consecutive failures. The 5 s poll interval is a constant, so the 5-failure test takes about 20 s. Not covered: that polling stops after a final status (it would need another 5 s wait). **P2-11b** is production only. The two named extractions alone leave `StartPolling` at ~75 lines, so the loop also moves from the `Task.Run` lambda into `PollPurgeStatusAsync(roomId, purgeId, token)`; `StartPolling` is 12 lines. The move re-indents ~70 lines (185-line diff, 81 with `git diff -w`). These tests wait with bUnit's 1 s default for work started by `Task.Run`; a single unidentified test failure, seen once while verifying P2-14, may come from them.
 
 ### P2-12: `RoomDetails`: deduplicate the delete handlers and the media-table reload
-- **Target Files:** `Components/Pages/RoomDetails.razor.cs`
+- **Target Files:** `Components/Pages/RoomDetails.razor.cs`, new `tests/SynapseAdmin.Tests/Components/RoomDetailsActionTests.cs`
 - **Exact Scope:** `DeleteRoom` (208-229) and `DeleteAndBlockRoom` (231-252) differ only in resource keys and the `block` flag. Make both thin wrappers over `private Task ConfirmAndDeleteRoomAsync(bool block, string titleKey, string confirmKey, string yesKey)`. **Both names must remain** (§0). Also extract `private async Task ReloadMediaTablesAsync()` for the repeated `localMediaTable?.ReloadServerData()` / `remoteMediaTable?.ReloadServerData()` pairs (300-301, 322-323, 345-346). `ToggleMediaProtection` reloads only the local table (365); leave it as it is.
+- **Characterize first** (no test covered these; `RoomDetailsStaleSelectionTests` must stay unchanged, hence a new file): each delete handler's dialog title, message, yes and cancel texts, navigation to `/rooms` only on success, and exactly one snackbar with the result's message and severity (`OperationResult.Ok()` has `Severity.Success`); which tables each single-media action reloads after a success (both for quarantine, unquarantine and delete, which also reloads the room; only the local one for the protection toggle; nothing after a failure).
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus `RoomDetailsStaleSelectionTests` pass unchanged.
 
 ### P2-13: `UserDetails`: extract the MXC resolution and item-patch helpers
-- **Target Files:** `Components/Pages/UserDetails.razor.cs`
+- **Target Files:** `Components/Pages/UserDetails.razor.cs`, new `tests/SynapseAdmin.Tests/Components/UserDetailsMediaActionTests.cs`
 - **Exact Scope:** Five methods start with `if (MatrixSession.Gateway == null) return; var mxc = MediaHelper.ToMxcUri(x, MatrixSession.Gateway.ServerName);` (276-277, 305-306, 334-335, 358-359, 385-386). Extract `private string? ResolveMxc(string mediaId)` (null ⇒ return early). Extract `private void PatchMediaItem(string mediaId, Action<UserMediaItemViewModel> patch)` for 293-298 and 322-327. Keep the early-return order before confirmation dialogs. Keep the optimistic value `QuarantinedBy = "Admin"`. Keep every §0 name for `UserDetails`.
+- **Characterize first** (no test covered the five handlers): the full MXC URI each one sends; quarantine and unquarantine patch the shown item in place without a page reload, delete reloads the page, the protection toggle needs no confirmation and flips the flag, only on success; the preview URL; and without a session every handler returns before any dialog or service call.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus `UserDetailsMediaTabTests` and `UserDetailsStaleSelectionTests` pass.
+- **Executed as one PR with two commits** (215 changed lines: 168 test, 47 production), as agreed for the overrun.
 
 ### P2-14: `RoomGalleryGrid`: deduplicate the local/remote merge loop and name filter values
-- **Target Files:** `Components/Shared/RoomGalleryGrid.razor.cs`, `Components/Shared/RoomGalleryGrid.razor`
+- **Target Files:** `Components/Shared/RoomGalleryGrid.razor.cs`, `Components/Shared/RoomGalleryGrid.razor`, new `tests/SynapseAdmin.Tests/Components/RoomGalleryMergeAndFilterTests.cs`
 - **Exact Scope:** Lines 113-130 repeat the same loop for `Local` and `Remote`. Extract `private void AddUnique(IEnumerable<RoomMediaItemViewModel>? items, bool isLocal, HashSet<string> seen)`. Preserve the ordinal comparer, local-first ordering and the skip of empty IDs. Introduce `private const string` values for the filter literals `"all"`, `"local"`, `"remote"`, `"image"`, `"video"`, `"audio"`, `"file"` and use them in both the `.razor.cs` file and the `MudChip Value` attributes in the `.razor` file. The **values stay identical**, because tests pass them as literals (§0). Keep `OnSourceFilterChanged`, `OnTypeFilterChanged` and `_displayedMedia`.
+- **Characterize first** (the two named classes cover #384 and #397 only): the merge rules (first occurrence wins, local first, ordinal comparison, empty IDs dropped, each item's source taken from its list) and every chip value, by clicking the real chips, plus the `null` fallback to `"all"` of both handlers.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus `RoomGalleryDuplicateMediaTests` and `RoomGalleryFilterTests` pass.
 
 ### P2-15: `RoomGalleryGrid` and `TimeZoneService`: add Debug logging to the empty disposal catches
-- **Target Files:** `Components/Shared/RoomGalleryGrid.razor.cs` (422, 431), `Services/TimeZoneService.cs` (96)
+- **Target Files:** `Components/Shared/RoomGalleryGrid.razor.cs` (422, 431), `Services/TimeZoneService.cs` (96), new `tests/SynapseAdmin.Tests/Components/JsDisposalTests.cs`
 - **Exact Scope:** Turn the empty catch-alls into `catch (Exception ex) { Logger.LogDebug(ex, "...disposal failed (circuit likely gone)"); }`. **Don't** narrow the caught types and don't rethrow. Control flow stays identical. Only a Debug log line is added. Both classes already have a logger (`RoomGalleryGrid.Logger`, `TimeZoneService`'s `logger` constructor parameter), so no DI change is needed.
+- **Characterize first** (no test reached these disposal paths): with JS objects that fail like a lost circuit, both `DisposeAsync` methods complete, and the gallery still disposes its module after the observer failed. The refactor commit adds one Debug entry per swallowed failure. The gallery test needs its own `IJSRuntime` and calls `DisposeAsync` directly (bUnit pitfalls, see AGENTS.md). A2 gains 3 `CA1848`, one per new log call, like every existing log call.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus the target files contain no empty `catch { }` / `catch` block.
 
@@ -369,6 +375,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Characterize first:** If no test asserts it yet, add a `WebApplicationFactory` test that an unauthenticated `GET /Media/Preview?mxc=x` returns 401 and `/rooms` does not.
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus the new integration test passes.
+- **As executed** (tests in `SecurityInfrastructureTests`): `/rooms` returns 200, not a redirect, because pages are mapped with `.AllowAnonymous()` and `Routes` renders with `prerender: false` (the circuit sends the browser to the login page). Only `/Media` endpoints carry `[Authorize]` and none of them forbids, so the redirect branches and the access-denied event are tested by raising the configured `CookieAuthenticationEvents` directly. The parameter is named `context`, as in the moved lambdas.
 
 ### P2-19: Extract `IMatrixAuthStateService` from `MatrixAuthenticationStateProvider`
 - **Target Files:** new `Interfaces/IMatrixAuthStateService.cs`, `Services/MatrixAuthenticationStateProvider.cs`, `Program.cs` (144-145), `Components/Layout/NavMenu.razor.cs` (11), `Components/Pages/Login.razor.cs` (13)
@@ -379,6 +386,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
   - Switch `NavMenu` and `Login` to inject the interface. No logic changes.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus a DI or `WebApplicationFactory` test asserting that `IMatrixAuthStateService` and `AuthenticationStateProvider` resolve to the **same** instance within one scope, plus `grep -rn "MatrixAuthenticationStateProvider" src/SynapseAdmin/Components` is empty.
+- **As executed:** the test is `SecurityInfrastructureTests.AuthStateProvider_IsOneMatrixProviderPerCircuitScope`. Nothing else resolved the concrete type, so its alias was removed.
 
 ---
 
@@ -406,6 +414,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Exact Scope:** All three build `"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(type ?? "")}"` and show `MediaPreviewDialog` with the same `DialogOptions` and parameters. Extract `BuildPreviewUrl(string mxc, string? mediaType)` and `ShowMediaPreviewAsync(this IDialogService, string mxc, string? uploadName, string mediaId, string? mediaType, string fallbackTitle)`. The URL, title fallback (`UploadName ?? MediaId` for the parameter and `UploadName ?? L["MediaPreview"]` for the dialog title) and options must stay identical. `UserDetails` keeps resolving the MXC before calling. `RoomGalleryGrid.GetPreviewUrl` stays as a private wrapper that delegates to `BuildPreviewUrl`, because `RoomGalleryGrid.razor` calls it directly (lines 78, 83, 91).
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus a unit test for `BuildPreviewUrl` with characters that need escaping, plus `grep -rn "Media/Preview?mxc" src` matches only the helper.
+- **Note:** since P2-13, `UserDetails.ShowPreview` is invoked by name in `UserDetailsMediaActionTests` (§0), which also pins its preview URL and the early return without a session; keep the name as a thin wrapper.
 
 ### P3-03: Shared "is local Matrix ID" helper
 - **Target Files:** new `Infrastructure/Helpers/MatrixIdHelper.cs`, `Components/Pages/RoomDetails.razor.cs` (`IsLocalUser`, 369-375), `Components/Pages/EventForensics.razor.cs` (`IsLocalUser`, from 86), `Services/UserService.cs` (51-55), new tests
