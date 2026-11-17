@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Services;
@@ -36,4 +37,19 @@ public class LocalMatrixIdTests
         Assert.Equal(queried ? 1 : 0, stub.CallsTo(nameof(IMatrixGateway.GetUserDetailsAsync)).Count);
         Assert.Equal(queried ? "UserNotFound" : "CannotQueryRemoteUser", result.Message);
     }
+
+    [Theory]
+    [InlineData("@a:example.org", "example.org", true)]
+    [InlineData("@a:EXAMPLE.org", "example.org", true)]
+    [InlineData("@a:example.org", "Example.ORG", true)]
+    [InlineData("!room:example.org", "example.org", true)]
+    [InlineData("@a:example.org.evil", "example.org", false)]
+    [InlineData("@a:evilexample.org", "example.org", false)]
+    [InlineData("@a:other.org", "example.org", false)]
+    [InlineData("", "example.org", false)]
+    [InlineData(null, "example.org", false)]
+    [InlineData("@a:", "", false)]
+    [InlineData("@a:", null, false)]
+    public void IsOnServer_MatchesTheServerSuffixIgnoringCase(string? id, string? serverName, bool expected) =>
+        Assert.Equal(expected, MatrixIdHelper.IsOnServer(id, serverName));
 }

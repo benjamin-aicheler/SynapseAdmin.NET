@@ -3,6 +3,7 @@ using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Infrastructure.Helpers;
 
 namespace SynapseAdmin.Components.Pages
 {
@@ -360,13 +361,8 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
-        private bool IsLocalUser(string userId)
-        {
-            if (string.IsNullOrEmpty(userId)) return false;
-            var serverName = MatrixSession.Gateway?.ServerName;
-            if (string.IsNullOrEmpty(serverName)) return false;
-            return userId.EndsWith($":{serverName}", StringComparison.OrdinalIgnoreCase);
-        }
+        private bool IsLocalUser(string userId) =>
+            MatrixIdHelper.IsOnServer(userId, MatrixSession.Gateway?.ServerName);
 
         private bool IsPreviewable(string? mimeType)
         {

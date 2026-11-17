@@ -3,6 +3,7 @@ using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Extensions.Mapping;
+using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
@@ -49,7 +50,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         if (Gateway == null) return OperationResult<UserDetailViewModel>.Failure(L["NotAuthenticated"]);
 
         var serverName = Gateway.ServerName;
-        if (!string.IsNullOrEmpty(serverName) && !userId.EndsWith($":{serverName}", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(serverName) && !MatrixIdHelper.IsOnServer(userId, serverName))
         {
             return OperationResult<UserDetailViewModel>.Failure(L["CannotQueryRemoteUser"], Severity.Warning);
         }
