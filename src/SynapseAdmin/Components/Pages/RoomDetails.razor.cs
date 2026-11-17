@@ -213,41 +213,24 @@ namespace SynapseAdmin.Components.Pages
             loadingMessages = false;
         }
 
-        private async Task DeleteRoom()
+        private Task DeleteRoom() =>
+            ConfirmAndDeleteRoomAsync(block: false, "DeleteRoomTitle", "DeleteRoomConfirmation", "Delete");
+
+        private Task DeleteAndBlockRoom() =>
+            ConfirmAndDeleteRoomAsync(block: true, "DeleteAndBlockRoomTitle", "DeleteAndBlockRoomConfirmation", "DeleteAndBlock");
+
+        private async Task ConfirmAndDeleteRoomAsync(bool block, string titleKey, string confirmKey, string yesKey)
         {
             if (GetDisplayedTarget() is not { } target) return;
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["DeleteRoomTitle"],
-                L["DeleteRoomConfirmation", FormatTarget(room, target)],
-                yesText: L["Delete"], cancelText: L["Cancel"]);
+                L[titleKey],
+                L[confirmKey, FormatTarget(room, target)],
+                yesText: L[yesKey], cancelText: L["Cancel"]);
 
             if (confirmed == true && IsStillDisplayed(target))
             {
-                var result = await RoomService.DeleteRoomAsync(target, block: false, purge: true, token: _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
-                if (result.Success)
-                {
-                    Navigation.NavigateTo(RoomListPath);
-                }
-            }
-        }
-
-        private async Task DeleteAndBlockRoom()
-        {
-            if (GetDisplayedTarget() is not { } target) return;
-
-            bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                L["DeleteAndBlockRoomTitle"],
-                L["DeleteAndBlockRoomConfirmation", FormatTarget(room, target)],
-                yesText: L["DeleteAndBlock"], cancelText: L["Cancel"]);
-
-            if (confirmed == true && IsStillDisplayed(target))
-            {
-                var result = await RoomService.DeleteRoomAsync(target, block: true, purge: true, token: _cts.Token);
+                var result = await RoomService.DeleteRoomAsync(target, block, purge: true, token: _cts.Token);
                 if (result.Severity != Severity.Normal)
                 {
                     Snackbar.Add(result.Message, result.Severity);
@@ -305,8 +288,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
-                    await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                    await ReloadMediaTablesAsync();
                 }
             }
         }
@@ -327,8 +309,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 if (result.Success)
                 {
-                    await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
-                    await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                    await ReloadMediaTablesAsync();
                 }
             }
         }
@@ -350,10 +331,15 @@ namespace SynapseAdmin.Components.Pages
                 if (result.Success)
                 {
                     await ReloadRoomDetails();
-                    await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
-                    await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+                    await ReloadMediaTablesAsync();
                 }
             }
+        }
+
+        private async Task ReloadMediaTablesAsync()
+        {
+            await (localMediaTable?.ReloadServerData() ?? Task.CompletedTask);
+            await (remoteMediaTable?.ReloadServerData() ?? Task.CompletedTask);
         }
 
         private async Task ToggleMediaProtection(RoomMediaItemViewModel media)
