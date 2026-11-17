@@ -16,8 +16,8 @@ namespace SynapseAdmin.Infrastructure.Gateways;
 /// </summary>
 public class SynapseCompatibleAdminGateway(
     AuthenticatedHomeserverGeneric homeserver,
-    string serverBrand = "Synapse",
-    string serverVersion = "Unknown") : MatrixGatewayBase(homeserver)
+    string serverBrand = GatewayConstants.SynapseBrand,
+    string serverVersion = GatewayConstants.UnknownVersion) : MatrixGatewayBase(homeserver)
 {
     public override bool SupportsAdminApi => true;
     public override string ServerBrand => serverBrand;
@@ -368,7 +368,7 @@ public class SynapseCompatibleAdminGateway(
 
     public override async Task<SynapseVersionResponse?> GetSynapseVersionAsync(CancellationToken cancellationToken = default)
     {
-        return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>("/_synapse/admin/v1/server_version", cancellationToken: cancellationToken);
+        return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseVersionResponse>(GatewayConstants.ServerVersionPath, cancellationToken: cancellationToken);
     }
 
     // --- Media ---

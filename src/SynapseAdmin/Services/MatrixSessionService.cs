@@ -6,6 +6,7 @@ using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Infrastructure.Gateways;
 
 namespace SynapseAdmin.Services;
 
@@ -196,7 +197,7 @@ public class MatrixSessionService(
             }
         }
 
-        return Gateway.ServerVersion != "Unknown" ? Gateway.ServerVersion : null;
+        return Gateway.ServerVersion != GatewayConstants.UnknownVersion ? Gateway.ServerVersion : null;
     }
 
     public void Logout()
