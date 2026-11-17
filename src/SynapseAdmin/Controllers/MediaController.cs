@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.Helpers;
+using SynapseAdmin.Infrastructure.Security;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
@@ -16,8 +17,8 @@ namespace SynapseAdmin.Controllers;
 [Authorize]
 public class MediaController(IMediaService mediaService, IMatrixSessionService sessionService, ILogger<MediaController> logger) : Controller
 {
-    private string? Homeserver => User.FindFirst("Homeserver")?.Value;
-    private string? AccessToken => User.FindFirst("AccessToken")?.Value;
+    private string? Homeserver => User.FindFirst(MatrixClaimTypes.Homeserver)?.Value;
+    private string? AccessToken => User.FindFirst(MatrixClaimTypes.AccessToken)?.Value;
     private string? UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
     // Matrix media URIs (mxc://<server>/<media_id>) are immutable in the Matrix specification:
