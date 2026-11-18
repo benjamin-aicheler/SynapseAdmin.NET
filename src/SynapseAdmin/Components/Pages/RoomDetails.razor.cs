@@ -121,10 +121,9 @@ namespace SynapseAdmin.Components.Pages
             {
                 room = null;
                 _displayedRoomId = null;
-                if (result.Severity != Severity.Normal)
+                if (Snackbar.ShowResult(result))
                 {
                     errorMessage = result.Message;
-                    Snackbar.Add(result.Message, result.Severity);
                 }
             }
             isLoading = false;
@@ -183,7 +182,7 @@ namespace SynapseAdmin.Components.Pages
                 return new TableData<RoomMediaItemViewModel> { TotalItems = media.Count, Items = result.Data };
             }
 
-            if (result.Severity != Severity.Normal) Snackbar.Add(result.Message, result.Severity);
+            Snackbar.ShowResult(result);
             return new TableData<RoomMediaItemViewModel> { TotalItems = media.Count, Items = [] };
         }
 
@@ -208,9 +207,9 @@ namespace SynapseAdmin.Components.Pages
                     messages.EndToken = result.Data.EndToken;
                 }
             }
-            else if (!result.Success && result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowFailure(result);
             }
             loadingMessages = false;
         }
@@ -233,10 +232,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true && IsStillDisplayed(target))
             {
                 var result = await RoomService.DeleteRoomAsync(target, block, purge: true, token: _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     Navigation.NavigateTo(RoomListPath);
@@ -256,10 +252,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true && IsStillDisplayed(target))
             {
                 var result = await RoomService.QuarantineMediaAsync(target, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
             }
         }
 
@@ -268,10 +261,7 @@ namespace SynapseAdmin.Components.Pages
             if (GetDisplayedTarget() is not { } target) return;
 
             var result = await RoomService.BlockRoomAsync(target, true, _cts.Token);
-            if (result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowResult(result);
         }
 
         private async Task QuarantineSingleMedia(string mxc)
@@ -284,10 +274,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.QuarantineMediaAsync(mxc, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     await ReloadMediaTablesAsync();
@@ -305,10 +292,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.UnquarantineMediaAsync(mxc, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     await ReloadMediaTablesAsync();
@@ -326,10 +310,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.DeleteMediaAsync(mxc, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     await ReloadRoomDetails();
@@ -350,10 +331,7 @@ namespace SynapseAdmin.Components.Pages
                 ? await MediaService.UnprotectMediaAsync(media.MediaId, _cts.Token)
                 : await MediaService.ProtectMediaAsync(media.MediaId, _cts.Token);
 
-            if (result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowResult(result);
 
             if (result.Success)
             {
