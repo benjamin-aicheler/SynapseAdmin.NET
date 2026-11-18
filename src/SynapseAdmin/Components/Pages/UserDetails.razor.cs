@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Infrastructure.Helpers;
 using System.Net;
@@ -193,12 +194,11 @@ namespace SynapseAdmin.Components.Pages
             var result = await UserService.LoginAsUserAsync(target, TimeSpan.FromHours(1), _cts.Token);
             if (result.Success && !string.IsNullOrEmpty(result.Data))
             {
-                try
+                if (await JSRuntime.TryCopyToClipboardAsync(result.Data))
                 {
-                    await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", result.Data);
                     Snackbar.Add(result.Message + " " + L["TokenCopiedToClipboard"], result.Severity);
                 }
-                catch
+                else
                 {
                     Snackbar.Add(result.Message, result.Severity);
                 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
@@ -118,12 +119,11 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task CopyToClipboard(string text)
         {
-            try
+            if (await JSRuntime.TryCopyToClipboardAsync(text))
             {
-                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
                 Snackbar.Add(L["TokenCopiedToClipboard"], Severity.Success);
             }
-            catch (Exception)
+            else
             {
                 Snackbar.Add(L["ErrorCopyingToClipboard"], Severity.Error);
             }
