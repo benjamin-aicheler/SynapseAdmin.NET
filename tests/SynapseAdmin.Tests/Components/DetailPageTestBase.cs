@@ -77,4 +77,15 @@ public abstract class DetailPageTestBase : BunitContext, IAsyncLifetime
 
     protected bool WarningShown() =>
         SnackbarStub.CallsTo(nameof(ISnackbar.Add)).Any(a => a.Length > 1 && a[1] is Severity.Warning);
+
+    /// <summary>Asserts the only dialog shown: the media preview, with its title, parameters and options.</summary>
+    protected void AssertPreviewShown(string title, string titleParameter, string previewUrl, string? mediaType)
+    {
+        var args = Assert.Single(DialogStub.CallsTo(nameof(IDialogService.ShowAsync)));
+        Assert.Equal(title, args[0]);
+        var parameters = (DialogParameters)args[1]!;
+        Assert.Equal(3, parameters.Count);
+        Assert.Equal((titleParameter, previewUrl, mediaType), ((string?)parameters["Title"], (string?)parameters["PreviewUrl"], (string?)parameters["MediaType"]));
+        Assert.Equivalent(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true }, args[2], strict: true);
+    }
 }

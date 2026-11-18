@@ -146,6 +146,20 @@ public class UserDetailsMediaActionTests : DetailPageTestBase
         Assert.Equal("/Media/Preview?mxc=mxc%3A%2F%2Fhs%2Fupload1&mimeType=image%2Fpng", parameters["PreviewUrl"]);
     }
 
+    /// <summary>The URL uses the resolved MXC URI, the Title parameter falls back to the bare media ID.</summary>
+    [Theory]
+    [InlineData("cat & dog.svg", "image/svg+xml", "/Media/Preview?mxc=mxc%3A%2F%2Fhs%2Fa%2Bb&mimeType=image%2Fsvg%2Bxml")]
+    [InlineData(null, null, "/Media/Preview?mxc=mxc%3A%2F%2Fhs%2Fa%2Bb&mimeType=")]
+    public async Task ShowPreview_OpensTheDialog(string? uploadName, string? mediaType, string previewUrl)
+    {
+        var cut = RenderMediaTab();
+
+        await InvokeHandler(cut, "ShowPreview", new UserMediaItemViewModel { MediaId = "a+b", UploadName = uploadName, MediaType = mediaType });
+
+        var fallbackTitle = Services.GetRequiredService<IStringLocalizer<SharedResources>>()["MediaPreview"].Value;
+        AssertPreviewShown(uploadName ?? fallbackTitle, uploadName ?? "a+b", previewUrl, mediaType);
+    }
+
     /// <summary>Without a session every action returns before its confirmation, dialog or service call.</summary>
     [Theory]
     [InlineData("QuarantineSingleMedia")]
