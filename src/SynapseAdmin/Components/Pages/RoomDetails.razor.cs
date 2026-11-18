@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Extensions;
@@ -380,18 +381,7 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task ShowPreview(RoomMediaItemViewModel media)
         {
-            var mxc = media.MediaId;
-            var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
-
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var parameters = new DialogParameters
-            {
-                { "Title", media.UploadName ?? media.MediaId },
-                { "PreviewUrl", previewUrl },
-                { "MediaType", media.MediaType }
-            };
-
-            await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
+            await DialogService.ShowMediaPreviewAsync(media.MediaId, media.UploadName, media.MediaId, media.MediaType, L["MediaPreview"]);
         }
 
         private void StopPolling()

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Infrastructure.Helpers;
@@ -390,17 +391,7 @@ namespace SynapseAdmin.Components.Pages
         private async Task ShowPreview(UserMediaItemViewModel media)
         {
             if (ResolveMxc(media.MediaId) is not { } mxc) return;
-            var previewUrl = $"/Media/Preview?mxc={Uri.EscapeDataString(mxc)}&mimeType={Uri.EscapeDataString(media.MediaType ?? "")}";
-
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var parameters = new DialogParameters
-            {
-                { "Title", media.UploadName ?? media.MediaId },
-                { "PreviewUrl", previewUrl },
-                { "MediaType", media.MediaType }
-            };
-
-            await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
+            await DialogService.ShowMediaPreviewAsync(mxc, media.UploadName, media.MediaId, media.MediaType, L["MediaPreview"]);
         }
 
         private async Task ToggleExperimentalFeature(UserExperimentalFeatureViewModel feature, bool enabled)
