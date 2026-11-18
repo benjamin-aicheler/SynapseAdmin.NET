@@ -5,6 +5,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Components.Pages;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
@@ -15,7 +16,7 @@ namespace SynapseAdmin.Tests.Components;
 
 /// <summary>
 /// The three clipboard copies: what each page writes, and which snackbar it shows when the browser accepts or refuses
-/// the write. Any exception counts as refused.
+/// the write, and the shared helper behind them. Any exception counts as refused.
 /// </summary>
 public class ClipboardCopyTests : DetailPageTestBase
 {
@@ -109,5 +110,17 @@ public class ClipboardCopyTests : DetailPageTestBase
         AssertCopied("syt_token", copied ? "Logged in " + L["TokenCopiedToClipboard"] : "Logged in", Severity.Info);
         Confirmations[0].Result.SetResult(true);
         await login;
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("js", false)]
+    [InlineData("other", false)]
+    public async Task TryCopyToClipboardAsync_ReportsWhetherTheWriteSucceeded(string? failure, bool expected)
+    {
+        SetupClipboard(failure);
+
+        Assert.Equal(expected, await JSInterop.JSRuntime.TryCopyToClipboardAsync("text"));
+        Assert.Equal("text", Assert.Single(JSInterop.VerifyInvoke(WriteText).Arguments));
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
@@ -73,12 +74,11 @@ public partial class EventForensics : IDisposable
     {
         if (eventData == null || string.IsNullOrEmpty(eventData.RawJson)) return;
 
-        try
+        if (await JSRuntime.TryCopyToClipboardAsync(eventData.RawJson))
         {
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", eventData.RawJson);
             Snackbar.Add(L["JsonCopiedToClipboard"], Severity.Success);
         }
-        catch
+        else
         {
             Snackbar.Add(L["ErrorCopyingToClipboard"], Severity.Error);
         }
