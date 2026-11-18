@@ -71,4 +71,17 @@ public class RoomMediaItemViewModel
             return mediaIdPart + Infrastructure.Helpers.MediaHelper.GetExtensionFromMediaType(MediaType);
         }
     }
+
+    /// <summary>
+    /// Copies the 6 metadata fields from <paramref name="other"/>. The ID and the local/remote source stay unchanged.
+    /// </summary>
+    public void CopyMetadataFrom(RoomMediaItemViewModel other)
+    {
+        UploadName = other.UploadName;
+        MediaType = other.MediaType;
+        MediaLength = other.MediaLength;
+        CreatedTimestamp = other.CreatedTimestamp;
+        QuarantinedBy = other.QuarantinedBy;
+        SafeFromQuarantine = other.SafeFromQuarantine;
+    }
 }

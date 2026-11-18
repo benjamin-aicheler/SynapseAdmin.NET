@@ -205,12 +205,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                         var meta = await Gateway.GetMediaMetadataAsync(m, token);
                         if (meta != null)
                         {
-                            vm.UploadName = meta.UploadName;
-                            vm.MediaType = meta.MediaType;
-                            vm.MediaLength = meta.MediaLength;
-                            vm.CreatedTimestamp = meta.CreatedTimestamp;
-                            vm.QuarantinedBy = meta.QuarantinedBy;
-                            vm.SafeFromQuarantine = meta.SafeFromQuarantine ?? false;
+                            vm.ApplyMetadata(meta);
                         }
                     }
                     catch (OperationCanceledException)
