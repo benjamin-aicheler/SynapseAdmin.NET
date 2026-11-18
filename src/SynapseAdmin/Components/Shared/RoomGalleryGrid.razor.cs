@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
@@ -283,7 +282,7 @@ namespace SynapseAdmin.Components.Shared
 
         private static string GetPreviewUrl(RoomMediaItemViewModel item)
         {
-            return $"/Media/Preview?mxc={Uri.EscapeDataString(item.MediaId)}&mimeType={Uri.EscapeDataString(item.MediaType ?? "")}";
+            return MediaPreviewLauncher.BuildPreviewUrl(item.MediaId, item.MediaType);
         }
 
         private static bool IsImageType(string? mimeType)
@@ -315,16 +314,7 @@ namespace SynapseAdmin.Components.Shared
 
         private async Task ShowPreview(RoomMediaItemViewModel media)
         {
-            var previewUrl = GetPreviewUrl(media);
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-            var parameters = new DialogParameters
-            {
-                { "Title", media.UploadName ?? media.MediaId },
-                { "PreviewUrl", previewUrl },
-                { "MediaType", media.MediaType }
-            };
-
-            await DialogService.ShowAsync<MediaPreviewDialog>(media.UploadName ?? L["MediaPreview"], parameters, options);
+            await DialogService.ShowMediaPreviewAsync(media.MediaId, media.UploadName, media.MediaId, media.MediaType, L["MediaPreview"]);
         }
 
         private async Task QuarantineSingleMedia(RoomMediaItemViewModel media)

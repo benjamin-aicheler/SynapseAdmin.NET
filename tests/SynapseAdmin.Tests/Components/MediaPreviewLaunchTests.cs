@@ -70,5 +70,11 @@ public class MediaPreviewLaunchTests : DetailPageTestBase
         cut.WaitForAssertion(() => AssertPreviewShown(uploadName ?? Text("MediaPreview"), uploadName ?? mediaId, previewUrl, mediaType));
     }
 
+    [Theory]
+    [InlineData("mxc://hs/a+b c", "image/svg+xml", "/Media/Preview?mxc=mxc%3A%2F%2Fhs%2Fa%2Bb%20c&mimeType=image%2Fsvg%2Bxml")]
+    [InlineData("mxc://hs/x?y&z=1#f", null, "/Media/Preview?mxc=mxc%3A%2F%2Fhs%2Fx%3Fy%26z%3D1%23f&mimeType=")]
+    public void BuildPreviewUrl_EscapesBothQueryValues(string mxc, string? mediaType, string expected) =>
+        Assert.Equal(expected, MediaPreviewLauncher.BuildPreviewUrl(mxc, mediaType));
+
     private string Text(string key) => Services.GetRequiredService<IStringLocalizer<SharedResources>>()[key].Value;
 }
