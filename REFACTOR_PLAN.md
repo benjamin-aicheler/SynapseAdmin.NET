@@ -27,9 +27,9 @@ Several tests reach into components **by member name via reflection** (`DetailPa
 
 | Component | Private methods invoked by name | Private fields / properties accessed by name |
 |---|---|---|
-| `RoomDetails` | `DeleteRoom`, `DeleteAndBlockRoom`, `QuarantineMedia`, `BlockRoom`, `LoadLocalMedia`, `LoadRemoteMedia`; since P2-12 also `QuarantineSingleMedia`, `UnquarantineSingleMedia`, `DeleteSingleMedia`, `ToggleMediaProtection` | `room` |
-| `UserDetails` | `DeactivateUser`, `QuarantineAllMedia`, `LoginAsUser`, `LoadMediaPage`; since P2-13 also `QuarantineSingleMedia`, `UnquarantineSingleMedia`, `DeleteSingleMedia`, `ToggleMediaProtection`, `ShowPreview` | `user`, `_displayedUserId`, `_mediaPage` |
-| `RoomGalleryGrid` | `OnSourceFilterChanged` (values `"local"`, `"remote"`, `"all"`; since P2-14 also `null`), `OnTypeFilterChanged` (value `"file"`; since P2-14 also `null`) | `_displayedMedia` |
+| `RoomDetails` | `DeleteRoom`, `DeleteAndBlockRoom`, `QuarantineMedia`, `BlockRoom`, `LoadLocalMedia`, `LoadRemoteMedia`; since P2-12 also `QuarantineSingleMedia`, `UnquarantineSingleMedia`, `DeleteSingleMedia`, `ToggleMediaProtection`; since P3-01 also `IsPreviewable` | `room` |
+| `UserDetails` | `DeactivateUser`, `QuarantineAllMedia`, `LoginAsUser`, `LoadMediaPage`; since P2-13 also `QuarantineSingleMedia`, `UnquarantineSingleMedia`, `DeleteSingleMedia`, `ToggleMediaProtection`, `ShowPreview`; since P3-01 also `IsPreviewable` | `user`, `_displayedUserId`, `_mediaPage` |
+| `RoomGalleryGrid` | `OnSourceFilterChanged` (values `"local"`, `"remote"`, `"all"`; since P2-14 also `null`), `OnTypeFilterChanged` (value `"file"`; since P2-14 also `null`); since P3-01 also the static `IsImageType`, `IsVideoType`, `IsAudioType` | `_displayedMedia` |
 | `RegistrationTokenDialog` | `OnInitializedAsync`, `Submit` | `MudDialog` (property), `expiryDate` |
 | `RoomAliasesDialog` | `ValidateAliasFormat` | `L` (injected property) |
 
@@ -393,6 +393,8 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 ## 5. Phase 3: Cross-Module Deduplication (Medium Risk)
 
 > Start a Phase 3 task only after the Phase 1/2 tasks for every module it touches are merged. Each task introduces **one** shared utility and migrates its call sites. Where the call-site count would push the diff over 200 lines, the task is split.
+>
+> REFACTOR_RULES §4.2 applies as in Phase 2. Where the call sites had no tests (P3-01 to P3-04), the PR's first commit characterizes them through the existing components and services, and the refactor commit adds the helper-level tests. A pure constant extraction (P3-05, P3-06) is verified instead by a byte-identical assembly: build `src/SynapseAdmin/SynapseAdmin.csproj` with `--no-incremental -p:BuildProjectReferences=false -p:DebugType=none` once after adding the constants class and once after replacing the literals, and compare the SHA-256 of `SynapseAdmin.dll`. Afterwards, restore the normal outputs with `dotnet build --no-incremental`.
 
 ### P3-01: Shared MIME-type classification helper
 - **Depends on:** P2-14, P2-17, O-02 (fixed in PR #448)
@@ -407,6 +409,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Risk Level:** Medium
 - **Characterize first:** A bUnit test for `MediaPreviewDialog` that renders `image/png`, `video/mp4`, `audio/ogg`, `application/pdf` and `null`, and asserts which element (`img` / `video` / `audio` / fallback) appears.
 - **Done Criteria:** SDC, plus new tests cover all comparison × null combinations, plus `grep -rnE 'StartsWith\("(image|video|audio)/"' src --include=*.cs --include=*.razor` matches nothing outside `MediaHelper.cs` (5 files match at `836c091`).
+- **As executed** (two commits, 197 changed lines): the dialog is characterized through `IDialogService` and a `MudDialogProvider` in `Components/MediaPreviewDialogTests.cs`. The other UI sites are characterized in `MediaTypeClassificationTests.cs`, which invokes the private wrappers by name (§0). `IMAGE/PNG` and a leading soft hyphen tell the three comparisons apart. `HasTopLevelType` checks the prefix `type + "/"`, and the wrappers keep their own null guards. A2 loses the 6 `CA1310` of the two `IsPreviewable` methods.
 
 ### P3-02: Shared media-preview launcher
 - **Depends on:** P2-12, P2-13, P2-14
@@ -415,12 +418,14 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus a unit test for `BuildPreviewUrl` with characters that need escaping, plus `grep -rn "Media/Preview?mxc" src` matches only the helper.
 - **Note:** since P2-13, `UserDetails.ShowPreview` is invoked by name in `UserDetailsMediaActionTests` (§0), which also pins its preview URL and the early return without a session; keep the name as a thin wrapper.
+- **As executed** (two commits, 176 changed lines): `Components/MediaPreviewLaunchTests.cs` clicks the real preview buttons of the room media table and the gallery, and `UserDetailsMediaActionTests` gains a `ShowPreview` theory. `DetailPageTestBase.AssertPreviewShown` asserts the dialog title, the 3 parameters and every `DialogOptions` property. `ShowMediaPreviewAsync` returns `ShowAsync`'s `Task<IDialogReference>`; the three wrappers keep `async`/`await`. The gallery's `using SynapseAdmin.Components.Pages;` became unused and was removed. `L["MediaPreview"]` is now evaluated as an argument even when an upload name exists.
 
 ### P3-03: Shared "is local Matrix ID" helper
 - **Target Files:** new `Infrastructure/Helpers/MatrixIdHelper.cs`, `Components/Pages/RoomDetails.razor.cs` (`IsLocalUser`, 369-375), `Components/Pages/EventForensics.razor.cs` (`IsLocalUser`, from 86), `Services/UserService.cs` (51-55), new tests
 - **Exact Scope:** Add `MatrixIdHelper.IsOnServer(string? id, string? serverName)`, which returns false for an empty ID or server and otherwise checks `EndsWith($":{serverName}", StringComparison.OrdinalIgnoreCase)`. `RoomDetails` and `EventForensics` call it directly. `UserService` must preserve "**allow** when `serverName` is empty", so it calls `string.IsNullOrEmpty(serverName) || MatrixIdHelper.IsOnServer(userId, serverName)`. **Exclude** the alias validation in `RoomAliasesDialog`: it is deliberately ordinal **and case-sensitive** (§6.2 S-04).
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus tests for empty ID, empty server, mixed case and a suffix-collision case (`@a:example.org.evil` vs server `example.org` → false).
+- **As executed** (two commits, 188 changed lines): `Components/LocalUserLinkTests.cs` characterizes the rendered `/users/…` links of the room members table and the event forensics sender. `LocalMatrixIdTests.cs` characterizes the `UserService` guard and holds the helper matrix. Only an ID ending in `:` with an empty or missing server name (`@a:`) pins each page's server-name guard. Two differences outside reachable behavior: `UserService` returns `CannotQueryRemoteUser` for a `null` user ID instead of throwing (A2: −1 `CA1062`), and the page wrappers read `Gateway.ServerName` even for an empty ID.
 
 ### P3-04: Shared `SortDirection` → Synapse `dir` mapping
 - **Target Files:** new `Extensions/SortDirectionExtensions.cs`, `Services/RoomService.cs:44`, `Services/UserService.cs:28`, `Services/EventReportService.cs:23`, `Services/FederationService.cs:23`, new tests
@@ -430,6 +435,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
   - Add `ToSynapseDir(this SortDirection d, string whenUnsorted)` and migrate each service with its current default, passed as a named argument (`whenUnsorted: "f"` / `whenUnsorted: "b"`). Don't unify the defaults.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus a test matrix covering 3 enum values × both defaults.
+- **As executed** (two commits, 110 changed lines): `SortDirectionMappingTests.cs` characterizes the `dir` that each of the 4 services sends for each direction, and holds the helper matrix. The helper is a `switch` (`Ascending` → `"f"`, `Descending` → `"b"`, otherwise `whenUnsorted`), which matches both former ternaries, also for undefined enum values.
 
 ### P3-05: Claim-type constants
 - **Depends on:** P2-09
@@ -437,12 +443,14 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Exact Scope:** `public const string Homeserver = "Homeserver"; public const string AccessToken = "AccessToken";`. **The values must not change**: they are persisted inside issued authentication cookies. Don't touch `ClaimTypes.*` or the `"MatrixAuth"` authentication type.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus `grep -rn '"Homeserver"\|"AccessToken"' src --include=*.cs` matches only the constants file (`L["AccessToken"]` in `UserDetails` is a resource key and is out of scope).
+- **As executed:** the assembly is byte-identical to a build that only adds `MatrixClaimTypes` (see the Phase 3 intro). The tests keep their literal claim names, so they pin the persisted values.
 
 ### P3-06: Gateway brand/version sentinel constants and the admin path constant
 - **Target Files:** new `Infrastructure/Gateways/GatewayConstants.cs`, `Infrastructure/Gateways/MatrixGatewayBase.cs` (28-29), `Infrastructure/Gateways/SynapseCompatibleAdminGateway.cs` (19-20, 361), `Infrastructure/Gateways/MatrixAuthGateway.cs` (136, 143, 147, 160, 165-166, 178-179, 224), `Services/MatrixSessionService.cs:199`
 - **Exact Scope:** `const string UnknownVersion = "Unknown"`, `GenericBrand = "Generic"`, `SynapseBrand = "Synapse"`, `ServerVersionPath = "/_synapse/admin/v1/server_version"`. They must be `const`, because they are used as default parameter values. Leave the case-insensitive brand comparisons (`"tuwunel"`, `"synapse"`) as literals or add separate constants. Values stay identical.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus `grep -rn '"Unknown"' src --include=*.cs` matches only the constants file.
+- **As executed:** the assembly is byte-identical, as in P3-05. The `grep` also matches comments, so `ProbeSynapseVersionAsync`'s summary now refers to `GatewayConstants.UnknownVersion`. Markup is outside the task: the `?? "Synapse"` display fallback in `Home.razor` and the MIME-type `"Unknown"` label in `RoomGalleryGrid.razor` stay.
 
 ### P3-07a / P3-07b / P3-07c: Snackbar result helper
 - **Depends on:** P2-11 to P2-14 for the files they touch
@@ -465,7 +473,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Done Criteria:** SDC, plus `grep -rn "navigator.clipboard" src` matches only the helper.
 
 ### P3-09: Shared media-metadata copy
-- **Target Files:** `Models/ViewModels/RoomDetailViewModel.cs` (`RoomMediaItemViewModel`), `Services/RoomService.cs` (189-194), `Components/Shared/RoomGalleryGrid.razor.cs` (222-227), `Extensions/Mapping/RoomMappingExtensions.cs`
+- **Target Files:** `Models/ViewModels/RoomDetailViewModel.cs` (`RoomMediaItemViewModel`), `Services/RoomService.cs` (`GetMediaMetadataBatchAsync`, 189-194), `Components/Shared/RoomGalleryGrid.razor.cs` (`LoadNextBatch`, 222-227), `Extensions/Mapping/RoomMappingExtensions.cs`
 - **Exact Scope:** Move the gallery's vm→vm copy of the 6 metadata fields into `RoomMediaItemViewModel.CopyMetadataFrom(RoomMediaItemViewModel other)`. Move the `MediaInfo` → vm copy in `RoomService` into `RoomMappingExtensions.ApplyMetadata(this RoomMediaItemViewModel vm, MediaInfo meta)`. Preserve `SafeFromQuarantine ?? false` in the service copy (the gallery copies a bool).
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus `RoomMediaDeduplicationTests`, `RoomGalleryDuplicateMediaTests` and `RoomGalleryFilterTests` pass.
@@ -478,6 +486,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Exact Scope:** Two shared classes that keep the semantics above. **Keep** `UserExperimentalFeaturesTests.FakeStringLocalizer`, which has dictionary semantics and is not a duplicate. Change no assertions.
 - **Risk Level:** Low
 - **Done Criteria:** SDC with an unchanged test count, and `grep -rn "class .*Localizer : IStringLocalizer" tests` shows 3 classes (2 shared + `FakeStringLocalizer`).
+- **As executed:** both classes are `internal sealed` in `SynapseAdmin.Tests.TestSupport`. No test depends on whether format arguments are ignored or applied: swapping the two semantics passes the suite.
 
 ### P3-11 (approval-gated): Service-layer result boilerplate helper
 - **Status:** **Do not start without explicit owner approval.** It may count as a "paradigm rewrite" under REFACTOR_RULES §2.
