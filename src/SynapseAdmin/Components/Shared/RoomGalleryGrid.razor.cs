@@ -224,12 +224,7 @@ namespace SynapseAdmin.Components.Shared
                         {
                             if (metaDict.TryGetValue(item.MediaId, out var metaItem))
                             {
-                                item.UploadName = metaItem.UploadName;
-                                item.MediaType = metaItem.MediaType;
-                                item.MediaLength = metaItem.MediaLength;
-                                item.CreatedTimestamp = metaItem.CreatedTimestamp;
-                                item.QuarantinedBy = metaItem.QuarantinedBy;
-                                item.SafeFromQuarantine = metaItem.SafeFromQuarantine;
+                                item.CopyMetadataFrom(metaItem);
                                 _loadedMetadataMxcs.Add(item.MediaId);
                             }
                         }

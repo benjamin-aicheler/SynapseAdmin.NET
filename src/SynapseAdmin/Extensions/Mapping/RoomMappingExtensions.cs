@@ -76,4 +76,18 @@ public static class RoomMappingExtensions
             ReplacementRoom = room.ReplacementRoom
         };
     }
+
+    /// <summary>
+    /// Copies the 6 metadata fields of <paramref name="meta"/> onto <paramref name="vm"/>, reading a missing
+    /// <c>safe_from_quarantine</c> as false. The view model keeps its ID (the MXC URI) and its local/remote source.
+    /// </summary>
+    public static void ApplyMetadata(this RoomMediaItemViewModel vm, SynapseAdminMediaMetadataResponse.MediaInfo meta)
+    {
+        vm.UploadName = meta.UploadName;
+        vm.MediaType = meta.MediaType;
+        vm.MediaLength = meta.MediaLength;
+        vm.CreatedTimestamp = meta.CreatedTimestamp;
+        vm.QuarantinedBy = meta.QuarantinedBy;
+        vm.SafeFromQuarantine = meta.SafeFromQuarantine ?? false;
+    }
 }
