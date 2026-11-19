@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages;
@@ -57,9 +58,9 @@ public partial class MediaMaintenance : IDisposable
                 {
                     Snackbar.Add(result.Message, Severity.Success);
                 }
-                else if (result.Severity != Severity.Normal)
+                else
                 {
-                    Snackbar.Add(result.Message, result.Severity);
+                    Snackbar.ShowResult(result);
                 }
             }
             finally
@@ -100,9 +101,9 @@ public partial class MediaMaintenance : IDisposable
                     // For the success message, we can show total deleted media count, or use the direct returned message
                     Snackbar.Add(result.Message, Severity.Success);
                 }
-                else if (result.Severity != Severity.Normal)
+                else
                 {
-                    Snackbar.Add(result.Message, result.Severity);
+                    Snackbar.ShowResult(result);
                 }
             }
             finally
