@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
@@ -56,10 +57,7 @@ namespace SynapseAdmin.Components.Pages
                 return new TableData<EventReportListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Reports };
             }
 
-            if (!result.Success && result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowFailure(result);
 
             return new TableData<EventReportListViewModel>() { TotalItems = 0, Items = new List<EventReportListViewModel>() };
         }
@@ -74,10 +72,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await EventReportService.DeleteEventReportAsync(reportId, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     await ReloadTable();

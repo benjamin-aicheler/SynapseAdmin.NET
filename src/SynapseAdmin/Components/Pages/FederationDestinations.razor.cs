@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
@@ -69,10 +70,7 @@ namespace SynapseAdmin.Components.Pages
                 }
                 else
                 {
-                    if (!result.Success && result.Severity != Severity.Normal)
-                    {
-                        Snackbar.Add(result.Message, result.Severity);
-                    }
+                    Snackbar.ShowFailure(result);
                     totalDestinations = 0;
                     return new TableData<FederationDestinationListViewModel>() { TotalItems = 0, Items = new List<FederationDestinationListViewModel>() };
                 }
@@ -117,10 +115,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await FederationService.ResetConnectionTimeoutAsync(destination, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     await ReloadTable();
