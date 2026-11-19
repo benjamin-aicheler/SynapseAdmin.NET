@@ -89,10 +89,9 @@ namespace SynapseAdmin.Components.Pages
             {
                 user = null;
                 _displayedUserId = null;
-                if (result.Severity != Severity.Normal)
+                if (Snackbar.ShowResult(result))
                 {
                     errorMessage = result.Message;
-                    Snackbar.Add(result.Message, result.Severity);
                 }
             }
             isLoading = false;
@@ -131,10 +130,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true && IsStillDisplayed(target))
             {
                 var result = await UserService.DeactivateUserAsync(target, token: _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success && _loadCts != null && GetDisplayedTarget() == target)
                 {
                     await LoadUserDetails(target, _loadCts.Token);
@@ -176,10 +172,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true && IsStillDisplayed(target))
             {
                 var result = await UserService.QuarantineMediaAsync(target, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success && GetDisplayedTarget() == target)
                 {
                     await ReloadMedia();
@@ -211,9 +204,9 @@ namespace SynapseAdmin.Components.Pages
                     (MarkupString)$"<b>{encodedLabel}:</b><br/><code style='word-break: break-all;'>{encodedToken}</code>",
                     yesText: L["Close"]);
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowResult(result);
             }
         }
 
@@ -243,7 +236,7 @@ namespace SynapseAdmin.Components.Pages
             if (!page.Success || page.Data == null)
             {
                 _mediaPage = null;
-                if (page.Severity != Severity.Normal) Snackbar.Add(page.Message, page.Severity);
+                Snackbar.ShowResult(page);
                 StateHasChanged();
                 return empty;
             }
@@ -303,10 +296,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.QuarantineMediaAsync(mxc, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     PatchMediaItem(mediaIdPart, item => item.QuarantinedBy = "Admin");
@@ -326,10 +316,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.UnquarantineMediaAsync(mxc, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     PatchMediaItem(mediaIdPart, item => item.QuarantinedBy = null);
@@ -349,10 +336,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var result = await MediaService.DeleteMediaAsync(mxc, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     await ReloadMedia(itemRemoved: true);
@@ -368,10 +352,7 @@ namespace SynapseAdmin.Components.Pages
                 ? await MediaService.UnprotectMediaAsync(mxc, _cts.Token)
                 : await MediaService.ProtectMediaAsync(mxc, _cts.Token);
 
-            if (result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowResult(result);
 
             if (result.Success)
             {
@@ -409,10 +390,7 @@ namespace SynapseAdmin.Components.Pages
 
             var result = await UserService.SetUserExperimentalFeaturesAsync(target, updates, _cts.Token);
 
-            if (result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowResult(result);
 
             if (result.Success)
             {
