@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
@@ -64,10 +65,7 @@ namespace SynapseAdmin.Components.Pages
                 return new TableData<UserListViewModel>() { TotalItems = result.Data.Total, Items = result.Data.Users };
             }
 
-            if (!result.Success && result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowFailure(result);
 
             return new TableData<UserListViewModel>() { TotalItems = 0, Items = new List<UserListViewModel>() };
         }
