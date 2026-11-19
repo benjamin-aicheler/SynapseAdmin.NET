@@ -6,6 +6,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Models;
 using Xunit;
 
 namespace SynapseAdmin.Tests.Components;
@@ -88,4 +89,18 @@ public abstract class DetailPageTestBase : BunitContext, IAsyncLifetime
         Assert.Equal((titleParameter, previewUrl, mediaType), ((string?)parameters["Title"], (string?)parameters["PreviewUrl"], (string?)parameters["MediaType"]));
         Assert.Equivalent(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true }, args[2], strict: true);
     }
+
+    /// <summary>"failure" fails, "cancelled" is a silent cancellation, "success" succeeds without data.</summary>
+    protected static TResult Make<TResult>(string kind) where TResult : OperationResult, new() => kind switch
+    {
+        "failure" => new TResult { Success = false, Message = "Failed", Severity = Severity.Error },
+        "cancelled" => new TResult { Success = false, Message = "Operation cancelled", Severity = Severity.Normal },
+        _ => new TResult { Success = true, Message = "Done", Severity = Severity.Success }
+    };
+
+    /// <summary>Asserts the snackbars shown so far: exactly these results' messages and severities, in order.</summary>
+    protected void AssertSnackbars(params OperationResult[] shown) =>
+        Assert.Equal(
+            shown.Select(r => ((string?)r.Message, r.Severity)),
+            SnackbarStub.CallsTo(nameof(ISnackbar.Add)).Select(a => ((string?)a[0], (Severity)a[1]!)));
 }

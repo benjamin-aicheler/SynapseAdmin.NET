@@ -51,19 +51,6 @@ public class RoomDetailsSnackbarTests : DetailPageTestBase
 
     private IStringLocalizer<SharedResources> L => Services.GetRequiredService<IStringLocalizer<SharedResources>>();
 
-    /// <summary>"failure" fails, "cancelled" is a silent cancellation, "success" succeeds without data.</summary>
-    private static TResult Make<TResult>(string kind) where TResult : OperationResult, new() => kind switch
-    {
-        "failure" => new TResult { Success = false, Message = "Failed", Severity = Severity.Error },
-        "cancelled" => new TResult { Success = false, Message = "Operation cancelled", Severity = Severity.Normal },
-        _ => new TResult { Success = true, Message = "Done", Severity = Severity.Success }
-    };
-
-    private void AssertSnackbars(params OperationResult[] shown) =>
-        Assert.Equal(
-            shown.Select(r => ((string?)r.Message, r.Severity)),
-            SnackbarStub.CallsTo(nameof(ISnackbar.Add)).Select(a => ((string?)a[0], (Severity)a[1]!)));
-
     private IRenderedComponent<RoomDetails> RenderRoom()
     {
         var cut = Render<RoomDetails>(p => p.Add(x => x.RoomId, RoomId));
