@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
@@ -50,9 +51,9 @@ namespace SynapseAdmin.Components.Pages
             {
                 _aliases = result.Data;
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowResult(result);
             }
 
             _isLoading = false;
@@ -98,9 +99,9 @@ namespace SynapseAdmin.Components.Pages
                 }
                 await LoadAliasesAsync();
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowResult(result);
             }
         }
 
@@ -124,9 +125,9 @@ namespace SynapseAdmin.Components.Pages
                     Snackbar.Add(result.Message, Severity.Success);
                     await LoadAliasesAsync();
                 }
-                else if (result.Severity != Severity.Normal)
+                else
                 {
-                    Snackbar.Add(result.Message, result.Severity);
+                    Snackbar.ShowResult(result);
                 }
             }
         }

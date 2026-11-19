@@ -40,9 +40,9 @@ namespace SynapseAdmin.Components.Pages
             {
                 tokens = result.Data;
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowResult(result);
             }
             isLoading = false;
         }
@@ -56,10 +56,7 @@ namespace SynapseAdmin.Components.Pages
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
                 var createResult = await RegistrationTokenService.CreateRegistrationTokenAsync(viewModel, _cts.Token);
-                if (createResult.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(createResult.Message, createResult.Severity);
-                }
+                Snackbar.ShowResult(createResult);
                 if (createResult.Success)
                 {
                     await LoadTokens();
@@ -85,10 +82,7 @@ namespace SynapseAdmin.Components.Pages
             if (result != null && !result.Canceled && result.Data is RegistrationTokenViewModel viewModel)
             {
                 var updateResult = await RegistrationTokenService.UpdateRegistrationTokenAsync(tokenObj.Token, viewModel, _cts.Token);
-                if (updateResult.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(updateResult.Message, updateResult.Severity);
-                }
+                Snackbar.ShowResult(updateResult);
                 if (updateResult.Success)
                 {
                     await LoadTokens();
@@ -106,10 +100,7 @@ namespace SynapseAdmin.Components.Pages
             if (confirmed == true)
             {
                 var deleteResult = await RegistrationTokenService.DeleteRegistrationTokenAsync(token, _cts.Token);
-                if (deleteResult.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(deleteResult.Message, deleteResult.Severity);
-                }
+                Snackbar.ShowResult(deleteResult);
                 if (deleteResult.Success)
                 {
                     await LoadTokens();
