@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
@@ -44,9 +45,9 @@ namespace SynapseAdmin.Components.Pages
                 Snackbar.Add(result.Message, Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowResult(result);
             }
         }
 
