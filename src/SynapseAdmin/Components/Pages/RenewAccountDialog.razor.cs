@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
 
@@ -90,9 +91,9 @@ public partial class RenewAccountDialog : IDisposable
             Snackbar.Add(result.Message, result.Severity);
             MudDialog.Close(DialogResult.Ok(result.Data));
         }
-        else if (result.Severity != Severity.Normal)
+        else
         {
-            Snackbar.Add(result.Message, result.Severity);
+            Snackbar.ShowResult(result);
         }
     }
 
