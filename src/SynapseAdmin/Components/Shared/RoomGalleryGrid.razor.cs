@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
@@ -106,9 +107,9 @@ namespace SynapseAdmin.Components.Shared
                 {
                     mediaModel = roomResult.Data.Media;
                 }
-                else if (roomResult.Severity != Severity.Normal)
+                else
                 {
-                    Snackbar.Add(roomResult.Message, roomResult.Severity);
+                    Snackbar.ShowResult(roomResult);
                 }
             }
 
@@ -230,9 +231,9 @@ namespace SynapseAdmin.Components.Shared
                         }
                         StateHasChanged();
                     }
-                    else if (!metaResult.Success && metaResult.Severity != Severity.Normal)
+                    else
                     {
-                        Snackbar.Add(metaResult.Message, metaResult.Severity);
+                        Snackbar.ShowFailure(metaResult);
                     }
                 }
             }
@@ -322,10 +323,7 @@ namespace SynapseAdmin.Components.Shared
             if (confirmed == true)
             {
                 var result = await MediaService.QuarantineMediaAsync(media.MediaId, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     media.QuarantinedBy = "Admin";
@@ -344,10 +342,7 @@ namespace SynapseAdmin.Components.Shared
             if (confirmed == true)
             {
                 var result = await MediaService.UnquarantineMediaAsync(media.MediaId, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     media.QuarantinedBy = null;
@@ -366,10 +361,7 @@ namespace SynapseAdmin.Components.Shared
             if (confirmed == true)
             {
                 var result = await MediaService.DeleteMediaAsync(media.MediaId, _cts.Token);
-                if (result.Severity != Severity.Normal)
-                {
-                    Snackbar.Add(result.Message, result.Severity);
-                }
+                Snackbar.ShowResult(result);
                 if (result.Success)
                 {
                     _allMedia.Remove(media);
@@ -386,10 +378,7 @@ namespace SynapseAdmin.Components.Shared
                 ? await MediaService.UnprotectMediaAsync(media.MediaId, _cts.Token)
                 : await MediaService.ProtectMediaAsync(media.MediaId, _cts.Token);
 
-            if (result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowResult(result);
 
             if (result.Success)
             {

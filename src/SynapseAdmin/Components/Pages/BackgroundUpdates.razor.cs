@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
 
@@ -42,9 +43,9 @@ public partial class BackgroundUpdates : IDisposable
         {
             statusResponse = result.Data;
         }
-        else if (result.Severity != Severity.Normal)
+        else
         {
-            Snackbar.Add(result.Message, result.Severity);
+            Snackbar.ShowResult(result);
         }
         isLoading = false;
     }
@@ -78,9 +79,9 @@ public partial class BackgroundUpdates : IDisposable
                 Snackbar.Add(result.Message, Severity.Success);
                 await LoadStatus();
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowResult(result);
             }
             isToggling = false;
         }
@@ -106,9 +107,9 @@ public partial class BackgroundUpdates : IDisposable
                 Snackbar.Add(result.Message, Severity.Success);
                 await LoadStatus();
             }
-            else if (result.Severity != Severity.Normal)
+            else
             {
-                Snackbar.Add(result.Message, result.Severity);
+                Snackbar.ShowResult(result);
             }
             isTriggering = false;
         }
