@@ -62,9 +62,9 @@ public partial class EventForensics : IDisposable
         {
             eventData = result.Data;
         }
-        else if (result.Severity != Severity.Normal)
+        else
         {
-            Snackbar.Add(result.Message, result.Severity);
+            Snackbar.ShowResult(result);
         }
 
         isLoading = false;

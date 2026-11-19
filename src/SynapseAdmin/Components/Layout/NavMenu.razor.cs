@@ -57,9 +57,9 @@ public partial class NavMenu : ComponentBase
                 {
                     Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
                 }
-                else if (cookieResult.Severity != Severity.Normal)
+                else
                 {
-                    Snackbar.Add(cookieResult.Message, cookieResult.Severity);
+                    Snackbar.ShowResult(cookieResult);
                 }
             }
         }

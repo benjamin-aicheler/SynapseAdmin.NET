@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
 
@@ -33,9 +34,9 @@ namespace SynapseAdmin.Components.Pages
                     roomName = result.Data.Name ?? result.Data.CanonicalAlias ?? result.Data.RoomId;
                     roomMedia = result.Data.Media;
                 }
-                else if (result.Severity != Severity.Normal)
+                else
                 {
-                    Snackbar.Add(result.Message, result.Severity);
+                    Snackbar.ShowResult(result);
                 }
                 isLoading = false;
             }
