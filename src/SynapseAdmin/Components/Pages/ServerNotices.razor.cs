@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 
 namespace SynapseAdmin.Components.Pages
@@ -28,10 +29,7 @@ namespace SynapseAdmin.Components.Pages
 
             var result = await UserService.SendServerNoticeAsync(targetUserId, noticeMessage, _cts.Token);
 
-            if (result.Severity != Severity.Normal)
-            {
-                Snackbar.Add(result.Message, result.Severity);
-            }
+            Snackbar.ShowResult(result);
 
             if (result.Success)
             {
