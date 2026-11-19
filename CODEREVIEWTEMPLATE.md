@@ -59,7 +59,7 @@
 
 ## 🛡️ 5. Error Handling & Logging
 
-*Focus: Standardized `OperationResult` / `OperationResult<T>` service return types, silent cancellation (`OperationCanceledException` -> `OperationResult.Cancelled()` with `Severity.Normal`, and UI suppressing error Snackbars on `Severity.Normal`), safe localized user-facing error messages (never raw `ex.Message` or stack traces), and structured server-side logging via `ILogger<T>` with `.SanitizeForLogging()`.*
+*Focus: Standardized `OperationResult` / `OperationResult<T>` service return types, silent cancellation (`OperationCanceledException` -> `OperationResult.Cancelled()` with `Severity.Normal`, and UI suppressing error Snackbars on `Severity.Normal` through `SnackbarExtensions.ShowResult` / `ShowFailure`, not hand-written `Severity` checks), safe localized user-facing error messages (never raw `ex.Message` or stack traces), and structured server-side logging via `ILogger<T>` with `.SanitizeForLogging()`.*
 
 **Remarks:**
 * **OperationResult & Silent Cancellation:** [Assessment of service return patterns and `OperationCanceledException` handling]
