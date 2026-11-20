@@ -1,5 +1,5 @@
 {
-  "name": "Dotnet 10 & Antigravity CLI Dev",
+  "name": "Dotnet 10 & AI CLI Dev",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
