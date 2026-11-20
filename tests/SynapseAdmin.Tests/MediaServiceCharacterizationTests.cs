@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
-using MudBlazor;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
@@ -70,9 +69,9 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
 
     private static readonly string[] MxcOperationNames = ["Open", "Metadata", "Quarantine", "Unquarantine", "Delete", "Protect", "Unprotect"];
 
-    public static TheoryData<string> AllOperations => Names(Operations.Keys);
-    public static TheoryData<string> MxcOperations => Names(MxcOperationNames);
-    public static TheoryData<string> ActionOperations => Names(Operations.Where(o => o.Value.SuccessKey != null).Select(o => o.Key));
+    public static TheoryData<string> AllOperations => new(Operations.Keys);
+    public static TheoryData<string> MxcOperations => new(MxcOperationNames);
+    public static TheoryData<string> ActionOperations => new(Operations.Where(o => o.Value.SuccessKey != null).Select(o => o.Key));
 
     public static TheoryData<string, string> MxcOperationsWithBlankMxc
     {
@@ -98,7 +97,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
     {
         var result = await Operations[name].Invoke(CreateService(gateway: null), Mxc, _cts.Token);
 
-        AssertFailure(result, "NotAuthenticated");
+        ResultAssert.Failure(result, "NotAuthenticated");
         Assert.Empty(_logger.Entries);
     }
 
@@ -107,7 +106,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
     {
         var result = await Operations[name].Invoke(CreateService(gateway: null), " ", _cts.Token);
 
-        AssertFailure(result, "NotAuthenticated");
+        ResultAssert.Failure(result, "NotAuthenticated");
     }
 
     [Theory, MemberData(nameof(MxcOperationsWithBlankMxc))]
@@ -117,7 +116,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
 
         var result = await Operations[name].Invoke(CreateService(gateway), mxc, _cts.Token);
 
-        AssertFailure(result, Operations[name].FailureKey);
+        ResultAssert.Failure(result, Operations[name].FailureKey);
         Assert.Empty(stub.Calls);
         Assert.Empty(_logger.Entries);
     }
@@ -138,11 +137,9 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
     [Theory, MemberData(nameof(AllOperations))]
     public async Task GatewayCancels_ReturnsSilentCancellation_WithoutLogging(string name)
     {
-        var result = await Operations[name].Invoke(CreateService(FaultingGateway(name, new TaskCanceledException())), Mxc, _cts.Token);
+        var result = await Operations[name].Invoke(CreateService(Stub.Create<IMatrixGateway>(s => s.Fault(Operations[name].GatewayMethod, new TaskCanceledException()))), Mxc, _cts.Token);
 
-        Assert.False(result.Success);
-        Assert.Equal(Severity.Normal, result.Severity);
-        Assert.Equal("Operation cancelled", result.Message);
+        ResultAssert.Cancelled(result);
         Assert.Empty(_logger.Entries);
     }
 
@@ -152,9 +149,9 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
         var operation = Operations[name];
         var error = new InvalidOperationException("boom");
 
-        var result = await operation.Invoke(CreateService(FaultingGateway(name, error)), Mxc, _cts.Token);
+        var result = await operation.Invoke(CreateService(Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, error))), Mxc, _cts.Token);
 
-        AssertFailure(result, operation.FailureKey);
+        ResultAssert.Failure(result, operation.FailureKey);
         var entry = Assert.Single(_logger.Entries);
         Assert.Equal(LogLevel.Error, entry.Level);
         Assert.Equal(operation.ErrorTemplate, entry.Template);
@@ -170,7 +167,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
     {
         var result = await Operations[name].Invoke(CreateService(Stub.Create<IMatrixGateway>()), Mxc, _cts.Token);
 
-        AssertFailure(result, Operations[name].FailureKey);
+        ResultAssert.Failure(result, Operations[name].FailureKey);
         Assert.Empty(_logger.Entries);
     }
 
@@ -179,7 +176,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
     {
         var result = await CreateService(Stub.Create<IMatrixGateway>()).OpenMediaAsync(Mxc, ByteRange, _cts.Token);
 
-        AssertSuccess(result, "");
+        ResultAssert.Success(result, "");
         Assert.Null(result.Data);
     }
 
@@ -191,7 +188,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
 
         var result = await CreateService(gateway).OpenMediaAsync(Mxc, ByteRange, _cts.Token);
 
-        AssertSuccess(result, "");
+        ResultAssert.Success(result, "");
         Assert.Same(download, result.Data);
         Assert.Empty(_logger.Entries);
     }
@@ -204,7 +201,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
 
         var result = await CreateService(gateway).GetMediaMetadataAsync(Mxc, _cts.Token);
 
-        AssertSuccess(result, "");
+        ResultAssert.Success(result, "");
         Assert.Same(meta, result.Data);
         Assert.Empty(_logger.Entries);
     }
@@ -216,7 +213,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
 
         var result = await operation.Invoke(CreateService(Stub.Create<IMatrixGateway>()), Mxc, _cts.Token);
 
-        AssertSuccess(result, operation.SuccessKey!);
+        ResultAssert.Success(result, operation.SuccessKey!);
         var entry = Assert.Single(_logger.Entries);
         Assert.Equal(LogLevel.Information, entry.Level);
         Assert.Equal(operation.InfoTemplate, entry.Template);
@@ -232,7 +229,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
 
         var result = await CreateService(gateway).PurgeRemoteMediaCacheAsync(BeforeTs, _cts.Token);
 
-        AssertSuccess(result, "PurgedCacheSuccess: 7");
+        ResultAssert.Success(result, "PurgedCacheSuccess: 7");
         Assert.Same(response, result.Data);
         Assert.Empty(_logger.Entries);
     }
@@ -245,7 +242,7 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
 
         var result = await CreateService(gateway).DeleteLocalMediaAsync(BeforeTs, SizeGt, true, _cts.Token);
 
-        AssertSuccess(result, "DeletedLocalMediaSuccess");
+        ResultAssert.Success(result, "DeletedLocalMediaSuccess");
         Assert.Same(response, result.Data);
         Assert.Empty(_logger.Entries);
     }
@@ -260,40 +257,5 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
             return new LocalizedString(key, key == "PurgedCacheSuccess" ? "PurgedCacheSuccess: {0}" : key);
         }));
         return new MediaService(session, _logger, localizer);
-    }
-
-    /// <summary>A gateway whose <paramref name="name"/> operation returns a task faulted with <paramref name="error"/>.</summary>
-    private static IMatrixGateway FaultingGateway(string name, Exception error)
-    {
-        var method = Operations[name].GatewayMethod;
-        return Stub.Create<IMatrixGateway>(s => s.On(method, args =>
-        {
-            var returnType = typeof(IMatrixGateway).GetMethods()
-                .Single(m => m.Name == method && m.GetParameters().Length == args.Length).ReturnType;
-            if (returnType == typeof(Task)) return Task.FromException(error);
-            return typeof(Task).GetMethods().Single(m => m.Name == nameof(Task.FromException) && m.IsGenericMethod)
-                .MakeGenericMethod(returnType.GetGenericArguments()[0]).Invoke(null, [error]);
-        }));
-    }
-
-    private static TheoryData<string> Names(IEnumerable<string> names)
-    {
-        var data = new TheoryData<string>();
-        foreach (var name in names) data.Add(name);
-        return data;
-    }
-
-    private static void AssertFailure(OperationResult result, string message)
-    {
-        Assert.False(result.Success);
-        Assert.Equal(message, result.Message);
-        Assert.Equal(Severity.Error, result.Severity);
-    }
-
-    private static void AssertSuccess(OperationResult result, string message)
-    {
-        Assert.True(result.Success);
-        Assert.Equal(message, result.Message);
-        Assert.Equal(Severity.Success, result.Severity);
     }
 }
