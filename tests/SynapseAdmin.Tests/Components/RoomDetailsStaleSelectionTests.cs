@@ -301,6 +301,8 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
         var cut = RenderPurgingRoom(() => Task.FromResult(PurgeStatus("active")));
 
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".mud-alert .mud-progress-circular")));
+        var chip = Assert.Single(cut.FindAll(".mud-alert .mud-chip"));
+        Assert.Equal(Localizer["PurgeStatusActive"].Value, chip.TextContent.Trim());
         Assert.Empty(ClearCalls);
         Assert.Empty(SnackbarCalls);
     }
