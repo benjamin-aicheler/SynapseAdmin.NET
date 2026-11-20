@@ -166,6 +166,8 @@ sequenceDiagram
 
 *(Note: If a returning browser loads a Blazor circuit from `ProtectedLocalStorage` without an active HTTP auth cookie, `NavMenu.CheckSessionSync` triggers the same `AuthCookieService` bridge automatically, provided the origin is HTTPS or loopback.)*
 
+*(Note: `AuthCookieService` is the only way to start the handoff; `Login` and `NavMenu` both use it. The bridge key is bound to the circuit's antiforgery token. `AuthController.SignIn` rejects a request whose token doesn't match without consuming the key, so such a request can't burn the key before the right browser redeems it.)*
+
 ### Flow: Authorized Media Streaming, Conditional Caching & Range Forwarding
 
 ```mermaid
@@ -195,6 +197,8 @@ sequenceDiagram
         MC-->>B: 200 OK streamed via ResponseOwningStream (X-Content-Type-Options: nosniff + CSP if needed)
     end
 ```
+
+*(Notes: `MediaController` forwards a `Range` only if it is a single `bytes` range and any `If-Range` validator strongly matches the media's `ETag` (#372); otherwise it requests the whole file. A `304` disposes the opened download unread. `Download` and `Preview` set `X-Content-Type-Options: nosniff` themselves, although the global middleware already adds it: this is deliberate defense in depth for user-uploaded content (#396). `Preview` adds a sandboxing `Content-Security-Policy` for SVG, HTML and every type that isn't an image, video or audio.)*
 
 ### Flow: Homeserver Capability Probing & Stale-Selection Guard on Detail Pages
 
@@ -231,12 +235,14 @@ sequenceDiagram
   - `TRUSTED_PROXIES`: Comma/semicolon-separated proxy IPs or CIDRs for `ForwardedHeadersMiddleware` (`ForwardLimit = 1`); defaults to loopback, RFC 1918, and RFC 4193 ranges.
   - `ASPNETCORE_ENVIRONMENT`, `ASPNETCORE_HTTP_PORTS`, `HTTPS_PORT`, `ASPNETCORE_HTTPS_PORTS`.
 - **Monitoring / logging / alerting:**
-  - Serilog configured in `appsettings.json` outputs to stdout (`Console` sink for `docker logs`) and rolling daily JSON files (`logs/log-.txt`, 7-day retention), enriched with log context, machine name, and thread ID.
+  - Serilog configured in `appsettings.json` outputs to stdout (`Console` sink for `docker logs`) and rolling daily JSON files (`logs/log-.txt`, 7-day retention), enriched with log context properties (`FromLogContext`).
   - No built-in metrics, distributed tracing, or alerting backends are bundled; external log aggregation or monitoring is left to the deploying administrator.
 
 ## 8. Cross-cutting Concerns
 
 - **Authentication & authorization:** Blazor Interactive Server auth (`MatrixAuthenticationStateProvider`) restores sessions from encrypted `ProtectedLocalStorage` and syncs with ASP.NET Core Cookie Auth (`.AspNetCore.Cookies`) via the antiforgery-bound `SessionBridgeService` + `AuthController.SignIn`. `Routes.razor` wraps pages in `AuthorizeRouteView` (redirecting unauthenticated users to `/login`), `MediaController` requires `[Authorize]`, admin features check `IMatrixGateway.SupportsAdminApi`, and the upstream homeserver enforces actual admin privileges.
+- **Homeserver destination policy (SSRF):** `HomeserverDiscoveryClient` applies `IHomeserverDestinationPolicy` to the entry host, every `.well-known` hop, every redirect, and the resolved socket IP (`SocketsHttpHandler.ConnectCallback`). It requires HTTPS unless `http://host:port` is in `HOMESERVER_ALLOWLIST`, and refuses loopback, link-local, RFC 1918, CGNAT, and ULA addresses. A non-empty allowlist is a hard gate on entry hosts, and an allowlist without valid entries fails closed. `MatrixAuthGateway` builds `AuthenticatedHomeserver*` directly from the validated `WellKnownUris`, and `MatrixSessionService` maps `HomeserverNotAllowedException` to the localized `HomeserverNotAllowed` message. Calls after login are not re-checked at connect time (§10).
+- **Client IP & rate limiting:** `ForwardedHeadersMiddleware` (`ForwardLimit = 1`) trusts proxies on loopback, RFC 1918, and RFC 4193 addresses by default, or the `TRUSTED_PROXIES` list. `ClientIdentityCircuitHandler` stores the client IP in `ClientIdentityProvider` when a circuit opens and on every reconnect; outside a circuit, `ClientIdentityProvider` reads the ambient `HttpContext`. A missing IP is logged as a warning and counted in the shared `"unknown"` bucket. `LoginRateLimiter` throttles password logins per IP and per `(homeserver, account)` across IPs, and token logins per IP only (#368). ASP.NET Core's `"auth"` rate limiter guards `POST /Auth/SignIn` separately.
 - **Error handling:** Services return `OperationResult` / `OperationResult<T>`. Each gateway call runs through `GatewayCallExtensions.RunGatewayCallAsync`, which applies the policy in one place: no session → `NotAuthenticated`, any other exception → logged and replaced by the method's localized failure key. `OperationCanceledException` produces `OperationResult.Cancelled()` (`Severity.Normal`), which UI components suppress through `SnackbarExtensions.ShowResult` / `ShowFailure` to avoid noisy error snackbars during navigation. Technical exceptions and `HomeserverNotAllowedException` messages are logged server-side and replaced with safe, localized strings. Production unhandled exceptions route to `/Error`, and missing/error status codes re-execute `/not-found`.
 - **Logging & tracing:** `ILogger<T>` is injected across services, gateways, and controllers; untrusted strings (user IDs, room IDs, MXC URIs, proxy headers, homeserver URLs) pass through `LoggingExtensions.SanitizeForLogging()` to strip control chars/newlines and prevent log forging.
 - **Caching:** Process-local `IMemoryCache` caches discovery results, authenticated gateways, session bridges, login rate-limit windows, room names, and active purge IDs. Media responses use `Cache-Control: private, no-cache` with deterministic `mxc://` SHA-256 `ETag`s so deletions/quarantines take effect immediately while saving body transfers on `304`.
@@ -259,9 +265,10 @@ sequenceDiagram
 
 | Item | Impact | Mitigation / plan |
 |---|---|---|
-| Post-login `LibMatrix` `HttpClient` lacks connect-time IP re-checking | Unauthenticated discovery/login enforces `SocketsHttpHandler.ConnectCallback`, but post-login requests pass validated `WellKnownUris` to `LibMatrix`'s static `MatrixHttpClient` without socket-level DNS-rebinding checks (`AGENTS.md`). | Entry/delegated URLs are policy-checked prior to login; full post-login enforcement would require injecting a custom `HttpMessageHandler` into `LibMatrix`. |
+| Post-login `LibMatrix` `HttpClient` lacks connect-time IP re-checking | Unauthenticated discovery/login enforces `SocketsHttpHandler.ConnectCallback`, but post-login requests pass validated `WellKnownUris` to `LibMatrix`'s static `MatrixHttpClient` without socket-level DNS-rebinding checks. | Entry/delegated URLs are policy-checked prior to login; full post-login enforcement would require injecting a custom `HttpMessageHandler` into `LibMatrix`. |
 | In-memory state limits horizontal scaling | `MemoryLoginRateLimitStore`, `SessionBridgeService`, gateway cache, and `RoomService` caches are process-local by default. | Configure sticky sessions and shared `/app/keys` across replicas, and register a distributed `ILoginRateLimitStore` if scaling horizontally (`README.md`). |
 | Unconfigured or weak `DP_PASSPHRASE` | Missing `DP_PASSPHRASE` stores Data Protection keys unencrypted on disk; leaving the sample passphrase in `docker-compose.yml` weakens at-rest encryption; rotating it invalidates existing sessions. | Startup logs a warning when unset; document production passphrase generation and rotation impact in `README.md`. |
+| Misconfigured `TRUSTED_PROXIES` behind a reverse proxy | If the proxy isn't trusted, the app sees the proxy's address instead of the client's, so every client behind it shares one login rate-limit bucket. If no client IP reaches the app at all, logins share the `"unknown"` bucket. | Trust loopback, RFC 1918, and RFC 4193 proxies by default with `ForwardLimit = 1`; log a warning when the client IP is missing; document the proxy headers and `TRUSTED_PROXIES` in `README.md`. |
 | Manual git submodule updates | Dependabot cannot update `LibMatrix/` or `ArcaneLibs/` (`.github/dependabot.yml`), risking stale SDK dependencies. | Periodically review and update the `LibMatrix` submodule manually. |
 | Coupling to undocumented Synapse / Tuwunel API quirks | Upstream changes to `next_token` types, `creation_ts` units (ms vs s across v3/v2), `avatar` naming, or localpart media-stats filtering could break endpoints. | Isolated inside `SynapseCompatibleAdminGateway` and mapping extensions, covered by serialization, pagination, and deduplication unit tests. |
 | External Google Fonts CDN link (`App.razor`) | Browser requests `fonts.googleapis.com` for Roboto; air-gapped or strict-CSP environments will fall back to system fonts or log CSP violations. | Accepted for now (offline/air-gapped environments are not currently targeted); can self-host Roboto CSS/woff2 assets in `wwwroot/` later if needed. |
