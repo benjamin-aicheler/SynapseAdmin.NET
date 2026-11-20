@@ -52,22 +52,22 @@ else
                 {
                     <MudText Typo="Typo.body2">
                         @L["PurgeStatus"]: 
-                        @if (activePurgeStatus == "active")
+                        @if (activePurgeStatus == PurgeStatusActive)
                         {
                             <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusActive"]</MudChip>
                         }
-                        else if (activePurgeStatus == "complete")
+                        else if (activePurgeStatus == PurgeStatusComplete)
                         {
                             <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusComplete"]</MudChip>
                         }
-                        else if (activePurgeStatus == "failed")
+                        else if (activePurgeStatus == PurgeStatusFailed)
                         {
                             <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusFailed"]</MudChip>
                         }
                     </MudText>
                 }
             </div>
-            @if (activePurgeStatus == "active")
+            @if (activePurgeStatus == PurgeStatusActive)
             {
                 <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Small" Class="ml-4" />
             }
