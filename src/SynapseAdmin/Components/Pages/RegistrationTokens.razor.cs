@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
@@ -49,7 +50,7 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task OpenCreateDialog()
         {
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var options = DialogPresets.Small();
             var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>(L["CreateToken"], options);
             var result = await dialog.Result;
 
@@ -75,7 +76,7 @@ namespace SynapseAdmin.Components.Pages
                 { "ExistingExpiryDate", tokenObj.ExpiryTimeDateTime is { } expiry ? TimeZoneService.ToLocal(expiry).DateTime : null }
             };
 
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var options = DialogPresets.Small();
             var dialog = await DialogService.ShowAsync<RegistrationTokenDialog>(L["EditToken"], parameters, options);
             var result = await dialog.Result;
 

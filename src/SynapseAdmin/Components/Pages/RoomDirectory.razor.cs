@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models.ViewModels;
@@ -81,7 +82,7 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task OpenPublishRoomDialog()
         {
-            var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var options = DialogPresets.SmallWithCloseButton();
             var dialog = await DialogService.ShowAsync<PublishRoomDialog>(L["PublishRoomToDirectory"], options);
             var result = await dialog.Result;
 
@@ -123,7 +124,7 @@ namespace SynapseAdmin.Components.Pages
                 { x => x.CanonicalAlias, canonicalAlias }
             };
 
-            var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var options = DialogPresets.MediumWithCloseButton();
             var dialog = await DialogService.ShowAsync<RoomAliasesDialog>(L["ManageAliases"], parameters, options);
             await dialog.Result;
 

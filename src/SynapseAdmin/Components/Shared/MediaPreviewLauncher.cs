@@ -17,7 +17,7 @@ public static class MediaPreviewLauncher
     public static Task<IDialogReference> ShowMediaPreviewAsync(
         this IDialogService dialogService, string mxc, string? uploadName, string mediaId, string? mediaType, string fallbackTitle)
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var options = DialogPresets.Medium();
         var parameters = new DialogParameters
         {
             { "Title", uploadName ?? mediaId },

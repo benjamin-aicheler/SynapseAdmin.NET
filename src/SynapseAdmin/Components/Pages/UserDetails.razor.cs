@@ -142,7 +142,7 @@ namespace SynapseAdmin.Components.Pages
         {
             if (GetDisplayedTarget() is not { } target || user == null) return;
 
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var options = DialogPresets.Small();
             var parameters = new DialogParameters
             {
                 { nameof(RenewAccountDialog.UserId), target },
