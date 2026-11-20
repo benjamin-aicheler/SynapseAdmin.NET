@@ -36,7 +36,7 @@ flowchart LR
 
 **Constraints:**
 
-- **Runtime & UI stack:** .NET 10 (`net10.0`), Blazor Server (`InteractiveServerRenderMode` with `prerender: false`), MudBlazor 9.12.0, Serilog 10.0.0.
+- **Runtime & UI stack:** .NET 10 (`net10.0`), Blazor Server (`InteractiveServerRenderMode` with `prerender: false`), MudBlazor 9.14.0, Serilog 10.0.0.
 - **Git submodule boundary:** `LibMatrix` and `ArcaneLibs` are included as git submodules (`LibMatrix/` on branch `SynapseAdmin.NET`) and must not be modified locally for Synapse Admin workarounds.
 - **Licensing (AGPL-3.0):** The application and its `LibMatrix` / `ArcaneLibs` dependencies are licensed under AGPL-3.0, requiring remote network interaction source disclosure (`LICENSE`, `README.md`, `About.razor`).
 - **HTTPS / Secure cookie policy:** Authentication cookies enforce `CookieSecurePolicy.Always`. Local loopback HTTP works directly; remote/LAN access requires a TLS-terminating reverse proxy.
