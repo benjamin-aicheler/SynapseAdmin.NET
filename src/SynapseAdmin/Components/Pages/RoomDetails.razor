@@ -52,17 +52,10 @@ else
                 {
                     <MudText Typo="Typo.body2">
                         @L["PurgeStatus"]: 
+                        @* No chip for "complete" or "failed": ApplyPurgeStatus clears the purge before the next render and reports the result in a snackbar. *@
                         @if (activePurgeStatus == PurgeStatusActive)
                         {
                             <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusActive"]</MudChip>
-                        }
-                        else if (activePurgeStatus == PurgeStatusComplete)
-                        {
-                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusComplete"]</MudChip>
-                        }
-                        else if (activePurgeStatus == PurgeStatusFailed)
-                        {
-                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Class="ml-1">@L["PurgeStatusFailed"]</MudChip>
                         }
                     </MudText>
                 }

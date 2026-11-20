@@ -968,12 +968,6 @@
   <data name="PurgeStatusActive" xml:space="preserve">
     <value>Active</value>
   </data>
-  <data name="PurgeStatusComplete" xml:space="preserve">
-    <value>Complete</value>
-  </data>
-  <data name="PurgeStatusFailed" xml:space="preserve">
-    <value>Failed</value>
-  </data>
   <data name="PurgeStatus" xml:space="preserve">
     <value>Purge Status</value>
   </data>

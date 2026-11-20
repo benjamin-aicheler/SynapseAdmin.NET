@@ -955,12 +955,6 @@
   <data name="PurgeStatusActive" xml:space="preserve">
     <value>Aktiv</value>
   </data>
-  <data name="PurgeStatusComplete" xml:space="preserve">
-    <value>Abgeschlossen</value>
-  </data>
-  <data name="PurgeStatusFailed" xml:space="preserve">
-    <value>Fehlgeschlagen</value>
-  </data>
   <data name="PurgeStatus" xml:space="preserve">
     <value>Bereinigungsstatus</value>
   </data>
