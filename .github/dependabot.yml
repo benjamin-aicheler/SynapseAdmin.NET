@@ -13,6 +13,13 @@
 # Minor and patch updates are grouped into a single PR per ecosystem to keep
 # the PR volume low. Major updates stay as individual PRs so each one can be
 # reviewed on its own.
+#
+# The app stays on .NET 10. The Docker tags (`10.0`), CI (`setup-dotnet`
+# `10.0.x`) and the devcontainer (`10.0`) pick up each 10.0.x patch
+# automatically. Dependabot ignores new .NET major versions (the "Stay on
+# .NET 10" rules below). It would still propose a .NET 10 minor version, but
+# .NET doesn't ship those: after 10.0 comes 11.0. To move to a new .NET
+# version, remove the "Stay on .NET 10" rules.
 
 version: 2
 updates:
@@ -37,6 +44,14 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Stay on .NET 10: these packages' major version follows .NET (10.x = .NET 10).
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Serilog.AspNetCore"
+        update-types: ["version-update:semver-major"]
 
   # --- GitHub Actions -------------------------------------------------------
   - package-ecosystem: "github-actions"
@@ -83,6 +98,10 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Stay on .NET 10: no dotnet/sdk or dotnet/aspnet 11.0 or later.
+      - dependency-name: "dotnet/*"
+        update-types: ["version-update:semver-major"]
 
   # --- Devcontainer ---------------------------------------------------------
   - package-ecosystem: "devcontainers"
