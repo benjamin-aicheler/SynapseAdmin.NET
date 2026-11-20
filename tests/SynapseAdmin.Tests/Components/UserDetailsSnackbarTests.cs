@@ -2,6 +2,7 @@ using System.Net;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using MudBlazor;
 using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
@@ -55,6 +56,17 @@ public class UserDetailsSnackbarTests : DetailPageTestBase
         var cut = Render<UserDetails>(p => p.Add(x => x.UserId, UserId));
         cut.WaitForAssertion(() => Assert.Contains("Alice Example", cut.Markup));
         return cut;
+    }
+
+    [Fact]
+    public async Task RenewAccountDialog_IsSmall_AndClosesOnEscape()
+    {
+        CancelDialogs();
+        var cut = RenderUser();
+
+        await InvokeHandler(cut, "OpenRenewAccountDialog");
+
+        AssertDialogOptions(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
     }
 
     public static TheoryData<string, string> Actions()

@@ -45,6 +45,19 @@ public class RegistrationTokensSnackbarTests : DetailPageTestBase
         AssertSnackbars(shown ? [_tokens] : []);
     }
 
+    [Fact]
+    public async Task CreateAndEditDialogs_AreSmall_AndCloseOnEscape()
+    {
+        var cut = Render<RegistrationTokens>();
+
+        await InvokeHandler(cut, "OpenCreateDialog");
+        await InvokeHandler(cut, "OpenEditDialog", new RegistrationTokenViewModel { Token = "tok" });
+
+        AssertDialogOptions(
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true },
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+    }
+
     /// <summary>After a success the list reloads, which reports nothing.</summary>
     [Theory]
     [InlineData("OpenCreateDialog", "success")]

@@ -509,7 +509,7 @@ namespace SynapseAdmin.Components.Pages
         {
             if (GetDisplayedTarget() is not { } target) return;
 
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+            var options = DialogPresets.Medium();
             var parameters = new DialogParameters
             {
                 { "RoomId", target },

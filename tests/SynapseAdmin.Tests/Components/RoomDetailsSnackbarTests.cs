@@ -58,6 +58,20 @@ public class RoomDetailsSnackbarTests : DetailPageTestBase
         return cut;
     }
 
+    [Fact]
+    public async Task PurgeHistoryDialogs_AreMedium_AndCloseOnEscape()
+    {
+        CancelDialogs();
+        var cut = RenderRoom();
+
+        await InvokeHandler(cut, "OpenPurgeHistoryDialog");
+        await InvokeHandler(cut, "OpenPurgeHistoryDialogForMessage", "$event:example.com");
+
+        AssertDialogOptions(
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true },
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
+    }
+
     public static TheoryData<string, string> Actions()
     {
         var data = new TheoryData<string, string>();

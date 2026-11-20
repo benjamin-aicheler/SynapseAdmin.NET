@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
@@ -41,7 +42,7 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task OpenCreateUserDialog()
         {
-            var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var options = DialogPresets.Small();
             var dialog = await DialogService.ShowAsync<UserCreateDialog>(L["CreateUser"], options);
             var result = await dialog.Result;
 

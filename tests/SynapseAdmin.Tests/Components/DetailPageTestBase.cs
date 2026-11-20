@@ -90,6 +90,19 @@ public abstract class DetailPageTestBase : BunitContext, IAsyncLifetime
         Assert.Equivalent(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true }, args[2], strict: true);
     }
 
+    /// <summary>Makes every dialog shown through <see cref="IDialogService.ShowAsync"/> close as cancelled at once.</summary>
+    protected void CancelDialogs() =>
+        DialogStub.On(nameof(IDialogService.ShowAsync), _ => Task.FromResult(
+            Stub.Create<IDialogReference>(s => s.On("get_Result", _ => Task.FromResult<DialogResult?>(DialogResult.Cancel())))));
+
+    /// <summary>Asserts the options of every dialog shown through <see cref="IDialogService.ShowAsync"/>, in order.</summary>
+    protected void AssertDialogOptions(params DialogOptions[] expected)
+    {
+        var shown = DialogStub.CallsTo(nameof(IDialogService.ShowAsync)).Select(args => args[^1]).ToList();
+        Assert.Equal(expected.Length, shown.Count);
+        foreach (var (options, actual) in expected.Zip(shown)) Assert.Equivalent(options, actual, strict: true);
+    }
+
     /// <summary>"failure" fails, "cancelled" is a silent cancellation, "success" succeeds without data.</summary>
     protected static TResult Make<TResult>(string kind) where TResult : OperationResult, new() => kind switch
     {

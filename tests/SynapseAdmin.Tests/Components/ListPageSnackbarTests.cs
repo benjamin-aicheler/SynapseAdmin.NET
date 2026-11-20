@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
@@ -49,6 +50,17 @@ public class ListPageSnackbarTests : DetailPageTestBase
         var cut = Render<TPage>();
         cut.WaitForAssertion(() => Assert.NotEmpty(service.CallsTo(listMethod)));
         return cut;
+    }
+
+    [Fact]
+    public async Task CreateUserDialog_IsSmall_AndClosesOnEscape()
+    {
+        CancelDialogs();
+        var cut = RenderList<Users>(_users, nameof(IUserService.GetUserListAsync));
+
+        await InvokeHandler(cut, "OpenCreateUserDialog");
+
+        AssertDialogOptions(new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
     }
 
     public static TheoryData<string, string> Loads()
