@@ -6,6 +6,8 @@
 **/.vs
 **/.vscode
 **/.idea
+.claude/
+.antigravitycli/
 **/node_modules
 **/npm-debug.log
 **/Dockerfile
