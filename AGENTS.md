@@ -119,7 +119,7 @@ We strictly follow **GitHub Flow** (direct commits to `main` are prohibited):
 - **Branching:** Create a dedicated branch per task (`ai/feature/issue-<number>-<description>` or `ai/bugfix/issue-<number>-<description>`, omitting `issue-<number>-` if no issue is linked). If no GitHub issue number was provided, ask the user whether to provide one or create one (optional if declined).
 - **Commits:** Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `refactor:`). Keep commits atomic and link issues (`Closes #42`, `Fixes #42`).
 - **Pre-push verification & PRs:** Always run `dotnet build` and `dotnet test` locally and verify both pass before pushing (`git push -u origin <branch-name>`). Open a PR against `main` (`gh pr create`) referencing the issue (`Resolves #42`). Resolve conflicts locally and delete the local branch after merge. To change a PR description afterwards, use `gh api -X PATCH repos/benjamin-aicheler/SynapseAdmin.NET/pulls/<n> -F body=@<file>`: `gh pr edit` currently fails with a GitHub Projects (classic) deprecation error.
-- **Automated Code Review:** When reviewing code, use [CODEREVIEWTEMPLATE.md](./CODEREVIEWTEMPLATE.md) (checking Security, Bugs, Performance, Architecture, Error Handling for Blazor/.NET 10/MudBlazor), save the report to `reviews/YYYY-MM-DD_HH-MM-SS_review.md`, summarize Action Items in chat, and ask before implementing High/Medium fixes.
+- **Automated Code Review:** When reviewing code, follow [CODEREVIEWTEMPLATE.md](./CODEREVIEWTEMPLATE.md): it defines the severities and the finding format, and it checks Security, Bugs, Performance, Architecture, Error Handling and Tests & Documentation against this file. Save the report to `reviews/YYYY-MM-DD_HH-MM-SS_review.md`, summarize Action Items in chat, and ask before implementing High/Medium fixes.
 - **.NET Version Policy:** The app stays on .NET 10 and takes .NET 10 patches automatically: the Dockerfile's `dotnet/sdk:10.0` and `dotnet/aspnet:10.0` tags, `setup-dotnet` `10.0.x` in `dotnet.yml` and `codeql.yml`, and the devcontainer's dotnet feature `10.0` float within .NET 10. Keep them floating. Dependabot ignores new .NET major versions (the "Stay on .NET 10" rules in `.github/dependabot.yml`). To move to a new .NET version, remove those rules and change the floating versions and the `net10.0` target frameworks yourself.
 
 ## Boundaries
@@ -175,7 +175,7 @@ We strictly follow **GitHub Flow** (direct commits to `main` are prohibited):
 - [README.md](./README.md) – installation, Docker, reverse proxy, and scaling guide
 - [THEMING.md](./THEMING.md) – adding reflection-discovered MudBlazor `IAppTheme` themes
 - [LOCALIZATION.md](./LOCALIZATION.md) – adding `.resx` languages and UI cultures
-- [CODEREVIEWTEMPLATE.md](./CODEREVIEWTEMPLATE.md) – checklist for automated code reviews
+- [CODEREVIEWTEMPLATE.md](./CODEREVIEWTEMPLATE.md) – how to review: scope, severities, finding format, deliberate choices not to flag, and the report template
 - [PLAN.md](./PLAN.md) & [TODO.md](./TODO.md) – single-task implementation plan and execution checklist (cleared/reset per task)
 - [docs/archive/2026-11-refactor-plan.md](./docs/archive/2026-11-refactor-plan.md) – the completed refactor (2026-11, archived): what each task changed and why, the standing decisions (§6.2), the private names tests reach by reflection (§0) and the analyzer audit commands (§1.2)
 - [REFACTOR_RULES.md](./REFACTOR_RULES.md) – rules for behavior-preserving refactors
