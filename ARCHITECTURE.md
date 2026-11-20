@@ -228,7 +228,7 @@ sequenceDiagram
   - `.github/workflows/dotnet.yml`: Recursive submodule checkout, `dotnet restore`, `dotnet build`, and `dotnet test` on `main` pushes and PRs.
   - `.github/workflows/docker-image.yml`: Multi-architecture (`linux/amd64`, `linux/arm64`) Docker Buildx build, push to `ghcr.io/benjamin-aicheler/synapseadmin.net` on `main`/tags/releases, and artifact signing with Sigstore `cosign`.
   - `.github/workflows/codeql.yml`: CodeQL security analysis for `actions`, `csharp`, and `javascript-typescript`.
-  - `.github/dependabot.yml`: Weekly dependency PRs for NuGet, GitHub Actions, Docker base images, and DevContainers (`LibMatrix` submodule is updated manually). It ignores new .NET major versions, so the app stays on .NET 10 (AGENTS.md, ".NET Version Policy").
+  - `.github/dependabot.yml`: Weekly dependency PRs for NuGet (app and tests), GitHub Actions, Docker base images, and DevContainers (`LibMatrix` submodule is updated manually). It ignores new .NET major versions, so the app stays on .NET 10 (AGENTS.md, ".NET Version Policy").
 - **Configuration & secrets management:**
   - `DP_PASSPHRASE`: Environment variable encrypting/decrypting Data Protection keys on disk. Changing it invalidates active cookies and `ProtectedLocalStorage` sessions.
   - `HOMESERVER_ALLOWLIST`: Comma/semicolon-separated allowlist for permitted homeservers, plain-HTTP exceptions (`http://host:port`), and internal CIDR/IP exceptions (fails closed if set with no valid entries).
