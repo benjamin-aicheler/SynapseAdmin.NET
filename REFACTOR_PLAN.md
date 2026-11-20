@@ -4,7 +4,7 @@
 > **Current as of:** `main` @ `836c091` (2026-11-14). **All line numbers refer to this revision.** The audit itself ran at `e34a2f3`; findings fixed since then are listed in [Appendix A](#appendix-a-findings-resolved-since-the-audit).
 > **Scope:** `src/SynapseAdmin/**` and `tests/SynapseAdmin.Tests/**`. The `LibMatrix/` and `ArcaneLibs/` submodules are **out of scope** (AGENTS.md forbids modifying them).
 > **Execution rules:** every task is executed under [REFACTOR_RULES.md](./REFACTOR_RULES.md): one task ID per pass, < 200 changed lines, mechanical and structural changes kept apart, pre-flight and post-edit build + test, characterization tests before Phase 2/3 structural edits. Project conventions in [AGENTS.md](./AGENTS.md) apply throughout.
-> **Status:** every Phase 1–3 task is merged; the last, P3-12, in #491. Only the open findings in [§6.1](#61-open-findings-change-behavior-so-not-part-of-any-task-above) remain.
+> **Status:** every Phase 1–3 task is merged; the last, P3-12, in #491. The last open finding, O-01, was fixed in PR #493, so nothing in this plan is left to do.
 
 ---
 
@@ -538,9 +538,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 ### 6.1 Open findings (change behavior, so not part of any task above)
 
-| ID | Finding | Location | Plan |
-|---|---|---|---|
-| O-01 | Catch-all blocks that swallow exceptions without logging: theme type instantiation, three clipboard calls, a polling-cleanup fallback. (The two JS disposal catches in `RoomGalleryGrid` and the one in `TimeZoneService` get Debug logging in P2-15.) | `Services/ThemeService.cs:128`, `Components/Pages/EventForensics.razor.cs:80`, `UserDetails.razor.cs:199`, `RegistrationTokens.razor.cs:126`, `RoomDetails.razor.cs:521` | Needs a small logging design and owner approval; it is **not** a copy of P2-15, because only `RoomDetails` already has an instance logger. `ThemeService.DiscoverThemesStatic` (112-132) is `private static` (it would need a static logger, or a logger passed in). `EventForensics`, `UserDetails` and `RegistrationTokens` inject no `ILogger`, and P3-08 (#468) moved their three clipboard catches into `JsRuntimeExtensions.TryCopyToClipboardAsync`, so log there rather than in the components. Never log clipboard contents, access tokens or raw event JSON. Narrowing the caught types is a behavior change and needs a separate decision. |
+**None.** The last open finding, O-01, was fixed in PR #493 and moved to [Appendix A](#appendix-a-findings-resolved-since-the-audit). If a task uncovers a finding that changes behavior, list it here for an owner decision.
 
 ### 6.2 Standing decisions (constraints for every task)
 
@@ -570,7 +568,7 @@ Per AGENTS.md workflow: each task (or a small, same-phase group of tasks) gets i
 
 ## Appendix A: Findings resolved since the audit
 
-Fixed or decided between the audit (`e34a2f3`) and `836c091`, plus open findings from §6.1 resolved later (O-02). Kept for traceability; nothing here needs action.
+Fixed or decided between the audit (`e34a2f3`) and `836c091`, plus open findings from §6.1 resolved later (O-01, O-02). Kept for traceability; nothing here needs action.
 
 | ID | Finding | Resolution | Ref |
 |---|---|---|---|
@@ -597,4 +595,5 @@ Fixed or decided between the audit (`e34a2f3`) and `836c091`, plus open findings
 | D-07 | Unused `NavigationManager` injection in `UserDetails` | Removed | #397, PR #403 |
 | D-08 | Unused `MudForm` reference in `RegistrationTokenDialog` | Removed | #397, PR #403 |
 | D-09 | Unreferenced `Files` resource key | Was the label of a missing gallery filter chip; chip added | #397, PR #403 |
+| O-01 | Catch-all blocks swallowed exceptions without logging: theme type instantiation, three clipboard calls, a purge-polling cleanup fallback | They catch the same exceptions but log them: a theme that can't be created at `Warning`, once per process (`ThemeService.DiscoverThemes`); a failed clipboard write at `Debug` through the page's logger (`TryCopyToClipboardAsync(text, logger)`, never the text); a failed purge-polling cleanup at `Debug` | PR #493 |
 | O-02 | Preview CSP sandbox decision used culture-sensitive MIME prefix checks, so a leading soft hyphen hid SVG from the exact check | `RequiresSandbox` compares the `image/` / `video/` / `audio/` prefixes ordinally; the soft-hyphen table row now expects the sandbox | #392, PR #448 |

@@ -12,7 +12,9 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
     private const string StorageKey_ThemeId = "app_theme_id";
     private const string StorageKey_DarkMode = "app_dark_mode";
 
-    private static readonly Lazy<IReadOnlyList<IAppTheme>> _cachedThemes = new(DiscoverThemesStatic);
+    // Discovered once per process, logging through the first instance's logger.
+    private static IReadOnlyList<IAppTheme>? _cachedThemes;
+    private static object? _discoveryLock;
 
     private IAppTheme _currentThemeInstance = new DefaultTheme();
     private bool _isDarkMode = true;
@@ -35,7 +37,9 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
         }
     }
 
-    public IReadOnlyList<IAppTheme> AvailableThemes => _cachedThemes.Value;
+    public IReadOnlyList<IAppTheme> AvailableThemes =>
+        LazyInitializer.EnsureInitialized(ref _cachedThemes, ref _discoveryLock,
+            () => DiscoverThemes(Assembly.GetExecutingAssembly().GetTypes(), logger));
 
     public event Action? OnThemeChanged;
 
@@ -109,10 +113,13 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
         }
     }
 
-    private static IReadOnlyList<IAppTheme> DiscoverThemesStatic()
+    /// <summary>
+    /// Creates one instance of every concrete <see cref="IAppTheme"/> in <paramref name="types"/>, the default theme
+    /// first and the others by name. A theme that can't be created is skipped with a warning.
+    /// </summary>
+    internal static IReadOnlyList<IAppTheme> DiscoverThemes(IEnumerable<Type> types, ILogger logger)
     {
-        var themeTypes = Assembly.GetExecutingAssembly()
-            .GetTypes()
+        var themeTypes = types
             .Where(t => typeof(IAppTheme).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
 
         var themes = new List<IAppTheme>();
@@ -125,9 +132,10 @@ public class ThemeService(ProtectedLocalStorage localStorage, ILogger<ThemeServi
                     themes.Add(theme);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore theme types that cannot be instantiated with a parameterless constructor
+                // For example a theme without a parameterless constructor, or one whose constructor throws.
+                logger.LogWarning(ex, "Theme {ThemeType} could not be created and is not offered", type.FullName);
             }
         }
 

@@ -25,6 +25,9 @@ public partial class EventForensics : IDisposable
     [Inject]
     public ITimeZoneService TimeZoneService { get; set; } = null!;
 
+    [Inject]
+    public ILogger<EventForensics> Logger { get; set; } = null!;
+
     [SupplyParameterFromQuery(Name = "eventId")]
     public string? EventIdParam { get; set; }
 
@@ -74,7 +77,7 @@ public partial class EventForensics : IDisposable
     {
         if (eventData == null || string.IsNullOrEmpty(eventData.RawJson)) return;
 
-        if (await JSRuntime.TryCopyToClipboardAsync(eventData.RawJson))
+        if (await JSRuntime.TryCopyToClipboardAsync(eventData.RawJson, Logger))
         {
             Snackbar.Add(L["JsonCopiedToClipboard"], Severity.Success);
         }

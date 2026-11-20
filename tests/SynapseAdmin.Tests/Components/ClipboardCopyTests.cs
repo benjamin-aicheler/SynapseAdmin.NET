@@ -2,6 +2,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using SynapseAdmin.Components.Pages;
@@ -10,6 +11,7 @@ using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests.Components;
@@ -39,6 +41,31 @@ public class ClipboardCopyTests : DetailPageTestBase
     private void ClickButtonTitled<T>(IRenderedComponent<T> cut, string titleKey) where T : IComponent =>
         cut.FindAll("button").Single(b => b.GetAttribute("title") == L[titleKey].Value).Click();
 
+    /// <summary>Records what the page of type <typeparamref name="T"/> logs.</summary>
+    private RecordingLogger<T> PageLogs<T>()
+    {
+        var logger = new RecordingLogger<T>();
+        Services.AddSingleton<ILogger<T>>(logger);
+        return logger;
+    }
+
+    /// <summary>
+    /// A failed write is logged once at Debug with its exception, but without the copied text, which can be an access
+    /// token. A successful write isn't logged.
+    /// </summary>
+    private static void AssertClipboardLog<T>(RecordingLogger<T> logger, string? failure)
+    {
+        if (failure == null)
+        {
+            Assert.Empty(logger.Entries);
+            return;
+        }
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal((LogLevel.Debug, "Clipboard write failed"), (entry.Level, entry.Template));
+        Assert.Empty(entry.Arguments);
+        Assert.IsType(failure == "js" ? typeof(JSException) : typeof(InvalidOperationException), entry.Exception);
+    }
+
     /// <summary>Asserts the single clipboard write and the single snackbar.</summary>
     private void AssertCopied(string text, string message, Severity severity)
     {
@@ -54,6 +81,7 @@ public class ClipboardCopyTests : DetailPageTestBase
     public void RegistrationTokens_CopyButton(string? failure, string messageKey, Severity severity)
     {
         SetupClipboard(failure);
+        var logger = PageLogs<RegistrationTokens>();
         Services.AddSingleton(Stub.Create<IRegistrationTokenService>(s => s.On(nameof(IRegistrationTokenService.GetRegistrationTokensAsync), _ =>
             Task.FromResult(OperationResult<List<RegistrationTokenViewModel>>.Ok([new() { Token = "tok-123" }])))));
         var cut = Render<RegistrationTokens>();
@@ -62,6 +90,7 @@ public class ClipboardCopyTests : DetailPageTestBase
         ClickButtonTitled(cut, "CopyToClipboard");
 
         cut.WaitForAssertion(() => AssertCopied("tok-123", L[messageKey], severity));
+        AssertClipboardLog(logger, failure);
     }
 
     [Theory]
@@ -71,6 +100,7 @@ public class ClipboardCopyTests : DetailPageTestBase
     public void EventForensics_CopyJsonButton(string? failure, string messageKey, Severity severity)
     {
         SetupClipboard(failure);
+        var logger = PageLogs<EventForensics>();
         Services.AddSingleton(Stub.Create<IEventForensicsService>(s => s.On(nameof(IEventForensicsService.FetchEventAsync), _ =>
             Task.FromResult(OperationResult<EventForensicsViewModel>.Ok(
                 new EventForensicsViewModel { EventId = "$e", Type = "m.room.message", Sender = "@a:hs", RawJson = """{"a":1}""" })))));
@@ -81,6 +111,7 @@ public class ClipboardCopyTests : DetailPageTestBase
         ClickButtonTitled(cut, "CopyJson");
 
         cut.WaitForAssertion(() => AssertCopied("""{"a":1}""", L[messageKey], severity));
+        AssertClipboardLog(logger, failure);
     }
 
     /// <summary>
@@ -94,6 +125,7 @@ public class ClipboardCopyTests : DetailPageTestBase
     public async Task UserDetails_LoginAsUser(string? failure, bool copied)
     {
         SetupClipboard(failure);
+        var logger = PageLogs<UserDetails>();
         Services.AddSingleton(Stub.Create<IUserService>(s => s
             .On(nameof(IUserService.GetUserDetailsAsync), _ => Task.FromResult(OperationResult<UserDetailViewModel>.Ok(
                 new UserDetailViewModel { UserId = "@alice:hs", DisplayName = "Alice Example" })))
@@ -108,6 +140,7 @@ public class ClipboardCopyTests : DetailPageTestBase
 
         cut.WaitForAssertion(() => Assert.Single(Confirmations));
         AssertCopied("syt_token", copied ? "Logged in " + L["TokenCopiedToClipboard"] : "Logged in", Severity.Info);
+        AssertClipboardLog(logger, failure);
         Confirmations[0].Result.SetResult(true);
         await login;
     }
@@ -122,5 +155,19 @@ public class ClipboardCopyTests : DetailPageTestBase
 
         Assert.Equal(expected, await JSInterop.JSRuntime.TryCopyToClipboardAsync("text"));
         Assert.Equal("text", Assert.Single(JSInterop.VerifyInvoke(WriteText).Arguments));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("js")]
+    [InlineData("other")]
+    public async Task TryCopyToClipboardAsync_LogsAFailureAtDebug_WithoutTheText(string? failure)
+    {
+        SetupClipboard(failure);
+        var logger = new RecordingLogger<ClipboardCopyTests>();
+
+        await JSInterop.JSRuntime.TryCopyToClipboardAsync("syt_token", logger);
+
+        AssertClipboardLog(logger, failure);
     }
 }
