@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-11-13
+**Last updated:** 2026-11-20
 **Maintainer(s):** Benjamin Aicheler
 
 ## 1. Context
@@ -95,7 +95,7 @@ flowchart TB
 | Presentation Pages & Layout | `src/SynapseAdmin/Components/` | Routed Blazor pages (18 `@page` routes + dialogs + `MainLayout`, `NavMenu`, `RoomGalleryGrid`), code-behind `.razor.cs`, JS interop (`wwwroot/js/`), ViewModel binding, and stale-selection cancellation on detail pages. | `Interfaces/`, `Models/ViewModels/`, MudBlazor, `IStringLocalizer` |
 | HTTP Controllers | `src/SynapseAdmin/Controllers/` | Cookie bridge sign-in/out (`AuthController`), authorized conditional/ranged media streaming (`MediaController`, `PartialMediaResult`), and culture cookie switching (`CultureController`). | `ISessionBridgeService`, `IMatrixSessionService`, `IMediaService`, ASP.NET Core MVC/Antiforgery |
 | Domain Services | `src/SynapseAdmin/Services/` & `Interfaces/` | Business logic, Matrix orchestration, ViewModel mapping (`Extensions/Mapping/`), caching room names/active purges (`RoomService`), media deduplication, and `OperationResult` error wrapping (`GatewayCallExtensions`). | `IMatrixSessionService`, `IMatrixGateway`, `IMemoryCache`, `ILogger<T>`, `IStringLocalizer` |
-| Session, Auth & Rate Limiting | `src/SynapseAdmin/Services/` & `Interfaces/` | Blazor `AuthenticationStateProvider` (`ProtectedLocalStorage`), session lifecycle (`MatrixSessionService`), browser-bound bridge (`SessionBridgeService`, `AuthCookieService`), and dual-key login throttling (`LoginRateLimiter`, `MemoryLoginRateLimitStore`). | `IMatrixAuthGateway`, `IClientIdentityProvider`, `AntiforgeryStateProvider`, `IMemoryCache` |
+| Session, Auth & Rate Limiting | `src/SynapseAdmin/Services/` & `Interfaces/` | Blazor `AuthenticationStateProvider` (`MatrixAuthenticationStateProvider`, which components use as `IMatrixAuthStateService`; `ProtectedLocalStorage`), session lifecycle (`MatrixSessionService`), browser-bound bridge (`SessionBridgeService`, `AuthCookieService`), and dual-key login throttling (`LoginRateLimiter`, `MemoryLoginRateLimitStore`). | `IMatrixAuthGateway`, `IClientIdentityProvider`, `AntiforgeryStateProvider`, `IMemoryCache` |
 | UI Support Services & Themes | `src/SynapseAdmin/Services/` & `Infrastructure/Themes/` | Reflection-discovered themes (`IAppTheme` + 12 themes), persisted light/dark mode (`ThemeService`), and browser IANA timezone conversion (`TimeZoneService`). | `ProtectedLocalStorage`, `IJSRuntime` |
 | Gateway & Discovery Layer | `src/SynapseAdmin/Infrastructure/Gateways/` & `Interfaces/Gateways/` | Policy-enforced `.well-known` discovery & password login (`HomeserverDiscoveryClient`), gateway factory & caching (`MatrixAuthGateway`), Synapse/Tuwunel HTTP & JSON handling (`SynapseCompatibleAdminGateway`, `JsonStringConverter`), media stream ownership (`ResponseOwningStream`), and generic fallback (`GenericMatrixGateway`). | `LibMatrix`, `IHomeserverDestinationPolicy`, `IMemoryCache` |
 | Security & Data Protection | `src/SynapseAdmin/Infrastructure/Security/` & `DataProtection/` | SSRF/cleartext destination policy (`HomeserverDestinationPolicy`), SignalR circuit IP capture (`ClientIdentityCircuitHandler`, `ClientIdentityProvider`), and AES-256-GCM key ring encryption (`AesXmlEncryptor`, `AesXmlDecryptor`). | ASP.NET Core DataProtection, `IConfiguration`, `IHttpContextAccessor` |
@@ -104,8 +104,8 @@ flowchart TB
 
 ### Layering & dependency rules
 
-- **Presentation -> Interfaces & ViewModels only:** `.razor` and `.razor.cs` files must use the code-behind pattern (no inline `@code` blocks), bind only to `Models/ViewModels/`, and check server capabilities via `IMatrixGateway.SupportsAdminApi` rather than concrete gateway type checks.
-- **Services -> Gateways via Interfaces:** Every service has an `I*Service` interface in `Interfaces/` and interacts with Matrix exclusively through `IMatrixAuthGateway` / `IMatrixGateway`. All service methods return `OperationResult` or `OperationResult<T>`, catching `OperationCanceledException` silently (`Severity.Normal`) and returning localized user-safe messages on failure.
+- **Presentation -> Interfaces & ViewModels only:** `.razor` and `.razor.cs` files must use the code-behind pattern (no inline `@code` blocks), bind only to `Models/ViewModels/`, check server capabilities via `IMatrixGateway.SupportsAdminApi` rather than concrete gateway type checks, and use the login state through `IMatrixAuthStateService` rather than the concrete `MatrixAuthenticationStateProvider`.
+- **Services -> Gateways via Interfaces:** Every service has an `I*Service` interface in `Interfaces/` and interacts with Matrix exclusively through `IMatrixAuthGateway` / `IMatrixGateway`. All service methods return `OperationResult` or `OperationResult<T>` and run their gateway calls through `GatewayCallExtensions.RunGatewayCallAsync`, which turns `OperationCanceledException` into a silent `Cancelled()` result (`Severity.Normal`) and any other exception into a logged failure with a localized, user-safe message (§8). Services map DTOs to ViewModels with the extension methods in `Extensions/Mapping/`.
 - **Gateways encapsulate wire & SDK concerns:** Gateways own HTTP calls, URI encoding, JSON type coercion (`SynapseCompatibilityJsonOptions`), and response disposal (`ResponseOwningStream`), never exposing raw `HttpResponseMessage` or raw `LibMatrix` objects to the UI.
 - **Submodule isolation:** `LibMatrix/` and `ArcaneLibs/` are treated as immutable upstream dependencies; missing Synapse Admin endpoints or server quirks are implemented in `SynapseCompatibleAdminGateway` and `Models/`.
 
@@ -127,7 +127,7 @@ flowchart TB
     - Authenticated `IMatrixGateway` instances (`matrix_gateway:*`, 15 min sliding / 1 h absolute TTL; concurrent creations coalesced per key).
     - Session bridge entries (`session_bridge:*`, 60 s TTL, single-use).
     - Login rate-limit buckets (`login_ratelimit:*`, 1 min fixed window).
-    - Room name lookups (`room_name:*`, 30 min sliding / 2 h absolute TTL) and active room history purge IDs (`active_purge:*`, 24 h TTL) in `RoomService`.
+    - Room name lookups (`room_name:{homeserver}:{roomId}`, 30 min sliding / 2 h absolute TTL) and active room history purge IDs (`active_purge:{homeserver}:{roomId}`, 24 h TTL) in `RoomService`. `{homeserver}` is the lower-cased homeserver URL, so sessions on different homeservers never share entries.
 - **Data ownership:** The target Matrix homeserver is the sole source of truth for all Matrix entities and permissions. `SynapseAdmin.NET` owns only local operational logs, Data Protection key material, and ephemeral session/UI caches.
 - **Personal data (PII):** Matrix user IDs, display names, event/message payloads, media metadata, client IP addresses (for rate limiting and audit logs), and access tokens transit the server. Passwords are never persisted (forwarded only during `m.login.password`). Untrusted strings are sanitized via `.SanitizeForLogging()` before logging. Log retention beyond the 7-day rolling log default and GDPR governance are left to the deploying administrator.
 

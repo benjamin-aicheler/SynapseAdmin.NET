@@ -7,7 +7,7 @@ SynapseAdmin.NET supports multiple MudBlazor themes, allowing users to customize
 The application uses a reflection-based discovery system to find available themes:
 
 1.  **Interface**: Themes must implement the `IAppTheme` interface (found in `src/SynapseAdmin/Infrastructure/Themes/`).
-2.  **Discovery**: On startup, the `ThemeService` scans the assembly for all non-abstract classes that implement `IAppTheme`.
+2.  **Discovery**: The first time the theme list is needed, `ThemeService` scans the assembly for all non-abstract classes that implement `IAppTheme` and creates one instance of each, once per process. A theme needs a public parameterless constructor. A theme that can't be created (no such constructor, or a constructor that throws) is left out of the list and logged as a warning: `Theme {ThemeType} could not be created and is not offered`.
 3.  **Persistence**: The selected theme ID and the "Dark Mode" preference are automatically persisted in the browser's local storage using `ProtectedLocalStorage`.
 4.  **Application**: Themes are applied globally via the `MudThemeProvider` in `MainLayout.razor`.
 
@@ -18,7 +18,7 @@ To add a new custom theme (e.g., "Deep Sea"):
 1.  **Create a new theme class**:
     *   Navigate to `src/SynapseAdmin/Infrastructure/Themes/`.
     *   Create a new C# file (e.g., `DeepSeaTheme.cs`).
-    *   Implement the `IAppTheme` interface.
+    *   Implement the `IAppTheme` interface. The class needs a public parameterless constructor (the default one is enough).
 
 2.  **Define your palette**:
     *   Customize the `PaletteLight` and `PaletteDark` properties using hex codes or `MudBlazor.Colors`.
