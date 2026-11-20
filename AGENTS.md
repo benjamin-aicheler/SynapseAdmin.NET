@@ -4,7 +4,7 @@
 
 - **Purpose:** Self-hosted .NET 10 Blazor Server web app for administering Matrix Synapse and compatible homeservers (such as Tuwunel >= 1.8.1) via the Matrix Client-Server and Synapse Admin APIs, bundled with `LibMatrix` and `ArcaneLibs` git submodules and licensed under AGPL-3.0.
 - **Primary users / consumers:** Matrix homeserver administrators only (not general Matrix end users).
-- **Status:** Beta / Active Development (`v1.15.0-beta`) — auth, dashboard, user/room/media management, room gallery, room history, event reports, event forensics, registration tokens, federation destinations, server notices, background updates, bulk media maintenance, localization (EN/DE/FR), Tuwunel >= 1.8.1 support, and MudBlazor themes are implemented (see [SPEC.md](./SPEC.md)).
+- **Status:** Active Development (latest release `v1.15.0`) — auth, dashboard, user/room/media management, room gallery, room history, event reports, event forensics, registration tokens, federation destinations, server notices, background updates, bulk media maintenance, localization (EN/DE/FR), Tuwunel >= 1.8.1 support, and MudBlazor themes are implemented (see [SPEC.md](./SPEC.md)).
 - **Owner / team:** Benjamin Aicheler
 
 ## Tech Stack
@@ -52,8 +52,11 @@ dotnet test --filter "FullyQualifiedName~TestClassOrMethodName"
 /
 ├── SynapseAdmin.NET.slnx             # .NET 10 solution file
 ├── src/SynapseAdmin/                 # Main Blazor Server + MVC web application
-│   ├── Components/                   # Presentation layer: Pages/, Layout/, Shared/, dialogs (.razor + .razor.cs)
-│   ├── Controllers/                  # HTTP endpoints: AuthController, MediaController, CultureController
+│   ├── Components/                   # Presentation layer (.razor + .razor.cs): App, Routes, ThemeSelector, LanguageSelector, RedirectToLogin, _Imports
+│   │   ├── Pages/                    # Routed pages and their dialogs (*Dialog.razor)
+│   │   ├── Layout/                   # MainLayout, NavMenu, ReconnectModal
+│   │   └── Shared/                   # RoomGalleryGrid, DialogPresets, MediaPreviewLauncher
+│   ├── Controllers/                  # HTTP endpoints: AuthController, MediaController (+ PartialMediaResult), CultureController
 │   ├── Services/                     # Application layer: Matrix orchestration, session/auth, UI state
 │   ├── Interfaces/                   # Contracts for every service and gateway (Gateways/)
 │   ├── Infrastructure/               # Gateways/, Security/, DataProtection/, Serialization/, Themes/, Helpers/
@@ -61,15 +64,22 @@ dotnet test --filter "FullyQualifiedName~TestClassOrMethodName"
 │   ├── Extensions/                   # LoggingExtensions, FormatExtensions, GatewayCallExtensions, SortDirectionExtensions, SnackbarExtensions, JsRuntimeExtensions, Mapping/
 │   ├── Resources/                    # SharedResources*.resx (EN, DE, FR)
 │   ├── wwwroot/js/                   # auth-bridge.js, gallery-interop.js, timezone-interop.js
+│   ├── Properties/launchSettings.json # Local dev profiles (http://localhost:5235, https://localhost:7256)
+│   ├── appsettings.json              # Serilog sinks and log retention
 │   ├── Dockerfile                    # Multi-stage .NET 10 build running as non-root `app`
 │   └── Program.cs                    # DI registration and ASP.NET Core middleware pipeline
 ├── tests/SynapseAdmin.Tests/         # xUnit unit tests, bUnit tests (Components/), shared test doubles (TestSupport/), WebApplicationFactory tests
 ├── LibMatrix/                        # Matrix SDK + ArcaneLibs git submodules (DO NOT modify for app quirks)
 ├── reviews/                          # Timestamped code review reports
 ├── docs/archive/                     # Completed refactor plans (YYYY-MM-refactor-plan.md)
+├── assets/                           # Explainer video (README embeds an uploaded copy)
 ├── docker-compose.yml                # Production GHCR compose config
 ├── docker-compose.build.yml          # Local source build compose config
-├── .github/workflows/                # dotnet.yml, docker-image.yml, codeql.yml
+├── .github/
+│   ├── workflows/                    # dotnet.yml, docker-image.yml, codeql.yml
+│   └── dependabot.yml                # Weekly NuGet, Actions, Docker and DevContainer updates (not LibMatrix/)
+├── .devcontainer/                    # VS Code dev container (.NET 10, Node 24, gh CLI)
+├── .editorconfig                     # Formatting reference (see Code Conventions)
 └── README.md                         # User & deployment documentation
 ```
 
@@ -104,6 +114,7 @@ We strictly follow **GitHub Flow** (direct commits to `main` are prohibited):
 
 - **Before starting:** Sync `main` (`git checkout main && git pull origin main`). Read [SPEC.md](./SPEC.md), [ARCHITECTURE.md](./ARCHITECTURE.md), and if an active task is in progress, [PLAN.md](./PLAN.md) / [TODO.md](./TODO.md).
 - **Feature Lifecycle (`SPEC → PLAN → TODO`):** [SPEC.md](./SPEC.md) is the living system specification—extend it for new features first (tag new additions `[Planned]` until implemented). For non-trivial changes, fill single-task [PLAN.md](./PLAN.md) (`Draft` → `Approved`), then populate [TODO.md](./TODO.md) and execute one task at a time (ignore `PLAN.md` / `TODO.md` unless `PLAN.md` is active in `Approved` or `In Progress`). When finished (before PR merge or when starting the next task), finalize `[Planned]` updates in [SPEC.md](./SPEC.md) (and [ARCHITECTURE.md](./ARCHITECTURE.md) if structure/flows changed) and clear/reset [PLAN.md](./PLAN.md) and [TODO.md](./TODO.md) back to their blank templates.
+- **Where Documentation Goes:** AGENTS.md holds rules for working on the code (conventions, boundaries, pitfalls) and links elsewhere for background. [ARCHITECTURE.md](./ARCHITECTURE.md) describes how the system works and tracks technical and operational risks (§10). [SPEC.md](./SPEC.md) describes what the app does (requirements, acceptance criteria, edge cases written as behavior) and product or feature risks. Write each fact in one place and link to it from the others.
 - **Behavior-Preserving Refactors:** For a change that must not alter behavior, follow [REFACTOR_RULES.md](./REFACTOR_RULES.md), whether or not it is a task in a refactor plan. Commit characterization tests for code without tests before the production change, in the same PR. Keep mechanical and structural changes in separate passes. A pure constant extraction is checked by a byte-identical `SynapseAdmin.dll` instead (Phase 3 intro of the [archived refactor plan](./docs/archive/2026-11-refactor-plan.md)). The audit-only analyzer builds A1 (style) and A2 (quality) in its §1.2 measure warnings that the normal build doesn't report. An active refactor plan lives at the repo root as `REFACTOR_PLAN.md`. When all its tasks are merged, `git mv` it to `docs/archive/YYYY-MM-refactor-plan.md`, add an "Archived" line with the date and the last PR at the top, and fix its relative links (`../../`).
 - **Branching:** Create a dedicated branch per task (`ai/feature/issue-<number>-<description>` or `ai/bugfix/issue-<number>-<description>`, omitting `issue-<number>-` if no issue is linked). If no GitHub issue number was provided, ask the user whether to provide one or create one (optional if declined).
 - **Commits:** Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `refactor:`). Keep commits atomic and link issues (`Closes #42`, `Fixes #42`).
@@ -135,11 +146,13 @@ We strictly follow **GitHub Flow** (direct commits to `main` are prohibited):
 
 ## Security & Data Protection
 
-- **Cookie Bridge (`SessionBridgeService` → `AuthCookieService` → `AuthController.SignIn`):** Singleton `SessionBridgeService` creates single-use, 60-second keys bound to the circuit's `AntiforgeryStateProvider` token; circuit-scoped `IAuthCookieService` (`AuthCookieService`, the only entry point for `Login` and `NavMenu`) redeems them via `wwwroot/js/auth-bridge.js` (`POST /Auth/SignIn` with JSON `{ key }` and `RequestVerificationToken` header, returning `204` + `.AspNetCore.Cookies`, followed by `forceLoad: true`). Consumption is atomic (`Interlocked`); a mismatched binding rejects the request **without burning the key**.
-- **Data Protection at Rest:** Keys persist in `./keys` (`/app/keys` in Docker) and are encrypted with AES-256-GCM (PBKDF2-SHA256) using `DP_PASSPHRASE` (`AesXmlEncryptor` / `AesXmlDecryptor`).
-- **Reverse Proxy & Throttling:** `ForwardedHeadersMiddleware` (`ForwardLimit = 1`) trusts loopback + RFC 1918/4193 ranges by default, or `TRUSTED_PROXIES`. `ILoginRateLimiter` throttles password logins per IP *and* cross-IP `(homeserver, account)`, and token logins **per IP only** (#368—never reintroduce a homeserver-only bucket). `POST /Auth/SignIn` is separately guarded by ASP.NET Core's `"auth"` rate limiter. Always get client IP via `IClientIdentityProvider` (`ClientIdentityCircuitHandler` populates `ClientIdentityProvider` on open/reconnect, falling back to ambient `HttpContext` outside circuits; missing IP falls back to shared `"unknown"` bucket with a warning).
-- **SSRF / Cleartext Policy (`IHomeserverDestinationPolicy`):** `HomeserverDiscoveryClient` enforces HTTPS (unless `http://host:port` is in `HOMESERVER_ALLOWLIST`) and refuses internal/private addresses (`loopback`, `link-local`, RFC 1918, CGNAT, ULA) across `.well-known` hops, redirects, and resolved socket IPs (`SocketsHttpHandler.ConnectCallback`). A non-empty allowlist is a hard gate on entry hosts (misconfigured entries fail closed); `MatrixSessionService` maps `HomeserverNotAllowedException` to localized `HomeserverNotAllowed`. `MatrixAuthGateway` constructs `AuthenticatedHomeserver*` directly from validated `WellKnownUris`. *Known limitation:* post-login token-bearing calls use `LibMatrix`'s static `MatrixHttpClient` (validated base URLs, but resolved IPs are not re-checked at connect time).
-- **Media Streaming (`MediaController`):** `Download`, `Preview`, and `Avatar` (cookie-authenticated native browser streaming for large files) must authorize, restore session, and open `IMatrixGateway.OpenMediaAsync` (`ResponseHeadersRead`) **before** evaluating `If-None-Match` (including `*` and `Range` requests, #370)—missing/quarantined media returns `404`, never `304`, and `304` disposes the unread stream. Forward single `bytes` ranges (with strong `If-Range` match) upstream through `IMatrixGateway.OpenMediaAsync` (#372): relay `206` via `PartialMediaResult` with `Content-Range`, pass through `416`, or serve `200` (homeserver ignored range) in full. `MatrixGatewayBase.OpenMediaAsync` calls `/_matrix/client/v1/media/download` via `SendUnhandledAsync` and falls back to `/_matrix/media/v3/download` only on `M_UNRECOGNIZED` (or bare `404`/`405`), never on `M_NOT_FOUND`. Serve protected media with `Cache-Control: private, no-cache` so deletion, quarantine, or revocation takes effect immediately. `Download` and `Preview` set `X-Content-Type-Options: nosniff` themselves, in addition to the global middleware. This is deliberate defense in depth for user-uploaded content (#396), so don't remove it as a duplicate.
+[ARCHITECTURE.md](./ARCHITECTURE.md) describes how these mechanisms work: the login, cookie bridge and media flows in §5, data at rest in §4, configuration in §7, the destination policy and client IP handling in §8, and known limitations in §10. When you change them, keep these rules:
+
+- **Cookie Bridge:** Start the handoff only through `IAuthCookieService` (`Login` and `NavMenu` use it). Bridge keys stay single-use, expire after 60 seconds, stay bound to the circuit's antiforgery token and travel only in the `POST /Auth/SignIn` body. Claim a key atomically (`Interlocked`), and reject a mismatched binding **without burning the key**.
+- **Data Protection at Rest:** The key ring in `./keys` is encrypted with `DP_PASSPHRASE`. Renaming or moving `AesXmlDecryptor` makes the existing keys unreadable (see Dynamically Wired Code).
+- **Rate Limiting & Client IP:** Throttle password logins per IP *and* per cross-IP `(homeserver, account)`, and token logins **per IP only** (#368). Never reintroduce a homeserver-only bucket. Keep the separate `"auth"` rate limiter on `POST /Auth/SignIn`. Get the client IP only through `IClientIdentityProvider`; a missing IP goes to the shared `"unknown"` bucket with a warning.
+- **SSRF / Cleartext Policy:** Send every unauthenticated discovery and login request through `HomeserverDiscoveryClient`, so that `IHomeserverDestinationPolicy` checks the entry host, every `.well-known` hop, every redirect and the resolved socket IP. A non-empty `HOMESERVER_ALLOWLIST` stays a hard gate that fails closed. Show `HomeserverNotAllowedException` only as the localized `HomeserverNotAllowed` message. Calls after login are not re-checked at connect time (ARCHITECTURE.md §10), so don't rely on the policy there.
+- **Media Streaming (`MediaController`):** `Download`, `Preview` and `Avatar` authorize, restore the session and open the media (`IMatrixGateway.OpenMediaAsync`, `ResponseHeadersRead`) **before** they evaluate `If-None-Match`, including `*` and `Range` requests (#370). Missing or quarantined media returns `404`, never `304`, and a `304` disposes the unread stream. Forward only a single `bytes` range, and only if an `If-Range` validator, when present, matches strongly (#372). Relay the homeserver's `206` (through `PartialMediaResult`), its `416`, or its full `200`. Fall back to `/_matrix/media/v3/download` only on `M_UNRECOGNIZED` or a bare `404`/`405`, never on `M_NOT_FOUND`. Keep `Cache-Control: private, no-cache` on protected media, so deletion, quarantine or revocation takes effect at once. `Download` and `Preview` set `X-Content-Type-Options: nosniff` themselves, in addition to the global middleware. This is deliberate defense in depth for user-uploaded content (#396), so don't remove it as a duplicate.
 
 ## Known Pitfalls
 

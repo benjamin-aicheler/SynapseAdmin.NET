@@ -117,8 +117,8 @@ SynapseAdmin.NET addresses this by acting as a dedicated, containerized administ
 - **Plain HTTP cookie rejection:** Non-localhost HTTP access cannot store `CookieSecurePolicy.Always` cookies; `NavMenu` warns the user (`HttpsRequiredForMediaWarning`) and skips cookie sync, while `AuthController.SignIn` logs a warning.
 - **Missing client IP:** If a reverse proxy omits client IP (e.g., Unix socket) or is not in `TRUSTED_PROXIES`, `ClientIdentityCircuitHandler` and `MatrixSessionService` log a warning and fall back to the shared `"unknown"` rate-limit bucket rather than per-circuit random keys.
 - **Missing room on the gallery page:** If `/rooms/{RoomId}/gallery` can't load the room, the page shows the error once as a snackbar and in an alert ("room not found" if the result has no message), with a button back to the room list. It doesn't render an empty gallery, which would load the room a second time (#480).
-- **Media download endpoint fallback:** `MatrixGatewayBase.OpenMediaAsync` calls `/_matrix/client/v1/media/download` and falls back to `/_matrix/media/v3/download` only on `M_UNRECOGNIZED` (or bare `404`/`405`), never on `M_NOT_FOUND`.
-- **Synapse/Tuwunel inconsistencies:** Handled via `SynapseCompatibilityJsonOptions` (`JsonStringConverter`), separate v3/v2 `creation_ts` mapping, `avatar` vs `avatar_url` DTO mapping, `RoomService` name caching for `/statistics/database/rooms`, localpart search for `/statistics/users/media`, and ordinal `mxc://` deduplication.
+- **Homeservers without authenticated media:** Media is fetched from the authenticated `/_matrix/client/v1/media/download` endpoint first. If the homeserver doesn't support it (`M_UNRECOGNIZED`, or a bare `404`/`405`), the legacy `/_matrix/media/v3/download` endpoint is used instead. Media the homeserver reports as missing (`M_NOT_FOUND`) isn't requested again from the legacy endpoint.
+- **Synapse/Tuwunel inconsistencies:** Lists load when `next_token` is a number instead of a string. User creation dates are correct on the user list (milliseconds) and on user details (seconds). Room avatars (`avatar` in the room admin API) and user avatars (`avatar_url`) both display. The dashboard's largest rooms show names although `/statistics/database/rooms` returns none. A user's overall media totals are found by a localpart search on `/statistics/users/media`. Each `mxc://` URI appears once per room (AC-6, AC-9).
 
 ## 11. Dependencies & Constraints
 
@@ -137,13 +137,11 @@ SynapseAdmin.NET addresses this by acting as a dedicated, containerized administ
 
 ## 13. Risks
 
+Technical and operational risks of the baseline (connect-time checks after login, `DP_PASSPHRASE`, `TRUSTED_PROXIES`, upstream API changes, the `LibMatrix` submodule, in-memory state, the font CDN) are tracked in [ARCHITECTURE.md §10](./ARCHITECTURE.md#10-technical-debt--risks). Use this table for product and feature risks, such as those of a `[Planned]` feature.
+
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Post-login `LibMatrix` `HttpClient` lacks connect-time IP re-checking | Low | Medium | Discovery and password login enforce connect-time IP checks via `HomeserverDiscoveryClient`; post-login requests use validated `WellKnownUris`. |
-| Missing or weak `DP_PASSPHRASE` in deployment | Medium | High | Log startup warning if unset; document mandatory unique passphrase and rotation impact in `README.md` and `docker-compose.yml`. |
-| Misconfigured `TRUSTED_PROXIES` behind reverse proxy | Medium | Medium | Default to loopback + RFC 1918 + RFC 4193 with `ForwardLimit = 1`; log warning when client IP is unavailable; document proxy header config. |
-| Upstream Synapse / Tuwunel Admin API changes | Medium | Medium | Isolate protocol handling in `SynapseCompatibleAdminGateway` and verify quirks with unit and bUnit tests. |
-| Outdated `LibMatrix` / `ArcaneLibs` git submodule | Low | Medium | Track upstream changes manually since Dependabot does not cover git submodules (`.github/dependabot.yml`). |
+| None beyond the technical risks in ARCHITECTURE.md §10. | — | — | — |
 
 ## 14. Open Questions
 
@@ -157,3 +155,4 @@ SynapseAdmin.NET addresses this by acting as a dedicated, containerized administ
 | 2026-11-13 | Restrict intended target audience strictly to homeserver administrators (non-admin end-user workflows out of scope). | Aligns with product purpose as a server administration tool rather than a Matrix client. | Benjamin Aicheler |
 | 2026-11-13 | Leave external hosting, log aggregation/monitoring, and GDPR retention governance to each deploying administrator without fixed SLA/scale mandates. | Self-hosted deployment model leaves infrastructure and compliance policies under operator control. | Benjamin Aicheler |
 | 2026-11-13 | Retain external Google Fonts CDN (`fonts.googleapis.com`) in `App.razor` for now. | Offline/air-gapped deployments are not currently targeted. | Benjamin Aicheler |
+| 2026-11-20 | Track technical and operational risks only in ARCHITECTURE.md §10; §13 here keeps product and feature risks. | Four of the five rows were already in ARCHITECTURE.md, and two copies drift apart. | Benjamin Aicheler |
