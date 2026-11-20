@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Interfaces;
@@ -8,6 +9,7 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests.Components;
@@ -310,6 +312,32 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
             Task.FromException<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>(new InvalidOperationException("boom")));
 
         AssertPurgeClearedAndReported(cut, Localizer["ErrorFetchingPurgeStatus"].Value, Severity.Error);
+    }
+
+    /// <summary>
+    /// If the error cleanup after a failed status request fails too, for example because the circuit is gone, the
+    /// polling error is still logged and the cleanup failure doesn't escape.
+    /// </summary>
+    [Fact]
+    public async Task FailingCleanupAfterAPollingError_StillLogsThePollingError()
+    {
+        var logger = new RecordingLogger<RoomDetails>();
+        Services.AddSingleton<ILogger<RoomDetails>>(logger);
+        var snackbarTried = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        SnackbarStub.On(nameof(ISnackbar.Add), _ =>
+        {
+            snackbarTried.TrySetResult();
+            throw new InvalidOperationException("circuit gone");
+        });
+        var pollingError = new InvalidOperationException("boom");
+
+        RenderPurgingRoom(() => Task.FromException<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>(pollingError));
+
+        await snackbarTried.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(RoomA, Assert.Single(ClearCalls)[0]);
+        var error = Assert.Single(logger.Entries, e => e.Level == LogLevel.Error);
+        Assert.Equal("Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", error.Template);
+        Assert.Same(pollingError, error.Exception);
     }
 
     /// <summary>Navigating away stops polling: a late "complete" for room A's purge changes nothing.</summary>
