@@ -122,10 +122,10 @@ SynapseAdmin.NET addresses this by acting as a dedicated, containerized administ
 
 ## 11. Dependencies & Constraints
 
-- **Framework & packages:** `.NET 10` (`net10.0`), `MudBlazor` `9.12.0`, `MudBlazor.Translations` `3.6.0`, `Serilog.AspNetCore` `10.0.0`, `Serilog.Sinks.File` `7.0.0`.
+- **Framework & packages:** `.NET 10` (`net10.0`), `MudBlazor` `9.14.0`, `MudBlazor.Translations` `3.7.0`, `Serilog.AspNetCore` `10.0.0`, `Serilog.Sinks.File` `7.0.0`.
 - **Submodules:** `LibMatrix` (`SynapseAdmin.NET` branch) and `ArcaneLibs` (both AGPL-3.0); must not be modified locally for Synapse Admin quirks.
 - **Deployment constraints:** Docker container runs as non-root `app` (`UID 1654`) requiring writable `./keys` and `./logs` mounts; remote deployments require a TLS-terminating reverse proxy forwarding `X-Forwarded-For` and `X-Forwarded-Proto`; multi-replica setups require sticky sessions and shared `/app/keys` with identical `DP_PASSPHRASE`.
-- **Test dependencies:** xUnit `2.9.3`, bUnit `2.15.2`, `Microsoft.AspNetCore.Mvc.Testing` `10.0.0`.
+- **Test dependencies:** xUnit `2.9.3`, bUnit `2.15.2`, `Microsoft.AspNetCore.Mvc.Testing` `10.0.15`.
 
 ## 12. Success Metrics
 

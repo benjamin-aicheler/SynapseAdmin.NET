@@ -12,7 +12,7 @@
 | Area | Technology | Version |
 |---|---|---|
 | Language | C# (Nullable enabled) | .NET 10 (`net10.0`) |
-| Framework & UI | ASP.NET Core Blazor Server (Interactive Server) + MudBlazor | .NET 10 / MudBlazor `9.12.0` (`MudBlazor.Translations` `3.6.0`) |
+| Framework & UI | ASP.NET Core Blazor Server (Interactive Server) + MudBlazor | .NET 10 / MudBlazor `9.14.0` (`MudBlazor.Translations` `3.7.0`) |
 | Matrix SDKs | `LibMatrix` & `ArcaneLibs` (git submodules) | Branch `SynapseAdmin.NET` |
 | Storage & State | No local DB (homeserver is source of truth); `ProtectedLocalStorage`, `IMemoryCache`, file keys (`./keys`), Serilog (`./logs`) | Serilog.AspNetCore `10.0.0` |
 | Package Manager | NuGet (`.NET CLI`) + Git submodules | `.NET 10 SDK` |
