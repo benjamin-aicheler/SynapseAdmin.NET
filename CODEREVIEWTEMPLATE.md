@@ -6,7 +6,7 @@ How to review SynapseAdmin.NET and write the report. The report skeleton is in [
 
 - Review the diff against `main` (`git diff main...HEAD`) unless you were asked for a PR, a file set or the whole codebase. Record the commit SHA: the line numbers in the report refer to it.
 - Read [AGENTS.md](./AGENTS.md) first. Its sections are the checklist (see [What to Check](#4-what-to-check)), so this template doesn't repeat them. Read the parts of [SPEC.md](./SPEC.md) and [ARCHITECTURE.md](./ARCHITECTURE.md) that cover the code under review.
-- Run `dotnet build` and `dotnet test` and record the results. If you can't run them, say why.
+- Run `dotnet build` and `dotnet test` and record the results. If the diff changes only Markdown files, skip them and record "not run, Markdown only". If you can't run them, say why.
 - Don't review `LibMatrix/` (git submodule). Read it only to confirm how the SDK behaves.
 
 ## 2. Severity and Review Status
