@@ -1,9 +1,10 @@
-# REFACTOR_PLAN.md
+# REFACTOR_PLAN.md (archived)
 
+> **Archived:** completed on 2026-11-20 (last PR #494) and moved here from the repo root. Nothing in it is left to do. The rules that apply to later changes are in [AGENTS.md](../../AGENTS.md).
 > **What this is:** the task list for a behavior-preserving refactor of SynapseAdmin.NET, built from a read-only code-quality and architecture audit.
 > **Current as of:** `main` @ `836c091` (2026-11-14). **All line numbers refer to this revision.** The audit itself ran at `e34a2f3`; findings fixed since then are listed in [Appendix A](#appendix-a-findings-resolved-since-the-audit).
 > **Scope:** `src/SynapseAdmin/**` and `tests/SynapseAdmin.Tests/**`. The `LibMatrix/` and `ArcaneLibs/` submodules are **out of scope** (AGENTS.md forbids modifying them).
-> **Execution rules:** every task is executed under [REFACTOR_RULES.md](./REFACTOR_RULES.md): one task ID per pass, < 200 changed lines, mechanical and structural changes kept apart, pre-flight and post-edit build + test, characterization tests before Phase 2/3 structural edits. Project conventions in [AGENTS.md](./AGENTS.md) apply throughout.
+> **Execution rules:** every task is executed under [REFACTOR_RULES.md](../../REFACTOR_RULES.md): one task ID per pass, < 200 changed lines, mechanical and structural changes kept apart, pre-flight and post-edit build + test, characterization tests before Phase 2/3 structural edits. Project conventions in [AGENTS.md](../../AGENTS.md) apply throughout.
 > **Status:** every Phase 1–3 task is merged; the last, P3-12, in #491. The last open finding, O-01, was fixed in PR #493, so nothing in this plan is left to do.
 
 ---
@@ -118,7 +119,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 | `RoomGalleryGrid.OnSentinelIntersected` | `[JSInvokable]`, called from `wwwroot/js/gallery-interop.js` |
 | `PartialMediaResult.ExecuteResultAsync` | ASP.NET Core `IActionResult` pipeline |
 | All controller actions (`MediaController.Avatar/Download/Preview`, `AuthController.SignIn/SignOutAction`, `CultureController.Set`) | Attribute/convention routing (`[controller]/[action]`). JS and `NavigationManager` call them by URL string. |
-| All `IAppTheme` implementations in `Infrastructure/Themes/` | Reflection discovery (`ThemeService.DiscoverThemesStatic`) |
+| All `IAppTheme` implementations in `Infrastructure/Themes/` | Reflection discovery (`ThemeService.DiscoverThemes`) |
 | `AesXmlDecryptor` | Instantiated by ASP.NET Core Data Protection from `typeof(AesXmlDecryptor)` stored in key XML |
 | Private DTO classes in `HomeserverDiscoveryClient` and every type under `Models/Responses`, `Models/Requests` | `System.Text.Json` (de)serialization |
 | `ClientIdentityCircuitHandler`, `ClientIdentityProvider` | DI (`TryAddEnumerable(CircuitHandler)`) |

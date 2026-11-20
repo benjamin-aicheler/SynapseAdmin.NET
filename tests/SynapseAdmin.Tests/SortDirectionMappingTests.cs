@@ -13,7 +13,7 @@ namespace SynapseAdmin.Tests;
 
 /// <summary>
 /// Characterization of the <c>dir</c> parameter ("f" forwards, "b" backwards) that the list services send to Synapse.
-/// Each list keeps its natural order when unsorted (REFACTOR_PLAN.md S-01): room and user lists read forwards (A→Z),
+/// Each list keeps its natural order when unsorted (AGENTS.md, Shared Helpers, whenUnsorted): room and user lists read forwards (A→Z),
 /// event reports and federation destinations read backwards (newest first).
 /// </summary>
 public sealed class SortDirectionMappingTests : IDisposable

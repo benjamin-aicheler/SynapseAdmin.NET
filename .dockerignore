@@ -16,6 +16,7 @@ docker-compose.build.yml
 .github/
 assets/
 reviews/
+docs/
 tests/
 keys/
 logs/

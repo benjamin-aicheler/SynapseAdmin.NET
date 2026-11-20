@@ -1,6 +1,6 @@
 # Strict Refactoring Ruleset
 
-When executing tasks from `REFACTOR_PLAN.md`, you must strictly follow these rules.
+When executing tasks from the active `REFACTOR_PLAN.md` at the repo root (completed plans are archived in `docs/archive/`), or any other refactor that must not change behavior, you must strictly follow these rules. For a refactor outside a plan, "the task" is the change you were asked to make, and the characterization rule applies to every structural change.
 
 ## 1. Scope & Execution Boundaries
 - **Single-Task Lock:** Execute ONLY the specific task ID assigned in the current prompt. Never perform "drive-by" cleanups in unrelated files.
