@@ -7,6 +7,7 @@ using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Services;
+using SynapseAdmin.Tests.TestSupport;
 using Xunit;
 
 namespace SynapseAdmin.Tests.Components;
@@ -67,24 +68,13 @@ public class JsDisposalTests : DetailPageTestBase
             Assert.Single(logger.Entries.Skip(entriesBefore)), "Time zone JS module disposal failed (circuit likely gone)");
     }
 
-    private static void AssertDisposalFailureLogged((LogLevel Level, Exception? Exception, string Message) entry, string message)
+    private static void AssertDisposalFailureLogged(RecordedLog entry, string message)
     {
         Assert.Equal(LogLevel.Debug, entry.Level);
         Assert.Equal("circuit gone", Assert.IsType<JSDisconnectedException>(entry.Exception).Message);
-        Assert.Equal(message, entry.Message);
-    }
-
-    private sealed class RecordingLogger<T> : ILogger<T>
-    {
-        public List<(LogLevel Level, Exception? Exception, string Message)> Entries { get; } = [];
-
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-        public bool IsEnabled(LogLevel logLevel) => true;
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter) =>
-            Entries.Add((logLevel, exception, formatter(state, exception)));
+        // A template without arguments is the logged message itself.
+        Assert.Equal(message, entry.Template);
+        Assert.Empty(entry.Arguments);
     }
 
     /// <summary>Answers the calls in <paramref name="results"/>; any other call and its disposal fail like a lost circuit.</summary>
