@@ -42,81 +42,59 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         memoryCache.Set(GetRoomNameCacheKey(roomId), resolvedName, RoomNameCacheOptions);
     }
 
-    public async Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            if (orderBy == "room_id") orderBy = "alphabetical";
-            var dir = direction.ToSynapseDir(whenUnsorted: "f");
-            var result = await Gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
-            if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
-
-            foreach (var room in result.Rooms)
+    public Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomList",
+            ex => logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging()),
+            async gateway =>
             {
-                CacheRoomName(room.RoomId, room.Name);
-            }
+                if (orderBy == "room_id") orderBy = "alphabetical";
+                var dir = direction.ToSynapseDir(whenUnsorted: "f");
+                var result = await gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
+                if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
 
-            var vms = result.Rooms.ToViewModels();
+                foreach (var room in result.Rooms)
+                {
+                    CacheRoomName(room.RoomId, room.Name);
+                }
 
-            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((result.TotalRooms, vms));
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging());
-            return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Failure(L["ErrorFetchingRoomList"]);
-        }
-    }
+                var vms = result.Rooms.ToViewModels();
 
-    public async Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<RoomDetailViewModel>.Failure(L["NotAuthenticated"]);
+                return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((result.TotalRooms, vms));
+            });
 
-        try
-        {
-            var r = await Gateway.GetRoomDetailsAsync(roomId, token);
-
-            if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
-
-            CacheRoomName(roomId, r.Name);
-
-            var membersTask = Gateway.GetRoomMembersAsync(roomId, token);
-            var stateTask = Gateway.GetRoomStateAsync(roomId, cancellationToken: token);
-            var mediaTask = Gateway.GetRoomMediaListAsync(roomId, token);
-
-            await Task.WhenAll(membersTask, stateTask, mediaTask);
-
-            var members = await membersTask;
-            var stateEvents = await stateTask;
-            var media = await mediaTask;
-
-            var vm = r.ToDetailViewModel();
-            ApplyTombstone(vm, stateEvents);
-            vm.Members = MapMembers(members, stateEvents);
-            vm.StateEvents = MapStateEvents(stateEvents);
-            vm.Media = media == null ? null : new RoomMediaViewModel
+    public Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomDetails",
+            ex => logger.LogError(ex, "Error fetching room details for {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
             {
-                Local = UniqueMxcs(media.Local).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
-                Remote = UniqueMxcs(media.Remote).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
-            };
+                var r = await gateway.GetRoomDetailsAsync(roomId, token);
 
-            return OperationResult<RoomDetailViewModel>.Ok(vm);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<RoomDetailViewModel>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching room details for {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult<RoomDetailViewModel>.Failure(L["ErrorFetchingRoomDetails"]);
-        }
-    }
+                if (r == null) return OperationResult<RoomDetailViewModel>.Failure(L["RoomNotFound"]);
+
+                CacheRoomName(roomId, r.Name);
+
+                var membersTask = gateway.GetRoomMembersAsync(roomId, token);
+                var stateTask = gateway.GetRoomStateAsync(roomId, cancellationToken: token);
+                var mediaTask = gateway.GetRoomMediaListAsync(roomId, token);
+
+                await Task.WhenAll(membersTask, stateTask, mediaTask);
+
+                var members = await membersTask;
+                var stateEvents = await stateTask;
+                var media = await mediaTask;
+
+                var vm = r.ToDetailViewModel();
+                ApplyTombstone(vm, stateEvents);
+                vm.Members = MapMembers(members, stateEvents);
+                vm.StateEvents = MapStateEvents(stateEvents);
+                vm.Media = media == null ? null : new RoomMediaViewModel
+                {
+                    Local = UniqueMxcs(media.Local).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
+                    Remote = UniqueMxcs(media.Remote).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
+                };
+
+                return OperationResult<RoomDetailViewModel>.Ok(vm);
+            });
 
     private static void ApplyTombstone(RoomDetailViewModel vm, SynapseAdminRoomStateResult? stateEvents)
     {
@@ -187,25 +165,117 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         return mxcUris.Where(m => !string.IsNullOrEmpty(m) && seen.Add(m)).Select(m => m!).ToList();
     }
 
-    public async Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<List<RoomMediaItemViewModel>>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            using var semaphore = new SemaphoreSlim(10, 10);
-            var tasks = UniqueMxcs(mxcUris).Select(async m =>
+    public Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingMedia",
+            ex => logger.LogError(ex, "Error fetching media metadata batch"),
+            async gateway =>
             {
-                await semaphore.WaitAsync(token);
-                try
+                using var semaphore = new SemaphoreSlim(10, 10);
+                var tasks = UniqueMxcs(mxcUris).Select(async m =>
                 {
-                    var vm = new RoomMediaItemViewModel { MediaId = m };
+                    await semaphore.WaitAsync(token);
                     try
                     {
-                        var meta = await Gateway.GetMediaMetadataAsync(m, token);
-                        if (meta != null)
+                        var vm = new RoomMediaItemViewModel { MediaId = m };
+                        try
                         {
-                            vm.ApplyMetadata(meta);
+                            var meta = await gateway.GetMediaMetadataAsync(m, token);
+                            if (meta != null)
+                            {
+                                vm.ApplyMetadata(meta);
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Silent cancellation for inner task
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogDebug(ex, "Failed to fetch metadata for media {Mxc}", m.SanitizeForLogging());
+                        }
+                        return vm;
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                });
+
+                var results = (await Task.WhenAll(tasks)).ToList();
+                return OperationResult<List<RoomMediaItemViewModel>>.Ok(results);
+            });
+
+    public Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorDeletingRoom",
+            ex => logger.LogError(ex, "Error deleting room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var req = new SynapseAdminRoomDeleteRequest
+                {
+                    Block = block,
+                    Purge = purge
+                };
+                await gateway.DeleteRoomAsync(roomId, req, token);
+                memoryCache.Remove(GetRoomNameCacheKey(roomId));
+                ClearActivePurgeId(roomId);
+                logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
+                return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
+            });
+
+    public Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorQuarantiningRoomMedia",
+            ex => logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                await gateway.QuarantineMediaByRoomIdAsync(roomId, token);
+                logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId.SanitizeForLogging());
+                return OperationResult.Ok(L["RoomMediaQuarantinedSuccessfully"]);
+            });
+
+    public Task<OperationResult> BlockRoomAsync(string roomId, bool block, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, block ? "ErrorBlockingRoom" : "ErrorUnblockingRoom",
+            ex => logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                await gateway.BlockRoomAsync(roomId, block, token);
+                logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId.SanitizeForLogging());
+                return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
+            });
+
+    public Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingLargestRooms",
+            ex => logger.LogError(ex, "Error fetching largest rooms"),
+            async gateway =>
+            {
+                var stats = await gateway.GetLargestRoomsAsync(token);
+                if (stats == null) return OperationResult<List<RoomStatisticsViewModel>>.Ok([]);
+
+                var tasks = stats.Rooms.Take(10).Select(async roomStat =>
+                {
+                    var vm = new RoomStatisticsViewModel
+                    {
+                        RoomId = roomStat.RoomId,
+                        EstimatedSize = roomStat.EstimatedSize,
+                        Name = roomStat.RoomId
+                    };
+
+                    if (memoryCache.TryGetValue<string>(GetRoomNameCacheKey(roomStat.RoomId), out var cachedName) &&
+                        !string.IsNullOrEmpty(cachedName))
+                    {
+                        vm.Name = cachedName;
+                        return vm;
+                    }
+
+                    try
+                    {
+                        var roomDetails = await gateway.GetRoomDetailsAsync(roomStat.RoomId, token);
+                        if (roomDetails != null)
+                        {
+                            if (!string.IsNullOrEmpty(roomDetails.Name))
+                            {
+                                vm.Name = roomDetails.Name;
+                            }
+                            CacheRoomName(roomStat.RoomId, roomDetails.Name);
                         }
                     }
                     catch (OperationCanceledException)
@@ -214,211 +284,56 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     }
                     catch (Exception ex)
                     {
-                        logger.LogDebug(ex, "Failed to fetch metadata for media {Mxc}", m.SanitizeForLogging());
+                        logger.LogDebug(ex, "Failed to fetch metadata for room {RoomId} during statistics gathering.", roomStat.RoomId.SanitizeForLogging());
                     }
                     return vm;
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
+                });
+
+                var result = (await Task.WhenAll(tasks)).ToList();
+                return OperationResult<List<RoomStatisticsViewModel>>.Ok(result);
             });
 
-            var results = (await Task.WhenAll(tasks)).ToList();
-            return OperationResult<List<RoomMediaItemViewModel>>.Ok(results);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<List<RoomMediaItemViewModel>>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching media metadata batch");
-            return OperationResult<List<RoomMediaItemViewModel>>.Failure(L["ErrorFetchingMedia"]);
-        }
-    }
-
-    public async Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var req = new SynapseAdminRoomDeleteRequest
+    public Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomMessages",
+            ex => logger.LogError(ex, "Error fetching room messages for {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
             {
-                Block = block,
-                Purge = purge
-            };
-            await Gateway.DeleteRoomAsync(roomId, req, token);
-            memoryCache.Remove(GetRoomNameCacheKey(roomId));
-            ClearActivePurgeId(roomId);
-            logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
-            return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error deleting room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorDeletingRoom"]);
-        }
-    }
+                var result = await gateway.GetRoomMessagesAsync(roomId, limit, from, dir, filter, to, token);
+                if (result == null) return OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel());
 
-    public async Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-        try
-        {
-            await Gateway.QuarantineMediaByRoomIdAsync(roomId, token);
-            logger.LogInformation("Successfully quarantined media for room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Ok(L["RoomMediaQuarantinedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error quarantining media for room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorQuarantiningRoomMedia"]);
-        }
-    }
-
-    public async Task<OperationResult> BlockRoomAsync(string roomId, bool block, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-        try
-        {
-            await Gateway.BlockRoomAsync(roomId, block, token);
-            logger.LogInformation("Successfully {Action} room {RoomId}", block ? "blocked" : "unblocked", roomId.SanitizeForLogging());
-            return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error blocking/unblocking room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult.Failure(block ? L["ErrorBlockingRoom"] : L["ErrorUnblockingRoom"]);
-        }
-    }
-
-    public async Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
-        try
-        {
-            var stats = await Gateway.GetLargestRoomsAsync(token);
-            if (stats == null) return OperationResult<List<RoomStatisticsViewModel>>.Ok([]);
-
-            var tasks = stats.Rooms.Take(10).Select(async roomStat =>
-            {
-                var vm = new RoomStatisticsViewModel
+                var vm = new RoomMessagesViewModel
                 {
-                    RoomId = roomStat.RoomId,
-                    EstimatedSize = roomStat.EstimatedSize,
-                    Name = roomStat.RoomId
+                    EndToken = result.End,
+                    Messages = result.Chunk
+                        .Where(m => m.Type == "m.room.message")
+                        .Select(m =>
+                        {
+                            string? content = null;
+                            string? body = null;
+                            if (m.Content is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } contentJson)
+                            {
+                                if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
+                                {
+                                    body = bodyProp.GetString();
+                                }
+                                content = contentJson.GetRawText();
+                            }
+
+                            return new RoomMessageItemViewModel
+                            {
+                                EventId = m.EventId,
+                                Sender = m.Sender,
+                                OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
+                                Type = m.Type,
+                                StateKey = m.StateKey,
+                                Content = content,
+                                Body = body
+                            };
+                        }).ToList()
                 };
 
-                if (memoryCache.TryGetValue<string>(GetRoomNameCacheKey(roomStat.RoomId), out var cachedName) &&
-                    !string.IsNullOrEmpty(cachedName))
-                {
-                    vm.Name = cachedName;
-                    return vm;
-                }
-
-                try
-                {
-                    var roomDetails = await Gateway.GetRoomDetailsAsync(roomStat.RoomId, token);
-                    if (roomDetails != null)
-                    {
-                        if (!string.IsNullOrEmpty(roomDetails.Name))
-                        {
-                            vm.Name = roomDetails.Name;
-                        }
-                        CacheRoomName(roomStat.RoomId, roomDetails.Name);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    // Silent cancellation for inner task
-                }
-                catch (Exception ex)
-                {
-                    logger.LogDebug(ex, "Failed to fetch metadata for room {RoomId} during statistics gathering.", roomStat.RoomId.SanitizeForLogging());
-                }
-                return vm;
+                return OperationResult<RoomMessagesViewModel>.Ok(vm);
             });
-
-            var result = (await Task.WhenAll(tasks)).ToList();
-            return OperationResult<List<RoomStatisticsViewModel>>.Ok(result);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<List<RoomStatisticsViewModel>>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching largest rooms");
-            return OperationResult<List<RoomStatisticsViewModel>>.Failure(L["ErrorFetchingLargestRooms"]);
-        }
-    }
-
-    public async Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<RoomMessagesViewModel>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var result = await Gateway.GetRoomMessagesAsync(roomId, limit, from, dir, filter, to, token);
-            if (result == null) return OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel());
-
-            var vm = new RoomMessagesViewModel
-            {
-                EndToken = result.End,
-                Messages = result.Chunk
-                    .Where(m => m.Type == "m.room.message")
-                    .Select(m =>
-                    {
-                        string? content = null;
-                        string? body = null;
-                        if (m.Content is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } contentJson)
-                        {
-                            if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
-                            {
-                                body = bodyProp.GetString();
-                            }
-                            content = contentJson.GetRawText();
-                        }
-
-                        return new RoomMessageItemViewModel
-                        {
-                            EventId = m.EventId,
-                            Sender = m.Sender,
-                            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
-                            Type = m.Type,
-                            StateKey = m.StateKey,
-                            Content = content,
-                            Body = body
-                        };
-                    }).ToList()
-            };
-
-            return OperationResult<RoomMessagesViewModel>.Ok(vm);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<RoomMessagesViewModel>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching room messages for {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult<RoomMessagesViewModel>.Failure(L["ErrorFetchingRoomMessages"]);
-        }
-    }
 
     private string GetActivePurgeCacheKey(string roomId) =>
         $"active_purge:{HomeserverCacheScope}:{roomId}";
@@ -441,189 +356,101 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         memoryCache.Remove(GetActivePurgeCacheKey(roomId));
     }
 
-    public async Task<OperationResult<string>> PurgeRoomHistoryAsync(string roomId, PurgeHistoryViewModel request, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var gatewayReq = new SynapseAdminPurgeHistoryRequest
+    public Task<OperationResult<string>> PurgeRoomHistoryAsync(string roomId, PurgeHistoryViewModel request, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorPurgingHistory",
+            ex => logger.LogError(ex, "Error purging history for room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
             {
-                DeleteLocalEvents = request.DeleteLocalEvents,
-                PurgeUpToEventId = request.PurgeUpToEventId,
-                PurgeUpToTs = request.PurgeUpToTs
-            };
-            var result = await Gateway.PurgeRoomHistoryAsync(roomId, gatewayReq, token);
-            if (result == null) return OperationResult<string>.Failure(L["ErrorPurgingHistory"]);
-            if (string.IsNullOrWhiteSpace(result.PurgeId))
+                var gatewayReq = new SynapseAdminPurgeHistoryRequest
+                {
+                    DeleteLocalEvents = request.DeleteLocalEvents,
+                    PurgeUpToEventId = request.PurgeUpToEventId,
+                    PurgeUpToTs = request.PurgeUpToTs
+                };
+                var result = await gateway.PurgeRoomHistoryAsync(roomId, gatewayReq, token);
+                if (result == null) return OperationResult<string>.Failure(L["ErrorPurgingHistory"]);
+                if (string.IsNullOrWhiteSpace(result.PurgeId))
+                {
+                    logger.LogWarning("Purge history request for room {RoomId} succeeded without returning a purge_id", roomId.SanitizeForLogging());
+                    return OperationResult<string>.Ok(string.Empty, L["PurgeStarted"]);
+                }
+
+                SetActivePurgeId(roomId, result.PurgeId);
+                return OperationResult<string>.Ok(result.PurgeId, L["PurgeStarted"]);
+            });
+
+    public Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingPurgeStatus",
+            ex => logger.LogError(ex, "Error getting purge status for purge {PurgeId}", purgeId.SanitizeForLogging()),
+            async gateway =>
             {
-                logger.LogWarning("Purge history request for room {RoomId} succeeded without returning a purge_id", roomId.SanitizeForLogging());
-                return OperationResult<string>.Ok(string.Empty, L["PurgeStarted"]);
-            }
+                var result = await gateway.GetPurgeHistoryStatusAsync(purgeId, token);
+                if (result == null) return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["ErrorFetchingPurgeStatus"]);
+                return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Ok(result);
+            });
 
-            SetActivePurgeId(roomId, result.PurgeId);
-            return OperationResult<string>.Ok(result.PurgeId, L["PurgeStarted"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<string>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error purging history for room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult<string>.Failure(L["ErrorPurgingHistory"]);
-        }
-    }
+    public Task<OperationResult<PublicRoomDirectoryViewModel>> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomDirectory",
+            ex => logger.LogError(ex, "Error fetching public room directory"),
+            async gateway =>
+            {
+                var result = await gateway.GetPublicRoomsAsync(limit, since, searchTerm, token);
+                // Collection read: a null result is an empty directory, not an error (#395, H-12).
+                if (result == null) return OperationResult<PublicRoomDirectoryViewModel>.Ok(new PublicRoomDirectoryViewModel());
+                var vm = result.ToViewModel();
+                return OperationResult<PublicRoomDirectoryViewModel>.Ok(vm);
+            });
 
-    public async Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["NotAuthenticated"]);
+    public Task<OperationResult<string>> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomDirectoryVisibility",
+            ex => logger.LogError(ex, "Error fetching directory visibility for room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var result = await gateway.GetRoomDirectoryVisibilityAsync(roomId, token);
+                if (result == null) return OperationResult<string>.Failure(L["ErrorFetchingRoomDirectoryVisibility"]);
+                return OperationResult<string>.Ok(result);
+            });
 
-        try
-        {
-            var result = await Gateway.GetPurgeHistoryStatusAsync(purgeId, token);
-            if (result == null) return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["ErrorFetchingPurgeStatus"]);
-            return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Ok(result);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error getting purge status for purge {PurgeId}", purgeId.SanitizeForLogging());
-            return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["ErrorFetchingPurgeStatus"]);
-        }
-    }
+    public Task<OperationResult> SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorSettingRoomDirectoryVisibility",
+            ex => logger.LogError(ex, "Error setting directory visibility for room {RoomId} to {Visibility}", roomId.SanitizeForLogging(), visibility.SanitizeForLogging()),
+            async gateway =>
+            {
+                await gateway.SetRoomDirectoryVisibilityAsync(roomId, visibility, token);
+                var msg = string.Equals(visibility, "private", StringComparison.OrdinalIgnoreCase)
+                    ? L["RoomRemovedFromDirectory"]
+                    : L["RoomDirectoryVisibilityUpdated"];
+                return OperationResult.Ok(msg);
+            });
 
-    public async Task<OperationResult<PublicRoomDirectoryViewModel>> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<PublicRoomDirectoryViewModel>.Failure(L["NotAuthenticated"]);
+    public Task<OperationResult> PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorSettingRoomAlias",
+            ex => logger.LogError(ex, "Error setting alias {Alias} for room {RoomId}", roomAlias.SanitizeForLogging(), roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                await gateway.PutRoomAliasAsync(roomAlias, roomId, token);
+                return OperationResult.Ok(L["AliasAddedSuccessfully"]);
+            });
 
-        try
-        {
-            var result = await Gateway.GetPublicRoomsAsync(limit, since, searchTerm, token);
-            // Collection read: a null result is an empty directory, not an error (#395, H-12).
-            if (result == null) return OperationResult<PublicRoomDirectoryViewModel>.Ok(new PublicRoomDirectoryViewModel());
-            var vm = result.ToViewModel();
-            return OperationResult<PublicRoomDirectoryViewModel>.Ok(vm);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<PublicRoomDirectoryViewModel>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching public room directory");
-            return OperationResult<PublicRoomDirectoryViewModel>.Failure(L["ErrorFetchingRoomDirectory"]);
-        }
-    }
+    public Task<OperationResult> DeleteRoomAliasAsync(string roomAlias, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorDeletingRoomAlias",
+            ex => logger.LogError(ex, "Error deleting alias {Alias}", roomAlias.SanitizeForLogging()),
+            async gateway =>
+            {
+                await gateway.DeleteRoomAliasAsync(roomAlias, token);
+                return OperationResult.Ok(L["AliasDeletedSuccessfully"]);
+            });
 
-    public async Task<OperationResult<string>> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var result = await Gateway.GetRoomDirectoryVisibilityAsync(roomId, token);
-            if (result == null) return OperationResult<string>.Failure(L["ErrorFetchingRoomDirectoryVisibility"]);
-            return OperationResult<string>.Ok(result);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<string>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching directory visibility for room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult<string>.Failure(L["ErrorFetchingRoomDirectoryVisibility"]);
-        }
-    }
-
-    public async Task<OperationResult> SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            await Gateway.SetRoomDirectoryVisibilityAsync(roomId, visibility, token);
-            var msg = string.Equals(visibility, "private", StringComparison.OrdinalIgnoreCase)
-                ? L["RoomRemovedFromDirectory"]
-                : L["RoomDirectoryVisibilityUpdated"];
-            return OperationResult.Ok(msg);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error setting directory visibility for room {RoomId} to {Visibility}", roomId.SanitizeForLogging(), visibility.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorSettingRoomDirectoryVisibility"]);
-        }
-    }
-
-    public async Task<OperationResult> PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            await Gateway.PutRoomAliasAsync(roomAlias, roomId, token);
-            return OperationResult.Ok(L["AliasAddedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error setting alias {Alias} for room {RoomId}", roomAlias.SanitizeForLogging(), roomId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorSettingRoomAlias"]);
-        }
-    }
-
-    public async Task<OperationResult> DeleteRoomAliasAsync(string roomAlias, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            await Gateway.DeleteRoomAliasAsync(roomAlias, token);
-            return OperationResult.Ok(L["AliasDeletedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error deleting alias {Alias}", roomAlias.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorDeletingRoomAlias"]);
-        }
-    }
-
-    public async Task<OperationResult<List<string>>> GetLocalRoomAliasesAsync(string roomId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<List<string>>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var result = await Gateway.GetLocalRoomAliasesAsync(roomId, token);
-            // Collection read: a null result means no aliases, not an error (#395, H-12).
-            if (result == null) return OperationResult<List<string>>.Ok([]);
-            return OperationResult<List<string>>.Ok(result);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<List<string>>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching aliases for room {RoomId}", roomId.SanitizeForLogging());
-            return OperationResult<List<string>>.Failure(L["ErrorFetchingRoomAliases"]);
-        }
-    }
+    public Task<OperationResult<List<string>>> GetLocalRoomAliasesAsync(string roomId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomAliases",
+            ex => logger.LogError(ex, "Error fetching aliases for room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var result = await gateway.GetLocalRoomAliasesAsync(roomId, token);
+                // Collection read: a null result means no aliases, not an error (#395, H-12).
+                if (result == null) return OperationResult<List<string>>.Ok([]);
+                return OperationResult<List<string>>.Ok(result);
+            });
 
     private static string? GetSafeString(JsonNode? node)
     {
