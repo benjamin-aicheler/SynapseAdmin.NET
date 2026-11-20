@@ -4,6 +4,7 @@
 > **Current as of:** `main` @ `836c091` (2026-11-14). **All line numbers refer to this revision.** The audit itself ran at `e34a2f3`; findings fixed since then are listed in [Appendix A](#appendix-a-findings-resolved-since-the-audit).
 > **Scope:** `src/SynapseAdmin/**` and `tests/SynapseAdmin.Tests/**`. The `LibMatrix/` and `ArcaneLibs/` submodules are **out of scope** (AGENTS.md forbids modifying them).
 > **Execution rules:** every task is executed under [REFACTOR_RULES.md](./REFACTOR_RULES.md): one task ID per pass, < 200 changed lines, mechanical and structural changes kept apart, pre-flight and post-edit build + test, characterization tests before Phase 2/3 structural edits. Project conventions in [AGENTS.md](./AGENTS.md) apply throughout.
+> **Status:** every Phase 1–3 task is merged; the last, P3-12, in #491. Only the open findings in [§6.1](#61-open-findings-change-behavior-so-not-part-of-any-task-above) remain.
 
 ---
 
@@ -396,7 +397,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 > Start a Phase 3 task only after the Phase 1/2 tasks for every module it touches are merged. Each task introduces **one** shared utility and migrates its call sites. Where the call-site count would push the diff over 200 lines, the task is split.
 >
-> REFACTOR_RULES §4.2 applies as in Phase 2. Where the call sites had no tests (P3-01 to P3-04, P3-07 to P3-09, P3-11), the PR's first commit characterizes them through the existing components and services, and the refactor commit adds the helper-level tests. A pure constant extraction (P3-05, P3-06) is verified instead by a byte-identical assembly: build `src/SynapseAdmin/SynapseAdmin.csproj` with `--no-incremental -p:BuildProjectReferences=false -p:DebugType=none` once after adding the constants class and once after replacing the literals, and compare the SHA-256 of `SynapseAdmin.dll`. Afterwards, restore the normal outputs with `dotnet build --no-incremental`.
+> REFACTOR_RULES §4.2 applies as in Phase 2. Where the call sites had no tests (P3-01 to P3-04, P3-07 to P3-09, P3-11, P3-12), the PR's first commit characterizes them through the existing components and services, and the refactor commit adds the helper-level tests. A pure constant extraction (P3-05, P3-06) is verified instead by a byte-identical assembly: build `src/SynapseAdmin/SynapseAdmin.csproj` with `--no-incremental -p:BuildProjectReferences=false -p:DebugType=none` once after adding the constants class and once after replacing the literals, and compare the SHA-256 of `SynapseAdmin.dll`. Afterwards, restore the normal outputs with `dotnet build --no-incremental`.
 
 ### P3-01: Shared MIME-type classification helper
 - **Depends on:** P2-14, P2-17, O-02 (fixed in PR #448)
@@ -529,6 +530,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Exact Scope:** Factory **methods** (`DialogPresets.Small()`, `Medium()`, `SmallWithCloseButton()`, `MediumWithCloseButton()`) that return new instances. Don't share instances, because MudBlazor may mutate options. Keep the existing combinations exactly: `RoomDirectory` uses `CloseButton = true` without `CloseOnEscapeKey`.
 - **Risk Level:** Low
 - **Done Criteria:** SDC, plus a unit test that two calls of each preset return different instances with the expected property values.
+- **As executed** (two commits, 159 changed lines, #491): 8 sites in **7** files, because `MediaPreviewLauncher.cs` counts as a file of its own. Only the preview options were tested (`AssertPreviewShown`), so the first commit adds an options test for the other seven dialogs to each page's existing snackbar test class, using two new `DetailPageTestBase` helpers: `CancelDialogs()` and `AssertDialogOptions(...)`. The close-button presets leave `CloseOnEscapeKey` unset. The app's `MudDialogProvider` sets no default, so Escape stays off for the two `RoomDirectory` dialogs, as before. `DialogPresets` is `public` like `MediaPreviewLauncher` (A2 `CA1515` +1).
 
 ---
 
