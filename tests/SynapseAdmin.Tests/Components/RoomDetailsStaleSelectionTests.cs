@@ -375,12 +375,15 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
     }
 
     /// <summary>
-    /// Failed status requests are retried every 5 s; the fifth failure in a row clears the purge and reports it. Takes
-    /// about 20 s, because the poll interval is a constant.
+    /// Failed status requests are retried every 5 s; the fifth failure in a row clears the purge and reports it. Each
+    /// failure logs a warning with its attempt number and the limit (#427). Takes about 20 s, because the poll interval
+    /// is a constant.
     /// </summary>
     [Fact]
-    public void FiveFailedStatusRequestsInARow_ClearThePurge_AndReportTheError()
+    public void FiveFailedStatusRequestsInARow_AreLogged_ThenClearThePurgeAndReportTheError()
     {
+        var logger = new RecordingLogger<RoomDetails>();
+        Services.AddSingleton<ILogger<RoomDetails>>(logger);
         (int Clears, int Snackbars)? beforeFifthRequest = null;
         var cut = RenderPurgingRoom(() =>
         {
@@ -392,5 +395,19 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
         Assert.Equal((0, 0), beforeFifthRequest);
         Assert.Equal(5, StatusCalls.Count);
         AssertPurgeClearedAndReported(cut, Localizer["ErrorFetchingPurgeStatus"].Value, Severity.Error);
+
+        var warnings = logger.Entries.Where(e => e.Level == LogLevel.Warning).ToList();
+        Assert.All(warnings, w => Assert.Equal(
+            "Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of {MaxAttempts}. Error: {Error}",
+            w.Template));
+        Assert.Equal([1, 2, 3, 4, 5], warnings.Select(w => w.Arguments["Attempt"]));
+        // Every warning names the limit that polling actually stopped at.
+        Assert.All(warnings, w => Assert.Equal(StatusCalls.Count, w.Arguments["MaxAttempts"]));
+        Assert.Equal(
+            new Dictionary<string, object?>
+            {
+                ["RoomId"] = RoomA, ["PurgeId"] = "purge-a", ["Attempt"] = 1, ["MaxAttempts"] = 5, ["Error"] = "status unavailable"
+            },
+            warnings[0].Arguments);
     }
 }
