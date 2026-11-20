@@ -316,18 +316,20 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
 
     /// <summary>
     /// If the error cleanup after a failed status request fails too, for example because the circuit is gone, the
-    /// polling error is still logged and the cleanup failure doesn't escape.
+    /// polling error is still logged and the cleanup failure doesn't escape. Since O-01 the cleanup failure is logged
+    /// at Debug.
     /// </summary>
     [Fact]
-    public async Task FailingCleanupAfterAPollingError_StillLogsThePollingError()
+    public async Task FailingCleanupAfterAPollingError_LogsThePollingError_AndTheCleanupFailureAtDebug()
     {
         var logger = new RecordingLogger<RoomDetails>();
         Services.AddSingleton<ILogger<RoomDetails>>(logger);
         var snackbarTried = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cleanupFailure = new InvalidOperationException("circuit gone");
         SnackbarStub.On(nameof(ISnackbar.Add), _ =>
         {
             snackbarTried.TrySetResult();
-            throw new InvalidOperationException("circuit gone");
+            throw cleanupFailure;
         });
         var pollingError = new InvalidOperationException("boom");
 
@@ -338,6 +340,14 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
         var error = Assert.Single(logger.Entries, e => e.Level == LogLevel.Error);
         Assert.Equal("Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", error.Template);
         Assert.Same(pollingError, error.Exception);
+
+        // The cleanup failure is logged after the snackbar call throws; polling runs in the background.
+        const string CleanupTemplate = "Purge polling cleanup failed for room {RoomId} (circuit likely gone)";
+        Assert.True(SpinWait.SpinUntil(() => logger.Entries.Any(e => e.Template == CleanupTemplate), TimeSpan.FromSeconds(10)));
+        var cleanup = Assert.Single(logger.Entries, e => e.Template == CleanupTemplate);
+        Assert.Equal(LogLevel.Debug, cleanup.Level);
+        Assert.Equal(new Dictionary<string, object?> { ["RoomId"] = RoomA }, cleanup.Arguments);
+        Assert.Same(cleanupFailure, cleanup.Exception);
     }
 
     /// <summary>Navigating away stops polling: a late "complete" for room A's purge changes nothing.</summary>

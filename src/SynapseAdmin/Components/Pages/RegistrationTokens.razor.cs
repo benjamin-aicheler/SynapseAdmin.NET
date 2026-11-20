@@ -22,6 +22,8 @@ namespace SynapseAdmin.Components.Pages
         public IJSRuntime JSRuntime { get; set; } = null!;
         [Inject]
         public ITimeZoneService TimeZoneService { get; set; } = null!;
+        [Inject]
+        public ILogger<RegistrationTokens> Logger { get; set; } = null!;
 
         private List<RegistrationTokenViewModel> tokens = new();
         private bool isLoading = true;
@@ -111,7 +113,7 @@ namespace SynapseAdmin.Components.Pages
 
         private async Task CopyToClipboard(string text)
         {
-            if (await JSRuntime.TryCopyToClipboardAsync(text))
+            if (await JSRuntime.TryCopyToClipboardAsync(text, Logger))
             {
                 Snackbar.Add(L["TokenCopiedToClipboard"], Severity.Success);
             }

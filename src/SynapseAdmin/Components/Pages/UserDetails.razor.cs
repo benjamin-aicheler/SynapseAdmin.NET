@@ -26,6 +26,8 @@ namespace SynapseAdmin.Components.Pages
         public IJSRuntime JSRuntime { get; set; } = null!;
         [Inject]
         public ITimeZoneService TimeZoneService { get; set; } = null!;
+        [Inject]
+        public ILogger<UserDetails> Logger { get; set; } = null!;
 
         [Parameter]
         public string UserId { get; set; } = string.Empty;
@@ -187,7 +189,7 @@ namespace SynapseAdmin.Components.Pages
             var result = await UserService.LoginAsUserAsync(target, TimeSpan.FromHours(1), _cts.Token);
             if (result.Success && !string.IsNullOrEmpty(result.Data))
             {
-                if (await JSRuntime.TryCopyToClipboardAsync(result.Data))
+                if (await JSRuntime.TryCopyToClipboardAsync(result.Data, Logger))
                 {
                     Snackbar.Add(result.Message + " " + L["TokenCopiedToClipboard"], result.Severity);
                 }

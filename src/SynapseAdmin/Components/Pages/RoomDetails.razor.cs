@@ -450,9 +450,10 @@ namespace SynapseAdmin.Components.Pages
                         StateHasChanged();
                     });
                 }
-                catch (Exception)
+                catch (Exception cleanupEx)
                 {
                     // Prevent secondary crash during cleanup
+                    Logger.LogDebug(cleanupEx, "Purge polling cleanup failed for room {RoomId} (circuit likely gone)", roomId.SanitizeForLogging());
                 }
             }
         }
