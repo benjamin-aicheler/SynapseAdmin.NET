@@ -2,7 +2,6 @@ using Microsoft.Extensions.Localization;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces;
-using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
@@ -14,66 +13,34 @@ public class BackgroundUpdatesService(
     ILogger<BackgroundUpdatesService> logger,
     IStringLocalizer<SharedResources> L) : IBackgroundUpdatesService
 {
-    private IMatrixGateway? Gateway => sessionService.Gateway;
+    public Task<OperationResult<BackgroundUpdatesStatusViewModel>> GetStatusAsync(CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingBackgroundUpdatesStatus",
+            ex => logger.LogError(ex, "Error fetching background updates status"),
+            async gateway =>
+            {
+                var status = await gateway.GetBackgroundUpdatesStatusAsync(token);
+                if (status == null) return OperationResult<BackgroundUpdatesStatusViewModel>.Failure(L["ErrorFetchingBackgroundUpdatesStatus"]);
+                var vm = status.ToViewModel();
+                return OperationResult<BackgroundUpdatesStatusViewModel>.Ok(vm);
+            });
 
-    public async Task<OperationResult<BackgroundUpdatesStatusViewModel>> GetStatusAsync(CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<BackgroundUpdatesStatusViewModel>.Failure(L["NotAuthenticated"]);
-        try
-        {
-            var status = await Gateway.GetBackgroundUpdatesStatusAsync(token);
-            if (status == null) return OperationResult<BackgroundUpdatesStatusViewModel>.Failure(L["ErrorFetchingBackgroundUpdatesStatus"]);
-            var vm = status.ToViewModel();
-            return OperationResult<BackgroundUpdatesStatusViewModel>.Ok(vm);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<BackgroundUpdatesStatusViewModel>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching background updates status");
-            return OperationResult<BackgroundUpdatesStatusViewModel>.Failure(L["ErrorFetchingBackgroundUpdatesStatus"]);
-        }
-    }
+    public Task<OperationResult<bool>> SetEnabledAsync(bool enabled, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorTogglingBackgroundUpdates",
+            ex => logger.LogError(ex, "Error toggling background updates enabled state to {Enabled}", enabled),
+            async gateway =>
+            {
+                var result = await gateway.SetBackgroundUpdatesEnabledAsync(enabled, token);
+                if (result == null) return OperationResult<bool>.Failure(L["ErrorTogglingBackgroundUpdates"]);
+                var msg = $"{L["BackgroundUpdatesStatus"]}: {(result.Enabled ? L["Active"] : L["Paused"])}";
+                return OperationResult<bool>.Ok(result.Enabled, msg);
+            });
 
-    public async Task<OperationResult<bool>> SetEnabledAsync(bool enabled, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<bool>.Failure(L["NotAuthenticated"]);
-        try
-        {
-            var result = await Gateway.SetBackgroundUpdatesEnabledAsync(enabled, token);
-            if (result == null) return OperationResult<bool>.Failure(L["ErrorTogglingBackgroundUpdates"]);
-            var msg = $"{L["BackgroundUpdatesStatus"]}: {(result.Enabled ? L["Active"] : L["Paused"])}";
-            return OperationResult<bool>.Ok(result.Enabled, msg);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<bool>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error toggling background updates enabled state to {Enabled}", enabled);
-            return OperationResult<bool>.Failure(L["ErrorTogglingBackgroundUpdates"]);
-        }
-    }
-
-    public async Task<OperationResult> StartJobAsync(string jobName, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-        try
-        {
-            await Gateway.StartBackgroundUpdatesJobAsync(jobName, token);
-            return OperationResult.Ok(L["BackgroundUpdateJobStarted"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error starting background updates job {JobName}", jobName.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorStartingBackgroundUpdateJob"]);
-        }
-    }
+    public Task<OperationResult> StartJobAsync(string jobName, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorStartingBackgroundUpdateJob",
+            ex => logger.LogError(ex, "Error starting background updates job {JobName}", jobName.SanitizeForLogging()),
+            async gateway =>
+            {
+                await gateway.StartBackgroundUpdatesJobAsync(jobName, token);
+                return OperationResult.Ok(L["BackgroundUpdateJobStarted"]);
+            });
 }
