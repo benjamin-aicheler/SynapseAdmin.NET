@@ -2,7 +2,7 @@
 # Docs: https://docs.github.com/code-security/dependabot/dependabot-options-reference
 #
 # Covered here:
-#   - nuget          -> NuGet packages of the web application
+#   - nuget          -> NuGet packages of the web application and the tests
 #   - github-actions -> actions used by the workflows in .github/workflows
 #   - docker         -> base images in src/SynapseAdmin/Dockerfile
 #   - devcontainers  -> image and features in .devcontainer/devcontainer.json
@@ -25,7 +25,9 @@ version: 2
 updates:
   # --- NuGet packages -------------------------------------------------------
   - package-ecosystem: "nuget"
-    directory: "/src/SynapseAdmin"
+    directories:
+      - "/src/SynapseAdmin"
+      - "/tests/SynapseAdmin.Tests"
     schedule:
       interval: "weekly"
       day: "monday"
