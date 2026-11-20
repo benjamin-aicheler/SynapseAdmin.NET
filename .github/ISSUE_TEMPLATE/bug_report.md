@@ -25,7 +25,7 @@ assignees: ''
 ## Environment
 - **Deployment Method:** [e.g. Docker Compose, Docker, Local `dotnet run`]
 - **App Version / Commit:** [e.g. `latest`, version tag, or git commit hash]
-- **Homeserver Brand & Version:** [e.g. Synapse 1.120.0, Tuwunel 1.8.1]
+- **Homeserver Brand & Version:** [e.g. Synapse 1.165.0, Tuwunel 1.8.1]
 - **OS & Browser:** [e.g. Linux / Windows, Chrome / Firefox]
 - **.NET Version (if running locally):** [e.g. .NET 10.0]
 

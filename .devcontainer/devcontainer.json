@@ -1,16 +1,28 @@
 {
-  "name": "Dotnet 10 & Antigravity CLI Dev",
+  "name": "Dotnet 10 & AI CLI Dev",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
       "version": "10.0"
     },
     "ghcr.io/devcontainers/features/node:2": {
-      "version": "24"
+      "version": "26"
     },
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
   },
-  "postCreateCommand": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+  "mounts": [
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
+    "source=codex-config-${devcontainerId},target=/home/vscode/.codex,type=volume"
+  ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  },
+  "postCreateCommand": {
+    "config-dirs": "sudo chown vscode:vscode /home/vscode/.claude /home/vscode/.codex",
+    "codex": "npm install -g @openai/codex",
+    "antigravity": "curl -fsSL https://antigravity.google/cli/install.sh | bash"
+  },
   "customizations": {
     "vscode": {
       "extensions": [

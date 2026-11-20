@@ -78,7 +78,7 @@ dotnet test --filter "FullyQualifiedName~TestClassOrMethodName"
 ├── .github/
 │   ├── workflows/                    # dotnet.yml, docker-image.yml, codeql.yml
 │   └── dependabot.yml                # Weekly NuGet, Actions, Docker and DevContainer updates (not LibMatrix/)
-├── .devcontainer/                    # VS Code dev container (.NET 10, Node 24, gh CLI)
+├── .devcontainer/                    # VS Code dev container (.NET 10, Node 26, gh CLI, Claude Code, Codex CLI)
 ├── .editorconfig                     # Formatting reference (see Code Conventions)
 └── README.md                         # User & deployment documentation
 ```

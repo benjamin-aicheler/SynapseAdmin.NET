@@ -221,7 +221,7 @@ sequenceDiagram
 ## 7. Deployment & Infrastructure
 
 - **Environments:**
-  - **Local development:** `dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj` (`launchSettings.json` profiles on `http://localhost:5235` and `https://localhost:7256` with `ASPNETCORE_ENVIRONMENT=Development`) or VS Code DevContainer (`.devcontainer/devcontainer.json` with .NET 10, Node 24, `gh` CLI).
+  - **Local development:** `dotnet run --project src/SynapseAdmin/SynapseAdmin.csproj` (`launchSettings.json` profiles on `http://localhost:5235` and `https://localhost:7256` with `ASPNETCORE_ENVIRONMENT=Development`) or VS Code DevContainer (`.devcontainer/devcontainer.json` with .NET 10, Node 26, `gh` CLI, Claude Code and Codex CLI; their sign-ins are kept in Docker volumes across rebuilds).
   - **Containerized / Production:** Docker multi-stage build (`src/SynapseAdmin/Dockerfile`, `mcr.microsoft.com/dotnet/sdk:10.0` -> `mcr.microsoft.com/dotnet/aspnet:10.0`), executed via `docker-compose.yml` (GHCR image) or `docker-compose.build.yml` (local build) on port `8080`.
 - **Hosting:** Self-hosted Docker container (or local .NET process) running as non-root `app` user (`UID 1654`), typically bound to `127.0.0.1:8080:8080` behind a TLS-terminating reverse proxy (Nginx, Caddy, Traefik, etc.), according to the administrator's infrastructure setup. Multi-replica setups require sticky sessions, shared `/app/keys` with matching `DP_PASSPHRASE`, and optionally a distributed `ILoginRateLimitStore` (`README.md`).
 - **CI/CD pipeline:**
