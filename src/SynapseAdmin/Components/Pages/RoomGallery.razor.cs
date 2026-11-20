@@ -18,6 +18,8 @@ namespace SynapseAdmin.Components.Pages
 
         private string? roomName;
         private RoomMediaViewModel? roomMedia;
+        private bool roomLoaded;
+        private string? errorMessage;
         private bool isLoading = true;
         private string? _loadedRoomId;
         private readonly CancellationTokenSource _cts = new();
@@ -28,15 +30,20 @@ namespace SynapseAdmin.Components.Pages
             {
                 _loadedRoomId = RoomId;
                 isLoading = true;
+                roomName = null;
+                roomMedia = null;
+                roomLoaded = false;
+                errorMessage = null;
                 var result = await RoomService.GetRoomDetailsAsync(RoomId, _cts.Token);
                 if (result.Success && result.Data != null)
                 {
                     roomName = result.Data.Name ?? result.Data.CanonicalAlias ?? result.Data.RoomId;
                     roomMedia = result.Data.Media;
+                    roomLoaded = true;
                 }
-                else
+                else if (Snackbar.ShowResult(result))
                 {
-                    Snackbar.ShowResult(result);
+                    errorMessage = result.Message;
                 }
                 isLoading = false;
             }

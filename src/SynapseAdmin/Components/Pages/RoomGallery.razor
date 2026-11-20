@@ -29,6 +29,16 @@ else
             <MudText Typo="Typo.body1" Color="Color.Secondary">@L["Loading"]</MudText>
         </div>
     }
+    else if (!roomLoaded)
+    {
+        @* Without a room, the grid would load it again on its own and report the same result twice (#480). *@
+        <MudAlert Severity="Severity.Warning" Elevation="2" Class="mb-4">
+            @(errorMessage ?? L["RoomNotFound"])
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="rooms" StartIcon="@Icons.Material.Filled.ArrowBack">
+            @L["Rooms"]
+        </MudButton>
+    }
     else
     {
         <RoomGalleryGrid RoomId="@RoomId" Media="@roomMedia" />
