@@ -9,147 +9,113 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
-using SynapseAdmin.Interfaces.Gateways;
 
 namespace SynapseAdmin.Services;
 
 public class UserService(IMatrixSessionService sessionService, ILogger<UserService> logger, IStringLocalizer<SharedResources> L) : IUserService
 {
-    private IMatrixGateway? Gateway => sessionService.Gateway;
-
     private const int MaxMediaPageSize = 100;
     private const int MediaTotalsSearchLimit = 100;
 
-    public async Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var dir = direction.ToSynapseDir(whenUnsorted: "f");
-            var result = await Gateway.GetUserListAsync(offset, limit, orderBy, dir, searchTerm, token);
-            if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
-
-            var vms = result.Users.ToViewModels();
-
-            return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((result.Total, vms));
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<(int Total, List<UserListViewModel> Users)>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging());
-            return OperationResult<(int Total, List<UserListViewModel> Users)>.Failure(L["ErrorFetchingUserList"]);
-        }
-    }
-
-    public async Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<UserDetailViewModel>.Failure(L["NotAuthenticated"]);
-
-        var serverName = Gateway.ServerName;
-        if (!string.IsNullOrEmpty(serverName) && !MatrixIdHelper.IsOnServer(userId, serverName))
-        {
-            return OperationResult<UserDetailViewModel>.Failure(L["CannotQueryRemoteUser"], Severity.Warning);
-        }
-
-        try
-        {
-            var u = await Gateway.GetUserDetailsAsync(userId, token);
-            if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
-
-
-            async Task<OperationResult<List<UserMembershipViewModel>>> FetchMembershipsSafeAsync()
+    public Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingUserList",
+            ex => logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging()),
+            async gateway =>
             {
-                try
-                {
-                    return await GetUserMembershipsAsync(userId, token);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to fetch memberships for user {UserId}. Continuing without memberships.", userId.SanitizeForLogging());
-                    return OperationResult<List<UserMembershipViewModel>>.Ok([]);
-                }
-            }
+                var dir = direction.ToSynapseDir(whenUnsorted: "f");
+                var result = await gateway.GetUserListAsync(offset, limit, orderBy, dir, searchTerm, token);
+                if (result == null) return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((0, []));
 
-            async Task<SynapseAdminExperimentalFeaturesResponse?> FetchExperimentalFeaturesSafeAsync()
+                var vms = result.Users.ToViewModels();
+
+                return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((result.Total, vms));
+            });
+
+    public Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingUserDetails",
+            ex => logger.LogError(ex, "Error fetching user details for {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
             {
-                try
+                var serverName = gateway.ServerName;
+                if (!string.IsNullOrEmpty(serverName) && !MatrixIdHelper.IsOnServer(userId, serverName))
                 {
-                    return await Gateway.GetUserExperimentalFeaturesAsync(userId, token);
+                    return OperationResult<UserDetailViewModel>.Failure(L["CannotQueryRemoteUser"], Severity.Warning);
                 }
-                catch (OperationCanceledException)
+
+                var u = await gateway.GetUserDetailsAsync(userId, token);
+                if (u == null) return OperationResult<UserDetailViewModel>.Failure(L["UserNotFound"]);
+
+
+                async Task<OperationResult<List<UserMembershipViewModel>>> FetchMembershipsSafeAsync()
                 {
-                    throw;
+                    try
+                    {
+                        return await GetUserMembershipsAsync(userId, token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to fetch memberships for user {UserId}. Continuing without memberships.", userId.SanitizeForLogging());
+                        return OperationResult<List<UserMembershipViewModel>>.Ok([]);
+                    }
                 }
-                catch (Exception ex)
+
+                async Task<SynapseAdminExperimentalFeaturesResponse?> FetchExperimentalFeaturesSafeAsync()
                 {
-                    logger.LogWarning(ex, "Failed to fetch experimental features for user {UserId}. Continuing without experimental features.", userId.SanitizeForLogging());
-                    return null;
+                    try
+                    {
+                        return await gateway.GetUserExperimentalFeaturesAsync(userId, token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to fetch experimental features for user {UserId}. Continuing without experimental features.", userId.SanitizeForLogging());
+                        return null;
+                    }
                 }
-            }
 
-            // Media is loaded page by page by the media table (GetUserMediaPageAsync), not here.
-            var membershipsTask = FetchMembershipsSafeAsync();
-            var experimentalFeaturesTask = FetchExperimentalFeaturesSafeAsync();
+                // Media is loaded page by page by the media table (GetUserMediaPageAsync), not here.
+                var membershipsTask = FetchMembershipsSafeAsync();
+                var experimentalFeaturesTask = FetchExperimentalFeaturesSafeAsync();
 
-            await Task.WhenAll(membershipsTask, experimentalFeaturesTask);
+                await Task.WhenAll(membershipsTask, experimentalFeaturesTask);
 
-            var membershipsResult = await membershipsTask;
-            var experimentalFeaturesResult = await experimentalFeaturesTask;
+                var membershipsResult = await membershipsTask;
+                var experimentalFeaturesResult = await experimentalFeaturesTask;
 
-            var vm = u.ToDetailViewModel();
-            vm.Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : [];
-            vm.ExperimentalFeatures = experimentalFeaturesResult == null
-                ? null
-                : MapExperimentalFeatures(experimentalFeaturesResult.Features);
+                var vm = u.ToDetailViewModel();
+                vm.Memberships = membershipsResult.Success ? (membershipsResult.Data ?? []) : [];
+                vm.ExperimentalFeatures = experimentalFeaturesResult == null
+                    ? null
+                    : MapExperimentalFeatures(experimentalFeaturesResult.Features);
 
-            return OperationResult<UserDetailViewModel>.Ok(vm);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<UserDetailViewModel>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching user details for {UserId}", userId.SanitizeForLogging());
-            return OperationResult<UserDetailViewModel>.Failure(L["ErrorFetchingUserDetails"]);
-        }
-    }
+                return OperationResult<UserDetailViewModel>.Ok(vm);
+            });
 
-    public async Task<OperationResult<UserMediaPageViewModel>> GetUserMediaPageAsync(string userId, int offset, int limit, CancellationToken token = default)
+    public Task<OperationResult<UserMediaPageViewModel>> GetUserMediaPageAsync(string userId, int offset, int limit, CancellationToken token = default)
     {
-        if (Gateway == null) return OperationResult<UserMediaPageViewModel>.Failure(L["NotAuthenticated"]);
-
         offset = Math.Max(0, offset);
         limit = Math.Clamp(limit, 1, MaxMediaPageSize);
 
-        try
-        {
-            var result = await Gateway.GetUserMediaAsync(userId, offset, limit, orderBy: "created_ts", dir: "b", cancellationToken: token);
-            var page = new UserMediaPageViewModel
+        return sessionService.RunGatewayCallAsync(L, "ErrorFetchingMedia",
+            ex => logger.LogError(ex, "Error fetching media page (offset {Offset}, limit {Limit}) for user {UserId}", offset, limit, userId.SanitizeForLogging()),
+            async gateway =>
             {
-                Offset = offset,
-                TotalCount = result?.Total ?? 0,
-                Items = (result?.Media ?? []).Select(m => m.ToViewModel()).ToList()
-            };
-            return OperationResult<UserMediaPageViewModel>.Ok(page);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<UserMediaPageViewModel>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching media page (offset {Offset}, limit {Limit}) for user {UserId}", offset, limit, userId.SanitizeForLogging());
-            return OperationResult<UserMediaPageViewModel>.Failure(L["ErrorFetchingMedia"]);
-        }
+                var result = await gateway.GetUserMediaAsync(userId, offset, limit, orderBy: "created_ts", dir: "b", cancellationToken: token);
+                var page = new UserMediaPageViewModel
+                {
+                    Offset = offset,
+                    TotalCount = result?.Total ?? 0,
+                    Items = (result?.Media ?? []).Select(m => m.ToViewModel()).ToList()
+                };
+                return OperationResult<UserMediaPageViewModel>.Ok(page);
+            });
     }
 
     /// <summary>
@@ -164,279 +130,162 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         return colon >= 0 ? withoutSigil[..colon] : withoutSigil;
     }
 
-    public async Task<OperationResult<UserMediaTotalsViewModel>> GetUserMediaTotalsAsync(string userId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<UserMediaTotalsViewModel>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            // Search by localpart, then pick the exact user: the term also matches similar IDs and display names.
-            var stats = await Gateway.GetUserMediaStatisticsAsync(MediaTotalsSearchLimit, searchTerm: MediaStatisticsSearchTerm(userId), cancellationToken: token);
-            var users = stats?.Users ?? [];
-            var match = users.FirstOrDefault(u => string.Equals(u.UserId, userId, StringComparison.OrdinalIgnoreCase));
-            if (match != null)
+    public Task<OperationResult<UserMediaTotalsViewModel>> GetUserMediaTotalsAsync(string userId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingMedia",
+            ex => logger.LogError(ex, "Error fetching media totals for user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
             {
-                return OperationResult<UserMediaTotalsViewModel>.Ok(new UserMediaTotalsViewModel { Count = match.MediaCount, Bytes = match.MediaLength });
-            }
+                // Search by localpart, then pick the exact user: the term also matches similar IDs and display names.
+                var stats = await gateway.GetUserMediaStatisticsAsync(MediaTotalsSearchLimit, searchTerm: MediaStatisticsSearchTerm(userId), cancellationToken: token);
+                var users = stats?.Users ?? [];
+                var match = users.FirstOrDefault(u => string.Equals(u.UserId, userId, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    return OperationResult<UserMediaTotalsViewModel>.Ok(new UserMediaTotalsViewModel { Count = match.MediaCount, Bytes = match.MediaLength });
+                }
 
-            // The statistics only list users with uploads. If every match was returned, the user has none.
-            if (stats != null && stats.Total <= users.Count)
+                // The statistics only list users with uploads. If every match was returned, the user has none.
+                if (stats != null && stats.Total <= users.Count)
+                {
+                    return OperationResult<UserMediaTotalsViewModel>.Ok(new UserMediaTotalsViewModel());
+                }
+
+                logger.LogWarning("Could not determine media totals for user {UserId}: not among the first {Limit} statistics matches.", userId.SanitizeForLogging(), MediaTotalsSearchLimit);
+                return OperationResult<UserMediaTotalsViewModel>.Failure(L["ErrorFetchingMedia"]);
+            });
+
+    public Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorDeactivatingUser",
+            ex => logger.LogError(ex, "Error deactivating user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
             {
-                return OperationResult<UserMediaTotalsViewModel>.Ok(new UserMediaTotalsViewModel());
-            }
+                await gateway.DeactivateUserAsync(userId, erase, token);
+                logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId.SanitizeForLogging(), erase);
+                return OperationResult.Ok(L["UserDeactivatedSuccessfully"]);
+            });
 
-            logger.LogWarning("Could not determine media totals for user {UserId}: not among the first {Limit} statistics matches.", userId.SanitizeForLogging(), MediaTotalsSearchLimit);
-            return OperationResult<UserMediaTotalsViewModel>.Failure(L["ErrorFetchingMedia"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<UserMediaTotalsViewModel>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching media totals for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult<UserMediaTotalsViewModel>.Failure(L["ErrorFetchingMedia"]);
-        }
-    }
-
-    public async Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            await Gateway.DeactivateUserAsync(userId, erase, token);
-            logger.LogInformation("Successfully deactivated user {UserId} (erase: {Erase})", userId.SanitizeForLogging(), erase);
-            return OperationResult.Ok(L["UserDeactivatedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error deactivating user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorDeactivatingUser"]);
-        }
-    }
-
-    public async Task<OperationResult> QuarantineMediaAsync(string userId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-        try
-        {
-            await Gateway.QuarantineMediaByUserIdAsync(userId, token);
-            logger.LogInformation("Successfully quarantined media for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Ok(L["UserMediaQuarantinedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error quarantining media for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorQuarantiningMedia"]);
-        }
-    }
-
-    public async Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<string>.Failure(L["NotAuthenticated"]);
-        try
-        {
-            var resp = await Gateway.LoginAsUserAsync(userId, expireIn, token);
-            logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
-            return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<string>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error performing shadow login for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult<string>.Failure(L["ErrorLoggingInAsUser"]);
-        }
-    }
-
-    public async Task<OperationResult> SendServerNoticeAsync(string userId, string message, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-        try
-        {
-            var content = new { msgtype = "m.text", body = message };
-            await Gateway.SendServerNoticeAsync(userId, content, cancellationToken: token);
-            logger.LogInformation("Successfully sent server notice to user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Ok(L["ServerNoticeSentSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error sending server notice to user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorSendingServerNotice"]);
-        }
-    }
-
-    public async Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["NotAuthenticated"]);
-        try
-        {
-            var result = await Gateway.GetUserMediaStatisticsAsync(count, cancellationToken: token);
-            if (result == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Ok([]);
-
-            var vms = result.Users.Select(u => u.ToViewModel()).ToList();
-
-            return OperationResult<List<UserMediaStatisticsViewModel>>.Ok(vms);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<List<UserMediaStatisticsViewModel>>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching top media users");
-            return OperationResult<List<UserMediaStatisticsViewModel>>.Failure(L["ErrorFetchingTopMediaUsers"]);
-        }
-    }
-
-    public async Task<OperationResult> CreateUserAsync(UserCreateViewModel model, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var req = new SynapseAdminUserUpsertRequest
+    public Task<OperationResult> QuarantineMediaAsync(string userId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorQuarantiningMedia",
+            ex => logger.LogError(ex, "Error quarantining media for user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
             {
-                Password = model.Password,
-                DisplayName = model.DisplayName,
-                Admin = model.Admin,
-                Deactivated = model.Deactivated
-            };
+                await gateway.QuarantineMediaByUserIdAsync(userId, token);
+                logger.LogInformation("Successfully quarantined media for user {UserId}", userId.SanitizeForLogging());
+                return OperationResult.Ok(L["UserMediaQuarantinedSuccessfully"]);
+            });
 
-            var result = await Gateway.UpdateUserAsync(model.UserId, req, token);
-
-            if (result == null) return OperationResult.Failure(L["ErrorCreatingUser"]);
-
-            logger.LogInformation("Successfully created user {UserId}", model.UserId.SanitizeForLogging());
-            return OperationResult.Ok(L["UserCreatedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error creating user {UserId}", model.UserId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorCreatingUser"]);
-        }
-    }
-
-    public async Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<List<UserMembershipViewModel>>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var result = await Gateway.GetUserMembershipsAsync(userId, token);
-
-            if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
-
-            var vms = result.ToViewModels();
-
-            return OperationResult<List<UserMembershipViewModel>>.Ok(vms);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<List<UserMembershipViewModel>>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching memberships for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult<List<UserMembershipViewModel>>.Failure(L["ErrorFetchingUserMemberships"]);
-        }
-    }
-
-    public async Task<OperationResult<List<UserExperimentalFeatureViewModel>>> GetUserExperimentalFeaturesAsync(string userId, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<List<UserExperimentalFeatureViewModel>>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var result = await Gateway.GetUserExperimentalFeaturesAsync(userId, token);
-            if (result == null) return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok([]);
-
-            return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok(MapExperimentalFeatures(result.Features));
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<List<UserExperimentalFeatureViewModel>>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error fetching experimental features for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult<List<UserExperimentalFeatureViewModel>>.Failure(L["ErrorFetchingExperimentalFeatures"]);
-        }
-    }
-
-    public async Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var req = new SynapseAdminExperimentalFeaturesRequest
+    public Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorLoggingInAsUser",
+            ex => logger.LogError(ex, "Error performing shadow login for user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
             {
-                Features = features
-            };
-            await Gateway.SetUserExperimentalFeaturesAsync(userId, req, token);
-            logger.LogInformation("Successfully updated experimental features for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Ok(L["ExperimentalFeaturesUpdatedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error updating experimental features for user {UserId}", userId.SanitizeForLogging());
-            return OperationResult.Failure(L["ErrorUpdatingExperimentalFeatures"]);
-        }
-    }
+                var resp = await gateway.LoginAsUserAsync(userId, expireIn, token);
+                logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
+                return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful"]);
+            });
 
-    public async Task<OperationResult<long>> RenewAccountValidityAsync(AccountValidityRenewViewModel model, CancellationToken token = default)
-    {
-        if (Gateway == null) return OperationResult<long>.Failure(L["NotAuthenticated"]);
-
-        try
-        {
-            var req = new SynapseAdminAccountValidityRequest
+    public Task<OperationResult> SendServerNoticeAsync(string userId, string message, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorSendingServerNotice",
+            ex => logger.LogError(ex, "Error sending server notice to user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
             {
-                UserId = model.UserId,
-                ExpirationTs = model.ExpirationTs,
-                EnableRenewalEmails = model.EnableRenewalEmails
-            };
+                var content = new { msgtype = "m.text", body = message };
+                await gateway.SendServerNoticeAsync(userId, content, cancellationToken: token);
+                logger.LogInformation("Successfully sent server notice to user {UserId}", userId.SanitizeForLogging());
+                return OperationResult.Ok(L["ServerNoticeSentSuccessfully"]);
+            });
 
-            var resp = await Gateway.RenewAccountValidityAsync(req, token);
-            if (resp == null) return OperationResult<long>.Failure(L["ErrorRenewingAccountValidity"]);
+    public Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingTopMediaUsers",
+            ex => logger.LogError(ex, "Error fetching top media users"),
+            async gateway =>
+            {
+                var result = await gateway.GetUserMediaStatisticsAsync(count, cancellationToken: token);
+                if (result == null) return OperationResult<List<UserMediaStatisticsViewModel>>.Ok([]);
 
-            logger.LogInformation("Successfully renewed account validity for user {UserId} (new expiration_ts: {ExpirationTs})", model.UserId.SanitizeForLogging(), resp.ExpirationTs);
-            return OperationResult<long>.Ok(resp.ExpirationTs, L["AccountValidityRenewedSuccessfully"]);
-        }
-        catch (OperationCanceledException)
-        {
-            return OperationResult<long>.Cancelled();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error renewing account validity for user {UserId}", model.UserId.SanitizeForLogging());
-            return OperationResult<long>.Failure(L["ErrorRenewingAccountValidity"]);
-        }
-    }
+                var vms = result.Users.Select(u => u.ToViewModel()).ToList();
+
+                return OperationResult<List<UserMediaStatisticsViewModel>>.Ok(vms);
+            });
+
+    public Task<OperationResult> CreateUserAsync(UserCreateViewModel model, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorCreatingUser",
+            ex => logger.LogError(ex, "Error creating user {UserId}", model.UserId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var req = new SynapseAdminUserUpsertRequest
+                {
+                    Password = model.Password,
+                    DisplayName = model.DisplayName,
+                    Admin = model.Admin,
+                    Deactivated = model.Deactivated
+                };
+
+                var result = await gateway.UpdateUserAsync(model.UserId, req, token);
+
+                if (result == null) return OperationResult.Failure(L["ErrorCreatingUser"]);
+
+                logger.LogInformation("Successfully created user {UserId}", model.UserId.SanitizeForLogging());
+                return OperationResult.Ok(L["UserCreatedSuccessfully"]);
+            });
+
+    public Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingUserMemberships",
+            ex => logger.LogError(ex, "Error fetching memberships for user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var result = await gateway.GetUserMembershipsAsync(userId, token);
+
+                if (result == null) return OperationResult<List<UserMembershipViewModel>>.Ok([]);
+
+                var vms = result.ToViewModels();
+
+                return OperationResult<List<UserMembershipViewModel>>.Ok(vms);
+            });
+
+    public Task<OperationResult<List<UserExperimentalFeatureViewModel>>> GetUserExperimentalFeaturesAsync(string userId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingExperimentalFeatures",
+            ex => logger.LogError(ex, "Error fetching experimental features for user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var result = await gateway.GetUserExperimentalFeaturesAsync(userId, token);
+                if (result == null) return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok([]);
+
+                return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok(MapExperimentalFeatures(result.Features));
+            });
+
+    public Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorUpdatingExperimentalFeatures",
+            ex => logger.LogError(ex, "Error updating experimental features for user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var req = new SynapseAdminExperimentalFeaturesRequest
+                {
+                    Features = features
+                };
+                await gateway.SetUserExperimentalFeaturesAsync(userId, req, token);
+                logger.LogInformation("Successfully updated experimental features for user {UserId}", userId.SanitizeForLogging());
+                return OperationResult.Ok(L["ExperimentalFeaturesUpdatedSuccessfully"]);
+            });
+
+    public Task<OperationResult<long>> RenewAccountValidityAsync(AccountValidityRenewViewModel model, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorRenewingAccountValidity",
+            ex => logger.LogError(ex, "Error renewing account validity for user {UserId}", model.UserId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var req = new SynapseAdminAccountValidityRequest
+                {
+                    UserId = model.UserId,
+                    ExpirationTs = model.ExpirationTs,
+                    EnableRenewalEmails = model.EnableRenewalEmails
+                };
+
+                var resp = await gateway.RenewAccountValidityAsync(req, token);
+                if (resp == null) return OperationResult<long>.Failure(L["ErrorRenewingAccountValidity"]);
+
+                logger.LogInformation("Successfully renewed account validity for user {UserId} (new expiration_ts: {ExpirationTs})", model.UserId.SanitizeForLogging(), resp.ExpirationTs);
+                return OperationResult<long>.Ok(resp.ExpirationTs, L["AccountValidityRenewedSuccessfully"]);
+            });
 
     private List<UserExperimentalFeatureViewModel> MapExperimentalFeatures(Dictionary<string, bool> features)
     {
