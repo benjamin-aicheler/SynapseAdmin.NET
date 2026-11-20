@@ -417,7 +417,7 @@ namespace SynapseAdmin.Components.Pages
 
                         consecutiveFailures++;
                         var errMsg = result.Message ?? "Unknown error";
-                        Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of 5. Error: {Error}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, errMsg.SanitizeForLogging());
+                        Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of {MaxAttempts}. Error: {Error}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, MaxConsecutivePurgeStatusFailures, errMsg.SanitizeForLogging());
 
                         if (consecutiveFailures >= MaxConsecutivePurgeStatusFailures)
                         {
