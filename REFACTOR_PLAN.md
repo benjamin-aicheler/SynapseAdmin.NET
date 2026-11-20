@@ -396,7 +396,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 
 > Start a Phase 3 task only after the Phase 1/2 tasks for every module it touches are merged. Each task introduces **one** shared utility and migrates its call sites. Where the call-site count would push the diff over 200 lines, the task is split.
 >
-> REFACTOR_RULES §4.2 applies as in Phase 2. Where the call sites had no tests (P3-01 to P3-04, P3-07 to P3-09), the PR's first commit characterizes them through the existing components and services, and the refactor commit adds the helper-level tests. A pure constant extraction (P3-05, P3-06) is verified instead by a byte-identical assembly: build `src/SynapseAdmin/SynapseAdmin.csproj` with `--no-incremental -p:BuildProjectReferences=false -p:DebugType=none` once after adding the constants class and once after replacing the literals, and compare the SHA-256 of `SynapseAdmin.dll`. Afterwards, restore the normal outputs with `dotnet build --no-incremental`.
+> REFACTOR_RULES §4.2 applies as in Phase 2. Where the call sites had no tests (P3-01 to P3-04, P3-07 to P3-09, P3-11), the PR's first commit characterizes them through the existing components and services, and the refactor commit adds the helper-level tests. A pure constant extraction (P3-05, P3-06) is verified instead by a byte-identical assembly: build `src/SynapseAdmin/SynapseAdmin.csproj` with `--no-incremental -p:BuildProjectReferences=false -p:DebugType=none` once after adding the constants class and once after replacing the literals, and compare the SHA-256 of `SynapseAdmin.dll`. Afterwards, restore the normal outputs with `dotnet build --no-incremental`.
 
 ### P3-01: Shared MIME-type classification helper
 - **Depends on:** P2-14, P2-17, O-02 (fixed in PR #448)
@@ -495,9 +495,9 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **As executed:** both classes are `internal sealed` in `SynapseAdmin.Tests.TestSupport`. No test depends on whether format arguments are ignored or applied: swapping the two semantics passes the suite.
 
 ### P3-11 (approval-gated): Service-layer result boilerplate helper
-- **Status:** **Do not start without explicit owner approval.** It may count as a "paradigm rewrite" under REFACTOR_RULES §2.
+- **Status:** **Done** (#482–#488). The plan gated it on owner approval because it might count as a "paradigm rewrite" under REFACTOR_RULES §2. After a best-practice review, the owner approved 11a as a pilot with a composed helper instead of a base class, then 11b–g.
 - **Depends on:** P1-12
-- **Target Files (one sub-task per service, executed separately):** **11a** `MediaService`, **11b** `RegistrationTokenService`, **11c** `EventReportService` + `FederationService`, **11d** `BackgroundUpdatesService`, **11e** `UserService` (split in two if > 200 lines), **11f** `RoomService` (split in two), **11g** `EventForensicsService`, plus a new `Services/GatewayServiceBase.cs`
+- **Target Files (one sub-task per service, executed separately):** **11a** `MediaService`, **11b** `RegistrationTokenService`, **11c** `EventReportService` + `FederationService`, **11d** `BackgroundUpdatesService`, **11e** `UserService` (split in two if > 200 lines), **11f** `RoomService` (split in two), **11g** `EventForensicsService`, plus a new `Services/GatewayServiceBase.cs` (executed as `Extensions/GatewayCallExtensions.cs` instead, see below)
 - **Exact Scope:** After P1-12, the target services contain 51 `Gateway == null → NotAuthenticated` guards and 51 outer `OperationCanceledException → Cancelled()` / `Exception → LogError + Failure(L[key])` ladders (49 guards at `836c091`, before P1-12 converts the 2 `MediaService` checks). A protected helper such as `Task<OperationResult<T>> RunAsync<T>(Func<IMatrixGateway, Task<OperationResult<T>>> body, string failureKey, Action<ILogger, Exception> log)` would remove them. It must preserve, per method:
   - the exact log template and arguments
   - the failure key
@@ -507,6 +507,21 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 - **Out of scope** (not the same pattern, leave untouched): `MatrixSessionService` (4 `OperationCanceledException` catches with login/session semantics, see §6.2 S-03), the 2 inner rethrows in `UserService.GetUserDetailsAsync` (69, 86) and the 2 inner silent catches in `RoomService` (197, 331) that protect per-item fan-out.
 - **Risk Level:** Medium
 - **Done Criteria:** SDC, plus a per-service characterization suite (gateway null, gateway throws OCE, gateway throws, gateway returns null, success) is written before migration and is green after.
+- **Executed as seven PRs**, one per sub-task, each with the characterization commit first: **11a** (#482), **11b** (#483), **11c** (#484), **11d** (#485), **11e** (#486), **11f** (#487), **11g** (#488). The owner accepted the line counts over the 200-line cap: 11a (758) and, instead of the planned splits, 11e (942) and 11f (1101). Most of those refactor commits is re-indentation of the method bodies; with whitespace ignored, 11e is +86 / −237 and 11f +100 / −273. #483–#488 are stacked, each on the previous branch.
+- **As executed:**
+  - **Helper:** `internal static class GatewayCallExtensions` with two overloads of `RunGatewayCallAsync(this IMatrixSessionService session, IStringLocalizer<SharedResources> localizer, string failureKey, Action<Exception> logFailure, Func<IMatrixGateway, Task<OperationResult[<T>]>> call)`. It is an extension method instead of a base class, so the services keep their class hierarchy. It is `internal` instead of `public` like the other `Extensions/` classes: `public` adds 8 A2 `CA1062` and 1 `CA1515` for an app-only helper.
+  - **The one intended behavior change:** the helper reads `session.Gateway` once and passes it to `call`. The old methods read the property for the check and again for each use.
+  - **Checks that must run after the session check** move to the start of `call`: the `MediaService` blank-MXC guards, the `UserService.GetUserDetailsAsync` remote-user check, and the `EventForensicsService` admin-API and event-ID checks with the trim. Their order is unchanged. They now run inside the helper's `try`, which matters only if `ServerName` or `SupportsAdminApi` threw; neither can in practice.
+  - **Values a failure log needs** are computed so the log stays the same: `GetUserMediaPageAsync` clamps offset and limit before calling the helper, and the `EventForensicsService` error log trims the ID itself (`SanitizeForLogging` trims too, but only after turning a tab into `?`).
+  - **The null-result contract stays in each method body**, not as a helper parameter: the rule and the empty value differ per method, and the suites pin each one.
+  - `RoomService` keeps its `Gateway` property, because `CacheRoomName` and `HomeserverCacheScope` still read it. The out-of-scope catches stay as they are. The only `catch (OperationCanceledException)` blocks left in `src/` are `MatrixSessionService` (4), the inner ones in `UserService` (2) and `RoomService` (2), and the helper (2).
+  - **Test infrastructure:** `TestSupport/RecordingLogger<T>` (11a; the older private copies moved to it in #489), `Stub.Fault(method, error)` and `TestSupport/ResultAssert` (11b), and one table-driven `*ServiceCharacterizationTests.cs` per service.
+  - **Pinned quirks**, kept as they are (the gateways' return types make the `null` cases impossible in practice):
+    - `GetRegistrationTokensAsync` turns a `null` list into a logged `ArgumentNullException` failure.
+    - `OpenMediaAsync` turns a `null` download into `Ok` without data.
+    - `LoginAsUserAsync` with a `null` response logs the successful login before it fails on the token.
+    - In the user details, cancelled memberships leave the list empty, but cancelled experimental features cancel the whole call.
+  - **A2:** 1156 → 1103; `CA1031` 77 → 28. Some `CA1062` drops (−6) only mean the analyzer doesn't follow parameters into the lambdas.
 
 ### P3-12 (optional, low value): `DialogOptions` presets
 - **Depends on:** P3-02
@@ -545,7 +560,7 @@ Diagnostic messages may appear in German on this machine, but the `warning IDExx
 1. **Phase 1:** P1-01 → P1-02 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-08 → P1-09a/b/c → P1-09d → P1-09e → P1-10 → P1-11 → P1-12
 2. **Phase 2, infrastructure first:** P2-10 → P2-07 → P2-06 → P2-05 → P2-08a/b/c → P2-09 → P2-01 → P2-02 → P2-03 → P2-04a/b → P2-16 → P2-17 → **O-02 fix** → P2-18 → P2-19
 3. **Phase 2, components:** P2-12 → P2-11 → P2-13 → P2-14 → P2-15
-4. **Phase 3:** P3-10 → P3-05 → P3-06 → P3-04 → P3-03 → P3-01 → P3-02 → P3-09 → P3-08 → P3-07a/b/c → (owner approval) P3-11a–g → P3-12
+4. **Phase 3:** P3-10 → P3-05 → P3-06 → P3-04 → P3-03 → P3-01 → P3-02 → P3-09 → P3-08 → P3-07a/b/c → P3-11a–g (owner-approved) → P3-12
 
 Per AGENTS.md workflow: each task (or a small, same-phase group of tasks) gets its own branch, e.g. `ai/feature/refactor-p1-01-unused-usings`, a Conventional Commit (`refactor: …`), local `dotnet build` + `dotnet test`, and a PR against `main`. **Counts and line numbers** are exact for the revision in the header; where a task depends on an earlier one, the expected count after that prerequisite is stated explicitly. Once tasks land, later line numbers drift; every location also names its method or member, so it can be found again.
 
