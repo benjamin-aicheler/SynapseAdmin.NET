@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
@@ -55,6 +56,21 @@ public class ToolPageSnackbarTests : DetailPageTestBase
         Render<RoomDirectory>();
 
         AssertSnackbars(shown ? [_directory] : []);
+    }
+
+    // Unlike the other dialogs, these two have a close button and leave Escape at the provider default (off).
+    [Fact]
+    public async Task DirectoryDialogs_HaveACloseButton_InsteadOfClosingOnEscape()
+    {
+        CancelDialogs();
+        var cut = Render<RoomDirectory>();
+
+        await InvokeHandler(cut, "OpenPublishRoomDialog");
+        await InvokeHandler(cut, "OpenManageAliasesDialog", "!room:example.com", null);
+
+        AssertDialogOptions(
+            new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true },
+            new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
     }
 
     /// <summary>After a success the directory reloads, which reports nothing.</summary>
