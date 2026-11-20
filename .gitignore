@@ -58,3 +58,5 @@ src/SynapseAdmin/keys/
 # Tools
 repomix-output.xml
 .antigravitycli/
+.claude/settings.local.json
+.claude/.cc-writes/
