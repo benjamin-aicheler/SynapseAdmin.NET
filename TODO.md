@@ -14,19 +14,21 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-21
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] [4.1] Finalize SPEC.md `[Planned]` entries and the Decision Log; reset PLAN.md and TODO.md
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
 - [ ] 
 
 ## ⛔ Blocked
 
-- [ ] 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
 
 ## 📋 Backlog
 
@@ -34,14 +36,11 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [x] 2026-11-21 – A load started by the JS sentinel didn't render after `_isBatchLoading` was reset, so a status that depends on it stayed stale. Fixed in `LoadNextBatch`'s `finally` and covered by `SentinelLoad_StoppingAtTheCap_RendersCheckMore`.
+- [ ] 
 
 ## ✅ Done
 
-- [x] 2026-11-21 – SPEC.md `[Planned]` entries and PLAN.md approved – df23bee
-- [x] 2026-11-21 – [1.1] Characterization tests (unfiltered, source filter, search by URI) – `RoomGalleryFilterHydrationTests`
-- [x] 2026-11-21 – [2.1]/[2.2] Classification in order with bounded lookups – `RoomGalleryGrid.razor.cs`
-- [x] 2026-11-21 – [3.1]/[3.2] Status, "Check more", unknown-type note, EN/DE/FR strings – `RoomGalleryGrid.razor`, resx
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
