@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Status** | Draft |
+| **Status** | In Progress |
 | **Spec** | [SPEC.md](./SPEC.md): FR-6, AC-10, Edge Cases "Gallery filters and unknown metadata", §13 Risks, §14 Open Questions (all `[Planned]`, #523) |
 | **Issue / Branch** | #523 / `ai/bugfix/issue-523-gallery-filter-hydration` |
 | **Author(s)** | Claude Code (for Benjamin Aicheler) |
@@ -123,18 +123,19 @@ None. `IRoomService.GetMediaMetadataBatchAsync` is reused unchanged.
 | Risk | Mitigation |
 |---|---|
 | Admin API load when filtering a large room | 5 × 20 lookups per load, more only on "Check more"; lookups are never repeated within the grid; unfiltered loading unchanged |
-| Typing a search term starts a lookup per keystroke | Each filter change increments the generation; an old loop stops after its current batch (at most 20 lookups). Optionally debounce the search field (`DebounceInterval`) if testing shows bursts |
+| Typing a search term starts a lookup per keystroke | The search field already debounces (`DebounceInterval="300"`). Each filter change increments the generation, and an old loop stops after its current batch (at most 20 lookups) |
 | Uncached remote media never gets a type | Counted and reported as "type unknown"; shown only under All; no retries |
 | Tests that reach private names break | Keep `_displayedMedia`, `OnSourceFilterChanged`, `OnTypeFilterChanged` and the filter values; search `tests/` before renaming |
 
 ## 9. Open Questions
 
-- [ ] Items whose type stays unknown: hidden from every type filter with a count note (proposed), or listed under Files with an "unknown type" marker?
-- [ ] Lookup budget: at most 5 batches of 20 per load, then "Check more" (proposed), or check the whole room at once with a progress indicator?
-- [ ] Debounce the search field (for example 300 ms) as part of this change, or only if testing shows bursts?
+- [x] Items whose type stays unknown: hidden from every type filter with a count note. Decided 2026-11-21.
+- [x] Lookup budget: at most 5 batches of 20 per load, then "Check more". Decided 2026-11-21.
+- [x] Debounce the search field: already done. The field has `DebounceInterval="300"`, so no change is needed.
 
 ## 10. Progress Notes
 
 | Date | Note |
 |---|---|
 | 2026-11-21 | Draft written from the #523 evaluation; waiting for review. |
+| 2026-11-21 | Approved with the proposed answers (hide unknown types with a count note; 5 × 20 lookups per load plus "Check more"). The search field is already debounced. |

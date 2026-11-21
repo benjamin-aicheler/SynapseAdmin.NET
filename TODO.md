@@ -14,21 +14,23 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-21
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] [1.1] Characterization tests for unfiltered loading, source-only filtering and search by `mxc://` URI (AC-10)
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [2.1] Failing tests: Images and file-name search find item 21; Files excludes items without a lookup or a known type; ≤ 5 lookup batches per load; stale filter discarded (AC-10)
+- [ ] [2.2] Classification in order with a cursor and bounded lookups in `RoomGalleryGrid.razor.cs` (FR-6)
+- [ ] [3.1] Failing tests: "Checked x of y items", "Check more", "No media found" only when complete, unknown-type note (AC-10)
+- [ ] [3.2] Markup, `CheckMore` handler, EN/DE/FR resource keys (FR-6)
+- [ ] [4.1] Finalize SPEC.md `[Planned]` entries and the Decision Log; reset PLAN.md and TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
@@ -40,7 +42,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-21 – SPEC.md `[Planned]` entries and PLAN.md approved – df23bee
 
 ## Definition of Done (applies to every task)
 
