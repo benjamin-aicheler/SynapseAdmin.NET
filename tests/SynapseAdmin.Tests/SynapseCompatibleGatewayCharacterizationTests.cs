@@ -25,6 +25,7 @@ namespace SynapseAdmin.Tests;
 /// gateway's own <c>EnsureSuccessStatusCode</c>: <see cref="MatrixException"/> for a Matrix JSON error body,
 /// <see cref="HttpRequestException"/> for any other body.
 /// Also the four raw DELETEs: the exact request (method, target, Content-Type, body) and the same error behavior.
+/// Also setting room directory visibility: the exact PUT, its cancellation token and the same error behavior.
 /// Also the seven POSTs that send <c>{}</c> and read no response body: the exact request, that a server accepting only
 /// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
 /// </summary>
@@ -270,6 +271,67 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
 
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => EmptyBodyMethod(method).Call(_gateway));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // Room directory visibility (MatrixGatewayBase, inherited): the Client-Server spec defines only GET and PUT on
+    // /_matrix/client/v3/directory/list/room/{roomId}, with {"visibility": "public" | "private"} (#517).
+    // "public" in any case publishes; any other value unpublishes, as before.
+    public static TheoryData<string, string> DirectoryVisibilities => new()
+    {
+        { "public", "public" },
+        { "PUBLIC", "public" },
+        { "private", "private" },
+    };
+
+    private const string DirectoryVisibilityTarget = "/_matrix/client/v3/directory/list/room/!room%3aexample.com";
+
+    [Theory]
+    [MemberData(nameof(DirectoryVisibilities))]
+    public async Task SetRoomDirectoryVisibility_SendsPutWithVisibility(string visibility, string expected)
+    {
+        _homeserver.AllowedMethod = "PUT";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.SetRoomDirectoryVisibilityAsync("!room:example.com", visibility);
+
+        Assert.Equal(
+            new CapturedRequest("PUT", DirectoryVisibilityTarget, "application/json; charset=utf-8", $$"""{"visibility":"{{expected}}"}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task SetRoomDirectoryVisibility_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _gateway.SetRoomDirectoryVisibilityAsync("!room:example.com", "public", cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task SetRoomDirectoryVisibility_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "Room not found" }, statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(
+            () => _gateway.SetRoomDirectoryVisibilityAsync("!room:example.com", "public"));
+
+        Assert.Equal("M_NOT_FOUND", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task SetRoomDirectoryVisibility_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _gateway.SetRoomDirectoryVisibilityAsync("!room:example.com", "private"));
 
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
