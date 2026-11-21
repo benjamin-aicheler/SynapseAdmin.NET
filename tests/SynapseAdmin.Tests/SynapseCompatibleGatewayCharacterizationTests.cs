@@ -25,6 +25,7 @@ namespace SynapseAdmin.Tests;
 /// gateway's own <c>EnsureSuccessStatusCode</c>: <see cref="MatrixException"/> for a Matrix JSON error body,
 /// <see cref="HttpRequestException"/> for any other body.
 /// Also the four raw DELETEs: the exact request (method, target, Content-Type, body) and the same error behavior.
+/// Also the registration token update and create bodies (explicit vs omitted nulls).
 /// Also setting room directory visibility: the exact PUT, its cancellation token and the same error behavior.
 /// Also the seven POSTs that send <c>{}</c> and read no response body: the exact request, that a server accepting only
 /// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
@@ -334,6 +335,44 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
             () => _gateway.SetRoomDirectoryVisibilityAsync("!room:example.com", "private"));
 
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // Registration token update (#519): Synapse leaves an omitted field unchanged and removes the limit for an explicit
+    // null, so the update always sends both fields. Create keeps omitting null fields (Synapse's defaults apply).
+    public static TheoryData<int?, long?, string> TokenUpdates => new()
+    {
+        { null, null, """{"uses_allowed":null,"expiry_time":null}""" },
+        { null, 4781243146000, """{"uses_allowed":null,"expiry_time":4781243146000}""" },
+        { 5, null, """{"uses_allowed":5,"expiry_time":null}""" },
+        { 5, 4781243146000, """{"uses_allowed":5,"expiry_time":4781243146000}""" },
+    };
+
+    [Theory]
+    [MemberData(nameof(TokenUpdates))]
+    public async Task UpdateRegistrationToken_SendsBothFieldsWithExplicitNulls(int? usesAllowed, long? expiryTime, string body)
+    {
+        _homeserver.AllowedMethod = "PUT";
+        _homeserver.Respond = () => Results.Json(new { token = "abcd" });
+
+        await _gateway.UpdateRegistrationTokenAsync("abcd",
+            new SynapseAdminRegistrationTokenUpdateRequest { UsesAllowed = usesAllowed, ExpiryTime = expiryTime });
+
+        Assert.Equal(
+            new CapturedRequest("PUT", "/_synapse/admin/v1/registration_tokens/abcd", "application/json; charset=utf-8", body),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task CreateRegistrationToken_OmitsNullFields()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { token = "abcd" });
+
+        await _gateway.CreateRegistrationTokenAsync(new SynapseAdminRegistrationTokenCreateRequest { UsesAllowed = 1 });
+
+        Assert.Equal(
+            new CapturedRequest("POST", "/_synapse/admin/v1/registration_tokens/new", "application/json; charset=utf-8", """{"uses_allowed":1}"""),
+            Assert.Single(_homeserver.Requests));
     }
 
     /// <summary>One request as the server received it. <see cref="Target"/> is the path and query exactly as sent.</summary>
