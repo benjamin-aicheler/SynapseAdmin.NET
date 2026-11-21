@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Http.Json;
 using LibMatrix;
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
@@ -24,7 +25,8 @@ namespace SynapseAdmin.Tests;
 /// gateway's own <c>EnsureSuccessStatusCode</c>: <see cref="MatrixException"/> for a Matrix JSON error body,
 /// <see cref="HttpRequestException"/> for any other body.
 /// Also the four raw DELETEs: the exact request (method, target, Content-Type, body) and the same error behavior.
-/// Also the seven POST/PUTs that send <c>{}</c> and read no response body: the exact request and the same error behavior.
+/// Also the seven POSTs that send <c>{}</c> and read no response body: the exact request, that a server accepting only
+/// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
 /// </summary>
 public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -181,21 +183,21 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         nameof(SynapseCompatibleAdminGateway.UnprotectMediaAsync),
     };
 
-    // Each POST/PUT that sends an empty JSON object and reads no response body, with fixed arguments and the exact
+    // Each POST that sends an empty JSON object and reads no response body, with fixed arguments and the exact
     // request it sends. Protect/unprotect ignore serverName, so it doesn't appear in their targets.
     private static (CapturedRequest Request, Func<SynapseCompatibleAdminGateway, Task> Call) EmptyBodyMethod(string name) => name switch
     {
         nameof(SynapseCompatibleAdminGateway.QuarantineMediaByUserIdAsync) => (
-            EmptyJsonObject("PUT", "/_synapse/admin/v1/user/%40alice%3aexample.com/media/quarantine"),
+            EmptyJsonObject("POST", "/_synapse/admin/v1/user/%40alice%3aexample.com/media/quarantine"),
             g => g.QuarantineMediaByUserIdAsync("@alice:example.com")),
         nameof(SynapseCompatibleAdminGateway.QuarantineMediaByRoomIdAsync) => (
-            EmptyJsonObject("PUT", "/_synapse/admin/v1/room/!room%3aexample.com/media/quarantine"),
+            EmptyJsonObject("POST", "/_synapse/admin/v1/room/!room%3aexample.com/media/quarantine"),
             g => g.QuarantineMediaByRoomIdAsync("!room:example.com")),
         nameof(SynapseCompatibleAdminGateway.ResetFederationConnectionTimeoutAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/federation/destinations/matrix.example.org%3a8448/reset_connection"),
             g => g.ResetFederationConnectionTimeoutAsync("matrix.example.org:8448")),
         nameof(SynapseCompatibleAdminGateway.QuarantineMediaAsync) => (
-            EmptyJsonObject("PUT", "/_synapse/admin/v1/media/quarantine/example.com/media-a"),
+            EmptyJsonObject("POST", "/_synapse/admin/v1/media/quarantine/example.com/media-a"),
             g => g.QuarantineMediaAsync("example.com", "media-a")),
         nameof(SynapseCompatibleAdminGateway.UnquarantineMediaAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/media/unquarantine/example.com/media-a"),
@@ -224,6 +226,32 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         Assert.Equal(request, Assert.Single(_homeserver.Requests));
     }
 
+    // Synapse registers only POST for all seven routes and answers any other method with 405 M_UNRECOGNIZED (#516).
+    [Theory]
+    [MemberData(nameof(EmptyBodyMethods))]
+    public async Task EmptyBody_ServerAcceptingOnlyPost_Succeeds(string method)
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await EmptyBodyMethod(method).Call(_gateway);
+
+        Assert.Equal("POST", Assert.Single(_homeserver.Requests).Method);
+    }
+
+    [Fact]
+    public async Task FakeHomeserver_WithAllowedMethod_RejectsOtherMethods()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { });
+        using var client = new HttpClient { BaseAddress = new Uri(_homeserver.Url) };
+
+        using var response = await client.PutAsJsonAsync("/_synapse/admin/v1/media/quarantine/example.com/media-a", new { });
+
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
+        Assert.Contains("M_UNRECOGNIZED", await response.Content.ReadAsStringAsync());
+    }
+
     [Theory]
     [MemberData(nameof(EmptyBodyMethods))]
     public async Task EmptyBody_MatrixErrorResponse_ThrowsMatrixException(string method)
@@ -249,7 +277,10 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
     /// <summary>One request as the server received it. <see cref="Target"/> is the path and query exactly as sent.</summary>
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);
 
-    /// <summary>A Kestrel server that records every request (any HTTP method) and answers with <see cref="Respond"/>.</summary>
+    /// <summary>
+    /// A Kestrel server that records every request (any HTTP method) and answers with <see cref="Respond"/>. When
+    /// <see cref="AllowedMethod"/> is set, any other method gets Synapse's 405 <c>M_UNRECOGNIZED</c> instead.
+    /// </summary>
     private sealed class FakeHomeserver : IAsyncDisposable
     {
         private WebApplication? _app;
@@ -258,6 +289,7 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         public ConcurrentQueue<CapturedRequest> Requests { get; } = new();
         public IEnumerable<string> RequestTargets => Requests.Select(r => r.Target);
         public Func<IResult> Respond { get; set; } = () => Results.NotFound();
+        public string? AllowedMethod { get; set; }
 
         public async Task StartAsync()
         {
@@ -271,6 +303,11 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
                 using var reader = new StreamReader(context.Request.Body);
                 Requests.Enqueue(new CapturedRequest(context.Request.Method, context.Features.Get<IHttpRequestFeature>()!.RawTarget,
                     context.Request.ContentType, await reader.ReadToEndAsync()));
+                if (AllowedMethod != null && !HttpMethods.Equals(context.Request.Method, AllowedMethod))
+                {
+                    return Results.Json(new { errcode = "M_UNRECOGNIZED", error = "Unrecognized request" }, statusCode: 405);
+                }
+
                 return Respond();
             }));
 

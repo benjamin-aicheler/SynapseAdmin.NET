@@ -62,13 +62,6 @@ public class SynapseCompatibleAdminGateway(
         resp.EnsureSuccessStatusCode();
     }
 
-    /// <summary>PUT an empty JSON object (<c>{}</c>) to an endpoint whose response body is not read.</summary>
-    private async Task PutEmptyAsync(string url, CancellationToken cancellationToken)
-    {
-        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
-        resp.EnsureSuccessStatusCode();
-    }
-
     // --- User Management ---
 
     public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
@@ -103,7 +96,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task QuarantineMediaByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/user/{userId.UrlEncode()}/media/quarantine";
-        await PutEmptyAsync(url, cancellationToken);
+        await PostEmptyAsync(url, cancellationToken);
     }
 
     public override async Task<LoginResponse> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken cancellationToken = default)
@@ -233,7 +226,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/room/{roomId.UrlEncode()}/media/quarantine";
-        await PutEmptyAsync(url, cancellationToken);
+        await PostEmptyAsync(url, cancellationToken);
     }
 
     public override async Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default)
@@ -389,7 +382,7 @@ public class SynapseCompatibleAdminGateway(
     public override async Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/quarantine/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
-        await PutEmptyAsync(url, cancellationToken);
+        await PostEmptyAsync(url, cancellationToken);
     }
 
     public override async Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
