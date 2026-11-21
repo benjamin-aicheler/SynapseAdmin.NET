@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using ArcaneLibs.Extensions;
 using LibMatrix.Homeservers;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Interfaces.Gateways;
@@ -290,12 +291,20 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
         return result?.Visibility.ToString().ToLowerInvariant();
     }
 
+    /// <summary>
+    /// Publishes (<c>"public"</c>, in any case) or unpublishes (any other value) a room in the published room directory.
+    /// </summary>
+    /// <remarks>
+    /// LibMatrix's <c>SetRoomDirectoryVisibilityAsync</c> is not used: it sends <c>POST</c>, takes no token and returns
+    /// an undisposed response. The Client-Server spec defines only <c>GET</c> and <c>PUT</c> on this path (#517).
+    /// The visibility is always sent explicitly, because the spec defaults a missing value to <c>public</c>.
+    /// </remarks>
     public virtual async Task SetRoomDirectoryVisibilityAsync(string roomId, string visibility, CancellationToken cancellationToken = default)
     {
-        var vis = visibility.ToLowerInvariant() == "public"
-            ? RoomDirectoryVisibilityResponse.VisibilityValue.Public
-            : RoomDirectoryVisibilityResponse.VisibilityValue.Private;
-        await Homeserver.SetRoomDirectoryVisibilityAsync(roomId, vis);
+        var vis = visibility.ToLowerInvariant() == "public" ? "public" : "private";
+        var url = $"/_matrix/client/v3/directory/list/room/{roomId.UrlEncode()}";
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { visibility = vis }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
     }
 
     public virtual async Task PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken cancellationToken = default)
