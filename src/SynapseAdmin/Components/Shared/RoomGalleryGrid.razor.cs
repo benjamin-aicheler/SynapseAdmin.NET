@@ -30,6 +30,9 @@ namespace SynapseAdmin.Components.Shared
         private bool _hasMoreToLoad;
         private int _batchGeneration;
         private const int PageSize = 20;
+        // A search or type filter looks up the metadata of unchecked items in batches of PageSize, at most this many
+        // batches per load; "Check more" or the next scroll continues (#523).
+        private const int MaxLookupBatchesPerLoad = 5;
         private const string FilterAll = "all";
         private const string SourceFilterLocal = "local";
         private const string SourceFilterRemote = "remote";
@@ -43,8 +46,17 @@ namespace SynapseAdmin.Components.Shared
         private string _typeFilter = FilterAll; // all, image, video, audio, file
 
         private readonly List<RoomMediaItemViewModel> _allMedia = [];
+        // The items of the selected source, in room order. The filter checks them in this order: `_classifyCursor`
+        // is the first unchecked one, `_filteredMedia` holds the matches found so far, `_displayedMedia` the shown
+        // ones (#523).
+        private List<RoomMediaItemViewModel> _sourceMedia = [];
+        private int _classifyCursor;
         private List<RoomMediaItemViewModel> _filteredMedia = [];
         private List<RoomMediaItemViewModel> _displayedMedia = [];
+        // Checked items that a type filter hides because their lookup found no type (for example uncached remote media).
+        private int _unknownTypeCount;
+        // The last load stopped at MaxLookupBatchesPerLoad with items left to check.
+        private bool _lookupCapReached;
         private readonly HashSet<string> _loadedMetadataMxcs = [];
         private readonly CancellationTokenSource _cts = new();
         private bool _hasLoaded;
@@ -161,26 +173,92 @@ namespace SynapseAdmin.Components.Shared
             else if (_sourceFilter == SourceFilterRemote)
                 query = query.Where(x => !x.IsLocal);
 
-            if (_typeFilter == TypeFilterImage)
-                query = query.Where(x => IsImageType(x.MediaType));
-            else if (_typeFilter == TypeFilterVideo)
-                query = query.Where(x => IsVideoType(x.MediaType));
-            else if (_typeFilter == TypeFilterAudio)
-                query = query.Where(x => IsAudioType(x.MediaType));
-            else if (_typeFilter == TypeFilterFile)
-                query = query.Where(x => !IsImageType(x.MediaType) && !IsVideoType(x.MediaType) && !IsAudioType(x.MediaType));
+            _sourceMedia = query.ToList();
+            _classifyCursor = 0;
+            _filteredMedia = [];
+            _displayedMedia = [];
+            _unknownTypeCount = 0;
+            _lookupCapReached = false;
 
+            // Without a search or type filter this checks every item at once, as before #523.
+            ClassifyKnownItems();
+            UpdateHasMoreToLoad();
+        }
+
+        /// <summary>How an item relates to the active search and type filters.</summary>
+        private enum FilterMatch
+        {
+            Match,
+            NoMatch,
+            /// <summary>The filters need metadata the item hasn't been looked up for yet.</summary>
+            Unknown,
+            /// <summary>Looked up, but its type is still unknown: hidden by a type filter and counted.</summary>
+            UnknownType
+        }
+
+        private FilterMatch Classify(RoomMediaItemViewModel item)
+        {
+            var lookedUp = _loadedMetadataMxcs.Contains(item.MediaId);
+
+            var search = FilterMatch.Match;
             if (!string.IsNullOrWhiteSpace(_searchTerm))
             {
                 var term = _searchTerm.Trim();
-                query = query.Where(x => (x.UploadName != null && x.UploadName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                                         x.MediaId.Contains(term, StringComparison.OrdinalIgnoreCase));
+                if (!item.MediaId.Contains(term, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (item.UploadName != null)
+                        search = item.UploadName.Contains(term, StringComparison.OrdinalIgnoreCase) ? FilterMatch.Match : FilterMatch.NoMatch;
+                    else
+                        search = lookedUp ? FilterMatch.NoMatch : FilterMatch.Unknown;
+                }
             }
+            if (search == FilterMatch.NoMatch) return FilterMatch.NoMatch;
 
-            _filteredMedia = query.ToList();
-            _displayedMedia = [];
-            _hasMoreToLoad = _filteredMedia.Count > 0;
+            var type = FilterMatch.Match;
+            if (_typeFilter != FilterAll)
+            {
+                if (string.IsNullOrEmpty(item.MediaType))
+                    type = lookedUp ? FilterMatch.UnknownType : FilterMatch.Unknown;
+                else if (!MatchesTypeFilter(item.MediaType))
+                    type = FilterMatch.NoMatch;
+            }
+            if (type == FilterMatch.NoMatch) return FilterMatch.NoMatch;
+
+            if (search == FilterMatch.Unknown || type == FilterMatch.Unknown) return FilterMatch.Unknown;
+            return type;
         }
+
+        /// <summary>Whether a known MIME type passes the type filter; Files means a known type that is none of the others.</summary>
+        private bool MatchesTypeFilter(string mediaType) => _typeFilter switch
+        {
+            TypeFilterImage => IsImageType(mediaType),
+            TypeFilterVideo => IsVideoType(mediaType),
+            TypeFilterAudio => IsAudioType(mediaType),
+            TypeFilterFile => !IsImageType(mediaType) && !IsVideoType(mediaType) && !IsAudioType(mediaType),
+            _ => true
+        };
+
+        /// <summary>Checks items from the cursor until one needs a lookup, recording matches and unknown types.</summary>
+        private void ClassifyKnownItems()
+        {
+            while (_classifyCursor < _sourceMedia.Count)
+            {
+                var result = Classify(_sourceMedia[_classifyCursor]);
+                if (result == FilterMatch.Unknown) return;
+                if (result == FilterMatch.Match) _filteredMedia.Add(_sourceMedia[_classifyCursor]);
+                else if (result == FilterMatch.UnknownType) _unknownTypeCount++;
+                _classifyCursor++;
+            }
+        }
+
+        /// <summary>A search or type filter still has items to check, so its result is not complete yet.</summary>
+        private bool IsChecking => _classifyCursor < _sourceMedia.Count;
+
+        /// <summary>Continues checking after the lookup limit stopped the last load (#523).</summary>
+        private Task CheckMore() => LoadNextBatch();
+
+        private void UpdateHasMoreToLoad() =>
+            _hasMoreToLoad = _displayedMedia.Count < _filteredMedia.Count || _classifyCursor < _sourceMedia.Count;
 
         private async Task LoadNextBatch()
         {
@@ -188,53 +266,50 @@ namespace SynapseAdmin.Components.Shared
 
             var currentGen = _batchGeneration;
             _isBatchLoading = true;
+            _lookupCapReached = false;
             try
             {
-                var currentCount = _displayedMedia.Count;
-                var nextItems = _filteredMedia.Skip(currentCount).Take(PageSize).ToList();
-
-                if (nextItems.Count == 0)
+                // Look up unchecked items until one more page of matches is ready, all items are checked, or the
+                // batch limit is reached (#523).
+                var lookupBatches = 0;
+                ClassifyKnownItems();
+                while (_filteredMedia.Count < _displayedMedia.Count + PageSize && _classifyCursor < _sourceMedia.Count)
                 {
-                    _hasMoreToLoad = false;
+                    if (lookupBatches == MaxLookupBatchesPerLoad)
+                    {
+                        _lookupCapReached = true;
+                        break;
+                    }
+
+                    var unknown = new List<string>();
+                    for (var i = _classifyCursor; i < _sourceMedia.Count && unknown.Count < PageSize; i++)
+                    {
+                        if (Classify(_sourceMedia[i]) == FilterMatch.Unknown) unknown.Add(_sourceMedia[i].MediaId);
+                    }
+                    lookupBatches++;
                     StateHasChanged();
-                    return;
+
+                    var looked = await LookUpMetadataAsync(unknown);
+                    // Discard the result of a filter that is no longer active; its metadata is kept.
+                    if (currentGen != _batchGeneration) return;
+                    if (!looked) break;
+                    ClassifyKnownItems();
                 }
 
+                var nextItems = _filteredMedia.Skip(_displayedMedia.Count).Take(PageSize).ToList();
                 _displayedMedia.AddRange(nextItems);
-                _hasMoreToLoad = _displayedMedia.Count < _filteredMedia.Count;
+                UpdateHasMoreToLoad();
                 StateHasChanged();
 
-                // Fetch metadata for unhydrated items in parallel/batch
+                // Shown items may still lack metadata (all of them without a filter, URI matches with a search).
                 var unhydrated = nextItems
                     .Select(x => x.MediaId)
                     .Where(id => !_loadedMetadataMxcs.Contains(id))
                     .Distinct(StringComparer.Ordinal)
                     .ToList();
-                if (unhydrated.Count > 0)
+                if (unhydrated.Count > 0 && await LookUpMetadataAsync(unhydrated))
                 {
-                    var metaResult = await RoomService.GetMediaMetadataBatchAsync(unhydrated, _cts.Token);
-                    if (metaResult.Success && metaResult.Data != null)
-                    {
-                        // Tolerate repeated result IDs: the first result for an MXC URI wins.
-                        var metaDict = new Dictionary<string, RoomMediaItemViewModel>(StringComparer.Ordinal);
-                        foreach (var meta in metaResult.Data)
-                        {
-                            if (!string.IsNullOrEmpty(meta.MediaId)) metaDict.TryAdd(meta.MediaId, meta);
-                        }
-                        foreach (var item in _allMedia)
-                        {
-                            if (metaDict.TryGetValue(item.MediaId, out var metaItem))
-                            {
-                                item.CopyMetadataFrom(metaItem);
-                                _loadedMetadataMxcs.Add(item.MediaId);
-                            }
-                        }
-                        StateHasChanged();
-                    }
-                    else
-                    {
-                        Snackbar.ShowFailure(metaResult);
-                    }
+                    StateHasChanged();
                 }
             }
             finally
@@ -242,8 +317,42 @@ namespace SynapseAdmin.Components.Shared
                 if (currentGen == _batchGeneration)
                 {
                     _isBatchLoading = false;
+                    // Also after a load started from JS (the sentinel), which renders nothing by itself: the status
+                    // and the "Check more" button depend on _isBatchLoading.
+                    StateHasChanged();
                 }
             }
+        }
+
+        /// <summary>
+        /// Looks up the metadata of <paramref name="mxcUris"/> and copies it into every matching item. Every requested
+        /// URI counts as looked up afterwards, also when nothing was found, so it is not looked up again. Returns false
+        /// (after reporting the failure) if the lookup failed.
+        /// </summary>
+        private async Task<bool> LookUpMetadataAsync(List<string> mxcUris)
+        {
+            var metaResult = await RoomService.GetMediaMetadataBatchAsync(mxcUris, _cts.Token);
+            if (!metaResult.Success || metaResult.Data == null)
+            {
+                Snackbar.ShowFailure(metaResult);
+                return false;
+            }
+
+            // Tolerate repeated result IDs: the first result for an MXC URI wins.
+            var metaDict = new Dictionary<string, RoomMediaItemViewModel>(StringComparer.Ordinal);
+            foreach (var meta in metaResult.Data)
+            {
+                if (!string.IsNullOrEmpty(meta.MediaId)) metaDict.TryAdd(meta.MediaId, meta);
+            }
+            foreach (var item in _allMedia)
+            {
+                if (metaDict.TryGetValue(item.MediaId, out var metaItem))
+                {
+                    item.CopyMetadataFrom(metaItem);
+                }
+            }
+            _loadedMetadataMxcs.UnionWith(mxcUris);
+            return true;
         }
 
         [JSInvokable]

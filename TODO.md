@@ -18,11 +18,11 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## 🔄 In Progress
 
-- [ ] [2.1] Failing tests: Images and file-name search find item 21; Files excludes items without a lookup or a known type; ≤ 5 lookup batches per load; stale filter discarded (AC-10)
-- [ ] [2.2] Classification in order with a cursor and bounded lookups in `RoomGalleryGrid.razor.cs` (FR-6)
-- [ ] [3.1] Failing tests: "Checked x of y items", "Check more", "No media found" only when complete, unknown-type note (AC-10)
-- [ ] [3.2] Markup, `CheckMore` handler, EN/DE/FR resource keys (FR-6)
 - [ ] [4.1] Finalize SPEC.md `[Planned]` entries and the Decision Log; reset PLAN.md and TODO.md
+
+## ⏭️ Next Up
+
+- [ ] 
 
 ## ⛔ Blocked
 
@@ -34,12 +34,14 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [ ] 
+- [x] 2026-11-21 – A load started by the JS sentinel didn't render after `_isBatchLoading` was reset, so a status that depends on it stayed stale. Fixed in `LoadNextBatch`'s `finally` and covered by `SentinelLoad_StoppingAtTheCap_RendersCheckMore`.
 
 ## ✅ Done
 
 - [x] 2026-11-21 – SPEC.md `[Planned]` entries and PLAN.md approved – df23bee
 - [x] 2026-11-21 – [1.1] Characterization tests (unfiltered, source filter, search by URI) – `RoomGalleryFilterHydrationTests`
+- [x] 2026-11-21 – [2.1]/[2.2] Classification in order with bounded lookups – `RoomGalleryGrid.razor.cs`
+- [x] 2026-11-21 – [3.1]/[3.2] Status, "Check more", unknown-type note, EN/DE/FR strings – `RoomGalleryGrid.razor`, resx
 
 ## Definition of Done (applies to every task)
 
