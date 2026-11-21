@@ -399,8 +399,8 @@ namespace SynapseAdmin.Components.Pages
 
                         await InvokeAsync(() =>
                         {
-                            if (token.IsCancellationRequested) return;
-                            shouldStop = ApplyPurgeStatus(roomId, status, error);
+                            if (!IsCurrentPoll(purgeId, token)) return;
+                            shouldStop = ApplyPurgeStatus(roomId, purgeId, status, error);
                         });
 
                         if (shouldStop)
@@ -423,7 +423,8 @@ namespace SynapseAdmin.Components.Pages
                         {
                             await InvokeAsync(() =>
                             {
-                                ClearActivePurge(roomId);
+                                if (!IsCurrentPoll(purgeId, token)) return;
+                                ClearActivePurge(roomId, purgeId);
                                 Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
                                 StateHasChanged();
                             });
@@ -445,7 +446,8 @@ namespace SynapseAdmin.Components.Pages
                 {
                     await InvokeAsync(() =>
                     {
-                        ClearActivePurge(roomId);
+                        if (!IsCurrentPoll(purgeId, token)) return;
+                        ClearActivePurge(roomId, purgeId);
                         Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
                         StateHasChanged();
                     });
@@ -462,13 +464,13 @@ namespace SynapseAdmin.Components.Pages
         /// Shows a polled purge status; on "complete" or "failed" clears the purge and reports it. Returns whether
         /// polling should stop.
         /// </summary>
-        private bool ApplyPurgeStatus(string roomId, string? status, string? error)
+        private bool ApplyPurgeStatus(string roomId, string purgeId, string? status, string? error)
         {
             activePurgeStatus = status;
 
             if (status == PurgeStatusComplete)
             {
-                ClearActivePurge(roomId);
+                ClearActivePurge(roomId, purgeId);
                 Snackbar.Add(L["PurgeCompleted"], Severity.Success);
                 StateHasChanged();
                 return true;
@@ -476,7 +478,7 @@ namespace SynapseAdmin.Components.Pages
 
             if (status == PurgeStatusFailed)
             {
-                ClearActivePurge(roomId);
+                ClearActivePurge(roomId, purgeId);
                 var errMsg = !string.IsNullOrEmpty(error)
                     ? string.Format(L["PurgeFailed"], error)
                     : string.Format(L["PurgeFailed"], L["UnknownError"]);
@@ -489,12 +491,21 @@ namespace SynapseAdmin.Components.Pages
             return false;
         }
 
-        private void ClearActivePurge(string roomId)
+        private void ClearActivePurge(string roomId, string purgeId)
         {
-            RoomService.ClearActivePurgeId(roomId);
+            // Only this purge: another session may already track a newer purge for the room (#522).
+            RoomService.ClearActivePurgeId(roomId, purgeId);
             activePurgeId = null;
             activePurgeStatus = null;
         }
+
+        /// <summary>
+        /// Whether a poll's answer still belongs to the shown purge. Navigating or starting a new purge cancels the
+        /// previous poll on the dispatcher (<see cref="StopPolling"/>), so call this on the dispatcher: a late answer
+        /// for another room or an older purge then changes no field, cache entry or snackbar (#522).
+        /// </summary>
+        private bool IsCurrentPoll(string purgeId, CancellationToken token) =>
+            !token.IsCancellationRequested && activePurgeId == purgeId;
 
         private async Task OpenPurgeHistoryDialog()
         {

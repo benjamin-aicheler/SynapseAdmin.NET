@@ -356,6 +356,11 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         memoryCache.Remove(GetActivePurgeCacheKey(roomId));
     }
 
+    public void ClearActivePurgeId(string roomId, string expectedPurgeId)
+    {
+        if (GetActivePurgeId(roomId) == expectedPurgeId) ClearActivePurgeId(roomId);
+    }
+
     public Task<OperationResult<string>> PurgeRoomHistoryAsync(string roomId, PurgeHistoryViewModel request, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorPurgingHistory",
             ex => logger.LogError(ex, "Error purging history for room {RoomId}", roomId.SanitizeForLogging()),
