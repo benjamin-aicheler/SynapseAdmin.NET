@@ -10,6 +10,7 @@
         </MudText>
     </TitleContent>
     <DialogContent>
+        @* Both limits are clearable: an empty field removes the limit when editing (#519). *@
         <MudForm @bind-IsValid="@success">
             @if(!IsEdit) {
                 <MudTextField @bind-Value="token" 
@@ -20,11 +21,13 @@
             <MudNumericField @bind-Value="usesAllowed" 
                              Label="@L["UsesAllowedLabel"]" 
                              Min="1" 
+                             Clearable="true"
                              Variant="Variant.Outlined" 
                              Class="mb-4" />
                              
             <MudDatePicker @bind-Date="expiryDate" 
                            Label="@L["ExpiryDateLabel"]" 
+                           Clearable="true"
                            Variant="Variant.Outlined" 
                            Class="mb-4" />
         </MudForm>
