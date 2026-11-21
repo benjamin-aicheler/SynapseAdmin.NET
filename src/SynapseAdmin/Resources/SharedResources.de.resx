@@ -1225,6 +1225,15 @@
   <data name="AllLoaded" xml:space="preserve">
     <value>Alle Medien geladen</value>
   </data>
+  <data name="GalleryCheckedItems" xml:space="preserve">
+    <value>{0} von {1} Elementen geprüft</value>
+  </data>
+  <data name="GalleryCheckMore" xml:space="preserve">
+    <value>Weitere prüfen</value>
+  </data>
+  <data name="GalleryUnknownTypeHidden" xml:space="preserve">
+    <value>{0} Elemente mit unbekanntem Typ werden nicht angezeigt</value>
+  </data>
   <data name="FilterSource" xml:space="preserve">
     <value>Quelle</value>
   </data>

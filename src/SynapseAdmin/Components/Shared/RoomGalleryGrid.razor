@@ -43,7 +43,7 @@
             <MudText Typo="Typo.body1" Color="Color.Secondary">@L["Loading"]</MudText>
         </div>
     }
-    else if (!_filteredMedia.Any())
+    else if (!_filteredMedia.Any() && !IsChecking)
     {
         <MudAlert Severity="Severity.Info" Class="my-4">@L["NoMediaFound"]</MudAlert>
     }
@@ -164,13 +164,30 @@
         </div>
     }
 
-    @* Infinite Scroll Sentinel & Loader *@
+    @if (!_isLoadingInitial && _unknownTypeCount > 0)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block text-center mt-2">@L["GalleryUnknownTypeHidden", _unknownTypeCount]</MudText>
+    }
+
+    @* Infinite Scroll Sentinel & Loader. While a search or type filter still has unchecked items, say how many are
+       checked; after the lookup limit, the admin continues with "Check more" (#523). *@
     <div @ref="_sentinelElement" class="d-flex align-center justify-center py-6">
-        @if (!_isLoadingInitial && _hasMoreToLoad)
+        @if (!_isLoadingInitial && _lookupCapReached && !_isBatchLoading && IsChecking)
+        {
+            <div class="d-flex align-center gap-2">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@L["GalleryCheckedItems", _classifyCursor, _sourceMedia.Count]</MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" OnClick="CheckMore">@L["GalleryCheckMore"]</MudButton>
+            </div>
+        }
+        else if (!_isLoadingInitial && _hasMoreToLoad)
         {
             <div class="d-flex align-center gap-2">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
                 <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Loading"]</MudText>
+                @if (IsChecking)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">(@L["GalleryCheckedItems", _classifyCursor, _sourceMedia.Count])</MudText>
+                }
             </div>
         }
         else if (!_isLoadingInitial && _displayedMedia.Any())
