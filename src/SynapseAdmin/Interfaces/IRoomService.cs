@@ -26,4 +26,9 @@ public interface IRoomService
     string? GetActivePurgeId(string roomId);
     void SetActivePurgeId(string roomId, string purgeId);
     void ClearActivePurgeId(string roomId);
+    /// <summary>
+    /// Clears the tracked purge of a room only if it is still <paramref name="expectedPurgeId"/>, so finishing or
+    /// giving up on an older purge never removes a newer one (the cache is shared by every session, #522).
+    /// </summary>
+    void ClearActivePurgeId(string roomId, string expectedPurgeId);
 }

@@ -267,7 +267,7 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
     {
         cut.WaitForAssertion(() => Assert.NotEmpty(SnackbarCalls));
         cut.WaitForAssertion(() => Assert.DoesNotContain(Localizer["PurgeInProgress"].Value, cut.Markup));
-        Assert.Equal(RoomA, Assert.Single(ClearCalls)[0]);
+        Assert.Equal([RoomA, "purge-a"], Assert.Single(ClearCalls));
         var snackbar = Assert.Single(SnackbarCalls);
         Assert.Equal(message, snackbar[0]);
         Assert.Equal(severity, snackbar[1]);
@@ -338,7 +338,7 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
         RenderPurgingRoom(() => Task.FromException<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>(pollingError));
 
         await snackbarTried.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.Equal(RoomA, Assert.Single(ClearCalls)[0]);
+        Assert.Equal([RoomA, "purge-a"], Assert.Single(ClearCalls));
         var error = Assert.Single(logger.Entries, e => e.Level == LogLevel.Error);
         Assert.Equal("Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", error.Template);
         Assert.Same(pollingError, error.Exception);
@@ -411,5 +411,119 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
                 ["RoomId"] = RoomA, ["PurgeId"] = "purge-a", ["Attempt"] = 1, ["MaxAttempts"] = 5, ["Error"] = "status unavailable"
             },
             warnings[0].Arguments);
+    }
+
+    // ---- A previous poll's late failure (#522) -------------------------------------------------------
+
+    /// <summary>
+    /// Room A's purge is polled with <paramref name="statusA"/>; room B has its own purge, which is reported as running.
+    /// </summary>
+    private IRenderedComponent<RoomDetails> RenderTwoPurgingRooms(Func<Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>> statusA)
+    {
+        _rooms
+            .On(nameof(IRoomService.GetActivePurgeId), args => (string)args[0]! == RoomA ? "purge-a" : "purge-b")
+            .On(nameof(IRoomService.GetPurgeHistoryStatusAsync), args =>
+                (string)args[0]! == "purge-a" ? statusA() : Task.FromResult(PurgeStatus("active")));
+        var cut = RenderRoom(RoomA);
+        cut.WaitForAssertion(() => Assert.Contains("Alpha Lounge", cut.Markup));
+        return cut;
+    }
+
+    private void NavigateToRunningPurgeB(IRenderedComponent<RoomDetails> cut)
+    {
+        Navigate(cut, RoomB);
+        cut.WaitForAssertion(() => Assert.Contains("Bravo Lounge", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains(StatusCalls, c => (string)c[0]! == "purge-b"));
+        cut.WaitForAssertion(() => Assert.Equal(Localizer["PurgeStatusActive"].Value,
+            Assert.Single(cut.FindAll(".mud-alert .mud-chip")).TextContent.Trim()));
+    }
+
+    /// <summary>Room B still shows its running purge, and nothing was cleared or reported.</summary>
+    private async Task AssertRoomBPurgeUntouchedAsync(IRenderedComponent<RoomDetails> cut)
+    {
+        await Task.Delay(500); // the late answer is handled on a background poll
+        Assert.Equal("purge-b", GetField<string>(cut.Instance, "activePurgeId"));
+        Assert.Equal("active", GetField<string>(cut.Instance, "activePurgeStatus"));
+        Assert.Contains(Localizer["PurgeInProgress"].Value, cut.Markup);
+        Assert.Empty(ClearCalls);
+        Assert.Empty(SnackbarCalls);
+    }
+
+    /// <summary>
+    /// The issue's scenario: four failed status reads for room A, the fifth is held while the page moves to room B,
+    /// which has a running purge, then fails. Takes about 20 s, because the poll interval is a constant.
+    /// </summary>
+    [Fact]
+    public async Task FifthFailureForThePreviousRoom_AfterNavigation_KeepsTheCurrentRoomsPurge()
+    {
+        var fifthRequested = Pending<bool>();
+        var fifth = Pending<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>();
+        var callsA = 0;
+        var cut = RenderTwoPurgingRooms(() =>
+        {
+            if (Interlocked.Increment(ref callsA) < 5)
+                return Task.FromResult(OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure("status unavailable"));
+            fifthRequested.TrySetResult(true);
+            return fifth.Task;
+        });
+        await fifthRequested.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
+        NavigateToRunningPurgeB(cut);
+        fifth.SetResult(OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure("status unavailable"));
+
+        await AssertRoomBPurgeUntouchedAsync(cut);
+    }
+
+    /// <summary>The catch-all path: room A's held status request throws after the page moved to room B.</summary>
+    [Fact]
+    public async Task ThrowingStatusRequestForThePreviousRoom_AfterNavigation_KeepsTheCurrentRoomsPurge()
+    {
+        var requested = Pending<bool>();
+        var pending = Pending<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>();
+        var cut = RenderTwoPurgingRooms(() =>
+        {
+            requested.TrySetResult(true);
+            return pending.Task;
+        });
+        await requested.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        NavigateToRunningPurgeB(cut);
+        pending.SetException(new InvalidOperationException("boom"));
+
+        await AssertRoomBPurgeUntouchedAsync(cut);
+    }
+
+    /// <summary>
+    /// A new purge started in the same room replaces the polled one: a late error for the old purge keeps the new
+    /// purge and reports nothing.
+    /// </summary>
+    [Fact]
+    public async Task ThrowingStatusRequestForAnOlderPurge_KeepsTheNewPurgeInTheSameRoom()
+    {
+        var requested = Pending<bool>();
+        var pending = Pending<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>();
+        _rooms
+            .On(nameof(IRoomService.GetActivePurgeId), _ => "purge-a")
+            .On(nameof(IRoomService.GetPurgeHistoryStatusAsync), args =>
+            {
+                if ((string)args[0]! != "purge-a") return Task.FromResult(PurgeStatus("active"));
+                requested.TrySetResult(true);
+                return pending.Task;
+            });
+        var dialog = Stub.Create<IDialogReference>(s => s.On("get_Result", _ =>
+            Task.FromResult<DialogResult?>(DialogResult.Ok("purge-a2"))));
+        DialogStub.On(nameof(IDialogService.ShowAsync), _ => Task.FromResult(dialog));
+        var cut = RenderRoom(RoomA);
+        cut.WaitForAssertion(() => Assert.Contains("Alpha Lounge", cut.Markup));
+        await requested.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        await InvokeHandler(cut, "OpenPurgeHistoryDialog");
+        Assert.Equal("purge-a2", GetField<string>(cut.Instance, "activePurgeId"));
+        pending.SetException(new InvalidOperationException("boom"));
+        await Task.Delay(500);
+
+        Assert.Equal("purge-a2", GetField<string>(cut.Instance, "activePurgeId"));
+        Assert.Empty(ClearCalls);
+        Assert.Empty(SnackbarCalls);
     }
 }

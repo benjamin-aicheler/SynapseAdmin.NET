@@ -23,6 +23,10 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
     };
 
+    // Guards writes of the tracked purge IDs. Static, because every session's (scoped) RoomService shares the
+    // process-wide IMemoryCache, and IMemoryCache has no compare-and-remove of its own (#522).
+    private static readonly Lock ActivePurgeLock = new();
+
     private static readonly MemoryCacheEntryOptions ActivePurgeCacheOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
@@ -347,13 +351,29 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
     public void SetActivePurgeId(string roomId, string purgeId)
     {
         if (string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(purgeId)) return;
-        memoryCache.Set(GetActivePurgeCacheKey(roomId), purgeId, ActivePurgeCacheOptions);
+        lock (ActivePurgeLock)
+        {
+            memoryCache.Set(GetActivePurgeCacheKey(roomId), purgeId, ActivePurgeCacheOptions);
+        }
     }
 
     public void ClearActivePurgeId(string roomId)
     {
         if (string.IsNullOrEmpty(roomId)) return;
-        memoryCache.Remove(GetActivePurgeCacheKey(roomId));
+        lock (ActivePurgeLock)
+        {
+            memoryCache.Remove(GetActivePurgeCacheKey(roomId));
+        }
+    }
+
+    public void ClearActivePurgeId(string roomId, string expectedPurgeId)
+    {
+        if (string.IsNullOrEmpty(roomId)) return;
+        // Compare and remove in one step: another session must not set a newer purge in between (#522).
+        lock (ActivePurgeLock)
+        {
+            if (GetActivePurgeId(roomId) == expectedPurgeId) memoryCache.Remove(GetActivePurgeCacheKey(roomId));
+        }
     }
 
     public Task<OperationResult<string>> PurgeRoomHistoryAsync(string roomId, PurgeHistoryViewModel request, CancellationToken token = default) =>
