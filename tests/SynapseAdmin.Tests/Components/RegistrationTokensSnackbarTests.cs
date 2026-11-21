@@ -90,4 +90,16 @@ public class RegistrationTokensSnackbarTests : DetailPageTestBase
 
         AssertSnackbars(kind == "cancelled" ? [] : [_result]);
     }
+
+    [Fact]
+    public async Task EditDialog_ReceivesTheStoredExpiryInstant()
+    {
+        const long expiry = 1_792_891_800_000L; // 2026-10-25 01:30 UTC
+        var cut = Render<RegistrationTokens>();
+
+        await InvokeHandler(cut, "OpenEditDialog", new RegistrationTokenViewModel { Token = "tok", ExpiryTime = expiry });
+
+        var parameters = Assert.IsType<DialogParameters>(Assert.Single(DialogStub.CallsTo(nameof(IDialogService.ShowAsync)))[1]);
+        Assert.Equal(expiry, parameters.Get<long?>(nameof(RegistrationTokenDialog.ExistingExpiryTime)));
+    }
 }

@@ -75,7 +75,9 @@ namespace SynapseAdmin.Components.Pages
                 { "ExistingToken", tokenObj.Token },
                 { "ExistingUsesAllowed", tokenObj.UsesAllowed },
                 // The dialog edits wall-clock time in the user's time zone.
-                { "ExistingExpiryDate", tokenObj.ExpiryTimeDateTime is { } expiry ? TimeZoneService.ToLocal(expiry).DateTime : null }
+                { "ExistingExpiryDate", tokenObj.ExpiryTimeDateTime is { } expiry ? TimeZoneService.ToLocal(expiry).DateTime : null },
+                // The stored instant, which an unchanged edit sends back as is (#520).
+                { "ExistingExpiryTime", tokenObj.ExpiryTime }
             };
 
             var options = DialogPresets.Small();

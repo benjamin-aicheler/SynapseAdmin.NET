@@ -26,6 +26,13 @@ namespace SynapseAdmin.Components.Pages
         [Parameter]
         public DateTime? ExistingExpiryDate { get; set; }
 
+        /// <summary>
+        /// The existing expiry as stored (Unix ms). Saved unchanged while the date is untouched, because converting
+        /// <see cref="ExistingExpiryDate"/> back can't tell the two occurrences of an ambiguous wall-clock time apart (#520).
+        /// </summary>
+        [Parameter]
+        public long? ExistingExpiryTime { get; set; }
+
         private bool success = true;
 
         private string? token;
@@ -43,6 +50,15 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private long? GetExpiryTime()
+        {
+            if (!expiryDate.HasValue) return null;
+            // An untouched expiry keeps its stored instant, also the second occurrence of an ambiguous time (#520).
+            if (IsEdit && ExistingExpiryTime.HasValue && expiryDate == ExistingExpiryDate) return ExistingExpiryTime;
+            // The picked date is wall-clock time in the user's time zone, not the server's (#393).
+            return TimeZoneService.ToDateTimeOffset(expiryDate.Value).ToUnixTimeMilliseconds();
+        }
+
         private void Cancel()
         {
             MudDialog.Cancel();
@@ -54,8 +70,7 @@ namespace SynapseAdmin.Components.Pages
             {
                 Token = string.IsNullOrWhiteSpace(token) ? string.Empty : token,
                 UsesAllowed = usesAllowed,
-                // The picked date is wall-clock time in the user's time zone, not the server's (#393).
-                ExpiryTime = expiryDate.HasValue ? TimeZoneService.ToDateTimeOffset(expiryDate.Value).ToUnixTimeMilliseconds() : null
+                ExpiryTime = GetExpiryTime()
             };
             MudDialog.Close(DialogResult.Ok(viewModel));
         }

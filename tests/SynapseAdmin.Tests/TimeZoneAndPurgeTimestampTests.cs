@@ -54,6 +54,63 @@ public class TimeZoneAndPurgeTimestampTests
         Assert.Equal(existing.ExpiryTime, token.ExpiryTime);
     }
 
+    // Issue #520: in Europe/Berlin, 2026-10-25 02:30 local occurs twice. 01:30 UTC is the second occurrence (CET, UTC+1);
+    // converting the wall-clock time back picks the earlier one (CEST, 00:30 UTC), so an unchanged edit must not convert.
+    private static readonly DateTimeOffset SecondOccurrenceOfAmbiguousTime = new(2026, 10, 25, 1, 30, 0, TimeSpan.Zero);
+
+    [Fact]
+    public async Task RegistrationTokenDialog_EditWithoutChanges_KeepsSecondOccurrenceOfAmbiguousExpiry()
+    {
+        await using var timeZone = new TimeZoneService(new StubJsRuntime("Europe/Berlin"), NullLogger<TimeZoneService>.Instance);
+        await timeZone.InitializeAsync();
+        var existing = SecondOccurrenceOfAmbiguousTime.ToUnixTimeMilliseconds();
+        var existingLocal = timeZone.ToLocal(SecondOccurrenceOfAmbiguousTime).DateTime;
+        Assert.True(timeZone.IsAmbiguousLocalTime(existingLocal));
+        var dialogProxy = (RecordingDialogProxy)(object)DispatchProxy.Create<IMudDialogInstance, RecordingDialogProxy>();
+
+        var dialog = await CreateTokenDialogAsync(timeZone, (IMudDialogInstance)(object)dialogProxy, isEdit: true,
+            existingExpiry: existingLocal, existingExpiryTime: existing);
+        InvokePrivate(dialog, "Submit");
+
+        var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
+        Assert.Equal(existing, token.ExpiryTime);
+    }
+
+    [Fact]
+    public async Task RegistrationTokenDialog_EditWithChangedDate_ConvertsTheNewDate()
+    {
+        await using var timeZone = new TimeZoneService(new StubJsRuntime("Europe/Berlin"), NullLogger<TimeZoneService>.Instance);
+        await timeZone.InitializeAsync();
+        var dialogProxy = (RecordingDialogProxy)(object)DispatchProxy.Create<IMudDialogInstance, RecordingDialogProxy>();
+        var dialog = await CreateTokenDialogAsync(timeZone, (IMudDialogInstance)(object)dialogProxy, isEdit: true,
+            existingExpiry: timeZone.ToLocal(SecondOccurrenceOfAmbiguousTime).DateTime,
+            existingExpiryTime: SecondOccurrenceOfAmbiguousTime.ToUnixTimeMilliseconds());
+
+        SetField(dialog, "expiryDate", new DateTime(2026, 12, 1));
+        InvokePrivate(dialog, "Submit");
+
+        var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
+        // 2026-12-01 00:00 in Berlin (CET, UTC+1) -> 2026-11-30 23:00 UTC
+        Assert.Equal(new DateTimeOffset(2026, 11, 30, 23, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds(), token.ExpiryTime);
+    }
+
+    [Fact]
+    public async Task RegistrationTokenDialog_EnteredAmbiguousTime_KeepsEarlierOccurrencePolicy()
+    {
+        await using var timeZone = new TimeZoneService(new StubJsRuntime("Europe/Berlin"), NullLogger<TimeZoneService>.Instance);
+        await timeZone.InitializeAsync();
+        var dialogProxy = (RecordingDialogProxy)(object)DispatchProxy.Create<IMudDialogInstance, RecordingDialogProxy>();
+        var dialog = await CreateTokenDialogAsync(timeZone, (IMudDialogInstance)(object)dialogProxy, isEdit: true,
+            existingExpiry: new DateTime(2026, 12, 1), existingExpiryTime: new DateTimeOffset(2026, 11, 30, 23, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds());
+
+        SetField(dialog, "expiryDate", new DateTime(2026, 10, 25, 2, 30, 0));
+        InvokePrivate(dialog, "Submit");
+
+        var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
+        // The earlier occurrence: 02:30 CEST (UTC+2) -> 00:30 UTC
+        Assert.Equal(new DateTimeOffset(2026, 10, 25, 0, 30, 0, TimeSpan.Zero).ToUnixTimeMilliseconds(), token.ExpiryTime);
+    }
+
     [Fact]
     public void TimestampViewModels_ExposeUtcInstants()
     {
@@ -71,14 +128,15 @@ public class TimeZoneAndPurgeTimestampTests
 
 #pragma warning disable BL0005
     private static async Task<RegistrationTokenDialog> CreateTokenDialogAsync(
-        ITimeZoneService timeZone, IMudDialogInstance mudDialog, bool isEdit, DateTime? existingExpiry)
+        ITimeZoneService timeZone, IMudDialogInstance mudDialog, bool isEdit, DateTime? existingExpiry, long? existingExpiryTime = null)
     {
         var dialog = new RegistrationTokenDialog
         {
             TimeZoneService = timeZone,
             IsEdit = isEdit,
             ExistingToken = isEdit ? "token" : null,
-            ExistingExpiryDate = existingExpiry
+            ExistingExpiryDate = existingExpiry,
+            ExistingExpiryTime = existingExpiryTime
         };
         typeof(RegistrationTokenDialog).GetProperty("MudDialog", BindingFlags.NonPublic | BindingFlags.Instance)!
             .SetValue(dialog, mudDialog);
