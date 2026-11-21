@@ -307,6 +307,23 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         Assert.Empty(_logger.Entries);
     }
 
+    // A null media list is a collection read: the room has no media, not "media still unknown" (#395, #524).
+    [Fact]
+    public async Task Details_NullMediaList_IsEmptyMedia()
+    {
+        var gateway = Stub.Create<IMatrixGateway>(s => s
+            .On("GetRoomDetailsAsync", _ => Task.FromResult<Room?>(new Room { RoomId = RoomId }))
+            .On("GetRoomMediaListAsync", _ => Task.FromResult<SynapseAdminRoomMediaListResult?>(null)));
+
+        var result = await CreateService(gateway).GetRoomDetailsAsync(RoomId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.NotNull(result.Data!.Media);
+        Assert.Empty(result.Data.Media.Local);
+        Assert.Empty(result.Data.Media.Remote);
+        Assert.Empty(_logger.Entries);
+    }
+
     // Members, state and media have no fallback: a failure fails the whole details call.
     [Theory]
     [InlineData("GetRoomMembersAsync")]

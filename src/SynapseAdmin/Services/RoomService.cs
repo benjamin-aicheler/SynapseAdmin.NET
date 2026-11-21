@@ -91,10 +91,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 ApplyTombstone(vm, stateEvents);
                 vm.Members = MapMembers(members, stateEvents);
                 vm.StateEvents = MapStateEvents(stateEvents);
-                vm.Media = media == null ? null : new RoomMediaViewModel
+                // A null media list is a collection read: no media (#395). A null Media would make RoomGalleryGrid
+                // load the room again and keep RoomDetails' media tab loading forever (#524).
+                vm.Media = new RoomMediaViewModel
                 {
-                    Local = UniqueMxcs(media.Local).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
-                    Remote = UniqueMxcs(media.Remote).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
+                    Local = UniqueMxcs(media?.Local).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = true }).ToList(),
+                    Remote = UniqueMxcs(media?.Remote).Select(m => new RoomMediaItemViewModel { MediaId = m, IsLocal = false }).ToList()
                 };
 
                 return OperationResult<RoomDetailViewModel>.Ok(vm);
