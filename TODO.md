@@ -18,10 +18,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## 🔄 In Progress
 
-- [ ] [1.1] Characterization tests for unfiltered loading, source-only filtering and search by `mxc://` URI (AC-10)
-
-## ⏭️ Next Up
-
 - [ ] [2.1] Failing tests: Images and file-name search find item 21; Files excludes items without a lookup or a known type; ≤ 5 lookup batches per load; stale filter discarded (AC-10)
 - [ ] [2.2] Classification in order with a cursor and bounded lookups in `RoomGalleryGrid.razor.cs` (FR-6)
 - [ ] [3.1] Failing tests: "Checked x of y items", "Check more", "No media found" only when complete, unknown-type note (AC-10)
@@ -43,6 +39,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 ## ✅ Done
 
 - [x] 2026-11-21 – SPEC.md `[Planned]` entries and PLAN.md approved – df23bee
+- [x] 2026-11-21 – [1.1] Characterization tests (unfiltered, source filter, search by URI) – `RoomGalleryFilterHydrationTests`
 
 ## Definition of Done (applies to every task)
 
