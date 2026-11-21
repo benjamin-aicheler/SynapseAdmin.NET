@@ -36,19 +36,41 @@ public partial class EventForensics : IDisposable
     private bool isLoading;
     private EventForensicsViewModel? eventData;
     private readonly CancellationTokenSource _cts = new();
+    // Blazor reuses this page when only the eventId query changes. `_fetchCts` is replaced on every request, so a
+    // late answer for a previous event is discarded (#521).
+    private CancellationTokenSource? _fetchCts;
 
     protected override Task OnInitializedAsync() => TimeZoneService.InitializeAsync();
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!string.IsNullOrWhiteSpace(EventIdParam) && EventIdParam != _lastEventIdParam)
+        if (string.IsNullOrWhiteSpace(EventIdParam))
         {
-            _lastEventIdParam = EventIdParam;
-            eventId = EventIdParam.Trim();
-            if (MatrixSession.Gateway is { SupportsAdminApi: true })
+            // The query was removed: clear what it selected. An event ID typed on /forensics stays.
+            if (_lastEventIdParam != null)
             {
-                await FetchEvent();
+                _lastEventIdParam = null;
+                CancelFetch();
+                eventId = string.Empty;
+                eventData = null;
+                isLoading = false;
             }
+            return;
+        }
+
+        if (EventIdParam == _lastEventIdParam) return;
+
+        _lastEventIdParam = EventIdParam;
+        eventId = EventIdParam.Trim();
+        if (MatrixSession.Gateway is { SupportsAdminApi: true })
+        {
+            await LoadEventAsync(eventId);
+        }
+        else
+        {
+            CancelFetch();
+            eventData = null;
+            isLoading = false;
         }
     }
 
@@ -56,10 +78,18 @@ public partial class EventForensics : IDisposable
     {
         if (isLoading || string.IsNullOrWhiteSpace(eventId)) return;
 
+        await LoadEventAsync(eventId.Trim());
+    }
+
+    private async Task LoadEventAsync(string id)
+    {
+        var token = ResetFetchToken();
         isLoading = true;
         eventData = null;
 
-        var result = await EventForensicsService.FetchEventAsync(eventId.Trim(), _cts.Token);
+        var result = await EventForensicsService.FetchEventAsync(id, token);
+        // Discard the answer for an event that is no longer selected.
+        if (token.IsCancellationRequested) return;
 
         if (result.Success && result.Data != null)
         {
@@ -71,6 +101,20 @@ public partial class EventForensics : IDisposable
         }
 
         isLoading = false;
+    }
+
+    private CancellationToken ResetFetchToken()
+    {
+        CancelFetch();
+        _fetchCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+        return _fetchCts.Token;
+    }
+
+    private void CancelFetch()
+    {
+        _fetchCts?.Cancel();
+        _fetchCts?.Dispose();
+        _fetchCts = null;
     }
 
     private async Task CopyRawJsonToClipboard()
@@ -92,6 +136,7 @@ public partial class EventForensics : IDisposable
 
     public void Dispose()
     {
+        CancelFetch();
         _cts.Cancel();
         _cts.Dispose();
     }
