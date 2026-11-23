@@ -1,4 +1,8 @@
+using System.Globalization;
+using System.Resources;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
@@ -7,6 +11,7 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
 using SynapseAdmin.Tests.TestSupport;
@@ -245,6 +250,28 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         ResultAssert.Failure(result, "ErrorLoggingInAsUser");
         Assert.Equal([LogLevel.Information, LogLevel.Error], _logger.Entries.Select(e => e.Level));
         Assert.IsType<NullReferenceException>(_logger.Entries[1].Exception);
+    }
+
+    // The token is real and expires (#539): the message names its lifetime in minutes, in every language.
+    [Fact]
+    public async Task LoginAs_Success_MessageNamesTheTokenLifetime()
+    {
+        using var services = new ServiceCollection().AddLogging().AddLocalization().BuildServiceProvider();
+        var localizer = services.GetRequiredService<IStringLocalizer<SharedResources>>();
+        var gateway = Stub.Create<IMatrixGateway>(s =>
+            s.On("LoginAsUserAsync", _ => Task.FromResult(new LoginResponse { AccessToken = "token" })));
+        var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
+
+        var result = await new UserService(session, _logger, localizer).LoginAsUserAsync(UserId, ExpireIn, _cts.Token);
+
+        Assert.True(result.Success);
+        Assert.Equal(localizer["ShadowLoginSuccessful", 5].Value, result.Message);
+        Assert.Contains("5", result.Message);
+        var resources = new ResourceManager(typeof(SharedResources).FullName!, typeof(SharedResources).Assembly);
+        foreach (var culture in new[] { "en", "de", "fr" })
+        {
+            Assert.Contains("{0}", resources.GetString("ShadowLoginSuccessful", new CultureInfo(culture)));
+        }
     }
 
     // The log reports the clamped page, not the requested one.

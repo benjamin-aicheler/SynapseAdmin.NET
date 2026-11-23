@@ -536,7 +536,7 @@
     <value>Erreur lors de la mise en quarantaine des médias.</value>
   </data>
   <data name="ShadowLoginSuccessful" xml:space="preserve">
-    <value>Connexion fantôme réussie. Jeton d'accès récupéré (Simulation).</value>
+    <value>Connexion fantôme réussie. Le jeton d'accès est valable {0} minutes.</value>
   </data>
   <data name="ErrorLoggingInAsUser" xml:space="preserve">
     <value>Erreur lors de la connexion en tant qu'utilisateur.</value>
