@@ -182,4 +182,4 @@ We strictly follow **GitHub Flow** (direct commits to `main` are prohibited):
 - [PLAN.md](./PLAN.md) & [TODO.md](./TODO.md) – single-task implementation plan and execution checklist (cleared/reset per task)
 - [docs/archive/2026-11-refactor-plan.md](./docs/archive/2026-11-refactor-plan.md) – the completed refactor (2026-11, archived): what each task changed and why, the standing decisions (§6.2), the private names tests reach by reflection (§0) and the analyzer audit commands (§1.2)
 - [REFACTOR_RULES.md](./REFACTOR_RULES.md) – rules for behavior-preserving refactors
-- [synapse-admin-api-2026-04-18.md](./synapse-admin-api-2026-04-18.md) – Synapse Admin API reference
+- [synapse-admin-api-2026-11-23.md](./synapse-admin-api-2026-11-23.md) – Synapse Admin API reference: the official Admin API pages of Synapse v1.165.0 in one file
