@@ -536,7 +536,7 @@
     <value>Fehler bei der Quarantäne der Medien.</value>
   </data>
   <data name="ShadowLoginSuccessful" xml:space="preserve">
-    <value>Schatten-Login erfolgreich. Access Token erhalten (Simulation).</value>
+    <value>Schatten-Login erfolgreich. Das Access Token ist {0} Minuten gültig.</value>
   </data>
   <data name="ErrorLoggingInAsUser" xml:space="preserve">
     <value>Fehler beim Login als Benutzer.</value>

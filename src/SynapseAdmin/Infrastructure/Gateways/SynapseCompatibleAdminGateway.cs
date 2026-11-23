@@ -135,8 +135,12 @@ public class SynapseCompatibleAdminGateway(
 
     public override async Task<LoginResponse> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken cancellationToken = default)
     {
-        var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/login?valid_until_ms={DateTimeOffset.UtcNow.Add(expireIn).ToUnixTimeMilliseconds()}";
-        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new { }, cancellationToken: cancellationToken);
+        var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/login";
+        var request = new SynapseAdminLoginAsUserRequest
+        {
+            ValidUntilMs = DateTimeOffset.UtcNow.Add(expireIn).ToUnixTimeMilliseconds()
+        };
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         var loginResp = await resp.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken: cancellationToken)
             ?? throw new InvalidOperationException($"Failed to deserialize shadow login response for user {userId}.");

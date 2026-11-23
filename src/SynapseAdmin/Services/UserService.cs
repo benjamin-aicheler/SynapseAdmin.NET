@@ -181,7 +181,7 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             {
                 var resp = await gateway.LoginAsUserAsync(userId, expireIn, token);
                 logger.LogInformation("Admin successfully performed shadow login as user {UserId}", userId.SanitizeForLogging());
-                return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful"]);
+                return OperationResult<string>.Ok(resp.AccessToken, L["ShadowLoginSuccessful", (int)expireIn.TotalMinutes]);
             });
 
     public Task<OperationResult> SendServerNoticeAsync(string userId, string message, CancellationToken token = default) =>
