@@ -246,6 +246,42 @@ public class RoomDetailsRoomDeletionTests : DetailPageTestBase
             warnings[0].Arguments);
     }
 
+    /// <summary>
+    /// If the cleanup after a failed check fails too, for example because the circuit is gone, the polling error is still
+    /// logged and the cleanup failure is logged at Debug, as for purge (#535 characterization).
+    /// </summary>
+    [Fact]
+    public async Task FailingCleanupAfterAPollingError_LogsThePollingError_AndTheCleanupFailureAtDebug()
+    {
+        var logger = new RecordingLogger<RoomDetails>();
+        Services.AddSingleton<ILogger<RoomDetails>>(logger);
+        var snackbarTried = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cleanupFailure = new InvalidOperationException("circuit gone");
+        SnackbarStub.On(nameof(ISnackbar.Add), _ =>
+        {
+            snackbarTried.TrySetResult();
+            throw cleanupFailure;
+        });
+        var pollingError = new InvalidOperationException("boom");
+        // Found on load, so no "requested" snackbar runs into the throwing stub first.
+        _running = roomId => roomId == RoomA ? RunningDeletion("delete-9", RoomDeletionState.Active) : NoRunningDeletion();
+        _status = _ => Task.FromException<OperationResult<RoomDeletionStatusViewModel>>(pollingError);
+
+        RenderRoom();
+
+        await snackbarTried.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var error = Assert.Single(logger.Entries, e => e.Level == LogLevel.Error);
+        Assert.Equal("Unexpected error in room deletion polling loop for room {RoomId}, delete ID {DeleteId}", error.Template);
+        Assert.Same(pollingError, error.Exception);
+
+        const string CleanupTemplate = "Room deletion polling cleanup failed for room {RoomId} (circuit likely gone)";
+        Assert.True(SpinWait.SpinUntil(() => logger.Entries.Any(e => e.Template == CleanupTemplate), TimeSpan.FromSeconds(10)));
+        var cleanup = Assert.Single(logger.Entries, e => e.Template == CleanupTemplate);
+        Assert.Equal(LogLevel.Debug, cleanup.Level);
+        Assert.Equal(new Dictionary<string, object?> { ["RoomId"] = RoomA }, cleanup.Arguments);
+        Assert.Same(cleanupFailure, cleanup.Exception);
+    }
+
     // ---- Opening a room with a running deletion ----------------------------------------------------
 
     [Theory]
@@ -302,6 +338,30 @@ public class RoomDetailsRoomDeletionTests : DetailPageTestBase
         AssertSnackbars((Requested, Severity.Success));
         Assert.Contains("Bravo Lounge", cut.Markup);
         Assert.DoesNotContain(Localizer["RoomDeleted"].Value, Markup(cut));
+        Assert.Single(StatusCalls);
+    }
+
+    /// <summary>
+    /// A check that answers "cancelled" after the page moved on is not a failed attempt: nothing is logged or reported
+    /// (#535 characterization).
+    /// </summary>
+    [Fact]
+    public async Task CancelledStatusAfterNavigation_LogsAndReportsNothing()
+    {
+        var logger = new RecordingLogger<RoomDetails>();
+        Services.AddSingleton<ILogger<RoomDetails>>(logger);
+        var pending = Pending<OperationResult<RoomDeletionStatusViewModel>>();
+        _running = roomId => roomId == RoomA ? RunningDeletion("delete-9", RoomDeletionState.Active) : NoRunningDeletion();
+        _status = _ => pending.Task;
+        var cut = RenderRoom();
+        cut.WaitForAssertion(() => Assert.Single(StatusCalls));
+
+        Navigate(cut, RoomB);
+        pending.SetResult(OperationResult<RoomDeletionStatusViewModel>.Cancelled());
+        await Task.Delay(500);
+
+        Assert.DoesNotContain(logger.Entries, e => e.Level >= LogLevel.Warning);
+        Assert.Empty(SnackbarCalls);
         Assert.Single(StatusCalls);
     }
 
