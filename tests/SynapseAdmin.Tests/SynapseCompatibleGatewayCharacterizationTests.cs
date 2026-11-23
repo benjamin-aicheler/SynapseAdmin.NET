@@ -33,6 +33,7 @@ namespace SynapseAdmin.Tests;
 /// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
 /// Also room deletion (#518): the <c>delete_id</c> the DELETE returns, and the two status reads with the answers that
 /// mean "no status".
+/// Also the shadow login (#539): the token's expiry travels in the body, not the query string.
 /// </summary>
 public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -377,6 +378,36 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         Assert.Equal(
             new CapturedRequest("POST", "/_synapse/admin/v1/registration_tokens/new", "application/json; charset=utf-8", """{"uses_allowed":1}"""),
             Assert.Single(_homeserver.Requests));
+    }
+
+    // ---- Shadow login (#539) -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Synapse reads <c>valid_until_ms</c> only from the JSON body, as an integer, and issues a token that never
+    /// expires without it. A query parameter is ignored, so the target carries none.
+    /// </summary>
+    [Fact]
+    public async Task LoginAsUser_SendsTheExpiryAsAnIntegerInTheBody()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { access_token = "syt_shadow" });
+        var expireIn = TimeSpan.FromHours(1);
+
+        var before = DateTimeOffset.UtcNow.Add(expireIn).ToUnixTimeMilliseconds();
+        var response = await _gateway.LoginAsUserAsync("@alice:example.com", expireIn);
+        var after = DateTimeOffset.UtcNow.Add(expireIn).ToUnixTimeMilliseconds();
+
+        var request = Assert.Single(_homeserver.Requests);
+        Assert.Equal("POST", request.Method);
+        Assert.Equal("/_synapse/admin/v1/users/%40alice%3aexample.com/login", request.Target);
+        Assert.Equal("application/json; charset=utf-8", request.ContentType);
+        using var body = JsonDocument.Parse(request.Body);
+        var property = Assert.Single(body.RootElement.EnumerateObject());
+        Assert.Equal("valid_until_ms", property.Name);
+        Assert.Equal(JsonValueKind.Number, property.Value.ValueKind);
+        Assert.InRange(property.Value.GetInt64(), before, after);
+        Assert.Equal("syt_shadow", response.AccessToken);
+        Assert.Equal("@alice:example.com", response.UserId);
     }
 
     // ---- Room deletion (#518) ------------------------------------------------------------------------
