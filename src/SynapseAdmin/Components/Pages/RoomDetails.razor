@@ -135,11 +135,11 @@ else
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Class="mb-2 mr-2">@L["DeleteRoom"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Class="mb-2 mr-2">@L["DeleteAndBlockRoom"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Class="mb-2 mr-2">@L["BlockRoom"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Class="mb-2 mr-2">@L["QuarantineMedia"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OpenPurgeHistoryDialog" Class="mb-2">@L["PurgeHistory"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["DeleteRoom"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["DeleteAndBlockRoom"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["BlockRoom"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["QuarantineMedia"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OpenPurgeHistoryDialog" Disabled="IsRoomOperationRunning" Class="mb-2">@L["PurgeHistory"]</MudButton>
                 </MudCardContent>
             </MudCard>
         </MudItem>

@@ -475,6 +475,11 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             {
                 var result = await gateway.GetPurgeHistoryStatusAsync(purgeId, token);
                 if (result == null) return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Failure(L["ErrorFetchingPurgeStatus"]);
+                if (result.Status == "failed")
+                {
+                    // The homeserver's error text goes only to the log; the room page shows a localized message (#518).
+                    logger.LogWarning("History purge {PurgeId} failed: {Error}", purgeId.SanitizeForLogging(), result.Error?.SanitizeForLogging());
+                }
                 return OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Ok(result);
             });
 

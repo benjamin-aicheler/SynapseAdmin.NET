@@ -959,7 +959,7 @@
     <value>Bereinigung läuft</value>
   </data>
   <data name="PurgeInProgressDescription" xml:space="preserve">
-    <value>Für diesen Raum ist derzeit eine Bereinigung des Verlaufs active. Alte Verlaufsereignisse werden aus der Datenbank gelöscht.</value>
+    <value>Für diesen Raum ist derzeit eine Bereinigung des Verlaufs aktiv. Alte Verlaufsereignisse werden aus der Datenbank gelöscht.</value>
   </data>
   <data name="PurgeStarted" xml:space="preserve">
     <value>Bereinigung des Verlaufs erfolgreich gestartet.</value>
@@ -968,7 +968,7 @@
     <value>Bereinigung des Verlaufs erfolgreich abgeschlossen.</value>
   </data>
   <data name="PurgeFailed" xml:space="preserve">
-    <value>Bereinigung des Verlaufs fehlgeschlagen: {0}</value>
+    <value>Bereinigung des Verlaufs fehlgeschlagen.</value>
   </data>
   <data name="ErrorPurgingHistory" xml:space="preserve">
     <value>Fehler beim Starten der Bereinigung des Raumverlaufs.</value>
@@ -1086,9 +1086,6 @@
   </data>
   <data name="MediaMaintenanceDescription" xml:space="preserve">
     <value>Führen Sie erweiterte Wartungsarbeiten am Medien-Repository durch, leeren Sie Remote-Caches und verwalten Sie lokale Medien-Assets.</value>
-  </data>
-  <data name="UnknownError" xml:space="preserve">
-    <value>Unbekannter Fehler</value>
   </data>
   <data name="SearchUserIdOrDisplayName" xml:space="preserve">
     <value>Benutzer-ID oder Anzeigenamen suchen</value>

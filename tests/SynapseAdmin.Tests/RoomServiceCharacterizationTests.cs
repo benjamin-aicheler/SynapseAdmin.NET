@@ -393,6 +393,23 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         Assert.Empty(_logger.Entries);
     }
 
+    /// <summary>The homeserver's error text for a failed purge goes only to the log; the page shows a localized message (#518).</summary>
+    [Theory]
+    [InlineData("disk\nfull", "disk full")]
+    [InlineData(null, null)]
+    public async Task PurgeStatus_Failed_LogsTheHomeserversError(string? error, string? loggedError)
+    {
+        var status = new SynapseAdminPurgeHistoryStatusResponse { Status = "failed", Error = error };
+        var service = CreateService(Stub.Create<IMatrixGateway>(s => s.On("GetPurgeHistoryStatusAsync", _ => Task.FromResult<SynapseAdminPurgeHistoryStatusResponse?>(status))));
+
+        var result = await service.GetPurgeHistoryStatusAsync(PurgeId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Same(status, result.Data);
+        AssertSingleLog(LogLevel.Warning, "History purge {PurgeId} failed: {Error}",
+            new() { ["PurgeId"] = "purge 1", ["Error"] = loggedError }, exception: null);
+    }
+
     [Fact]
     public async Task Purge_Success_RemembersThePurgeId()
     {

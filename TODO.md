@@ -25,10 +25,7 @@ Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC
 
 ### Phase 4: Room actions and purge failure
 
-- [ ] [4.1] `IsRoomOperationRunning` disables all five Actions buttons during a deletion or a purge
-- [ ] [4.2] Purge failure: `PurgeFailed` without `{0}` (EN/DE/FR), no error text in `ApplyPurgeStatus`, remove `UnknownError`
-- [ ] [4.3] `GetPurgeHistoryStatusAsync` logs a failed purge's error
-- [ ] [4.4] Tests: buttons disabled and enabled again; rewrite `FailedPurgeStatus_ClearsThePurge_AndReportsTheError`; service log test
+- Phase 4 done, see ✅ Done.
 
 ### Phase 5: Documentation
 
@@ -47,14 +44,15 @@ Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [ ] DE `PurgeInProgressDescription` says "…ist derzeit eine Bereinigung des Verlaufs active" (English "active" instead of "aktiv"). Fix with the purge strings in [4.2].
+- [x] DE `PurgeInProgressDescription` said "…ist derzeit eine Bereinigung des Verlaufs active" (English "active" instead of "aktiv"). Fixed in [4.2].
 
 ## ✅ Done
 
 - [x] 2026-11-23 – SPEC `[Planned]` entries and PLAN.md approved
 - [x] 2026-11-23 – [1.1–1.4] DTOs, gateway interface and implementation, wire tests in `SynapseCompatibleGatewayCharacterizationTests` (31 new cases); build 0 warnings, 1115 tests green – `c4d8849`
 - [x] 2026-11-23 – [2.1–2.5] `RoomDeletionState`, `RoomDeletionStatusViewModel`, mapper, `RoomService` delete / status / lookup, EN/DE/FR strings (key parity 463/463/463), service and mapping tests, `WithData<T>` bUnit helper; build 0 warnings, 1150 tests green – `c2ca944`
-- [x] 2026-11-23 – [3.1–3.4] Room page stays after a delete, deletion banner, lookup on load, status poll with the #522-style guard, "room deleted" state on completion; `RoomDetailsRoomDeletionTests` (17 cases), `DeleteHandler_ShowsItsTexts_AndStaysOnTheRoomPage`; unused `RoomListPath` and `NavigationManager` removed; build 0 warnings, 1167 tests green – not committed yet
+- [x] 2026-11-23 – [3.1–3.4] Room page stays after a delete, deletion banner, lookup on load, status poll with the #522-style guard, "room deleted" state on completion; `RoomDetailsRoomDeletionTests` (17 cases), `DeleteHandler_ShowsItsTexts_AndStaysOnTheRoomPage`; unused `RoomListPath` and `NavigationManager` removed; build 0 warnings, 1167 tests green – `8e7b77d`
+- [x] 2026-11-23 – [4.1–4.4] `IsRoomOperationRunning` disables the five Actions buttons during a deletion or a purge; purge failure shows `PurgeFailed` without the homeserver's text, `RoomService` logs it; `UnknownError` removed (462 keys in EN/DE/FR); DE "aktiv" fix; 10 new and 3 rewritten tests; build 0 warnings, 1177 tests green – not committed yet
 
 ## Definition of Done (applies to every task)
 

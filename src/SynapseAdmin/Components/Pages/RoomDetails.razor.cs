@@ -55,6 +55,9 @@ namespace SynapseAdmin.Components.Pages
         private RoomDeletionState activeDeletionState;
         private CancellationTokenSource? _deletionPollingCts;
 
+        /// <summary>A deletion or a purge is running: every room action is disabled until it ends (#518).</summary>
+        private bool IsRoomOperationRunning => activeDeleteId != null || !string.IsNullOrEmpty(activePurgeId);
+
         // Per-selection state. `_loadCts` is replaced on every route change so that requests
         // for a previous room are cancelled and their late responses are discarded.
         // `_displayedRoomId` is the room the currently shown `room` model was loaded for;
@@ -428,13 +431,12 @@ namespace SynapseAdmin.Components.Pages
                     {
                         consecutiveFailures = 0;
                         var status = result.Data.Status;
-                        var error = result.Data.Error;
                         var shouldStop = false;
 
                         await InvokeAsync(() =>
                         {
                             if (!IsCurrentPoll(purgeId, token)) return;
-                            shouldStop = ApplyPurgeStatus(roomId, purgeId, status, error);
+                            shouldStop = ApplyPurgeStatus(roomId, purgeId, status);
                         });
 
                         if (shouldStop)
@@ -496,9 +498,10 @@ namespace SynapseAdmin.Components.Pages
 
         /// <summary>
         /// Shows a polled purge status; on "complete" or "failed" clears the purge and reports it. Returns whether
-        /// polling should stop.
+        /// polling should stop. A failure shows only a localized message: the homeserver's error text is logged by
+        /// <c>RoomService</c> (#518).
         /// </summary>
-        private bool ApplyPurgeStatus(string roomId, string purgeId, string? status, string? error)
+        private bool ApplyPurgeStatus(string roomId, string purgeId, string? status)
         {
             activePurgeStatus = status;
 
@@ -513,10 +516,7 @@ namespace SynapseAdmin.Components.Pages
             if (status == PurgeStatusFailed)
             {
                 ClearActivePurge(roomId, purgeId);
-                var errMsg = !string.IsNullOrEmpty(error)
-                    ? string.Format(L["PurgeFailed"], error)
-                    : string.Format(L["PurgeFailed"], L["UnknownError"]);
-                Snackbar.Add(errMsg, Severity.Error);
+                Snackbar.Add(L["PurgeFailed"], Severity.Error);
                 StateHasChanged();
                 return true;
             }

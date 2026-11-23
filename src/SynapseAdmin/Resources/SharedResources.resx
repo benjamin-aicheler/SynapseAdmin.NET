@@ -981,7 +981,7 @@
     <value>History purge completed successfully.</value>
   </data>
   <data name="PurgeFailed" xml:space="preserve">
-    <value>History purge failed: {0}</value>
+    <value>History purge failed.</value>
   </data>
   <data name="ErrorPurgingHistory" xml:space="preserve">
     <value>Error starting room history purge.</value>
@@ -1087,9 +1087,6 @@
   </data>
   <data name="MediaMaintenanceDescription" xml:space="preserve">
     <value>Perform advanced media repository maintenance, clean up remote caches, and manage local media assets.</value>
-  </data>
-  <data name="UnknownError" xml:space="preserve">
-    <value>Unknown error</value>
   </data>
   <data name="SearchUserIdOrDisplayName" xml:space="preserve">
     <value>Search User ID or Display Name</value>

@@ -8,6 +8,7 @@ using MudBlazor;
 using SynapseAdmin.Components.Pages;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Resources;
 using SynapseAdmin.Tests.TestSupport;
@@ -338,5 +339,81 @@ public class RoomDetailsRoomDeletionTests : DetailPageTestBase
         AssertSnackbars((Requested, Severity.Success));
         Assert.Equal("delete-1", GetField<string>(cut.Instance, "activeDeleteId"));
         Assert.Contains(Banner, Markup(cut));
+    }
+
+    // ---- Room actions during a deletion or a purge ------------------------------------------------
+
+    private static readonly string[] ActionKeys = ["DeleteRoom", "DeleteAndBlockRoom", "BlockRoom", "QuarantineMedia", "PurgeHistory"];
+
+    /// <summary>Whether each of the five Actions buttons is disabled, keyed by its resource key.</summary>
+    private Dictionary<string, bool> ActionsDisabled(IRenderedComponent<RoomDetails> cut)
+    {
+        var buttons = cut.FindAll("button").ToList();
+        return ActionKeys.ToDictionary(key => key, key =>
+            Assert.Single(buttons, b => WebUtility.HtmlDecode(b.TextContent).Trim() == Localizer[key].Value).HasAttribute("disabled"));
+    }
+
+    private void AssertActions(IRenderedComponent<RoomDetails> cut, bool disabled) =>
+        cut.WaitForAssertion(() => Assert.Equal(ActionKeys.ToDictionary(k => k, _ => disabled), ActionsDisabled(cut)));
+
+    [Fact]
+    public void Actions_AreEnabled_WithoutARunningOperation()
+    {
+        var cut = RenderRoom();
+
+        AssertActions(cut, disabled: false);
+    }
+
+    /// <summary>Every way a deletion can end without deleting the room enables the actions again.</summary>
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("unknown")]
+    [InlineData("throws")]
+    public async Task Actions_AreDisabledWhileADeletionRuns_AndEnabledAgainWhenItEnds(string ending)
+    {
+        var status = Pending<OperationResult<RoomDeletionStatusViewModel>>();
+        _status = _ => status.Task;
+        var cut = RenderRoom();
+
+        await DeleteAsync(cut);
+        AssertActions(cut, disabled: true);
+
+        switch (ending)
+        {
+            case "failed": status.SetResult(Status(RoomDeletionState.Failed)); break;
+            case "unknown": status.SetResult(Status(RoomDeletionState.Unknown)); break;
+            default: status.SetException(new InvalidOperationException("boom")); break;
+        }
+        AssertActions(cut, disabled: false);
+    }
+
+    [Fact]
+    public void Actions_AreDisabled_WhileADeletionFoundOnLoadRuns()
+    {
+        _running = roomId => roomId == RoomA ? RunningDeletion("delete-9", RoomDeletionState.Scheduled) : NoRunningDeletion();
+
+        var cut = RenderRoom();
+
+        AssertActions(cut, disabled: true);
+    }
+
+    /// <summary>A tracked purge disables the actions too, until it ends (complete, failed, or giving up after an error).</summary>
+    [Theory]
+    [InlineData("complete")]
+    [InlineData("failed")]
+    [InlineData("throws")]
+    public void Actions_AreDisabledWhileAPurgeRuns_AndEnabledAgainWhenItEnds(string ending)
+    {
+        var status = Pending<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>();
+        _rooms
+            .On(nameof(IRoomService.GetActivePurgeId), args => (string)args[0]! == RoomA ? "purge-a" : null)
+            .On(nameof(IRoomService.GetPurgeHistoryStatusAsync), _ => status.Task);
+        var cut = RenderRoom();
+
+        AssertActions(cut, disabled: true);
+
+        if (ending == "throws") status.SetException(new InvalidOperationException("boom"));
+        else status.SetResult(OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Ok(new SynapseAdminPurgeHistoryStatusResponse { Status = ending }));
+        AssertActions(cut, disabled: false);
     }
 }

@@ -968,7 +968,7 @@
     <value>La purge de l'historique s'est terminée avec succès.</value>
   </data>
   <data name="PurgeFailed" xml:space="preserve">
-    <value>La purge de l'historique a échoué : {0}</value>
+    <value>La purge de l'historique a échoué.</value>
   </data>
   <data name="ErrorPurgingHistory" xml:space="preserve">
     <value>Erreur lors du démarrage de la purge de l'historique du salon.</value>
@@ -1086,9 +1086,6 @@
   </data>
   <data name="MediaMaintenanceDescription" xml:space="preserve">
     <value>Effectuer la maintenance avancée du dépôt de médias, purger les caches distants et gérer les fichiers médias locaux.</value>
-  </data>
-  <data name="UnknownError" xml:space="preserve">
-    <value>Erreur inconnue</value>
   </data>
   <data name="SearchUserIdOrDisplayName" xml:space="preserve">
     <value>Rechercher par identifiant ou nom d'affichage</value>
