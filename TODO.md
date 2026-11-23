@@ -1,58 +1,46 @@
 # TODO
 
-**Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-23
+<!--
+HOW TO USE THIS FILE (instructions for the AI agent):
+- This is the SINGLE-TASK execution checklist derived from the approved PLAN.md (ignore if PLAN.md is blank template or Done).
+- Work on ONE task at a time, top to bottom within "Next Up", unless the user says otherwise.
+- Before starting a task: move it to "In Progress".
+- After finishing a task: verify it (`dotnet build` & `dotnet test`), tick the checkbox, move it to "Done"
+  with the date and a short note (e.g. commit hash or files changed).
+- If you discover new work, add it to "Backlog" or "Bugs / Follow-ups" – do not silently expand the current task.
+- If a task is blocked, move it to "Blocked" with the reason and what is needed.
+- Keep entries short. Reference PLAN step IDs (e.g. [1.2]) and spec IDs (e.g. FR-15, AC-10).
+- ON COMPLETION (before merging the PR, or before starting the next task): finalize `[Planned]` items in SPEC.md and clear/reset this file (and PLAN.md) back to the blank template from `main` (optionally preserving any real unresolved follow-ups in Backlog, or moving them to GitHub Issues).
+-->
 
-Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC-11). Branch `ai/bugfix/issue-518-room-deletion-status`. One PR, one commit per phase.
+**Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] 
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-### Phase 1: Gateway and DTOs
-
-- Phase 1 done, see ✅ Done.
-
-### Phase 2: Service, ViewModel, strings
-
-- Phase 2 done, see ✅ Done.
-
-### Phase 3: Room page
-
-- Phase 3 done, see ✅ Done.
-
-### Phase 4: Room actions and purge failure
-
-- Phase 4 done, see ✅ Done.
-
-### Phase 5: Documentation
-
-- [ ] [5.1] SPEC.md: remove `[Planned]` tags, decision log rows
-- [ ] [5.2] ARCHITECTURE.md integration row; AGENTS.md "Room deletion status" pitfall; add `DetailPageTestBase.WithData<T>` to the AGENTS.md test double list
-- [ ] [5.3] Reset PLAN.md and TODO.md; open the shared-poller follow-up issue (PLAN §3 E)
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
-- [ ] 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
 
 ## 📋 Backlog
 
-- [ ] Manual test on Synapse: scheduled → active → complete, reopen during a deletion, Synapse restart mid-deletion, Delete & Block
-- [ ] Manual test on Tuwunel >= 1.8.1: `DELETE` response body and both status endpoints
+- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [x] DE `PurgeInProgressDescription` said "…ist derzeit eine Bereinigung des Verlaufs active" (English "active" instead of "aktiv"). Fixed in [4.2].
+- [ ] 
 
 ## ✅ Done
 
-- [x] 2026-11-23 – SPEC `[Planned]` entries and PLAN.md approved
-- [x] 2026-11-23 – [1.1–1.4] DTOs, gateway interface and implementation, wire tests in `SynapseCompatibleGatewayCharacterizationTests` (31 new cases); build 0 warnings, 1115 tests green – `c4d8849`
-- [x] 2026-11-23 – [2.1–2.5] `RoomDeletionState`, `RoomDeletionStatusViewModel`, mapper, `RoomService` delete / status / lookup, EN/DE/FR strings (key parity 463/463/463), service and mapping tests, `WithData<T>` bUnit helper; build 0 warnings, 1150 tests green – `c2ca944`
-- [x] 2026-11-23 – [3.1–3.4] Room page stays after a delete, deletion banner, lookup on load, status poll with the #522-style guard, "room deleted" state on completion; `RoomDetailsRoomDeletionTests` (17 cases), `DeleteHandler_ShowsItsTexts_AndStaysOnTheRoomPage`; unused `RoomListPath` and `NavigationManager` removed; build 0 warnings, 1167 tests green – `8e7b77d`
-- [x] 2026-11-23 – [4.1–4.4] `IsRoomOperationRunning` disables the five Actions buttons during a deletion or a purge; purge failure shows `PurgeFailed` without the homeserver's text, `RoomService` logs it; `UnknownError` removed (462 keys in EN/DE/FR); DE "aktiv" fix; 10 new and 3 rewritten tests; build 0 warnings, 1177 tests green – not committed yet
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
