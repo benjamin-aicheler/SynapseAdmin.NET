@@ -155,15 +155,16 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         operation.AssertGatewayArgs(call.Args, _cts.Token);
     }
 
+    // The documented key goes out as is, never as the deprecated alias "alphabetical" (#545).
     [Fact]
-    public async Task List_SortsRoomIdAlphabetically()
+    public async Task List_SendsTheNameKeyWithoutAnAlias()
     {
         var gateway = Stub.Create<IMatrixGateway>(out var stub);
 
-        await CreateService(gateway).GetRoomListAsync(0, 10, "room_id", SortDirection.None, token: _cts.Token);
+        await CreateService(gateway).GetRoomListAsync(0, 10, "name", SortDirection.None, token: _cts.Token);
 
         var args = Assert.Single(stub.CallsTo("GetRoomListAsync"));
-        Assert.Equal(("alphabetical", "f"), ((string?)args[2], (string?)args[3]));
+        Assert.Equal(("name", "f"), ((string?)args[2], (string?)args[3]));
     }
 
     [Theory, MemberData(nameof(AllOperations))]

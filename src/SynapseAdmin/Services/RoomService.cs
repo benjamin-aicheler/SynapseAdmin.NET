@@ -51,7 +51,6 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             ex => logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging()),
             async gateway =>
             {
-                if (orderBy == "room_id") orderBy = "alphabetical";
                 var dir = direction.ToSynapseDir(whenUnsorted: "f");
                 var result = await gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
                 if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));

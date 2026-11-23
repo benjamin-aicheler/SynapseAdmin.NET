@@ -36,8 +36,9 @@ else
     <MudTable ServerData="ServerReload" @ref="table" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info" Elevation="3">
         <HeaderContent>
             <MudTh><MudTableSortLabel SortLabel="name" T="RoomListViewModel">@L["Name"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortLabel="room_id" T="RoomListViewModel">@L["RoomId"]</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortLabel="room_type" T="RoomListViewModel">@L["RoomType"]</MudTableSortLabel></MudTh>
+            @* The admin API sorts by neither room ID nor room type (#540, #545). *@
+            <MudTh>@L["RoomId"]</MudTh>
+            <MudTh>@L["RoomType"]</MudTh>
             <MudTh><MudTableSortLabel SortLabel="creator" T="RoomListViewModel">@L["Creator"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="joined_members" T="RoomListViewModel">@L["Members"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="public" T="RoomListViewModel">@L["Public"]</MudTableSortLabel></MudTh>
