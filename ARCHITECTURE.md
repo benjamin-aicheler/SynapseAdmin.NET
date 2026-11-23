@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-11-20
+**Last updated:** 2026-11-23
 **Maintainer(s):** Benjamin Aicheler
 
 ## 1. Context
@@ -92,7 +92,7 @@ flowchart TB
 
 | Component | Location in repo | Responsibility | Depends on |
 |---|---|---|---|
-| Presentation Pages & Layout | `src/SynapseAdmin/Components/` | Routed Blazor pages (18 `@page` routes + dialogs + `MainLayout`, `NavMenu`, `RoomGalleryGrid`), code-behind `.razor.cs`, JS interop (`wwwroot/js/`), ViewModel binding, and stale-selection cancellation on detail pages. | `Interfaces/`, `Models/ViewModels/`, MudBlazor, `IStringLocalizer` |
+| Presentation Pages & Layout | `src/SynapseAdmin/Components/` | Routed Blazor pages (18 `@page` routes + dialogs + `MainLayout`, `NavMenu`), shared components and helpers in `Components/Shared` (`RoomGalleryGrid`, `DialogPresets`, `MediaPreviewLauncher`, and `StatusPoller` for long-running homeserver operations), code-behind `.razor.cs`, JS interop (`wwwroot/js/`), ViewModel binding, and stale-selection cancellation on detail pages. | `Interfaces/`, `Models/ViewModels/`, MudBlazor, `IStringLocalizer` |
 | HTTP Controllers | `src/SynapseAdmin/Controllers/` | Cookie bridge sign-in/out (`AuthController`), authorized conditional/ranged media streaming (`MediaController`, `PartialMediaResult`), and culture cookie switching (`CultureController`). | `ISessionBridgeService`, `IMatrixSessionService`, `IMediaService`, ASP.NET Core MVC/Antiforgery |
 | Domain Services | `src/SynapseAdmin/Services/` & `Interfaces/` | Business logic, Matrix orchestration, ViewModel mapping (`Extensions/Mapping/`), caching room names/active purges (`RoomService`), media deduplication, and `OperationResult` error wrapping (`GatewayCallExtensions`). | `IMatrixSessionService`, `IMatrixGateway`, `IMemoryCache`, `ILogger<T>`, `IStringLocalizer` |
 | Session, Auth & Rate Limiting | `src/SynapseAdmin/Services/` & `Interfaces/` | Blazor `AuthenticationStateProvider` (`MatrixAuthenticationStateProvider`, which components use as `IMatrixAuthStateService`; `ProtectedLocalStorage`), session lifecycle (`MatrixSessionService`), browser-bound bridge (`SessionBridgeService`, `AuthCookieService`), and dual-key login throttling (`LoginRateLimiter`, `MemoryLoginRateLimitStore`). | `IMatrixAuthGateway`, `IClientIdentityProvider`, `AntiforgeryStateProvider`, `IMemoryCache` |
@@ -204,6 +204,44 @@ sequenceDiagram
 
 1. **Capability detection:** During `MatrixAuthGateway.CreateAuthenticatedGatewayAsync`, the gateway initializes `AuthenticatedHomeserverSynapse` or `AuthenticatedHomeserverGeneric`, queries `/_matrix/federation/v1/version` (identifying `Synapse` or `Tuwunel >= 1.8.1`), and actively probes `/_synapse/admin/v1/server_version`. Compatible servers receive `SynapseCompatibleAdminGateway` (`SupportsAdminApi = true`); all others receive `GenericMatrixGateway` (`SupportsAdminApi = false`).
 2. **Stale-selection protection:** When Blazor reuses a detail page (`RoomDetails`, `UserDetails`) across route parameter changes (e.g., `/rooms/A` -> `/rooms/B`), `OnParametersSetAsync` synchronously cancels the previous selection's `CancellationTokenSource`, clears the displayed model and `_displayed*Id` before the first `await`, discards late responses, and re-verifies the captured target ID after user confirmation before executing destructive actions.
+
+### Flow: Long-Running Room Operations (History Purge & Room Deletion)
+
+Synapse runs a history purge and a room deletion in the background and only returns a job ID. `RoomDetails` follows both the same way; what the admin sees is in SPEC.md (FR-5, AC-5, AC-11), and the rules for changing it are in AGENTS.md (Known Pitfalls, "Room Deletion Status").
+
+```mermaid
+sequenceDiagram
+    participant Page as RoomDetails
+    participant RS as RoomService
+    participant Cache as IMemoryCache
+    participant Poll as StatusPoller
+    participant HS as Synapse Admin API
+
+    alt History purge (PurgeHistoryDialog)
+        Page->>RS: PurgeRoomHistoryAsync(roomId, …)
+        RS->>HS: POST /_synapse/admin/v1/purge_history/{roomId}
+        HS-->>RS: { purge_id }
+        RS->>Cache: active_purge:{homeserver}:{roomId} = purge_id (24 h)
+    else Room deletion (Delete, or Delete and Block)
+        Page->>RS: DeleteRoomAsync(roomId, block, purge: true)
+        RS->>HS: DELETE /_synapse/admin/v2/rooms/{roomId}
+        HS-->>RS: { delete_id }
+    end
+    Note over Page: Stays on the page: banner shown, room actions disabled
+    loop At once, then every 5 s, until the operation is over
+        Poll->>RS: GetPurgeHistoryStatusAsync(purge_id) / GetRoomDeletionStatusAsync(delete_id)
+        RS->>HS: GET …/purge_history_status/{purge_id} / GET …/rooms/delete_status/{delete_id}
+        HS-->>Poll: status (OperationResult)
+        Poll->>Page: Apply on the dispatcher, only while the poll is still current
+    end
+    Note over Page: Banner removed and the result reported, a completed deletion shows the room as deleted
+```
+
+1. **Starting:** `PurgeRoomHistoryAsync` keeps the `purge_id` in `IMemoryCache`, because Synapse reports a purge's status only by its ID. `DeleteRoomAsync` returns the `delete_id`, caches nothing, and forgets the room's cached name and tracked purge. A purge answer with an empty `purge_id`, and a deletion answer without a body or a `delete_id`, still count as started, but there is nothing to follow; a purge request without an answer fails.
+2. **Opening a room with a running operation:** `OnParametersSetAsync` reads the tracked purge from the cache (`GetActivePurgeId`), so an app restart, or a room page opened on another replica, loses it. It asks Synapse for a running deletion by room ID (`GetActiveRoomDeletionAsync`, `GET /_synapse/admin/v2/rooms/{roomId}/delete_status`, active before scheduled), so the banner also appears after a restart or for a deletion started elsewhere, as long as Synapse keeps the status: 24 h after it ends, or until Synapse restarts. A failed lookup shows nothing.
+3. **Polling:** Each operation gets its own `StatusPoller<TStatus>` (`Components/Shared`) on a background task, with its own `CancellationTokenSource`. It checks at once, then every 5 s, and applies each answer on the component's dispatcher only while `IsCurrentPoll` / `IsCurrentDeletionPoll` holds (the poll's token and the operation's ID), so a late answer for another room or an older operation changes nothing (#522). It gives up after 5 failed checks in a row; a check cancelled because the page moved on doesn't count. A route change and `Dispose` cancel both polls. The page supplies what differs: the status read, applying an answer, giving up, the constants and the log calls.
+4. **Ending:** A completed purge, or a failed one, clears the cached ID only if it is still that purge (#522). A completed deletion replaces the room data with a "room deleted" state and stops the purge poll. A failed purge or deletion shows only a localized message: `RoomService` logs the homeserver's `error` text. A deletion Synapse no longer knows (`404`, `M_NOT_FOUND`, `M_UNRECOGNIZED`) is `RoomDeletionState.Unknown` and reported as a warning. Giving up reports an error.
+5. **Room actions:** While a deletion or a purge runs (`IsRoomOperationRunning`), Delete, Delete & Block, Block, Quarantine Media and Purge History are disabled.
 
 ## 6. Interfaces & Integrations
 
