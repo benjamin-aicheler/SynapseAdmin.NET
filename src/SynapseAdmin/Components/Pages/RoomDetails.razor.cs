@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SynapseAdmin.Components.Shared;
+using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Extensions;
@@ -414,86 +415,33 @@ namespace SynapseAdmin.Components.Pages
             _pollingCts = new CancellationTokenSource();
             var token = _pollingCts.Token;
             var purgeId = activePurgeId;
+            var poller = new StatusPoller<SynapseAdminPurgeHistoryStatusResponse>
+            {
+                FetchAsync = t => RoomService.GetPurgeHistoryStatusAsync(purgeId, t),
+                InvokeAsync = InvokeAsync,
+                IsCurrent = () => IsCurrentPoll(purgeId, token),
+                Apply = status => ApplyPurgeStatus(roomId, purgeId, status.Status),
+                GiveUp = () => GiveUpOnPurge(roomId, purgeId),
+                IntervalMs = PurgeStatusPollIntervalMs,
+                MaxConsecutiveFailures = MaxConsecutivePurgeStatusFailures,
+                LogFailedAttempt = (attempt, error) => Logger.LogWarning(
+                    "Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of {MaxAttempts}. Error: {Error}",
+                    roomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), attempt, MaxConsecutivePurgeStatusFailures, error.SanitizeForLogging()),
+                LogUnexpectedError = ex => Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}",
+                    roomId.SanitizeForLogging(), purgeId.SanitizeForLogging()),
+                LogCleanupFailure = ex => Logger.LogDebug(ex, "Purge polling cleanup failed for room {RoomId} (circuit likely gone)",
+                    roomId.SanitizeForLogging())
+            };
 
             // Start polling as a background task
-            _ = Task.Run(() => PollPurgeStatusAsync(roomId, purgeId, token), token);
+            _ = Task.Run(() => poller.RunAsync(token), token);
         }
 
-        private async Task PollPurgeStatusAsync(string roomId, string purgeId, CancellationToken token)
+        private void GiveUpOnPurge(string roomId, string purgeId)
         {
-            int consecutiveFailures = 0;
-            try
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    var result = await RoomService.GetPurgeHistoryStatusAsync(purgeId, token);
-                    if (result.Success && result.Data != null)
-                    {
-                        consecutiveFailures = 0;
-                        var status = result.Data.Status;
-                        var shouldStop = false;
-
-                        await InvokeAsync(() =>
-                        {
-                            if (!IsCurrentPoll(purgeId, token)) return;
-                            shouldStop = ApplyPurgeStatus(roomId, purgeId, status);
-                        });
-
-                        if (shouldStop)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        if (result.Severity == Severity.Normal && token.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
-                        consecutiveFailures++;
-                        var errMsg = result.Message ?? "Unknown error";
-                        Logger.LogWarning("Failed to get purge status for room {RoomId}, purge ID {PurgeId}. Attempt {Attempt} of {MaxAttempts}. Error: {Error}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging(), consecutiveFailures, MaxConsecutivePurgeStatusFailures, errMsg.SanitizeForLogging());
-
-                        if (consecutiveFailures >= MaxConsecutivePurgeStatusFailures)
-                        {
-                            await InvokeAsync(() =>
-                            {
-                                if (!IsCurrentPoll(purgeId, token)) return;
-                                ClearActivePurge(roomId, purgeId);
-                                Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
-                                StateHasChanged();
-                            });
-                            break;
-                        }
-                    }
-
-                    await Task.Delay(PurgeStatusPollIntervalMs, token);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Ignore cancellation
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Unexpected error in purge polling loop for room {RoomId}, purge ID {PurgeId}", roomId.SanitizeForLogging(), purgeId.SanitizeForLogging());
-                try
-                {
-                    await InvokeAsync(() =>
-                    {
-                        if (!IsCurrentPoll(purgeId, token)) return;
-                        ClearActivePurge(roomId, purgeId);
-                        Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
-                        StateHasChanged();
-                    });
-                }
-                catch (Exception cleanupEx)
-                {
-                    // Prevent secondary crash during cleanup
-                    Logger.LogDebug(cleanupEx, "Purge polling cleanup failed for room {RoomId} (circuit likely gone)", roomId.SanitizeForLogging());
-                }
-            }
+            ClearActivePurge(roomId, purgeId);
+            Snackbar.Add(L["ErrorFetchingPurgeStatus"], Severity.Error);
+            StateHasChanged();
         }
 
         /// <summary>
