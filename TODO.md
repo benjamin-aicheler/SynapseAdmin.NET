@@ -1,38 +1,56 @@
 # TODO
 
-<!--
-HOW TO USE THIS FILE (instructions for the AI agent):
-- This is the SINGLE-TASK execution checklist derived from the approved PLAN.md (ignore if PLAN.md is blank template or Done).
-- Work on ONE task at a time, top to bottom within "Next Up", unless the user says otherwise.
-- Before starting a task: move it to "In Progress".
-- After finishing a task: verify it (`dotnet build` & `dotnet test`), tick the checkbox, move it to "Done"
-  with the date and a short note (e.g. commit hash or files changed).
-- If you discover new work, add it to "Backlog" or "Bugs / Follow-ups" – do not silently expand the current task.
-- If a task is blocked, move it to "Blocked" with the reason and what is needed.
-- Keep entries short. Reference PLAN step IDs (e.g. [1.2]) and spec IDs (e.g. FR-15, AC-10).
-- ON COMPLETION (before merging the PR, or before starting the next task): finalize `[Planned]` items in SPEC.md and clear/reset this file (and PLAN.md) back to the blank template from `main` (optionally preserving any real unresolved follow-ups in Backlog, or moving them to GitHub Issues).
--->
-
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-23
+
+Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC-11). Branch `ai/bugfix/issue-518-room-deletion-status`. One PR, one commit per phase.
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] 
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+### Phase 1: Gateway and DTOs
+
+- Phase 1 done, see ✅ Done.
+
+### Phase 2: Service, ViewModel, strings
+
+- [ ] [2.1] `RoomDeletionState`, `RoomDeletionStatusViewModel`, `RoomMappingExtensions.ToViewModel` + `MappingExtensionsTests`
+- [ ] [2.2] `RoomService.DeleteRoomAsync` → `OperationResult<string>` with `RoomDeletionRequested`, new log lines, missing-ID warning, catch and log `JsonException` (non-JSON body)
+- [ ] [2.3] `GetRoomDeletionStatusAsync` (`null` → `Unknown`; `failed` logs the error) and `GetActiveRoomDeletionAsync` (first scheduled or active entry; `null` → `Ok(null)`)
+- [ ] [2.4] EN/DE/FR strings: `RoomDeletionRequested`, `RoomDeletionInProgress`, `RoomDeletionScheduledDescription`, `RoomDeletionActiveDescription`, `RoomDeletionFailed`, `RoomDeletionStatusUnknown`, `ErrorFetchingRoomDeletionStatus`, `RoomDeleted`
+- [ ] [2.5] Service tests in `RoomServiceCharacterizationTests`; `RoomDetails*Tests` stubs to `OperationResult<string>`
+
+### Phase 3: Room page
+
+- [ ] [3.1] Delete handler stays on the page; banner and checks start when a `delete_id` came back and the room is still shown
+- [ ] [3.2] Find deletions on load, poll loop, `ApplyRoomDeletionStatus`, `IsCurrentDeletionPoll`, cleanup on route change and in `Dispose`
+- [ ] [3.3] Deletion banner (`Warning`, filled, after the tombstone banner)
+- [ ] [3.4] `RoomDetailsRoomDeletionTests`; rewrite `DeleteHandler_ShowsItsTexts_AndReturnsToTheRoomListOnlyOnSuccess`; stale-selection tests for the deletion poll
+
+### Phase 4: Room actions and purge failure
+
+- [ ] [4.1] `IsRoomOperationRunning` disables all five Actions buttons during a deletion or a purge
+- [ ] [4.2] Purge failure: `PurgeFailed` without `{0}` (EN/DE/FR), no error text in `ApplyPurgeStatus`, remove `UnknownError`
+- [ ] [4.3] `GetPurgeHistoryStatusAsync` logs a failed purge's error
+- [ ] [4.4] Tests: buttons disabled and enabled again; rewrite `FailedPurgeStatus_ClearsThePurge_AndReportsTheError`; service log test
+
+### Phase 5: Documentation
+
+- [ ] [5.1] SPEC.md: remove `[Planned]` tags, decision log rows
+- [ ] [5.2] ARCHITECTURE.md integration row; AGENTS.md "Room deletion status" pitfall
+- [ ] [5.3] Reset PLAN.md and TODO.md; open the shared-poller follow-up issue (PLAN §3 E)
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
-- [ ] 
+- [ ] Manual test on Synapse: scheduled → active → complete, reopen during a deletion, Synapse restart mid-deletion, Delete & Block
+- [ ] Manual test on Tuwunel >= 1.8.1: `DELETE` response body and both status endpoints
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
@@ -40,7 +58,8 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-23 – SPEC `[Planned]` entries and PLAN.md approved
+- [x] 2026-11-23 – [1.1–1.4] DTOs, gateway interface and implementation, wire tests in `SynapseCompatibleGatewayCharacterizationTests` (31 new cases); build 0 warnings, 1115 tests green – not committed yet
 
 ## Definition of Done (applies to every task)
 
