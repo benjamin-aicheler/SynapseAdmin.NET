@@ -24,7 +24,7 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 - **Dashboard:** At-a-glance overview of your server's status and metrics, including server brand (Synapse or compatible servers like Tuwunel) and version, room storage usage, and user media consumption. Features integrated quick-links to detailed user and room management views.
 - **User Management:** Search, view, create, deactivate, and manage properties of server users, including account validity renewal, shadow login tokens, experimental feature flags, room memberships, uploaded media (paginated, with total upload count and size), and extended metadata like Appservice IDs and Consent status.
 - **Media Management:** Directly download or preview user-uploaded media (images, video, audio) with native browser streaming support, including seeking in video/audio and resumable downloads when the homeserver supports HTTP range requests. Includes capabilities to quarantine/unquarantine media, toggle quarantine protection for individual files, and perform advanced bulk maintenance operations (remote cache purging and local media cleanup by age/size).
-- **Room Management:** Search and inspect server rooms and their details (including room avatars, message history, state events, member lists, and Room Type/Spaces identification), block or delete rooms (following the background deletion on the room page), purge room message history (up to an event ID or timestamp), audit room media with download/preview support, and browse an interactive room gallery view with infinite scrolling.
+- **Room Management:** Search and inspect server rooms and their details (including room avatars, message history, state events, member lists, and Room Type/Spaces identification), block or delete rooms (following the background deletion on the room page), purge room message history (up to an event ID or timestamp, with live progress on the room page), audit room media with download/preview support, and browse an interactive room gallery view with infinite scrolling.
 - **Public Room Directory & Aliases:** Browse and search the public room directory, publish or unpublish rooms, and add or remove local room aliases.
 - **Event Reports:** Search, review, and manage reported events/messages from users.
 - **Event Forensics:** Inspect raw, unredacted JSON event payloads by Event ID for moderation, auditing, and debugging without requiring room membership.
@@ -187,11 +187,12 @@ SynapseAdmin.NET uses Blazor Interactive Server (SignalR circuits) and process-l
 
 - **Sticky Sessions (Session Affinity):** Configure your reverse proxy or load balancer for sticky sessions so each client's Blazor circuit, `/Auth/SignIn` cookie handoff, and per-IP rate-limiting buckets stay pinned to the same replica.
 - **Shared Data Protection Keys:** Mount a shared volume (or configure a shared key ring) for `/app/keys` with the same `DP_PASSPHRASE` across all replicas so authentication cookies, antiforgery tokens (used by the `/Auth/SignIn` cookie handoff) and encrypted session data can be decrypted by any instance.
+- **Room Operation Status:** A running history purge is tracked by the replica that started it, so a room page opened on another replica, or after a restart, shows no purge banner. Room deletions are looked up from the homeserver and show on every replica.
 - **Distributed Rate Limiting:** To enforce login rate limits globally across replicas without relying solely on sticky sessions, register a distributed `ILoginRateLimitStore` implementation (e.g., backed by Redis) before `TryAddSingleton<ILoginRateLimitStore, MemoryLoginRateLimitStore>()` in `Program.cs`.
 
 ## Documentation
 
-- [Architecture Overview](./ARCHITECTURE.md) – system context, N-tier design, auth/media flows, ADRs, and risks
+- [Architecture Overview](./ARCHITECTURE.md) – system context, N-tier design, auth, media and room operation flows, ADRs, and risks
 - [System Specification](./SPEC.md) – living functional/non-functional specification and acceptance criteria
 - [Localization Guide](./LOCALIZATION.md) – adding `.resx` languages and UI cultures
 - [Theme Guide](./THEMING.md) – adding custom MudBlazor themes (`IAppTheme`)
