@@ -380,6 +380,30 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
     }
 
     /// <summary>
+    /// A status request that answers "cancelled" after the page moved on is not a failed attempt: nothing is logged,
+    /// cleared or reported (#535 characterization).
+    /// </summary>
+    [Fact]
+    public async Task CancelledStatusAfterNavigation_LogsClearsAndReportsNothing()
+    {
+        var logger = new RecordingLogger<RoomDetails>();
+        Services.AddSingleton<ILogger<RoomDetails>>(logger);
+        var pending = Pending<OperationResult<SynapseAdminPurgeHistoryStatusResponse>>();
+        var cut = RenderPurgingRoom(() => pending.Task);
+        cut.WaitForAssertion(() => Assert.Single(StatusCalls));
+
+        Navigate(cut, RoomB);
+        cut.WaitForAssertion(() => Assert.Contains("Bravo Lounge", cut.Markup));
+        pending.SetResult(OperationResult<SynapseAdminPurgeHistoryStatusResponse>.Cancelled());
+        await Task.Delay(500);
+
+        Assert.DoesNotContain(logger.Entries, e => e.Level >= LogLevel.Warning);
+        Assert.Empty(ClearCalls);
+        Assert.Empty(SnackbarCalls);
+        Assert.Single(StatusCalls);
+    }
+
+    /// <summary>
     /// Failed status requests are retried every 5 s; the fifth failure in a row clears the purge and reports it. Each
     /// failure logs a warning with its attempt number and the limit (#427). Takes about 20 s, because the poll interval
     /// is a constant.
