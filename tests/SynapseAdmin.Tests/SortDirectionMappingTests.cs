@@ -14,7 +14,8 @@ namespace SynapseAdmin.Tests;
 /// <summary>
 /// Characterization of the <c>dir</c> parameter ("f" forwards, "b" backwards) that the list services send to Synapse.
 /// Each list keeps its natural order when unsorted (AGENTS.md, Shared Helpers, whenUnsorted): room and user lists read forwards (A→Z),
-/// event reports and federation destinations read backwards (newest first).
+/// event reports and federation destinations read backwards (newest first). Room keys that Synapse sorts largest first
+/// reverse the mapping (#541).
 /// </summary>
 public sealed class SortDirectionMappingTests : IDisposable
 {
@@ -69,6 +70,43 @@ public sealed class SortDirectionMappingTests : IDisposable
         Assert.True(success);
         var call = Assert.Single(stub.CallsTo(gatewayMethod));
         Assert.Equal(expectedDir, call[dirIndex]);
+    }
+
+    // Synapse sorts these room keys largest first, and dir=b reverses that, so an ascending (smallest first) sort sends
+    // "b". Unsorted keeps Synapse's own order. The service maps to the documented API for every server and never reads
+    // the brand: the gateway corrects servers that sort differently (#541).
+    [Theory]
+    [InlineData("joined_members", SortDirection.None, "f")]
+    [InlineData("joined_members", SortDirection.Ascending, "b")]
+    [InlineData("joined_members", SortDirection.Descending, "f")]
+    [InlineData("joined_local_members", SortDirection.Ascending, "b")]
+    [InlineData("joined_local_members", SortDirection.Descending, "f")]
+    [InlineData("version", SortDirection.Ascending, "b")]
+    [InlineData("version", SortDirection.Descending, "f")]
+    [InlineData("state_events", SortDirection.Ascending, "b")]
+    [InlineData("state_events", SortDirection.Descending, "f")]
+    [InlineData("size", SortDirection.Ascending, "b")]
+    [InlineData("size", SortDirection.Descending, "f")]
+    [InlineData("name", SortDirection.None, "f")]
+    [InlineData("name", SortDirection.Ascending, "f")]
+    [InlineData("name", SortDirection.Descending, "b")]
+    [InlineData("creator", SortDirection.Ascending, "f")]
+    [InlineData("creator", SortDirection.Descending, "b")]
+    [InlineData("public", SortDirection.Ascending, "f")]
+    [InlineData("public", SortDirection.Descending, "b")]
+    [InlineData("Joined_Members", SortDirection.Ascending, "f")]
+    public async Task RoomList_SendsTheDocumentedDirForEachKey_WithoutReadingTheBrand(string orderBy, SortDirection direction, string expectedDir)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
+
+        var result = await new RoomService(session, NullLogger<RoomService>.Instance, new KeyLocalizer(), _cache)
+            .GetRoomListAsync(0, 10, orderBy, direction);
+
+        Assert.True(result.Success);
+        var call = Assert.Single(stub.CallsTo(nameof(IMatrixGateway.GetRoomListAsync)));
+        Assert.Equal((orderBy, expectedDir), ((string?)call[2], (string?)call[3]));
+        Assert.Empty(stub.CallsTo("get_" + nameof(IMatrixGateway.ServerBrand)));
     }
 
     [Theory]

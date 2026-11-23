@@ -5,6 +5,7 @@ using SynapseAdmin.Models.Requests;
 using System.Text;
 using System.Text.Json;
 using ArcaneLibs.Extensions;
+using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Infrastructure.Serialization;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
@@ -225,6 +226,13 @@ public class SynapseCompatibleAdminGateway(
 
     public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
+        // Callers pass the dir of Synapse's documented order. Tuwunel sorts the keys Synapse sorts largest first
+        // ascending instead, so it needs the opposite dir for the same order (#541).
+        if (RoomSortKeys.IsLargestFirst(orderBy) && string.Equals(ServerBrand, GatewayConstants.TuwunelBrand, StringComparison.OrdinalIgnoreCase))
+        {
+            direction = RoomSortKeys.Reverse(direction);
+        }
+
         var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={limit}&dir={direction.UrlEncode()}&order_by={orderBy.UrlEncode()}";
         if (!string.IsNullOrEmpty(searchTerm)) url += $"&search_term={searchTerm.UrlEncode()}";
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: cancellationToken);

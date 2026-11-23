@@ -14,5 +14,8 @@ public static class GatewayConstants
 
     public const string SynapseBrand = "Synapse";
 
+    /// <summary>Tuwunel's federation server name. Compare it case-insensitively: the server reports the casing.</summary>
+    public const string TuwunelBrand = "Tuwunel";
+
     public const string ServerVersionPath = "/_synapse/admin/v1/server_version";
 }
