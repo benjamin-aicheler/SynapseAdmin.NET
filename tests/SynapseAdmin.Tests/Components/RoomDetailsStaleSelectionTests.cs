@@ -44,7 +44,7 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
             .On(nameof(IRoomService.GetMediaMetadataBatchAsync), args =>
                 _pendingMediaBatch?.Task ?? Task.FromResult(OperationResult<List<RoomMediaItemViewModel>>.Ok(
                     ((List<string>)args[0]!).Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList())))
-            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(OperationResult.Ok()))
+            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(OperationResult<string>.Ok(string.Empty)))
             .On(nameof(IRoomService.QuarantineMediaAsync), _ => Task.FromResult(OperationResult.Ok()))
             .On(nameof(IRoomService.BlockRoomAsync), _ => Task.FromResult(OperationResult.Ok()));
     }
@@ -282,17 +282,20 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
         Assert.Equal("purge-a", Assert.Single(StatusCalls)[0]);
     }
 
-    /// <summary>A failed purge is reported with its error text, or "Unknown error" if it has none.</summary>
+    /// <summary>
+    /// A failed purge is reported with a localized message only. The homeserver's error text goes to the log
+    /// (<c>RoomService</c>), as for a failed room deletion (#518).
+    /// </summary>
     [Theory]
-    [InlineData("disk full", "disk full")]
-    [InlineData(null, null)]
-    [InlineData("", null)]
-    public void FailedPurgeStatus_ClearsThePurge_AndReportsTheError(string? error, string? shownError)
+    [InlineData("disk full")]
+    [InlineData(null)]
+    [InlineData("")]
+    public void FailedPurgeStatus_ClearsThePurge_AndReportsALocalizedFailure(string? error)
     {
         var cut = RenderPurgingRoom(() => Task.FromResult(PurgeStatus("failed", error)));
 
-        var message = string.Format(Localizer["PurgeFailed"].Value, shownError ?? Localizer["UnknownError"].Value);
-        AssertPurgeClearedAndReported(cut, message, Severity.Error);
+        AssertPurgeClearedAndReported(cut, Localizer["PurgeFailed"].Value, Severity.Error);
+        Assert.DoesNotContain("disk full", cut.Markup);
     }
 
     [Fact]

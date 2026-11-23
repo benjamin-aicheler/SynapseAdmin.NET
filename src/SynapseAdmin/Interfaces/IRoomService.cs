@@ -9,7 +9,15 @@ public interface IRoomService
 {
     Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default);
     Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId, CancellationToken token = default);
-    Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default);
+    /// <summary>
+    /// Requests the deletion of a room, which the homeserver runs in the background. The data is the deletion's
+    /// <c>delete_id</c>, or empty if the homeserver returned none (#518).
+    /// </summary>
+    Task<OperationResult<string>> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default);
+    /// <summary>The status of a room deletion; a deletion the homeserver no longer knows is <see cref="RoomDeletionState.Unknown"/>.</summary>
+    Task<OperationResult<RoomDeletionStatusViewModel>> GetRoomDeletionStatusAsync(string deleteId, CancellationToken token = default);
+    /// <summary>The room's running deletion (active before scheduled), or <c>null</c> if there is none.</summary>
+    Task<OperationResult<RoomDeletionStatusViewModel?>> GetActiveRoomDeletionAsync(string roomId, CancellationToken token = default);
     Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default);
     Task<OperationResult> BlockRoomAsync(string roomId, bool block, CancellationToken token = default);
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);

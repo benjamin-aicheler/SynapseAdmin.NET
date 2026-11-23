@@ -379,4 +379,31 @@ public class MappingExtensionsTests
             (dto.CurrentUpdates ?? []).Select(kvp => (kvp.Key, kvp.Value.Name, kvp.Value.TotalItemCount, kvp.Value.TotalDurationMs, kvp.Value.AverageItemsPerMs)),
             vm.CurrentUpdates.Select(kvp => (kvp.Key, kvp.Value.Name, kvp.Value.TotalItemCount, kvp.Value.TotalDurationMs, kvp.Value.AverageItemsPerMs)));
     }
+
+    // Room deletion status (#518): Synapse's status in lower case, anything else is Unknown (the API is experimental).
+    [Theory]
+    [InlineData("scheduled", RoomDeletionState.Scheduled, true)]
+    [InlineData("active", RoomDeletionState.Active, true)]
+    [InlineData("complete", RoomDeletionState.Complete, false)]
+    [InlineData("failed", RoomDeletionState.Failed, false)]
+    [InlineData("Active", RoomDeletionState.Unknown, false)]
+    [InlineData("paused", RoomDeletionState.Unknown, false)]
+    [InlineData("", RoomDeletionState.Unknown, false)]
+    [InlineData(null, RoomDeletionState.Unknown, false)]
+    public void RoomDeletionStatusMapping_MapsAllProperties(string? status, RoomDeletionState state, bool running)
+    {
+        var dto = new SynapseAdminRoomDeleteStatusResponse { DeleteId = "delete-1", RoomId = "!room:example.com", Status = status!, Error = "boom" };
+
+        var vm = dto.ToViewModel();
+
+        Assert.Equal(("delete-1", "!room:example.com", state, running), (vm.DeleteId, vm.RoomId, vm.State, vm.IsRunning));
+    }
+
+    [Fact]
+    public void RoomDeletionStatusMapping_MissingFields_BecomeEmpty()
+    {
+        var vm = JsonSerializer.Deserialize<SynapseAdminRoomDeleteStatusResponse>("{}")!.ToViewModel();
+
+        Assert.Equal((string.Empty, string.Empty, RoomDeletionState.Unknown), (vm.DeleteId, vm.RoomId, vm.State));
+    }
 }

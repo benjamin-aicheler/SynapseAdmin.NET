@@ -39,7 +39,7 @@ public class RoomDetailsActionTests : DetailPageTestBase
                 Task.FromResult(OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel())))
             .On(nameof(IRoomService.GetMediaMetadataBatchAsync), args => Task.FromResult(OperationResult<List<RoomMediaItemViewModel>>.Ok(
                 ((List<string>)args[0]!).Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList())))
-            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(_result));
+            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(WithData<string>(_result)));
 
         // Replaces the base class's unconfigured media service: every action returns the current _result.
         Services.AddSingleton(Stub.Create<IMediaService>(s =>
@@ -79,7 +79,7 @@ public class RoomDetailsActionTests : DetailPageTestBase
     [InlineData("DeleteRoom", "DeleteRoomTitle", "DeleteRoomConfirmation", "Delete", false)]
     [InlineData("DeleteAndBlockRoom", "DeleteAndBlockRoomTitle", "DeleteAndBlockRoomConfirmation", "DeleteAndBlock", true)]
     [InlineData("DeleteAndBlockRoom", "DeleteAndBlockRoomTitle", "DeleteAndBlockRoomConfirmation", "DeleteAndBlock", false)]
-    public async Task DeleteHandler_ShowsItsTexts_AndReturnsToTheRoomListOnlyOnSuccess(
+    public async Task DeleteHandler_ShowsItsTexts_AndStaysOnTheRoomPage(
         string handler, string titleKey, string confirmKey, string yesKey, bool success)
     {
         _result = success ? OperationResult.Ok() : OperationResult.Failure("Delete failed");
@@ -94,7 +94,8 @@ public class RoomDetailsActionTests : DetailPageTestBase
         Assert.Equal(Localizer[yesKey].Value, dialog[2]);
         Assert.Equal(Localizer["Cancel"].Value, dialog[4]);
 
-        Assert.Equal(success ? Navigation.ToAbsoluteUri("/rooms").ToString() : roomUri, Navigation.Uri);
+        // The homeserver only starts the deletion: the page stays, as after a purge (#518).
+        Assert.Equal(roomUri, Navigation.Uri);
         var snackbar = Assert.Single(SnackbarStub.CallsTo(nameof(ISnackbar.Add)));
         Assert.Equal(_result.Message, snackbar[0]);
         Assert.Equal(_result.Severity, snackbar[1]);

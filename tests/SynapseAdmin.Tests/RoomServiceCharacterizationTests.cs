@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
@@ -29,6 +30,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     private const string Alias = "#alias\n:example.com";
     private const string SanitizedAlias = "#alias :example.com";
     private const string PurgeId = "purge\n1";
+    private const string DeleteId = "delete\n1";
     private const string Search = "ali\nce";
     private static readonly Dictionary<string, object?> RoomArgument = new() { ["RoomId"] = SanitizedRoomId };
 
@@ -53,7 +55,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
             new() { ["Offset"] = 20, ["Limit"] = 10, ["SearchTerm"] = "ali ce" }),
         ["Details"] = new("GetRoomDetailsAsync", async (s, ct) => await s.GetRoomDetailsAsync(RoomId, ct),
             Args(RoomId), "ErrorFetchingRoomDetails", "Error fetching room details for {RoomId}", RoomArgument),
-        ["Delete"] = new("DeleteRoomAsync", (s, ct) => s.DeleteRoomAsync(RoomId, block: true, purge: false, ct),
+        ["Delete"] = new("DeleteRoomAsync", async (s, ct) => await s.DeleteRoomAsync(RoomId, block: true, purge: false, ct),
             (args, ct) =>
             {
                 Assert.Equal(RoomId, args[0]);
@@ -62,9 +64,13 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
                     (request.Block, request.Purge, request.NewRoomUserId, request.RoomName, request.Message));
                 Assert.Equal(ct, args[2]);
             },
-            "ErrorDeletingRoom", "Error deleting room {RoomId}", RoomArgument,
-            "RoomDeletedSuccessfully", "Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})",
-            new() { ["RoomId"] = SanitizedRoomId, ["Block"] = true, ["Purge"] = false }),
+            // Success depends on the delete_id the gateway returns: see the Delete_* tests (#518).
+            "ErrorDeletingRoom", "Error deleting room {RoomId}", RoomArgument),
+        ["DeletionStatus"] = new("GetRoomDeleteStatusAsync", async (s, ct) => await s.GetRoomDeletionStatusAsync(DeleteId, ct),
+            Args(DeleteId), "ErrorFetchingRoomDeletionStatus", "Error getting room deletion status for delete ID {DeleteId}",
+            new() { ["DeleteId"] = "delete 1" }),
+        ["ActiveDeletion"] = new("GetRoomDeleteStatusesAsync", async (s, ct) => await s.GetActiveRoomDeletionAsync(RoomId, ct),
+            Args(RoomId), "ErrorFetchingRoomDeletionStatus", "Error looking up deletions of room {RoomId}", RoomArgument),
         ["QuarantineMedia"] = new("QuarantineMediaByRoomIdAsync", (s, ct) => s.QuarantineMediaAsync(RoomId, ct),
             Args(RoomId), "ErrorQuarantiningRoomMedia", "Error quarantining media for room {RoomId}", RoomArgument,
             "RoomMediaQuarantinedSuccessfully", "Successfully quarantined media for room {RoomId}", RoomArgument),
@@ -248,6 +254,160 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
 
         await CreateService(Stub.Create<IMatrixGateway>()).DeleteRoomAsync(RoomId, token: _cts.Token);
         Assert.Null(service.GetActivePurgeId(RoomId));
+    }
+
+    // ---- Room deletion (#518) ------------------------------------------------------------------------
+
+    private static readonly Dictionary<string, object?> DeleteRequestArguments =
+        new() { ["RoomId"] = SanitizedRoomId, ["Block"] = true, ["Purge"] = false };
+
+    private RoomService DeletingService(Func<Task<SynapseAdminRoomDeleteResponse?>> response) =>
+        CreateService(Stub.Create<IMatrixGateway>(s => s.On("DeleteRoomAsync", _ => response())));
+
+    [Fact]
+    public async Task Delete_WithDeleteId_ReportsTheRequest_ReturnsTheId_AndLogsIt()
+    {
+        var service = DeletingService(() => Task.FromResult<SynapseAdminRoomDeleteResponse?>(new() { DeleteId = DeleteId }));
+
+        var result = await service.DeleteRoomAsync(RoomId, block: true, purge: false, _cts.Token);
+
+        ResultAssert.Success(result, "RoomDeletionRequested");
+        Assert.Equal(DeleteId, result.Data);
+        AssertSingleLog(LogLevel.Information, "Requested deletion of room {RoomId} (delete ID {DeleteId}, block: {Block}, purge: {Purge})",
+            new() { ["RoomId"] = SanitizedRoomId, ["DeleteId"] = "delete 1", ["Block"] = true, ["Purge"] = false }, exception: null);
+    }
+
+    [Theory]
+    [InlineData(false, null)]
+    [InlineData(true, null)]
+    [InlineData(true, "")]
+    [InlineData(true, "  ")]
+    public async Task Delete_WithoutDeleteId_ReportsTheRequest_WithAWarning(bool hasBody, string? deleteId)
+    {
+        var response = hasBody ? new SynapseAdminRoomDeleteResponse { DeleteId = deleteId } : null;
+        var service = DeletingService(() => Task.FromResult(response));
+
+        var result = await service.DeleteRoomAsync(RoomId, block: true, purge: false, _cts.Token);
+
+        ResultAssert.Success(result, "RoomDeletionRequested");
+        Assert.Equal("", result.Data);
+        AssertSingleLog(LogLevel.Warning, "Deletion of room {RoomId} was requested, but the homeserver returned no delete_id (block: {Block}, purge: {Purge})",
+            DeleteRequestArguments, exception: null);
+    }
+
+    /// <summary>The homeserver accepted the deletion (2xx); only its answer can't be read, so it isn't an error.</summary>
+    [Fact]
+    public async Task Delete_NonJsonResponse_ReportsTheRequest_ForgetsTheRoom_AndLogsAWarning()
+    {
+        var error = new JsonException("'A' is an invalid start of a value.");
+        var service = CreateService(Stub.Create<IMatrixGateway>(s => s.Fault("DeleteRoomAsync", error)));
+        service.SetActivePurgeId(RoomId, "purge");
+
+        var result = await service.DeleteRoomAsync(RoomId, block: true, purge: false, _cts.Token);
+
+        ResultAssert.Success(result, "RoomDeletionRequested");
+        Assert.Equal("", result.Data);
+        Assert.Null(service.GetActivePurgeId(RoomId));
+        AssertSingleLog(LogLevel.Warning, "Deletion of room {RoomId} was requested, but the homeserver's response is not JSON (block: {Block}, purge: {Purge})",
+            DeleteRequestArguments, error);
+    }
+
+    private RoomService DeletionStatusService(SynapseAdminRoomDeleteStatusResponse? status) =>
+        CreateService(Stub.Create<IMatrixGateway>(s => s.On("GetRoomDeleteStatusAsync", _ => Task.FromResult(status))));
+
+    [Theory]
+    [InlineData("scheduled", RoomDeletionState.Scheduled)]
+    [InlineData("active", RoomDeletionState.Active)]
+    [InlineData("complete", RoomDeletionState.Complete)]
+    [InlineData("paused", RoomDeletionState.Unknown)]
+    public async Task DeletionStatus_ReturnsTheMappedStatus_WithoutLogging(string status, RoomDeletionState state)
+    {
+        var service = DeletionStatusService(new() { DeleteId = DeleteId, RoomId = RoomId, Status = status });
+
+        var result = await service.GetRoomDeletionStatusAsync(DeleteId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Equal((DeleteId, RoomId, state), (result.Data!.DeleteId, result.Data.RoomId, result.Data.State));
+        Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>
+    /// Unlike other single-resource reads, a null result is an answer, not a failure: the homeserver no longer knows the
+    /// deletion, and the room page must not count it toward its cap of failed checks.
+    /// </summary>
+    [Fact]
+    public async Task DeletionStatus_NullGatewayResult_IsUnknown_WithoutLogging()
+    {
+        var result = await DeletionStatusService(null).GetRoomDeletionStatusAsync(DeleteId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Equal((DeleteId, RoomDeletionState.Unknown), (result.Data!.DeleteId, result.Data.State));
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Theory]
+    [InlineData("disk\nfull", "disk full")]
+    [InlineData(null, null)]
+    public async Task DeletionStatus_Failed_LogsTheHomeserversError(string? error, string? loggedError)
+    {
+        var service = DeletionStatusService(new() { DeleteId = DeleteId, RoomId = RoomId, Status = "failed", Error = error });
+
+        var result = await service.GetRoomDeletionStatusAsync(DeleteId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Equal(RoomDeletionState.Failed, result.Data!.State);
+        AssertSingleLog(LogLevel.Warning, "Room deletion {DeleteId} of room {RoomId} failed: {Error}",
+            new() { ["DeleteId"] = "delete 1", ["RoomId"] = SanitizedRoomId, ["Error"] = loggedError }, exception: null);
+    }
+
+    /// <summary>Each entry is <c>deleteId:status</c>. Active wins over scheduled; finished ones and entries without an ID are skipped.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(null, "d1:complete", "d2:failed")]
+    [InlineData("d2", "d1:complete", "d2:scheduled")]
+    [InlineData("d4", "d1:complete", "d2:scheduled", "d3:failed", "d4:active")]
+    [InlineData("d2", ":active", "d2:scheduled")]
+    public async Task ActiveDeletion_PicksTheRunningDeletion_ActiveBeforeScheduled(string? expected, params string[] entries)
+    {
+        var statuses = new SynapseAdminRoomDeleteStatusListResponse
+        {
+            Results = entries.Select(e => e.Split(':')).Select(p => new SynapseAdminRoomDeleteStatusResponse { DeleteId = p[0], RoomId = RoomId, Status = p[1] }).ToList()
+        };
+        var service = CreateService(Stub.Create<IMatrixGateway>(s => s.On("GetRoomDeleteStatusesAsync", _ => Task.FromResult<SynapseAdminRoomDeleteStatusListResponse?>(statuses))));
+
+        var result = await service.GetActiveRoomDeletionAsync(RoomId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Equal(expected, result.Data?.DeleteId);
+        Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>Collection read: no answer means no deletion the homeserver knows of (#395).</summary>
+    [Fact]
+    public async Task ActiveDeletion_NullGatewayResult_IsNone_WithoutLogging()
+    {
+        var result = await CreateService(Stub.Create<IMatrixGateway>()).GetActiveRoomDeletionAsync(RoomId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Null(result.Data);
+        Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>The homeserver's error text for a failed purge goes only to the log; the page shows a localized message (#518).</summary>
+    [Theory]
+    [InlineData("disk\nfull", "disk full")]
+    [InlineData(null, null)]
+    public async Task PurgeStatus_Failed_LogsTheHomeserversError(string? error, string? loggedError)
+    {
+        var status = new SynapseAdminPurgeHistoryStatusResponse { Status = "failed", Error = error };
+        var service = CreateService(Stub.Create<IMatrixGateway>(s => s.On("GetPurgeHistoryStatusAsync", _ => Task.FromResult<SynapseAdminPurgeHistoryStatusResponse?>(status))));
+
+        var result = await service.GetPurgeHistoryStatusAsync(PurgeId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Same(status, result.Data);
+        AssertSingleLog(LogLevel.Warning, "History purge {PurgeId} failed: {Error}",
+            new() { ["PurgeId"] = "purge 1", ["Error"] = loggedError }, exception: null);
     }
 
     [Fact]

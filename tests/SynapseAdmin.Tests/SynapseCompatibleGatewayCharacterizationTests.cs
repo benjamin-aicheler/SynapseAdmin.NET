@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using LibMatrix;
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SynapseAdmin.Infrastructure.Gateways;
 using SynapseAdmin.Models.Requests;
+using SynapseAdmin.Models.Responses;
 using Xunit;
 
 namespace SynapseAdmin.Tests;
@@ -29,6 +31,8 @@ namespace SynapseAdmin.Tests;
 /// Also setting room directory visibility: the exact PUT, its cancellation token and the same error behavior.
 /// Also the seven POSTs that send <c>{}</c> and read no response body: the exact request, that a server accepting only
 /// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
+/// Also room deletion (#518): the <c>delete_id</c> the DELETE returns, and the two status reads with the answers that
+/// mean "no status".
 /// </summary>
 public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -373,6 +377,145 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         Assert.Equal(
             new CapturedRequest("POST", "/_synapse/admin/v1/registration_tokens/new", "application/json; charset=utf-8", """{"uses_allowed":1}"""),
             Assert.Single(_homeserver.Requests));
+    }
+
+    // ---- Room deletion (#518) ------------------------------------------------------------------------
+
+    private static Task<SynapseAdminRoomDeleteResponse?> DeleteRoom(SynapseCompatibleAdminGateway gateway) =>
+        gateway.DeleteRoomAsync("!room:example.com", new SynapseAdminRoomDeleteRequest { Block = true, Purge = true });
+
+    [Fact]
+    public async Task DeleteRoom_ReturnsTheDeleteId()
+    {
+        _homeserver.Respond = () => Results.Json(new { delete_id = "delete-1" });
+
+        var response = await DeleteRoom(_gateway);
+
+        Assert.Equal("delete-1", response?.DeleteId);
+    }
+
+    /// <summary>The body used to be ignored, so an accepted deletion without one must not become an error.</summary>
+    [Fact]
+    public async Task DeleteRoom_EmptyBody_ReturnsNull()
+    {
+        _homeserver.Respond = () => Results.Ok();
+
+        Assert.Null(await DeleteRoom(_gateway));
+    }
+
+    /// <summary>The gateway can't log, so it leaves a body that isn't JSON to the service (<c>RoomService</c>).</summary>
+    [Fact]
+    public async Task DeleteRoom_NonJsonBody_ThrowsJsonException()
+    {
+        _homeserver.Respond = () => Results.Text("Accepted", statusCode: 200);
+
+        await Assert.ThrowsAnyAsync<JsonException>(() => DeleteRoom(_gateway));
+    }
+
+    [Fact]
+    public async Task GetRoomDeleteStatus_SendsAGetForTheDeleteId_AndReadsTheStatus()
+    {
+        _homeserver.Respond = () => Results.Json(new
+        {
+            delete_id = "delete+1",
+            room_id = "!room:example.com",
+            status = "failed",
+            error = "Purge failed",
+            shutdown_room = new { kicked_users = new[] { "@bob:example.com" }, failed_to_kick_users = Array.Empty<string>(), local_aliases = Array.Empty<string>(), new_room_id = (string?)null }
+        });
+
+        var status = await _gateway.GetRoomDeleteStatusAsync("delete+1");
+
+        Assert.Equal(new CapturedRequest("GET", "/_synapse/admin/v2/rooms/delete_status/delete%2b1", null, ""), Assert.Single(_homeserver.Requests));
+        Assert.NotNull(status);
+        Assert.Equal(("delete+1", "!room:example.com", "failed", "Purge failed"), (status.DeleteId, status.RoomId, status.Status, status.Error));
+    }
+
+    [Fact]
+    public async Task GetRoomDeleteStatuses_SendsAGetForTheRoom_AndReadsEveryResult()
+    {
+        _homeserver.Respond = () => Results.Json(new
+        {
+            results = new object[]
+            {
+                new { delete_id = "delete-1", room_id = "!room:example.com", status = "complete" },
+                new { delete_id = "delete-2", room_id = "!room:example.com", status = "active" },
+            }
+        });
+
+        var statuses = await _gateway.GetRoomDeleteStatusesAsync("!room:example.com");
+
+        Assert.Equal(new CapturedRequest("GET", "/_synapse/admin/v2/rooms/!room%3aexample.com/delete_status", null, ""), Assert.Single(_homeserver.Requests));
+        Assert.NotNull(statuses);
+        Assert.Equal(new (string?, string)[] { ("delete-1", "complete"), ("delete-2", "active") }, statuses.Results.Select(r => (r.DeleteId, r.Status)));
+    }
+
+    private static readonly string[] DeleteStatusMethodNames =
+    [
+        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusAsync),
+        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusesAsync),
+    ];
+
+    public static TheoryData<string> DeleteStatusMethods => new(DeleteStatusMethodNames);
+
+    private static Func<SynapseCompatibleAdminGateway, Task<object?>> DeleteStatusMethod(string name) => name switch
+    {
+        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusAsync) => async g => await g.GetRoomDeleteStatusAsync("delete-1"),
+        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusesAsync) => async g => await g.GetRoomDeleteStatusesAsync("!room:example.com"),
+        _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+    };
+
+    /// <summary>
+    /// A deletion Synapse no longer knows (404 <c>M_NOT_FOUND</c>), a homeserver without the endpoint
+    /// (<c>M_UNRECOGNIZED</c>, as 404 or 405) and a bare 404 from a proxy all mean "no status".
+    /// </summary>
+    public static TheoryData<string, int, string?> MissingDeleteStatuses
+    {
+        get
+        {
+            var data = new TheoryData<string, int, string?>();
+            foreach (var method in DeleteStatusMethodNames)
+            {
+                data.Add(method, 404, "M_NOT_FOUND");
+                data.Add(method, 404, "M_UNRECOGNIZED");
+                data.Add(method, 405, "M_UNRECOGNIZED");
+                data.Add(method, 404, null);
+            }
+            return data;
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(MissingDeleteStatuses))]
+    public async Task GetDeleteStatus_UnknownDeletionOrMissingEndpoint_ReturnsNull(string method, int statusCode, string? errcode)
+    {
+        _homeserver.Respond = () => errcode == null
+            ? Results.Text("Not Found", statusCode: statusCode)
+            : Results.Json(new { errcode, error = "Not found" }, statusCode: statusCode);
+
+        Assert.Null(await DeleteStatusMethod(method)(_gateway));
+    }
+
+    [Theory]
+    [MemberData(nameof(DeleteStatusMethods))]
+    public async Task GetDeleteStatus_MatrixErrorResponse_ThrowsMatrixException(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_FORBIDDEN", error = "You are not a server admin" }, statusCode: 403);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => DeleteStatusMethod(method)(_gateway));
+
+        Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(DeleteStatusMethods))]
+    public async Task GetDeleteStatus_NonJsonErrorResponse_ThrowsHttpRequestException(string method)
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => DeleteStatusMethod(method)(_gateway));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
 
     /// <summary>One request as the server received it. <see cref="Target"/> is the path and query exactly as sent.</summary>

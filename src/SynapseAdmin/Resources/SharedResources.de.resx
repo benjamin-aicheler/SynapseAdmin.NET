@@ -562,6 +562,30 @@
   <data name="ErrorDeletingRoom" xml:space="preserve">
     <value>Fehler beim Löschen des Raums.</value>
   </data>
+  <data name="RoomDeletionRequested" xml:space="preserve">
+    <value>Löschen des Raums angefordert. Der Homeserver löscht den Raum im Hintergrund.</value>
+  </data>
+  <data name="RoomDeletionInProgress" xml:space="preserve">
+    <value>Löschen des Raums läuft</value>
+  </data>
+  <data name="RoomDeletionScheduledDescription" xml:space="preserve">
+    <value>Der Homeserver hat das Löschen dieses Raums eingeplant und beginnt bald damit.</value>
+  </data>
+  <data name="RoomDeletionActiveDescription" xml:space="preserve">
+    <value>Der Homeserver entfernt die Mitglieder dieses Raums und löscht seine Daten aus der Datenbank.</value>
+  </data>
+  <data name="RoomDeletionFailed" xml:space="preserve">
+    <value>Löschen des Raums fehlgeschlagen. Die Fehlermeldung des Homeservers steht im Anwendungsprotokoll.</value>
+  </data>
+  <data name="RoomDeletionStatusUnknown" xml:space="preserve">
+    <value>Der Homeserver meldet den Status des Löschens nicht mehr. Laden Sie die Seite neu, um zu sehen, ob der Raum noch existiert.</value>
+  </data>
+  <data name="ErrorFetchingRoomDeletionStatus" xml:space="preserve">
+    <value>Fehler beim Überprüfen des Löschstatus des Raums.</value>
+  </data>
+  <data name="RoomDeleted" xml:space="preserve">
+    <value>Dieser Raum wurde gelöscht.</value>
+  </data>
   <data name="RoomMediaQuarantinedSuccessfully" xml:space="preserve">
     <value>Raummedien erfolgreich unter Quarantäne gestellt.</value>
   </data>
@@ -935,7 +959,7 @@
     <value>Bereinigung läuft</value>
   </data>
   <data name="PurgeInProgressDescription" xml:space="preserve">
-    <value>Für diesen Raum ist derzeit eine Bereinigung des Verlaufs active. Alte Verlaufsereignisse werden aus der Datenbank gelöscht.</value>
+    <value>Für diesen Raum ist derzeit eine Bereinigung des Verlaufs aktiv. Alte Verlaufsereignisse werden aus der Datenbank gelöscht.</value>
   </data>
   <data name="PurgeStarted" xml:space="preserve">
     <value>Bereinigung des Verlaufs erfolgreich gestartet.</value>
@@ -944,7 +968,7 @@
     <value>Bereinigung des Verlaufs erfolgreich abgeschlossen.</value>
   </data>
   <data name="PurgeFailed" xml:space="preserve">
-    <value>Bereinigung des Verlaufs fehlgeschlagen: {0}</value>
+    <value>Bereinigung des Verlaufs fehlgeschlagen.</value>
   </data>
   <data name="ErrorPurgingHistory" xml:space="preserve">
     <value>Fehler beim Starten der Bereinigung des Raumverlaufs.</value>
@@ -1062,9 +1086,6 @@
   </data>
   <data name="MediaMaintenanceDescription" xml:space="preserve">
     <value>Führen Sie erweiterte Wartungsarbeiten am Medien-Repository durch, leeren Sie Remote-Caches und verwalten Sie lokale Medien-Assets.</value>
-  </data>
-  <data name="UnknownError" xml:space="preserve">
-    <value>Unbekannter Fehler</value>
   </data>
   <data name="SearchUserIdOrDisplayName" xml:space="preserve">
     <value>Benutzer-ID oder Anzeigenamen suchen</value>

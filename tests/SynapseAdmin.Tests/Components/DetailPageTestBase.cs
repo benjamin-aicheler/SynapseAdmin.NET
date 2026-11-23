@@ -111,6 +111,13 @@ public abstract class DetailPageTestBase : BunitContext, IAsyncLifetime
         _ => new TResult { Success = true, Message = "Done", Severity = Severity.Success }
     };
 
+    /// <summary>
+    /// <paramref name="result"/>'s outcome as an <see cref="OperationResult{T}"/>, for a stub method that returns data while
+    /// the test shares one result between several actions.
+    /// </summary>
+    protected static OperationResult<T> WithData<T>(OperationResult result, T? data = default) =>
+        new() { Success = result.Success, Message = result.Message, Severity = result.Severity, Data = data };
+
     /// <summary>Asserts the snackbars shown so far: exactly these results' messages and severities, in order.</summary>
     protected void AssertSnackbars(params OperationResult[] shown) =>
         Assert.Equal(
