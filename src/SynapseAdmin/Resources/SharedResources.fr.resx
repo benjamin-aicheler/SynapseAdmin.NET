@@ -562,6 +562,30 @@
   <data name="ErrorDeletingRoom" xml:space="preserve">
     <value>Erreur lors de la suppression du salon.</value>
   </data>
+  <data name="RoomDeletionRequested" xml:space="preserve">
+    <value>Suppression du salon demandée. Le serveur d'accueil supprime le salon en arrière-plan.</value>
+  </data>
+  <data name="RoomDeletionInProgress" xml:space="preserve">
+    <value>Suppression du salon en cours</value>
+  </data>
+  <data name="RoomDeletionScheduledDescription" xml:space="preserve">
+    <value>Le serveur d'accueil a planifié la suppression de ce salon et la commencera bientôt.</value>
+  </data>
+  <data name="RoomDeletionActiveDescription" xml:space="preserve">
+    <value>Le serveur d'accueil retire les membres de ce salon et supprime ses données de la base de données.</value>
+  </data>
+  <data name="RoomDeletionFailed" xml:space="preserve">
+    <value>La suppression du salon a échoué. Le message d'erreur du serveur d'accueil figure dans le journal de l'application.</value>
+  </data>
+  <data name="RoomDeletionStatusUnknown" xml:space="preserve">
+    <value>Le serveur d'accueil ne communique plus l'état de la suppression de ce salon. Rechargez la page pour vérifier si le salon existe encore.</value>
+  </data>
+  <data name="ErrorFetchingRoomDeletionStatus" xml:space="preserve">
+    <value>Erreur lors de la vérification du statut de la suppression du salon.</value>
+  </data>
+  <data name="RoomDeleted" xml:space="preserve">
+    <value>Ce salon a été supprimé.</value>
+  </data>
   <data name="RoomMediaQuarantinedSuccessfully" xml:space="preserve">
     <value>Médias du salon mis en quarantaine avec succès.</value>
   </data>

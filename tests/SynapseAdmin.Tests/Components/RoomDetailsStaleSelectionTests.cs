@@ -44,7 +44,7 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
             .On(nameof(IRoomService.GetMediaMetadataBatchAsync), args =>
                 _pendingMediaBatch?.Task ?? Task.FromResult(OperationResult<List<RoomMediaItemViewModel>>.Ok(
                     ((List<string>)args[0]!).Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList())))
-            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(OperationResult.Ok()))
+            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(OperationResult<string>.Ok(string.Empty)))
             .On(nameof(IRoomService.QuarantineMediaAsync), _ => Task.FromResult(OperationResult.Ok()))
             .On(nameof(IRoomService.BlockRoomAsync), _ => Task.FromResult(OperationResult.Ok()));
     }

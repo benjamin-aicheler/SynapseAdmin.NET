@@ -211,7 +211,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 return OperationResult<List<RoomMediaItemViewModel>>.Ok(results);
             });
 
-    public Task<OperationResult> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default) =>
+    public Task<OperationResult<string>> DeleteRoomAsync(string roomId, bool block = false, bool purge = true, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorDeletingRoom",
             ex => logger.LogError(ex, "Error deleting room {RoomId}", roomId.SanitizeForLogging()),
             async gateway =>
@@ -221,11 +221,78 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     Block = block,
                     Purge = purge
                 };
-                await gateway.DeleteRoomAsync(roomId, req, token);
+                // The homeserver only starts the deletion; the room page follows it by its delete_id (#518).
+                var deleteId = await RequestRoomDeletionAsync(gateway, roomId, req, token);
                 memoryCache.Remove(GetRoomNameCacheKey(roomId));
                 ClearActivePurgeId(roomId);
-                logger.LogInformation("Successfully deleted room {RoomId} (block: {Block}, purge: {Purge})", roomId.SanitizeForLogging(), block, purge);
-                return OperationResult.Ok(L["RoomDeletedSuccessfully"]);
+                return OperationResult<string>.Ok(deleteId ?? string.Empty, L["RoomDeletionRequested"]);
+            });
+
+    /// <summary>
+    /// Sends the deletion and returns its <c>delete_id</c>, or <c>null</c> (logged) if the homeserver accepted it without
+    /// one or with an answer that isn't JSON. Both are still a requested deletion, not an error.
+    /// </summary>
+    private async Task<string?> RequestRoomDeletionAsync(IMatrixGateway gateway, string roomId, SynapseAdminRoomDeleteRequest req, CancellationToken token)
+    {
+        try
+        {
+            var response = await gateway.DeleteRoomAsync(roomId, req, token);
+            if (!string.IsNullOrWhiteSpace(response?.DeleteId))
+            {
+                logger.LogInformation("Requested deletion of room {RoomId} (delete ID {DeleteId}, block: {Block}, purge: {Purge})",
+                    roomId.SanitizeForLogging(), response.DeleteId.SanitizeForLogging(), req.Block, req.Purge);
+                return response.DeleteId;
+            }
+
+            logger.LogWarning("Deletion of room {RoomId} was requested, but the homeserver returned no delete_id (block: {Block}, purge: {Purge})",
+                roomId.SanitizeForLogging(), req.Block, req.Purge);
+        }
+        catch (JsonException ex)
+        {
+            // A 2xx answer: the homeserver accepted the deletion, only its body can't be read.
+            logger.LogWarning(ex, "Deletion of room {RoomId} was requested, but the homeserver's response is not JSON (block: {Block}, purge: {Purge})",
+                roomId.SanitizeForLogging(), req.Block, req.Purge);
+        }
+
+        return null;
+    }
+
+    public Task<OperationResult<RoomDeletionStatusViewModel>> GetRoomDeletionStatusAsync(string deleteId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomDeletionStatus",
+            ex => logger.LogError(ex, "Error getting room deletion status for delete ID {DeleteId}", deleteId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var result = await gateway.GetRoomDeleteStatusAsync(deleteId, token);
+                // Unlike other single-resource reads, null is an answer: the homeserver no longer knows the deletion
+                // (its status is kept 24 h, or until it restarts), or has no status endpoint (#518).
+                if (result == null)
+                {
+                    return OperationResult<RoomDeletionStatusViewModel>.Ok(new RoomDeletionStatusViewModel { DeleteId = deleteId, State = RoomDeletionState.Unknown });
+                }
+
+                var status = result.ToViewModel();
+                if (status.State == RoomDeletionState.Failed)
+                {
+                    // The homeserver's error text goes only to the log; the UI shows a localized message.
+                    logger.LogWarning("Room deletion {DeleteId} of room {RoomId} failed: {Error}",
+                        deleteId.SanitizeForLogging(), result.RoomId?.SanitizeForLogging(), result.Error?.SanitizeForLogging());
+                }
+                return OperationResult<RoomDeletionStatusViewModel>.Ok(status);
+            });
+
+    public Task<OperationResult<RoomDeletionStatusViewModel?>> GetActiveRoomDeletionAsync(string roomId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomDeletionStatus",
+            ex => logger.LogError(ex, "Error looking up deletions of room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var result = await gateway.GetRoomDeleteStatusesAsync(roomId, token);
+                // Collection read: null means no deletion the homeserver knows of (#395, #518).
+                var running = (result?.Results ?? [])
+                    .Select(r => r.ToViewModel())
+                    .Where(s => s.IsRunning && !string.IsNullOrEmpty(s.DeleteId))
+                    .ToList();
+                var active = running.FirstOrDefault(s => s.State == RoomDeletionState.Active) ?? running.FirstOrDefault();
+                return OperationResult<RoomDeletionStatusViewModel?>.Ok(active);
             });
 
     public Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default) =>

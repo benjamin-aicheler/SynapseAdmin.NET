@@ -74,7 +74,7 @@ All changes are internal, with no HTTP endpoint changes.
 - **`IRoomService`:**
   - `Task<OperationResult<string>> DeleteRoomAsync(...)`: same parameters, and the data is the `delete_id` (empty if missing).
   - `Task<OperationResult<RoomDeletionStatusViewModel>> GetRoomDeletionStatusAsync(deleteId, ct)`: a gateway `null` returns `Ok` with `State = Unknown`, not `Failure`. This is a deliberate exception to the null-result rule, because "unknown" is an answer, while a failure counts toward the cap of 5. A `failed` status logs Synapse's `error`, sanitized, at `Warning`.
-  - `Task<OperationResult<RoomDeletionStatusViewModel?>> GetActiveRoomDeletionAsync(roomId, ct)`: returns the first scheduled or active entry, or `null`. A gateway `null` returns `Ok(null)`, like a collection read. A failure is logged at `Warning` and the page ignores it.
+  - `Task<OperationResult<RoomDeletionStatusViewModel?>> GetActiveRoomDeletionAsync(roomId, ct)`: returns the first active entry, else the first scheduled one, skipping entries without an ID, or `null`. A gateway `null` returns `Ok(null)`, like a collection read. A failure is logged at `Error`, like every other read, and the page ignores it.
 - **`RoomDetails`:**
   - Fields `activeDeletion` and `_deletionPollingCts`.
   - Constants `RoomDeletionPollIntervalMs = 5000` and `MaxConsecutiveRoomDeletionStatusFailures = 5`.
@@ -194,4 +194,5 @@ One PR, with one commit per phase. Each phase builds and passes `dotnet test`.
 | 2026-11-23 | Draft. Verified on `main` @ `0dc486b`: the code matches the triage on #518. Upstream: Synapse `admin_api/rooms.html` documents the status by room ID as well as by `delete_id`. A purge status exists only by `purge_id`. |
 | 2026-11-23 | Review: all five open questions decided as in §9. Added Phase 4, which disables the actions during a deletion or a purge and applies the deletion's failure message rule to purge. |
 | 2026-11-23 | Plan approved. TODO.md filled. |
+| 2026-11-23 | Phase 2 done. The lookup by room logs a failure at `Error` instead of `Warning`: the table-driven failure test expects `Error` for every read, and the page shows nothing either way. When both exist it picks the active deletion before a scheduled one. New bUnit helper `DetailPageTestBase.WithData<T>(result)`, because a dispatch-proxy stub can't return one shared `OperationResult` for a method that now returns `OperationResult<string>`. Mutation checks on the active-first choice, the skipping of entries without an ID and the caught `JsonException` each fail their test. |
 | 2026-11-23 | Phase 1 done. The gateway has no logger, so a non-JSON `DELETE` body throws `JsonException`, which the service catches and logs (2.2), instead of the gateway returning `null`. The wire tests went into `SynapseCompatibleGatewayCharacterizationTests`, which owns the fake homeserver, instead of a new class. Mutation checks: removing the `M_UNRECOGNIZED`, bare-404 or empty-body handling each fails its tests. |

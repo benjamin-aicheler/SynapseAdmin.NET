@@ -39,7 +39,7 @@ public class RoomDetailsActionTests : DetailPageTestBase
                 Task.FromResult(OperationResult<RoomMessagesViewModel>.Ok(new RoomMessagesViewModel())))
             .On(nameof(IRoomService.GetMediaMetadataBatchAsync), args => Task.FromResult(OperationResult<List<RoomMediaItemViewModel>>.Ok(
                 ((List<string>)args[0]!).Select(m => new RoomMediaItemViewModel { MediaId = m }).ToList())))
-            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(_result));
+            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(WithData<string>(_result)));
 
         // Replaces the base class's unconfigured media service: every action returns the current _result.
         Services.AddSingleton(Stub.Create<IMediaService>(s =>

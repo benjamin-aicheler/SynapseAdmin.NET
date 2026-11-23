@@ -17,11 +17,7 @@ Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC
 
 ### Phase 2: Service, ViewModel, strings
 
-- [ ] [2.1] `RoomDeletionState`, `RoomDeletionStatusViewModel`, `RoomMappingExtensions.ToViewModel` + `MappingExtensionsTests`
-- [ ] [2.2] `RoomService.DeleteRoomAsync` → `OperationResult<string>` with `RoomDeletionRequested`, new log lines, missing-ID warning, catch and log `JsonException` (non-JSON body)
-- [ ] [2.3] `GetRoomDeletionStatusAsync` (`null` → `Unknown`; `failed` logs the error) and `GetActiveRoomDeletionAsync` (first scheduled or active entry; `null` → `Ok(null)`)
-- [ ] [2.4] EN/DE/FR strings: `RoomDeletionRequested`, `RoomDeletionInProgress`, `RoomDeletionScheduledDescription`, `RoomDeletionActiveDescription`, `RoomDeletionFailed`, `RoomDeletionStatusUnknown`, `ErrorFetchingRoomDeletionStatus`, `RoomDeleted`
-- [ ] [2.5] Service tests in `RoomServiceCharacterizationTests`; `RoomDetails*Tests` stubs to `OperationResult<string>`
+- Phase 2 done, see ✅ Done.
 
 ### Phase 3: Room page
 
@@ -40,7 +36,7 @@ Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC
 ### Phase 5: Documentation
 
 - [ ] [5.1] SPEC.md: remove `[Planned]` tags, decision log rows
-- [ ] [5.2] ARCHITECTURE.md integration row; AGENTS.md "Room deletion status" pitfall
+- [ ] [5.2] ARCHITECTURE.md integration row; AGENTS.md "Room deletion status" pitfall; add `DetailPageTestBase.WithData<T>` to the AGENTS.md test double list
 - [ ] [5.3] Reset PLAN.md and TODO.md; open the shared-poller follow-up issue (PLAN §3 E)
 
 ## ⛔ Blocked
@@ -54,12 +50,13 @@ Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [ ] 
+- [ ] DE `PurgeInProgressDescription` says "…ist derzeit eine Bereinigung des Verlaufs active" (English "active" instead of "aktiv"). Fix with the purge strings in [4.2].
 
 ## ✅ Done
 
 - [x] 2026-11-23 – SPEC `[Planned]` entries and PLAN.md approved
-- [x] 2026-11-23 – [1.1–1.4] DTOs, gateway interface and implementation, wire tests in `SynapseCompatibleGatewayCharacterizationTests` (31 new cases); build 0 warnings, 1115 tests green – not committed yet
+- [x] 2026-11-23 – [1.1–1.4] DTOs, gateway interface and implementation, wire tests in `SynapseCompatibleGatewayCharacterizationTests` (31 new cases); build 0 warnings, 1115 tests green – `c4d8849`
+- [x] 2026-11-23 – [2.1–2.5] `RoomDeletionState`, `RoomDeletionStatusViewModel`, mapper, `RoomService` delete / status / lookup, EN/DE/FR strings (key parity 463/463/463), service and mapping tests, `WithData<T>` bUnit helper; build 0 warnings, 1150 tests green – not committed yet
 
 ## Definition of Done (applies to every task)
 

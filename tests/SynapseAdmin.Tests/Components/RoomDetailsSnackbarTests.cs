@@ -37,7 +37,7 @@ public class RoomDetailsSnackbarTests : DetailPageTestBase
             .On(nameof(IRoomService.GetRoomDetailsAsync), _ => Task.FromResult(_room))
             .On(nameof(IRoomService.GetRoomMessagesAsync), _ => Task.FromResult(_messages))
             .On(nameof(IRoomService.GetMediaMetadataBatchAsync), _ => Task.FromResult(_media))
-            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(_result))
+            .On(nameof(IRoomService.DeleteRoomAsync), _ => Task.FromResult(WithData<string>(_result)))
             .On(nameof(IRoomService.QuarantineMediaAsync), _ => Task.FromResult(_result))
             .On(nameof(IRoomService.BlockRoomAsync), _ => Task.FromResult(_result));
         Services.AddSingleton(Stub.Create<IMediaService>(s =>

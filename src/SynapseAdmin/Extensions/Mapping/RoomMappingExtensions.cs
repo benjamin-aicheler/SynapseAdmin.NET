@@ -25,6 +25,24 @@ public static class RoomMappingExtensions
         };
     }
 
+    /// <summary>
+    /// Synapse sends the status in lower case; any other value is <see cref="RoomDeletionState.Unknown"/>, because the
+    /// status API is experimental (#518). The error text isn't copied: it goes only to the log.
+    /// </summary>
+    public static RoomDeletionStatusViewModel ToViewModel(this SynapseAdminRoomDeleteStatusResponse status) => new()
+    {
+        DeleteId = status.DeleteId ?? string.Empty,
+        RoomId = status.RoomId ?? string.Empty,
+        State = status.Status switch
+        {
+            "scheduled" => RoomDeletionState.Scheduled,
+            "active" => RoomDeletionState.Active,
+            "complete" => RoomDeletionState.Complete,
+            "failed" => RoomDeletionState.Failed,
+            _ => RoomDeletionState.Unknown
+        }
+    };
+
     public static List<RoomListViewModel> ToViewModels(this IEnumerable<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom> rooms)
     {
         return rooms.Select(ToViewModel).ToList();

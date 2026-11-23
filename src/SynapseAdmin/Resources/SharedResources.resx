@@ -596,6 +596,30 @@
   <data name="ErrorDeletingRoom" xml:space="preserve">
     <value>Error deleting room.</value>
   </data>
+  <data name="RoomDeletionRequested" xml:space="preserve">
+    <value>Room deletion requested. The homeserver deletes the room in the background.</value>
+  </data>
+  <data name="RoomDeletionInProgress" xml:space="preserve">
+    <value>Room Deletion In Progress</value>
+  </data>
+  <data name="RoomDeletionScheduledDescription" xml:space="preserve">
+    <value>The homeserver has scheduled the deletion of this room and will start it soon.</value>
+  </data>
+  <data name="RoomDeletionActiveDescription" xml:space="preserve">
+    <value>The homeserver is removing this room's members and deleting its data from the database.</value>
+  </data>
+  <data name="RoomDeletionFailed" xml:space="preserve">
+    <value>Room deletion failed. The homeserver's error message is in the application log.</value>
+  </data>
+  <data name="RoomDeletionStatusUnknown" xml:space="preserve">
+    <value>The homeserver no longer reports the status of this room's deletion. Reload the page to see whether the room still exists.</value>
+  </data>
+  <data name="ErrorFetchingRoomDeletionStatus" xml:space="preserve">
+    <value>Error checking room deletion status.</value>
+  </data>
+  <data name="RoomDeleted" xml:space="preserve">
+    <value>This room has been deleted.</value>
+  </data>
   <data name="RoomMediaQuarantinedSuccessfully" xml:space="preserve">
     <value>Room media quarantined successfully.</value>
   </data>
