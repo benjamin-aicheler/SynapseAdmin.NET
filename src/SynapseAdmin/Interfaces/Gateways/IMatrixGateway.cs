@@ -43,7 +43,11 @@ public interface IMatrixGateway
     Task<SynapseAdminRoomMemberListResult?> GetRoomMembersAsync(string roomId, CancellationToken cancellationToken = default);
     Task<SynapseAdminRoomStateResult?> GetRoomStateAsync(string roomId, string? type = null, CancellationToken cancellationToken = default);
     Task<SynapseAdminRoomMediaListResult?> GetRoomMediaListAsync(string roomId, CancellationToken cancellationToken = default);
-    Task DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default);
+    Task<SynapseAdminRoomDeleteResponse?> DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default);
+    /// <summary>The status of one room deletion, or <c>null</c> if the homeserver doesn't know it (anymore) or has no such endpoint.</summary>
+    Task<SynapseAdminRoomDeleteStatusResponse?> GetRoomDeleteStatusAsync(string deleteId, CancellationToken cancellationToken = default);
+    /// <summary>The room's active and recent deletions, or <c>null</c> if there are none or the homeserver has no such endpoint.</summary>
+    Task<SynapseAdminRoomDeleteStatusListResponse?> GetRoomDeleteStatusesAsync(string roomId, CancellationToken cancellationToken = default);
     Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default);
     Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default);
     Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default);

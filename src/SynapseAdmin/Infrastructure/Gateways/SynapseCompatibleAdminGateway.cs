@@ -55,6 +55,40 @@ public class SynapseCompatibleAdminGateway(
         resp.EnsureSuccessStatusCode();
     }
 
+    /// <summary>
+    /// Raw DELETE like <see cref="SendDeleteAsync(string, HttpContent?, CancellationToken)"/> that also reads the JSON
+    /// response body. An empty body returns <c>null</c>; a body that isn't JSON throws <see cref="JsonException"/>.
+    /// </summary>
+    private async Task<TResponse?> SendDeleteAsync<TResponse>(string url, HttpContent? content, CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        var body = await resp.Content.ReadAsStringAsync(cancellationToken);
+        return string.IsNullOrWhiteSpace(body) ? null : JsonSerializer.Deserialize<TResponse>(body);
+    }
+
+    /// <summary>
+    /// GET a status that may not exist: <c>null</c> for a 404 (<c>M_NOT_FOUND</c> or a bare 404 from a proxy) and for
+    /// <c>M_UNRECOGNIZED</c> (a homeserver without the endpoint, as 404 or 405). Every other error propagates.
+    /// </summary>
+    private async Task<T?> GetOptionalStatusAsync<T>(string url, CancellationToken cancellationToken) where T : class
+    {
+        try
+        {
+            return await Homeserver.ClientHttpClient.GetFromJsonAsync<T>(url, cancellationToken: cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (LibMatrix.MatrixException ex) when (ex.ErrorCode is "M_NOT_FOUND" or "M_UNRECOGNIZED")
+        {
+            return null;
+        }
+    }
+
     /// <summary>POST an empty JSON object (<c>{}</c>) to an endpoint whose response body is not read.</summary>
     private async Task PostEmptyAsync(string url, CancellationToken cancellationToken)
     {
@@ -217,11 +251,20 @@ public class SynapseCompatibleAdminGateway(
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomMediaListResult>(url, cancellationToken: cancellationToken);
     }
 
-    public override async Task DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminRoomDeleteResponse?> DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v2/rooms/{roomId.UrlEncode()}";
-        await SendDeleteAsync(url, new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json"), cancellationToken);
+        return await SendDeleteAsync<SynapseAdminRoomDeleteResponse>(url,
+            new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json"), cancellationToken);
     }
+
+    public override Task<SynapseAdminRoomDeleteStatusResponse?> GetRoomDeleteStatusAsync(string deleteId, CancellationToken cancellationToken = default) =>
+        GetOptionalStatusAsync<SynapseAdminRoomDeleteStatusResponse>(
+            $"/_synapse/admin/v2/rooms/delete_status/{deleteId.UrlEncode()}", cancellationToken);
+
+    public override Task<SynapseAdminRoomDeleteStatusListResponse?> GetRoomDeleteStatusesAsync(string roomId, CancellationToken cancellationToken = default) =>
+        GetOptionalStatusAsync<SynapseAdminRoomDeleteStatusListResponse>(
+            $"/_synapse/admin/v2/rooms/{roomId.UrlEncode()}/delete_status", cancellationToken);
 
     public override async Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default)
     {
