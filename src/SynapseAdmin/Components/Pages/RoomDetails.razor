@@ -43,6 +43,19 @@ else
         </MudAlert>
     }
 
+    @if (activeDeleteId != null)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4 d-flex align-center justify-space-between">
+            <div class="d-flex flex-column">
+                <MudText Typo="Typo.body1">
+                    <b>@L["RoomDeletionInProgress"]:</b>
+                    @(activeDeletionState == RoomDeletionState.Active ? L["RoomDeletionActiveDescription"] : L["RoomDeletionScheduledDescription"])
+                </MudText>
+            </div>
+            <MudProgressCircular Color="Color.Inherit" Indeterminate="true" Size="Size.Small" Class="ml-4" />
+        </MudAlert>
+    }
+
     @if (!string.IsNullOrEmpty(activePurgeId))
     {
         <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="mb-4 d-flex align-center justify-space-between">

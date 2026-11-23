@@ -21,10 +21,7 @@ Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC
 
 ### Phase 3: Room page
 
-- [ ] [3.1] Delete handler stays on the page; banner and checks start when a `delete_id` came back and the room is still shown
-- [ ] [3.2] Find deletions on load, poll loop, `ApplyRoomDeletionStatus`, `IsCurrentDeletionPoll`, cleanup on route change and in `Dispose`
-- [ ] [3.3] Deletion banner (`Warning`, filled, after the tombstone banner)
-- [ ] [3.4] `RoomDetailsRoomDeletionTests`; rewrite `DeleteHandler_ShowsItsTexts_AndReturnsToTheRoomListOnlyOnSuccess`; stale-selection tests for the deletion poll
+- Phase 3 done, see ✅ Done.
 
 ### Phase 4: Room actions and purge failure
 
@@ -56,7 +53,8 @@ Task: #518, distinguish a requested room deletion from a completed one (FR-5, AC
 
 - [x] 2026-11-23 – SPEC `[Planned]` entries and PLAN.md approved
 - [x] 2026-11-23 – [1.1–1.4] DTOs, gateway interface and implementation, wire tests in `SynapseCompatibleGatewayCharacterizationTests` (31 new cases); build 0 warnings, 1115 tests green – `c4d8849`
-- [x] 2026-11-23 – [2.1–2.5] `RoomDeletionState`, `RoomDeletionStatusViewModel`, mapper, `RoomService` delete / status / lookup, EN/DE/FR strings (key parity 463/463/463), service and mapping tests, `WithData<T>` bUnit helper; build 0 warnings, 1150 tests green – not committed yet
+- [x] 2026-11-23 – [2.1–2.5] `RoomDeletionState`, `RoomDeletionStatusViewModel`, mapper, `RoomService` delete / status / lookup, EN/DE/FR strings (key parity 463/463/463), service and mapping tests, `WithData<T>` bUnit helper; build 0 warnings, 1150 tests green – `c2ca944`
+- [x] 2026-11-23 – [3.1–3.4] Room page stays after a delete, deletion banner, lookup on load, status poll with the #522-style guard, "room deleted" state on completion; `RoomDetailsRoomDeletionTests` (17 cases), `DeleteHandler_ShowsItsTexts_AndStaysOnTheRoomPage`; unused `RoomListPath` and `NavigationManager` removed; build 0 warnings, 1167 tests green – not committed yet
 
 ## Definition of Done (applies to every task)
 

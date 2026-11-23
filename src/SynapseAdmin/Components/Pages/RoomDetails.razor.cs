@@ -17,8 +17,6 @@ namespace SynapseAdmin.Components.Pages
         [Inject]
         public IMediaService MediaService { get; set; } = null!;
         [Inject]
-        public NavigationManager Navigation { get; set; } = null!;
-        [Inject]
         public ISnackbar Snackbar { get; set; } = null!;
         [Inject]
         public IDialogService DialogService { get; set; } = null!;
@@ -35,8 +33,9 @@ namespace SynapseAdmin.Components.Pages
         private const string PurgeStatusFailed = "failed";
         private const int PurgeStatusPollIntervalMs = 5000;
         private const int MaxConsecutivePurgeStatusFailures = 5;
+        private const int RoomDeletionPollIntervalMs = 5000;
+        private const int MaxConsecutiveRoomDeletionStatusFailures = 5;
         private const int MessageHistoryPageSize = 50;
-        private const string RoomListPath = "/rooms";
 
         private RoomDetailViewModel? room;
         private RoomMessagesViewModel? messages;
@@ -50,6 +49,11 @@ namespace SynapseAdmin.Components.Pages
         private string? activePurgeId;
         private string? activePurgeStatus;
         private CancellationTokenSource? _pollingCts;
+
+        // The room deletion shown in the banner (#518): set while the homeserver reports it as scheduled or active.
+        private string? activeDeleteId;
+        private RoomDeletionState activeDeletionState;
+        private CancellationTokenSource? _deletionPollingCts;
 
         // Per-selection state. `_loadCts` is replaced on every route change so that requests
         // for a previous room are cancelled and their late responses are discarded.
@@ -70,6 +74,7 @@ namespace SynapseAdmin.Components.Pages
             var roomId = RoomId;
             _loadedRoomId = roomId;
             StopPolling();
+            StopDeletionPolling();
             var token = ResetLoadToken();
             room = null;
             _displayedRoomId = null;
@@ -79,6 +84,8 @@ namespace SynapseAdmin.Components.Pages
             isLoading = true;
             activePurgeId = RoomService.GetActivePurgeId(roomId);
             activePurgeStatus = null;
+            activeDeleteId = null;
+            activeDeletionState = RoomDeletionState.Unknown;
 
             await TimeZoneService.InitializeAsync();
             if (token.IsCancellationRequested) return;
@@ -92,6 +99,27 @@ namespace SynapseAdmin.Components.Pages
             if (!string.IsNullOrEmpty(activePurgeId))
             {
                 StartPolling(roomId);
+            }
+
+            await FindRunningDeletionAsync(roomId, token);
+        }
+
+        /// <summary>
+        /// Shows the banner for a deletion the homeserver reports as scheduled or running, also one started in another
+        /// session or tool (#518). A failed lookup shows nothing: the service logged it, and the page works without it.
+        /// </summary>
+        private async Task FindRunningDeletionAsync(string roomId, CancellationToken token)
+        {
+            if (_displayedRoomId != roomId) return;
+
+            var result = await RoomService.GetActiveRoomDeletionAsync(roomId, token);
+            if (token.IsCancellationRequested || roomId != _loadedRoomId || _displayedRoomId != roomId) return;
+
+            if (result is { Success: true, Data: { IsRunning: true } deletion } && activeDeleteId == null)
+            {
+                activeDeleteId = deletion.DeleteId;
+                activeDeletionState = deletion.State;
+                StartDeletionPolling(roomId);
             }
         }
 
@@ -233,9 +261,15 @@ namespace SynapseAdmin.Components.Pages
             {
                 var result = await RoomService.DeleteRoomAsync(target, block, purge: true, token: _cts.Token);
                 Snackbar.ShowResult(result);
-                if (result.Success)
+
+                // The homeserver only starts the deletion: stay on the page and follow it, as after a purge (#518).
+                // Only if the room is still the one shown; without a delete_id there is nothing to follow.
+                if (result.Success && !string.IsNullOrWhiteSpace(result.Data) && GetDisplayedTarget() == target)
                 {
-                    Navigation.NavigateTo(RoomListPath);
+                    activeDeleteId = result.Data;
+                    activeDeletionState = RoomDeletionState.Scheduled;
+                    StartDeletionPolling(target);
+                    StateHasChanged();
                 }
             }
         }
@@ -507,6 +541,150 @@ namespace SynapseAdmin.Components.Pages
         private bool IsCurrentPoll(string purgeId, CancellationToken token) =>
             !token.IsCancellationRequested && activePurgeId == purgeId;
 
+        private void StopDeletionPolling()
+        {
+            _deletionPollingCts?.Cancel();
+            _deletionPollingCts?.Dispose();
+            _deletionPollingCts = null;
+        }
+
+        private void StartDeletionPolling(string roomId)
+        {
+            StopDeletionPolling();
+            if (activeDeleteId is not { } deleteId) return;
+
+            _deletionPollingCts = new CancellationTokenSource();
+            var token = _deletionPollingCts.Token;
+            _ = Task.Run(() => PollRoomDeletionStatusAsync(roomId, deleteId, token), token);
+        }
+
+        /// <summary>
+        /// Checks the deletion now and then every <see cref="RoomDeletionPollIntervalMs"/> until it ends, the page moves on,
+        /// or <see cref="MaxConsecutiveRoomDeletionStatusFailures"/> checks in a row fail. Built like the purge poll.
+        /// </summary>
+        private async Task PollRoomDeletionStatusAsync(string roomId, string deleteId, CancellationToken token)
+        {
+            var consecutiveFailures = 0;
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    var result = await RoomService.GetRoomDeletionStatusAsync(deleteId, token);
+                    if (result.Success && result.Data != null)
+                    {
+                        consecutiveFailures = 0;
+                        var state = result.Data.State;
+                        var shouldStop = true;
+
+                        await InvokeAsync(() =>
+                        {
+                            if (!IsCurrentDeletionPoll(deleteId, token)) return;
+                            shouldStop = ApplyRoomDeletionStatus(state);
+                        });
+
+                        if (shouldStop) break;
+                    }
+                    else
+                    {
+                        if (result.Severity == Severity.Normal && token.IsCancellationRequested) break;
+
+                        consecutiveFailures++;
+                        Logger.LogWarning("Failed to get room deletion status for room {RoomId}, delete ID {DeleteId}. Attempt {Attempt} of {MaxAttempts}. Error: {Error}",
+                            roomId.SanitizeForLogging(), deleteId.SanitizeForLogging(), consecutiveFailures, MaxConsecutiveRoomDeletionStatusFailures,
+                            (result.Message ?? "Unknown error").SanitizeForLogging());
+
+                        if (consecutiveFailures >= MaxConsecutiveRoomDeletionStatusFailures)
+                        {
+                            await InvokeAsync(() => GiveUpOnDeletion(deleteId, token));
+                            break;
+                        }
+                    }
+
+                    await Task.Delay(RoomDeletionPollIntervalMs, token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // The page moved on or was disposed.
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Unexpected error in room deletion polling loop for room {RoomId}, delete ID {DeleteId}",
+                    roomId.SanitizeForLogging(), deleteId.SanitizeForLogging());
+                try
+                {
+                    await InvokeAsync(() => GiveUpOnDeletion(deleteId, token));
+                }
+                catch (Exception cleanupEx)
+                {
+                    Logger.LogDebug(cleanupEx, "Room deletion polling cleanup failed for room {RoomId} (circuit likely gone)", roomId.SanitizeForLogging());
+                }
+            }
+        }
+
+        /// <summary>
+        /// Shows a checked deletion status; when the deletion has ended, removes the banner and reports how. Returns
+        /// whether checking should stop. Call it on the dispatcher, after <see cref="IsCurrentDeletionPoll"/>.
+        /// </summary>
+        private bool ApplyRoomDeletionStatus(RoomDeletionState state)
+        {
+            switch (state)
+            {
+                case RoomDeletionState.Scheduled or RoomDeletionState.Active:
+                    activeDeletionState = state;
+                    StateHasChanged();
+                    return false;
+
+                case RoomDeletionState.Complete:
+                    // The room is gone: show it as deleted instead of its last data, and stop following its purge.
+                    ClearActiveDeletion();
+                    StopPolling();
+                    activePurgeId = null;
+                    activePurgeStatus = null;
+                    room = null;
+                    _displayedRoomId = null;
+                    messages = null;
+                    errorMessage = L["RoomDeleted"];
+                    Snackbar.Add(L["RoomDeletedSuccessfully"], Severity.Success);
+                    break;
+
+                case RoomDeletionState.Failed:
+                    // Synapse's error text is only in the log (RoomService); the page shows a localized message.
+                    ClearActiveDeletion();
+                    Snackbar.Add(L["RoomDeletionFailed"], Severity.Error);
+                    break;
+
+                default:
+                    ClearActiveDeletion();
+                    Snackbar.Add(L["RoomDeletionStatusUnknown"], Severity.Warning);
+                    break;
+            }
+
+            StateHasChanged();
+            return true;
+        }
+
+        private void GiveUpOnDeletion(string deleteId, CancellationToken token)
+        {
+            if (!IsCurrentDeletionPoll(deleteId, token)) return;
+            ClearActiveDeletion();
+            Snackbar.Add(L["ErrorFetchingRoomDeletionStatus"], Severity.Error);
+            StateHasChanged();
+        }
+
+        private void ClearActiveDeletion()
+        {
+            activeDeleteId = null;
+            activeDeletionState = RoomDeletionState.Unknown;
+        }
+
+        /// <summary>
+        /// Whether a check's answer still belongs to the deletion shown. Navigating or a newer deletion cancels the previous
+        /// check on the dispatcher (<see cref="StopDeletionPolling"/>), so call this on the dispatcher (as for purge, #522).
+        /// </summary>
+        private bool IsCurrentDeletionPoll(string deleteId, CancellationToken token) =>
+            !token.IsCancellationRequested && activeDeleteId == deleteId;
+
         private async Task OpenPurgeHistoryDialog()
         {
             await OpenPurgeHistoryDialogInternal(null, null);
@@ -562,6 +740,7 @@ namespace SynapseAdmin.Components.Pages
         public void Dispose()
         {
             StopPolling();
+            StopDeletionPolling();
             _loadCts?.Cancel();
             _loadCts?.Dispose();
             _cts.Cancel();
