@@ -211,11 +211,11 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                 brandResolved = true;
 
                 // If it is known to support Synapse Admin API
-                if (brand.Equals("tuwunel", StringComparison.OrdinalIgnoreCase))
+                if (brand.Equals(GatewayConstants.TuwunelBrand, StringComparison.OrdinalIgnoreCase))
                 {
                     supportsAdmin = IsTuwunelAdminCapable(version);
                 }
-                else if (brand.Equals("synapse", StringComparison.OrdinalIgnoreCase))
+                else if (brand.Equals(GatewayConstants.SynapseBrand, StringComparison.OrdinalIgnoreCase))
                 {
                     supportsAdmin = true;
                 }

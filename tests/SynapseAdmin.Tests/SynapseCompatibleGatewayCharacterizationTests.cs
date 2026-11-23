@@ -33,6 +33,7 @@ namespace SynapseAdmin.Tests;
 /// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
 /// Also room deletion (#518): the <c>delete_id</c> the DELETE returns, and the two status reads with the answers that
 /// mean "no status".
+/// Also the room list's sort direction per brand (#541).
 /// Also the shadow login (#539): the token's expiry travels in the body, not the query string.
 /// </summary>
 public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifetime
@@ -378,6 +379,40 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
         Assert.Equal(
             new CapturedRequest("POST", "/_synapse/admin/v1/registration_tokens/new", "application/json; charset=utf-8", """{"uses_allowed":1}"""),
             Assert.Single(_homeserver.Requests));
+    }
+
+    // ---- Room list sort direction (#541) -------------------------------------------------------------
+
+    // The dir a caller passes follows the Synapse docs, where these keys sort largest first. Tuwunel sorts every key
+    // ascending, so the gateway sends it the opposite dir for them. Other brands, including an unresolved one, get the
+    // documented behavior unchanged.
+    public static TheoryData<string, string, string, string> RoomListDirs => new()
+    {
+        { GatewayConstants.SynapseBrand, "joined_members", "f", "f" },
+        { GatewayConstants.SynapseBrand, "joined_members", "b", "b" },
+        { GatewayConstants.TuwunelBrand, "joined_members", "f", "b" },
+        { GatewayConstants.TuwunelBrand, "joined_members", "b", "f" },
+        { "tuwunel", "joined_members", "f", "b" },
+        { GatewayConstants.TuwunelBrand, "joined_local_members", "f", "b" },
+        { GatewayConstants.TuwunelBrand, "version", "f", "b" },
+        { GatewayConstants.TuwunelBrand, "state_events", "b", "f" },
+        { GatewayConstants.TuwunelBrand, "size", "f", "b" },
+        { GatewayConstants.TuwunelBrand, "name", "f", "f" },
+        { GatewayConstants.TuwunelBrand, "public", "b", "b" },
+        { GatewayConstants.GenericBrand, "joined_members", "f", "f" },
+    };
+
+    [Theory]
+    [MemberData(nameof(RoomListDirs))]
+    public async Task GetRoomList_SendsTheDirThatGivesTheDocumentedOrder(string brand, string orderBy, string dir, string sentDir)
+    {
+        var gateway = new SynapseCompatibleAdminGateway(new AuthenticatedHomeserverGeneric(
+            "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token"), brand);
+        _homeserver.Respond = () => Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
+
+        await gateway.GetRoomListAsync(0, 10, orderBy, dir);
+
+        Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir={sentDir}&order_by={orderBy}", Assert.Single(_homeserver.RequestTargets));
     }
 
     // ---- Shadow login (#539) -------------------------------------------------------------------------
