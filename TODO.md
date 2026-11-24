@@ -5,11 +5,10 @@
 
 ## 🔄 In Progress
 
-- [ ] [3.1] `MediaServiceCharacterizationTests`: `DeleteLocalMediaAsync` refusal → `OperationNotSupportedByHomeserver`, `Warning`
+- [ ] [4.1] SPEC.md: remove `[Planned]` from §3 Goals, AC-14, §10; name the tests in AC-14
 
 ## ⏭️ Next Up
 
-- [ ] [4.1] SPEC.md: remove `[Planned]` from §3 Goals, AC-14, §10; name the tests in AC-14
 - [ ] [4.2] AGENTS.md (Error Handling, Contract rule) and ARCHITECTURE.md (§8, layering rule)
 - [ ] [4.3] Reset PLAN.md and TODO.md to the templates from `main`
 
@@ -30,6 +29,7 @@
 - [x] 2026-11-24 – PLAN.md approved (`Warning`, wording as proposed)
 - [x] 2026-11-24 – [1.1–1.3] Policy tests red on behavior (2 rows) with the exception type in place, green after the catch in both overloads; resource key in EN/DE/FR with `NotSupportedWarning_IsTranslated` (written together with the key); 1242 tests pass
 - [x] 2026-11-24 – [2.1, 2.2] `GenericMatrixGatewayTests` (49 methods by signature) red with plain `NotSupportedException`, green after switching the 49 throws; 1292 tests pass
+- [x] 2026-11-24 – [3.1] `GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsIt` over all 9 media operations (plan named only `DeleteLocalMediaAsync`); disabling the catch in memory fails all 9
 
 ## Definition of Done (applies to every task)
 
