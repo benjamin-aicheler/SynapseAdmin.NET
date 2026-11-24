@@ -15,7 +15,7 @@ namespace SynapseAdmin.Infrastructure.Gateways;
 /// Does not depend on LibMatrix's SDK-level .Admin properties, allowing support for homeservers (such as Tuwunel >= 1.8.1)
 /// that implement the Synapse Admin API but return AuthenticatedHomeserverGeneric instead of AuthenticatedHomeserverSynapse.
 /// </summary>
-public class SynapseCompatibleAdminGateway(
+public class SynapseAdminGateway(
     AuthenticatedHomeserverGeneric homeserver,
     string serverBrand = GatewayConstants.SynapseBrand,
     string serverVersion = GatewayConstants.UnknownVersion) : MatrixGatewayBase(homeserver)

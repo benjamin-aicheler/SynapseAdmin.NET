@@ -5,12 +5,10 @@
 
 ## 🔄 In Progress
 
-- [ ] [2.1] Rename `SynapseCompatibleAdminGateway` → `SynapseAdminGateway` (`git mv`, src + tests)
+- [ ] [3.1] Add `TuwunelAdminGateway` with the `GetRoomListAsync` override; remove the brand check from `SynapseAdminGateway`
 
 ## ⏭️ Next Up
 
-- [ ] [2.2] Rename the test class to `SynapseAdminGatewayCharacterizationTests` (`git mv`; search `tests/` for the old name in quotes first)
-- [ ] [3.1] Add `TuwunelAdminGateway` with the `GetRoomListAsync` override; remove the brand check from `SynapseAdminGateway`
 - [ ] [3.2] Factory returns `TuwunelAdminGateway` for the Tuwunel brand (`OrdinalIgnoreCase`), `SynapseAdminGateway` otherwise
 - [ ] [3.3] Tests: exact class per probe outcome; split `RoomListDirs` by class
 - [ ] [4.1] AGENTS.md: new names, contract rule, Room Size Semantics, Tuwunel & Generic Fallback
@@ -34,6 +32,7 @@
 
 - [x] 2026-11-24 – PLAN.md approved
 - [x] 2026-11-24 – [1.1] `GetAuthenticated_RoomListDir_FollowsTheProbedServer` (6 rows) passes on `main`'s code; in-memory mutations caught: no reversal (2 Tuwunel rows fail), case-sensitive brand check (`tuwunel` row fails)
+- [x] 2026-11-24 – [2.1, 2.2] Gateway and test class renamed with `git mv` (7 files, 59 lines); no string references to the old names in `tests/`; build 0 errors, app project 0 warnings; 1233 tests pass
 
 ## Definition of Done (applies to every task)
 

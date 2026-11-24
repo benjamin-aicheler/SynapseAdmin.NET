@@ -141,8 +141,8 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         {
             var synapseVersion = await ProbeSynapseVersionAsync(synapse, cancellationToken);
 
-            // Switch Synapse to using SynapseCompatibleAdminGateway so it is thoroughly exercised and validated
-            return new SynapseCompatibleAdminGateway(synapse, GatewayConstants.SynapseBrand, synapseVersion);
+            // Switch Synapse to using SynapseAdminGateway so it is thoroughly exercised and validated
+            return new SynapseAdminGateway(synapse, GatewayConstants.SynapseBrand, synapseVersion);
         }
 
         // 1. Try to get federation version
@@ -159,7 +159,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 
         if (supportsAdmin)
         {
-            return new SynapseCompatibleAdminGateway(authenticatedHomeserver, brand, version);
+            return new SynapseAdminGateway(authenticatedHomeserver, brand, version);
         }
 
         return new GenericMatrixGateway(authenticatedHomeserver);

@@ -5,7 +5,7 @@ namespace SynapseAdmin.Infrastructure.Helpers;
 /// <summary>
 /// Sort order of the <c>order_by</c> keys of <c>GET /_synapse/admin/v1/rooms</c> (#541). Synapse documents these keys
 /// as largest to smallest with <c>dir=f</c>; every other key sorts ascending. <c>dir=b</c> reverses either order.
-/// Tuwunel sorts every key ascending, so <c>SynapseCompatibleAdminGateway</c> reverses the <c>dir</c> for these keys.
+/// Tuwunel sorts every key ascending, so <c>SynapseAdminGateway</c> reverses the <c>dir</c> for these keys.
 /// </summary>
 public static class RoomSortKeys
 {

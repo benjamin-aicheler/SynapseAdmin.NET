@@ -77,7 +77,7 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
 
         var gateway = await CreateAuthGateway().GetAuthenticatedAsync(_homeserver.Url, AccessToken);
 
-        Assert.IsType<SynapseCompatibleAdminGateway>(gateway);
+        Assert.IsType<SynapseAdminGateway>(gateway);
         Assert.Equal(("Synapse", "1.120.2"), (gateway.ServerBrand, gateway.ServerVersion));
         Assert.Equal(new[] { WhoAmIPath, FederationVersionPath, AdminVersionPath }, _homeserver.RequestPaths);
     }
@@ -114,7 +114,7 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
 
         var gateway = await CreateAuthGateway().GetAuthenticatedAsync(_homeserver.Url, AccessToken);
 
-        Assert.IsType<SynapseCompatibleAdminGateway>(gateway);
+        Assert.IsType<SynapseAdminGateway>(gateway);
         Assert.Equal(("Generic", expectedVersion), (gateway.ServerBrand, gateway.ServerVersion));
     }
 
@@ -161,7 +161,7 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
 
         var gateway = await CreateAuthGateway("Synapse").GetAuthenticatedAsync(_homeserver.Url, AccessToken);
 
-        Assert.IsType<SynapseCompatibleAdminGateway>(gateway);
+        Assert.IsType<SynapseAdminGateway>(gateway);
         Assert.Equal(("Synapse", expectedVersion), (gateway.ServerBrand, gateway.ServerVersion));
         Assert.Equal(new[] { WhoAmIPath, AdminVersionPath }, _homeserver.RequestPaths);
     }

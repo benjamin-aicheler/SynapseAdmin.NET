@@ -19,7 +19,7 @@ public class UserMediaPaginationTests
     private const int UploadCount = 150;
 
     /// <summary>Exposes the gateway's protected JSON options and internal URL builders.</summary>
-    private abstract class GatewayProbe : SynapseCompatibleAdminGateway
+    private abstract class GatewayProbe : SynapseAdminGateway
     {
         protected GatewayProbe() : base(null!) { }
         public static JsonSerializerOptions Options => SynapseCompatibilityJsonOptions;
@@ -227,14 +227,14 @@ public class UserMediaPaginationTests
     {
         Assert.Equal(
             "/_synapse/admin/v1/users/%40bob%3aexample.com/media?from=100&limit=25&order_by=created_ts&dir=b",
-            SynapseCompatibleAdminGateway.BuildUserMediaUrl(UserId, 100, 25, "created_ts", "b"));
+            SynapseAdminGateway.BuildUserMediaUrl(UserId, 100, 25, "created_ts", "b"));
 
         Assert.Equal(
             "/_synapse/admin/v1/statistics/users/media?limit=100&order_by=media_length&dir=b&search_term=%40bob%3aexample.com",
-            SynapseCompatibleAdminGateway.BuildUserMediaStatisticsUrl(100, "media_length", "b", UserId));
+            SynapseAdminGateway.BuildUserMediaStatisticsUrl(100, "media_length", "b", UserId));
 
         Assert.Equal(
             "/_synapse/admin/v1/statistics/users/media?limit=10&order_by=media_length&dir=b",
-            SynapseCompatibleAdminGateway.BuildUserMediaStatisticsUrl(10, "media_length", "b", null));
+            SynapseAdminGateway.BuildUserMediaStatisticsUrl(10, "media_length", "b", null));
     }
 }
