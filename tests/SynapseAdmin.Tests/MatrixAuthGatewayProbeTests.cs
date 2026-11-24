@@ -25,6 +25,7 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
     private const string WhoAmIPath = "/_matrix/client/v3/account/whoami";
     private const string FederationVersionPath = "/_matrix/federation/v1/version";
     private const string AdminVersionPath = "/_synapse/admin/v1/server_version";
+    private const string RoomListPath = "/_synapse/admin/v1/rooms";
     private static readonly TimeSpan SignalTimeout = TimeSpan.FromSeconds(10);
 
     private readonly FakeHomeserver _homeserver = new();
@@ -165,6 +166,30 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
         Assert.Equal(new[] { WhoAmIPath, AdminVersionPath }, _homeserver.RequestPaths);
     }
 
+    /// <summary>
+    /// The room list's sort direction end to end, for each probe outcome (#541). Callers pass the dir of Synapse's
+    /// documented order; only a Tuwunel server, whatever the case of its brand, gets the opposite dir, and only for the
+    /// keys Synapse sorts largest first. The test doesn't depend on which gateway class the probe picks.
+    /// </summary>
+    [Theory]
+    [InlineData(null, "Tuwunel", "joined_members", "b")]
+    [InlineData(null, "tuwunel", "joined_members", "b")]
+    [InlineData(null, "Tuwunel", "name", "f")]
+    [InlineData(null, "Synapse", "joined_members", "f")]
+    [InlineData(null, null, "joined_members", "f")] // federation unavailable: unknown brand
+    [InlineData("Synapse", null, "joined_members", "f")] // discovery identified Synapse
+    public async Task GetAuthenticated_RoomListDir_FollowsTheProbedServer(string? discoveredSoftware, string? federationBrand, string orderBy, string sentDir)
+    {
+        _homeserver.FederationVersion = federationBrand == null
+            ? () => Results.NotFound()
+            : () => Results.Json(new { server = new { name = federationBrand, version = "1.9.0" } });
+
+        var gateway = await CreateAuthGateway(discoveredSoftware).GetAuthenticatedAsync(_homeserver.Url, AccessToken);
+        await gateway.GetRoomListAsync(0, 10, orderBy, "f");
+
+        Assert.Equal($"{RoomListPath}?from=0&limit=10&dir={sentDir}&order_by={orderBy}", Assert.Single(_homeserver.RoomListTargets));
+    }
+
     private MatrixAuthGateway CreateAuthGateway(string? serverSoftwareName = null) =>
         new(new FixedDiscoveryClient(_homeserver.Url, serverSoftwareName), _cache);
 
@@ -199,8 +224,9 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
 
     /// <summary>
     /// By default a Tuwunel-like homeserver that supports the Synapse Admin API; <see cref="FederationVersion"/> and
-    /// <see cref="AdminServerVersion"/> change the probe answers. Records every request path in order. When
-    /// <see cref="StallFirstFederationProbe"/> is set, the first federation version request waits until the client aborts it.
+    /// <see cref="AdminServerVersion"/> change the probe answers. Records every request path in order, and the full
+    /// target of each room list request. When <see cref="StallFirstFederationProbe"/> is set, the first federation
+    /// version request waits until the client aborts it.
     /// </summary>
     private sealed class FakeHomeserver : IAsyncDisposable
     {
@@ -208,9 +234,11 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
         private readonly TaskCompletionSource _federationProbeStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _federationRequests;
         private readonly ConcurrentQueue<string> _requestPaths = new();
+        private readonly ConcurrentQueue<string> _roomListTargets = new();
 
         public string Url { get; private set; } = null!;
         public IEnumerable<string> RequestPaths => _requestPaths;
+        public IEnumerable<string> RoomListTargets => _roomListTargets;
         public Func<IResult> FederationVersion { get; set; } = () => Results.Json(new { server = new { name = "Tuwunel", version = "1.9.0" } });
         public Func<IResult> AdminServerVersion { get; set; } = () => Results.Json(new { server_version = "1.9.0" });
         public bool StallFirstFederationProbe { get; set; }
@@ -232,6 +260,11 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
             // Typed as Func so MapGet uses the result-returning overload, not RequestDelegate (which drops the IResult).
             _app.MapGet(FederationVersionPath, (Func<HttpContext, Task<IResult>>)HandleFederationVersionAsync);
             _app.MapGet(AdminVersionPath, () => AdminServerVersion());
+            _app.MapGet(RoomListPath, (Func<HttpContext, IResult>)(context =>
+            {
+                _roomListTargets.Enqueue(context.Request.Path.Value + context.Request.QueryString.Value);
+                return Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
+            }));
 
             await _app.StartAsync();
             Url = _app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.First();
