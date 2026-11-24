@@ -49,7 +49,7 @@ Each area names the AGENTS.md sections it checks against, plus points AGENTS.md 
 - **Security:** "Security & Data Protection", "🚫 Never". Also: `[Authorize]` on controller actions that use the session or media (`AuthController` and `CultureController` are anonymous on purpose), local-only redirects (`Url.IsLocalUrl`), HTML encoding of everything passed to a `MarkupString`, `Uri.EscapeDataString` for every value placed in a gateway URL, which proxies `ForwardedHeaders` trusts, and untrusted text in logs (log forging).
 - **Bugs:** "Known Pitfalls", and from "Code Conventions": "Detail Pages & Destructive Actions", "Null Gateway Results", "Login Failures", "Timezone & Themes". Also: null references, state changed after an `await` on a disposed component, `async void` outside event handlers, missing `CancellationToken`s, undisposed `CancellationTokenSource`s, timers, event subscriptions and JS object references.
 - **Performance:** server-side paging with `MudTable` `ServerData` rather than loading whole lists, N+1 homeserver calls, `IMemoryCache` use and its keys, needless `StateHasChanged`, missing `@key` on lists that change, media streamed rather than buffered, and `JsonSerializerOptions` kept in `static readonly` fields.
-- **Architecture & code quality:** "Code Conventions" ("N-Tier Separation", "ViewModel Mapping", "Interfaces & DI", "Gateway Pattern & Capability Checks", "Blazor & MudBlazor UI", "Razor Markup Hygiene", "Localization", "Shared Helpers", "Tuning Values"). If a private member was renamed or removed, check "Tests Bound to Private Names". If code was deleted as unused, check "Dynamically Wired Code".
+- **Architecture & code quality:** "Code Conventions" ("N-Tier Separation", "ViewModel Mapping", "Interfaces & DI", "Gateway Pattern & Capability Checks", "Synapse Admin API as the Contract", "Blazor & MudBlazor UI", "Razor Markup Hygiene", "Localization", "Shared Helpers", "Tuning Values"). If a private member was renamed or removed, check "Tests Bound to Private Names". If code was deleted as unused, check "Dynamically Wired Code".
 - **Error handling & logging:** "Error Handling & Silent Cancellation", "Null Gateway Results", "Logging".
 - **Tests & documentation:**
   - Changed logic has tests: xUnit, bUnit through `DetailPageTestBase`, the service's `*ServiceCharacterizationTests.cs`, and a `MappingExtensionsTests` test for each new mapper. bUnit tests follow "bUnit Component Tests" and "Test Doubles".
@@ -68,6 +68,8 @@ These look like mistakes but are decided and documented. If you think one is wro
 - The different `StringComparison` values of the MIME checks, and the case-sensitive alias server name check in `RoomAliasesDialog`.
 - Code without a static caller that "Dynamically Wired Code" lists.
 - `MatrixSessionService` keeping its own catch blocks instead of `RunGatewayCallAsync`.
+- UI text that describes Synapse's behavior even where another homeserver behaves differently: that server's gateway corrects the difference or refuses the operation (ADR 0006).
+- A gateway's refusal (`OperationNotSupportedByHomeserverException`) logged at `Error` through the method's `logFailure`, and a plain `NotSupportedException` keeping the method's failure key instead of the "not supported" warning (SPEC.md §15, 2026-11-24).
 - The `AuthenticationStateProvider` registration next to `IMatrixAuthStateService` in `Program.cs`.
 - Tuning values as named constants rather than configuration.
 - The floating `10.0` .NET versions (".NET Version Policy").

@@ -35,6 +35,10 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 - **Multi-Language Support:** Fully localized interface with support for English, German, and French (see [Localization Guide](./LOCALIZATION.md)).
 - **Multiple Themes:** Support for various themes (Matrix, Nord, Cyberpunk, etc.) with persistent user preferences (see [Theme Guide](./THEMING.md)).
 
+## Homeserver Compatibility
+
+SynapseAdmin.NET follows the [Synapse Admin API](https://element-hq.github.io/synapse/latest/usage/administration/admin_api/) and describes every operation the way Synapse runs it, whichever homeserver you manage. On a compatible homeserver such as Tuwunel (1.8.1 or later), the app corrects known differences so that the result matches Synapse's. If it can't, it doesn't run the operation with different results: it shows "This operation is not supported by this homeserver." instead. On Tuwunel this currently applies to bulk local media deletion, because Tuwunel selects media by upload time instead of last access and doesn't keep avatars. On a homeserver without the Synapse Admin API, the admin features are not available.
+
 ## Security
 
 SynapseAdmin.NET uses **AES-256-GCM** (via PBKDF2-SHA256) to encrypt the ASP.NET Core Data Protection keys stored on disk (`./keys`), which protect your browser-stored session tokens (`ProtectedLocalStorage`) and authentication cookies (`.AspNetCore.Cookies`).

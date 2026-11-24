@@ -4,7 +4,7 @@
 
 - **Purpose:** Self-hosted .NET 10 Blazor Server web app for administering Matrix Synapse and compatible homeservers (such as Tuwunel >= 1.8.1) via the Matrix Client-Server and Synapse Admin APIs, bundled with `LibMatrix` and `ArcaneLibs` git submodules and licensed under AGPL-3.0.
 - **Primary users / consumers:** Matrix homeserver administrators only (not general Matrix end users).
-- **Status:** Active Development (latest release `v1.15.0`) — auth, dashboard, user/room/media management, room gallery, room history, event reports, event forensics, registration tokens, federation destinations, server notices, background updates, bulk media maintenance, localization (EN/DE/FR), Tuwunel >= 1.8.1 support, and MudBlazor themes are implemented (see [SPEC.md](./SPEC.md)).
+- **Status:** Active Development (latest release `v1.16.1`) — auth, dashboard, user/room/media management, room gallery, room history, event reports, event forensics, registration tokens, federation destinations, server notices, background updates, bulk media maintenance, localization (EN/DE/FR), Tuwunel >= 1.8.1 support, and MudBlazor themes are implemented (see [SPEC.md](./SPEC.md)).
 - **Owner / team:** Benjamin Aicheler
 
 ## Tech Stack
