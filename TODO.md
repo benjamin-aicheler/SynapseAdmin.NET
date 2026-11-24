@@ -14,21 +14,17 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-24
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] [1.1] SPEC.md: Tuwunel room deletion refused, `[Planned]` (FR-5, AC-11, §10, Decision Log)
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-- [ ] [2.1] Wire tests: Tuwunel refuses the DELETE and both status reads without a request
-- [ ] [2.2] Service tests: not-supported warning; refused lookup logged at `Debug`
-- [ ] [2.3] bUnit: refused Delete / Delete & Block and refused lookup on open
-- [ ] [3.1] `TuwunelAdminGateway`: three refusing overrides
-- [ ] [3.2] `RoomService.GetActiveRoomDeletionAsync`: `Debug` for the refusal
-- [ ] [4.1] Finalize SPEC.md, AGENTS.md note
-- [ ] [4.2] Reset PLAN.md / TODO.md, PR "Resolves #559"
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
