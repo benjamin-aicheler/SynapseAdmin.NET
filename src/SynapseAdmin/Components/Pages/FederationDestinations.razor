@@ -45,7 +45,7 @@ else
         <RowTemplate>
             <MudTd DataLabel="@L["Destination"]"><MudText Typo="Typo.body2">@context.Destination</MudText></MudTd>
             <MudTd DataLabel="@L["Status"]">
-                @if (context.FailureTsDateTime.HasValue)
+                @if (context.IsFailing)
                 {
                     <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["Failing"]</MudChip>
                 }
@@ -64,7 +64,7 @@ else
                 @(context.FailureTsDateTime is { } failure ? TimeZoneService.ToLocal(failure).ToString("g") : "-")
             </MudTd>
             <MudTd DataLabel="@L["Actions"]">
-                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => ResetConnection(context.Destination))" Disabled="!context.FailureTsDateTime.HasValue">@L["ResetConnection"]</MudButton>
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => ResetConnection(context.Destination))" Disabled="!context.IsFailing">@L["ResetConnection"]</MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
