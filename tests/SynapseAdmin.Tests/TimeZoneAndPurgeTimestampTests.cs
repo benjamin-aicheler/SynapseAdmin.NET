@@ -30,7 +30,7 @@ public class TimeZoneAndPurgeTimestampTests
 
         // The picker yields midnight of the chosen day, as wall-clock time.
         SetField(dialog, "expiryDate", new DateTime(2026, 12, 1));
-        InvokePrivate(dialog, "Submit");
+        InvokePrivate(dialog, "CloseWithViewModel");
 
         var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
         // 2026-12-01 00:00 in Tokyo (UTC+9) -> 2026-11-30 15:00 UTC
@@ -48,7 +48,7 @@ public class TimeZoneAndPurgeTimestampTests
         // RegistrationTokens passes the stored instant as wall-clock time in the user's zone.
         var dialog = await CreateTokenDialogAsync(timeZone, (IMudDialogInstance)(object)dialogProxy, isEdit: true,
             existingExpiry: timeZone.ToLocal(existing.ExpiryTimeDateTime!.Value).DateTime);
-        InvokePrivate(dialog, "Submit");
+        InvokePrivate(dialog, "CloseWithViewModel");
 
         var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
         Assert.Equal(existing.ExpiryTime, token.ExpiryTime);
@@ -70,7 +70,7 @@ public class TimeZoneAndPurgeTimestampTests
 
         var dialog = await CreateTokenDialogAsync(timeZone, (IMudDialogInstance)(object)dialogProxy, isEdit: true,
             existingExpiry: existingLocal, existingExpiryTime: existing);
-        InvokePrivate(dialog, "Submit");
+        InvokePrivate(dialog, "CloseWithViewModel");
 
         var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
         Assert.Equal(existing, token.ExpiryTime);
@@ -87,7 +87,7 @@ public class TimeZoneAndPurgeTimestampTests
             existingExpiryTime: SecondOccurrenceOfAmbiguousTime.ToUnixTimeMilliseconds());
 
         SetField(dialog, "expiryDate", new DateTime(2026, 12, 1));
-        InvokePrivate(dialog, "Submit");
+        InvokePrivate(dialog, "CloseWithViewModel");
 
         var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
         // 2026-12-01 00:00 in Berlin (CET, UTC+1) -> 2026-11-30 23:00 UTC
@@ -104,7 +104,7 @@ public class TimeZoneAndPurgeTimestampTests
             existingExpiry: new DateTime(2026, 12, 1), existingExpiryTime: new DateTimeOffset(2026, 11, 30, 23, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds());
 
         SetField(dialog, "expiryDate", new DateTime(2026, 10, 25, 2, 30, 0));
-        InvokePrivate(dialog, "Submit");
+        InvokePrivate(dialog, "CloseWithViewModel");
 
         var token = Assert.IsType<RegistrationTokenViewModel>(dialogProxy.ClosedResult!.Data);
         // The earlier occurrence: 02:30 CEST (UTC+2) -> 00:30 UTC

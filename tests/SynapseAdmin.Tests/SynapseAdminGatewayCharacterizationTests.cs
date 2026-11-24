@@ -369,6 +369,8 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         { null, 4781243146000, """{"uses_allowed":null,"expiry_time":4781243146000}""" },
         { 5, null, """{"uses_allowed":5,"expiry_time":null}""" },
         { 5, 4781243146000, """{"uses_allowed":5,"expiry_time":4781243146000}""" },
+        // 0 is a cap that makes the token invalid without deleting it (#548), not "unlimited".
+        { 0, null, """{"uses_allowed":0,"expiry_time":null}""" },
     };
 
     [Theory]
@@ -396,6 +398,118 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         Assert.Equal(
             new CapturedRequest("POST", "/_synapse/admin/v1/registration_tokens/new", "application/json; charset=utf-8", """{"uses_allowed":1}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task CreateRegistrationToken_SendsAZeroCap()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { token = "abcd" });
+
+        await _gateway.CreateRegistrationTokenAsync(new SynapseAdminRegistrationTokenCreateRequest { UsesAllowed = 0 });
+
+        Assert.Equal("""{"uses_allowed":0}""", Assert.Single(_homeserver.Requests).Body);
+    }
+
+    // ---- Registration tokens on Tuwunel (#548) -------------------------------------------------------
+
+    // Tuwunel deletes a token as soon as it is invalid (its uses reached the cap, or its expiry passed), where Synapse
+    // keeps it (a cap) or rejects the request (an expiry in the past). A request that would leave the token invalid at
+    // once is refused, so the token isn't deleted (ADR 0006).
+    private const long PastExpiry = 1_000;
+    private const long FutureExpiry = 4_781_243_146_000;
+
+    public static TheoryData<int?, long?> TuwunelInvalidNewTokens => new()
+    {
+        { 0, null },
+        { null, PastExpiry },
+        { 5, PastExpiry },
+    };
+
+    [Theory]
+    [MemberData(nameof(TuwunelInvalidNewTokens))]
+    public async Task Tuwunel_CreateRegistrationToken_InvalidAtOnce_RefusesWithoutARequest(int? usesAllowed, long? expiryTime)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.CreateRegistrationTokenAsync(
+            new SynapseAdminRegistrationTokenCreateRequest { UsesAllowed = usesAllowed, ExpiryTime = expiryTime }));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.CreateRegistrationTokenAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Theory]
+    [InlineData(null, null, "{}")]
+    [InlineData(1, FutureExpiry, """{"uses_allowed":1,"expiry_time":4781243146000}""")]
+    public async Task Tuwunel_CreateRegistrationToken_Valid_SendsTheSynapseRequest(int? usesAllowed, long? expiryTime, string body)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { token = "abcd" });
+
+        await gateway.CreateRegistrationTokenAsync(new SynapseAdminRegistrationTokenCreateRequest { UsesAllowed = usesAllowed, ExpiryTime = expiryTime });
+
+        Assert.Equal(new CapturedRequest("POST", "/_synapse/admin/v1/registration_tokens/new", "application/json; charset=utf-8", body),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task Tuwunel_UpdateRegistrationToken_PastExpiry_RefusesWithoutARequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.UpdateRegistrationTokenAsync("abcd",
+            new SynapseAdminRegistrationTokenUpdateRequest { UsesAllowed = null, ExpiryTime = PastExpiry }));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.UpdateRegistrationTokenAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>A cap reads the token's uses first and is refused at or below them; only the read is sent.</summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task Tuwunel_UpdateRegistrationToken_CapAtOrBelowUses_RefusesAfterReadingTheToken(int usesAllowed)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { token = "abcd", uses_allowed = 10, pending = 0, completed = 3 });
+
+        await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.UpdateRegistrationTokenAsync("abcd",
+            new SynapseAdminRegistrationTokenUpdateRequest { UsesAllowed = usesAllowed, ExpiryTime = null }));
+
+        Assert.Equal(new CapturedRequest("GET", "/_synapse/admin/v1/registration_tokens/abcd", null, ""), Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task Tuwunel_UpdateRegistrationToken_CapAboveUses_ReadsTheTokenThenSendsTheSynapseRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { token = "abcd", uses_allowed = 10, pending = 0, completed = 3 });
+
+        await gateway.UpdateRegistrationTokenAsync("abcd", new SynapseAdminRegistrationTokenUpdateRequest { UsesAllowed = 4, ExpiryTime = FutureExpiry });
+
+        Assert.Equal(new[]
+        {
+            new CapturedRequest("GET", "/_synapse/admin/v1/registration_tokens/abcd", null, ""),
+            new CapturedRequest("PUT", "/_synapse/admin/v1/registration_tokens/abcd", "application/json; charset=utf-8",
+                """{"uses_allowed":4,"expiry_time":4781243146000}"""),
+        }, _homeserver.Requests);
+    }
+
+    /// <summary>Without a cap nothing can run out, so the update is sent as it is, without reading the token.</summary>
+    [Fact]
+    public async Task Tuwunel_UpdateRegistrationToken_NoCap_SendsOnlyTheSynapseRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { token = "abcd" });
+
+        await gateway.UpdateRegistrationTokenAsync("abcd", new SynapseAdminRegistrationTokenUpdateRequest { UsesAllowed = null, ExpiryTime = null });
+
+        Assert.Equal(
+            new CapturedRequest("PUT", "/_synapse/admin/v1/registration_tokens/abcd", "application/json; charset=utf-8",
+                """{"uses_allowed":null,"expiry_time":null}"""),
             Assert.Single(_homeserver.Requests));
     }
 

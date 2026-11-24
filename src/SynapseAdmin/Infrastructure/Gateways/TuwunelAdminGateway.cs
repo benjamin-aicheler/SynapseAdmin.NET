@@ -1,6 +1,8 @@
+using ArcaneLibs.Extensions;
 using LibMatrix.Homeservers;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
@@ -36,4 +38,47 @@ internal sealed class TuwunelAdminGateway(
     /// </summary>
     public override Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default) =>
         throw new OperationNotSupportedByHomeserverException();
+
+    // Tuwunel 1.8.1 deletes a registration token as soon as it is invalid, the next time tokens are listed or checked:
+    // when its uses reach the cap or its expiry passes. Synapse keeps such a token (a cap of 0 is its documented way to
+    // invalidate one without deleting it) and rejects an expiry in the past. A create or update that would leave the
+    // token invalid at once is therefore refused, so Tuwunel doesn't delete it (#548).
+
+    /// <summary>Refuses a cap of 0 or an expiry in the past, which Tuwunel would answer by deleting the token (#548).</summary>
+    public override Task<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken?> CreateRegistrationTokenAsync(SynapseAdminRegistrationTokenCreateRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.UsesAllowed == 0 || IsInThePast(request.ExpiryTime))
+        {
+            throw new OperationNotSupportedByHomeserverException();
+        }
+
+        return base.CreateRegistrationTokenAsync(request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Refuses an expiry in the past, and a cap at or below the token's uses so far, which it reads first (Tuwunel
+    /// consumes a use in one step, so <c>completed</c> is every use). Only that read is sent before a refusal (#548).
+    /// </summary>
+    public override async Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default)
+    {
+        if (IsInThePast(request.ExpiryTime))
+        {
+            throw new OperationNotSupportedByHomeserverException();
+        }
+
+        if (request.UsesAllowed is { } cap)
+        {
+            var current = await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>(
+                $"/_synapse/admin/v1/registration_tokens/{token.UrlEncode()}", cancellationToken: cancellationToken);
+            if (cap <= current.Completed)
+            {
+                throw new OperationNotSupportedByHomeserverException();
+            }
+        }
+
+        await base.UpdateRegistrationTokenAsync(token, request, cancellationToken);
+    }
+
+    private static bool IsInThePast(long? unixMs) =>
+        unixMs is { } ms && ms < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 }

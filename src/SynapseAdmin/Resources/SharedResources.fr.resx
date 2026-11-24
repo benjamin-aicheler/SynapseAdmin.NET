@@ -466,6 +466,12 @@
   <data name="TokenStringLabel" xml:space="preserve">
     <value>Chaîne de jeton (facultatif, laisser vide pour générer)</value>
   </data>
+  <data name="TokenTooLong" xml:space="preserve">
+    <value>Un jeton peut contenir au plus {0} caractères.</value>
+  </data>
+  <data name="TokenInvalidCharacters" xml:space="preserve">
+    <value>Un jeton ne peut contenir que les lettres A à Z et a à z, des chiffres et les caractères . _ ~ -</value>
+  </data>
   <data name="UsesAllowedLabel" xml:space="preserve">
     <value>Utilisations autorisées (facultatif, vide pour illimité)</value>
   </data>

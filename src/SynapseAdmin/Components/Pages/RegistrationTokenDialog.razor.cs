@@ -33,6 +33,13 @@ namespace SynapseAdmin.Components.Pages
         [Parameter]
         public long? ExistingExpiryTime { get; set; }
 
+        /// <summary>The longest custom token Synapse accepts.</summary>
+        private const int MaxTokenLength = 64;
+
+        /// <summary>The characters besides ASCII letters and digits that Synapse accepts in a custom token.</summary>
+        private const string TokenPunctuation = "._~-";
+
+        private MudForm form = null!;
         private bool success = true;
 
         private string? token;
@@ -64,7 +71,28 @@ namespace SynapseAdmin.Components.Pages
             MudDialog.Cancel();
         }
 
-        private void Submit()
+        /// <summary>
+        /// Synapse's rule for a custom token: at most 64 characters from <c>[A-Za-z0-9._~-]</c>. A blank field is valid
+        /// and lets the homeserver generate one (#548).
+        /// </summary>
+        private string? ValidateToken(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null;
+            if (value.Length > MaxTokenLength) return L["TokenTooLong", MaxTokenLength].Value;
+            return value.All(c => char.IsAsciiLetterOrDigit(c) || TokenPunctuation.Contains(c)) ? null : L["TokenInvalidCharacters"].Value;
+        }
+
+        private async Task Submit()
+        {
+            // The Save button follows the form's validity, but a submit must not depend on it.
+            await form.ValidateAsync();
+            if (!form.IsValid) return;
+
+            CloseWithViewModel();
+        }
+
+        /// <summary>Closes the dialog with the entered values. Tests call it directly for the expiry conversion.</summary>
+        private void CloseWithViewModel()
         {
             var viewModel = new RegistrationTokenViewModel
             {

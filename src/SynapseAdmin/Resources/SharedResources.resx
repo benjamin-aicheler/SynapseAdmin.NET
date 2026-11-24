@@ -500,6 +500,12 @@
   <data name="TokenStringLabel" xml:space="preserve">
     <value>Token String (optional, leave empty to generate)</value>
   </data>
+  <data name="TokenTooLong" xml:space="preserve">
+    <value>A token can have at most {0} characters.</value>
+  </data>
+  <data name="TokenInvalidCharacters" xml:space="preserve">
+    <value>A token can contain only the letters A to Z and a to z, digits, and the characters . _ ~ -</value>
+  </data>
   <data name="UsesAllowedLabel" xml:space="preserve">
     <value>Uses Allowed (optional, empty for unlimited)</value>
   </data>
