@@ -127,12 +127,12 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
     };
 
     // Each raw DELETE with fixed arguments and the exact request it sends. The room body uses default (not web)
-    // serializer options: declared property order, nulls written.
+    // serializer options in declared property order, and leaves out the optional strings that are null (#543).
     private static (CapturedRequest Request, Func<SynapseAdminGateway, Task> Call) DeleteMethod(string name) => name switch
     {
         nameof(SynapseAdminGateway.DeleteRoomAsync) => (
             new("DELETE", "/_synapse/admin/v2/rooms/!room%3aexample.com", "application/json; charset=utf-8",
-                """{"new_room_user_id":"@admin:example.com","room_name":null,"block":true,"purge":false,"message":"Moved"}"""),
+                """{"new_room_user_id":"@admin:example.com","block":true,"purge":false,"message":"Moved"}"""),
             g => g.DeleteRoomAsync("!room:example.com",
                 new SynapseAdminRoomDeleteRequest { NewRoomUserId = "@admin:example.com", Block = true, Purge = false, Message = "Moved" })),
         nameof(SynapseAdminGateway.DeleteEventReportAsync) => (
@@ -515,6 +515,40 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         Assert.Equal("delete-1", response?.DeleteId);
     }
+
+    /// <summary>
+    /// The Admin API documents <c>new_room_user_id</c>, <c>room_name</c> and <c>message</c> as optional strings, so a
+    /// null one is left out instead of sent as <c>null</c>. <c>block</c> and <c>purge</c> are always sent, which also
+    /// keeps the body from being empty (#543).
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(RoomDeleteBodies))]
+    public async Task DeleteRoom_SendsOnlyTheSetOptionalStrings(SynapseAdminRoomDeleteRequest request, string expectedBody)
+    {
+        _homeserver.Respond = () => Results.Json(new { delete_id = "delete-1" });
+
+        await _gateway.DeleteRoomAsync("!room:example.com", request);
+
+        Assert.Equal(expectedBody, Assert.Single(_homeserver.Requests).Body);
+    }
+
+    public static TheoryData<SynapseAdminRoomDeleteRequest, string> RoomDeleteBodies => new()
+    {
+        // What RoomService sends.
+        { new SynapseAdminRoomDeleteRequest { Block = false, Purge = true }, """{"block":false,"purge":true}""" },
+        {
+            new SynapseAdminRoomDeleteRequest
+            {
+                NewRoomUserId = "@admin:example.com", RoomName = "Notice", Block = true, Purge = false, Message = "Moved"
+            },
+            """{"new_room_user_id":"@admin:example.com","room_name":"Notice","block":true,"purge":false,"message":"Moved"}"""
+        },
+        // An empty string is a value, not a missing one.
+        {
+            new SynapseAdminRoomDeleteRequest { RoomName = "", Block = true, Purge = true },
+            """{"room_name":"","block":true,"purge":true}"""
+        },
+    };
 
     /// <summary>The body used to be ignored, so an accepted deletion without one must not become an error.</summary>
     [Fact]
