@@ -1,8 +1,11 @@
+using System.Globalization;
+using System.Resources;
 using MudBlazor;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
+using SynapseAdmin.Resources;
 using SynapseAdmin.Tests.Components;
 using SynapseAdmin.Tests.TestSupport;
 using Xunit;
@@ -96,6 +99,76 @@ public sealed class GatewayCallExtensionsTests
         Assert.Equal("ErrorDoingThings", result.Message);
         Assert.Equal(Severity.Error, result.Severity);
         Assert.Same(error, Assert.Single(_logged));
+    }
+
+    /// <summary>
+    /// A gateway that can't carry out an operation with Synapse's result refuses it (ADR 0006, AC-14). The refusal is
+    /// logged once and reported as the shared "not supported" warning instead of the method's failure key.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NotSupportedByHomeserver_IsLoggedOnce_AndReturnsTheNotSupportedWarning(bool withData)
+    {
+        var error = new OperationNotSupportedByHomeserverException("DeleteLocalMediaAsync");
+
+        OperationResult result = withData
+            ? await Session().RunGatewayCallAsync<int>(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error)
+            : await Session().RunGatewayCallAsync(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error);
+
+        Assert.False(result.Success);
+        Assert.Equal("OperationNotSupportedByHomeserver", result.Message);
+        Assert.Equal(Severity.Warning, result.Severity);
+        Assert.Same(error, Assert.Single(_logged));
+    }
+
+    /// <summary>
+    /// A plain <see cref="NotSupportedException"/> comes from elsewhere (a stream, the JSON serializer, LibMatrix) and
+    /// says nothing about the homeserver, so it stays an ordinary failure.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PlainNotSupportedException_KeepsTheFailureKey(bool withData)
+    {
+        var error = new NotSupportedException("Stream does not support seeking.");
+
+        OperationResult result = withData
+            ? await Session().RunGatewayCallAsync<int>(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error)
+            : await Session().RunGatewayCallAsync(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error);
+
+        Assert.False(result.Success);
+        Assert.Equal("ErrorDoingThings", result.Message);
+        Assert.Equal(Severity.Error, result.Severity);
+        Assert.Same(error, Assert.Single(_logged));
+    }
+
+    [Fact]
+    public void NotSupportedByHomeserver_NamesTheRefusedOperation()
+    {
+        var error = RefusedOperation();
+
+        Assert.IsAssignableFrom<NotSupportedException>(error);
+        Assert.Equal(nameof(RefusedOperation), error.Operation);
+        Assert.Contains(nameof(RefusedOperation), error.Message);
+    }
+
+    private static OperationNotSupportedByHomeserverException RefusedOperation() => new();
+
+    /// <summary>The "not supported" warning exists in every UI language, not only through the neutral fallback.</summary>
+    [Fact]
+    public void NotSupportedWarning_IsTranslated()
+    {
+        var resources = new ResourceManager(typeof(SharedResources).FullName!, typeof(SharedResources).Assembly);
+        var english = resources.GetString("OperationNotSupportedByHomeserver", new CultureInfo("en"));
+
+        Assert.False(string.IsNullOrWhiteSpace(english));
+        foreach (var culture in new[] { "de", "fr" })
+        {
+            var translated = resources.GetString("OperationNotSupportedByHomeserver", new CultureInfo(culture));
+            Assert.False(string.IsNullOrWhiteSpace(translated));
+            Assert.NotEqual(english, translated);
+        }
     }
 
     private IMatrixSessionService Session() => Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => _gateway));

@@ -5,13 +5,10 @@
 
 ## 🔄 In Progress
 
-- [ ] [1.1] Tests: `RunGatewayCallAsync` (both overloads) maps `OperationNotSupportedByHomeserverException` to `OperationNotSupportedByHomeserver` (`Warning`, logged once); a plain `NotSupportedException` keeps the failure key; `Operation` is the caller's name (AC-14)
+- [ ] [2.1] Reflection test: every method `GenericMatrixGateway` declares throws the new exception with its own name
 
 ## ⏭️ Next Up
 
-- [ ] [1.2] Add `Models/OperationNotSupportedByHomeserverException.cs` and the catch in both overloads
-- [ ] [1.3] Resource key `OperationNotSupportedByHomeserver` in EN, DE, FR + a three-culture resource test
-- [ ] [2.1] Reflection test: every method `GenericMatrixGateway` declares throws the new exception with its own name
 - [ ] [2.2] Replace the 49 throws in `GenericMatrixGateway`
 - [ ] [3.1] `MediaServiceCharacterizationTests`: `DeleteLocalMediaAsync` refusal → `OperationNotSupportedByHomeserver`, `Warning`
 - [ ] [4.1] SPEC.md: remove `[Planned]` from §3 Goals, AC-14, §10; name the tests in AC-14
@@ -33,6 +30,7 @@
 ## ✅ Done
 
 - [x] 2026-11-24 – PLAN.md approved (`Warning`, wording as proposed)
+- [x] 2026-11-24 – [1.1–1.3] Policy tests red on behavior (2 rows) with the exception type in place, green after the catch in both overloads; resource key in EN/DE/FR with `NotSupportedWarning_IsTranslated` (written together with the key); 1242 tests pass
 
 ## Definition of Done (applies to every task)
 
