@@ -15,6 +15,11 @@ public class UserDetailViewModel
     public string ConsentVersion { get; set; } = string.Empty;
     public string ConsentServerNoticeSent { get; set; } = string.Empty;
     public string AppserviceId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The account's expiration, if known. Synapse's user details don't include it, so it is <c>null</c> (unknown, not
+    /// "never expires") until a renewal on the page sets it (#546).
+    /// </summary>
     public long? ExpirationTs { get; set; }
     public DateTimeOffset? ExpirationTsDateTime => ExpirationTs.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ExpirationTs.Value) : null;
 
