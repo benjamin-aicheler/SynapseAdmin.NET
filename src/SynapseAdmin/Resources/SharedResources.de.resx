@@ -1013,19 +1013,31 @@
     <value>Lokale Medien löschen</value>
   </data>
   <data name="DeleteLocalMediaDescription" xml:space="preserve">
-    <value>Massenhaftes Löschen lokaler Mediendateien, die vor einem bestimmten Datum hochgeladen wurden, eine bestimmte Größe überschreiten oder nicht geschützt sind. Diese Aktion kann nicht rückgängig gemacht werden.</value>
+    <value>Löscht lokale Mediendateien, auf die seit mehr als der angegebenen Anzahl von Tagen nicht zugegriffen wurde (bei nie abgerufenen Medien zählt der Upload) und die größer als die angegebene Größe sind. Beide Bedingungen müssen zutreffen. Geschützte Medien und Medien in Quarantäne bleiben immer erhalten. Diese Aktion kann nicht rückgängig gemacht werden.</value>
   </data>
   <data name="SizeGreaterThanMb" xml:space="preserve">
     <value>Größe größer als (MB)</value>
   </data>
   <data name="KeepProfiles" xml:space="preserve">
-    <value>Profil-/Avatar-Medien behalten</value>
+    <value>Profilbilder und Raum-Avatare behalten</value>
   </data>
   <data name="DeleteMedia" xml:space="preserve">
     <value>Medien löschen</value>
   </data>
   <data name="DeleteLocalMediaConfirmation" xml:space="preserve">
-    <value>Sind Sie sicher, dass Sie lokale Mediendateien löschen möchten, die vor mehr als {0} Tagen hochgeladen wurden und größer als {1} MB sind? Diese Aktion ist unumkehrbar!</value>
+    <value>Alle lokalen Mediendateien löschen, auf die seit mehr als {0} Tagen nicht zugegriffen wurde und die größer als {1} MB sind?</value>
+  </data>
+  <data name="DeleteLocalMediaConfirmationAnySize" xml:space="preserve">
+    <value>Alle lokalen Mediendateien löschen, auf die seit mehr als {0} Tagen nicht zugegriffen wurde, unabhängig von ihrer Größe?</value>
+  </data>
+  <data name="DeleteLocalMediaKeepsAvatars" xml:space="preserve">
+    <value>Medien, die als Profilbild oder Raum-Avatar verwendet werden, bleiben erhalten.</value>
+  </data>
+  <data name="DeleteLocalMediaDeletesAvatars" xml:space="preserve">
+    <value>Medien, die als Profilbild oder Raum-Avatar verwendet werden, werden ebenfalls gelöscht.</value>
+  </data>
+  <data name="DeleteLocalMediaIrreversible" xml:space="preserve">
+    <value>Diese Aktion ist unumkehrbar!</value>
   </data>
   <data name="DeletedLocalMediaSuccess" xml:space="preserve">
     <value>{0} lokale Mediendateien erfolgreich gelöscht.</value>
@@ -1056,9 +1068,6 @@
   </data>
   <data name="ErrorDeletingLocalMedia" xml:space="preserve">
     <value>Fehler beim Löschen lokaler Medien.</value>
-  </data>
-  <data name="UploadedBeforeDays" xml:space="preserve">
-    <value>Hochgeladen vor (Tagen)</value>
   </data>
   <data name="MustStartWithAt" xml:space="preserve">
     <value>Muss mit @ beginnen</value>
@@ -1343,10 +1352,10 @@
     <value>Zu viele Anmeldeversuche. Bitte warten Sie eine Minute und versuchen Sie es erneut.</value>
   </data>
   <data name="DeleteAllSizesWarning" xml:space="preserve">
-    <value>Ein Schwellenwert von 0 MB löscht alle lokalen Mediendateien, die älter als die angegebenen Tage sind, unabhängig von ihrer Dateigröße.</value>
+    <value>Eine Größe von 0 MB bedeutet keine Mindestgröße: Alle lokalen Mediendateien mit letztem Zugriff vor dem Stichtag werden gelöscht, unabhängig von ihrer Größe.</value>
   </data>
   <data name="ConfirmDeleteAllSizes" xml:space="preserve">
-    <value>Mir ist bewusst, dass alle Dateigrößen (ab 0 MB) gelöscht werden</value>
+    <value>Mir ist bewusst, dass Dateien jeder Größe gelöscht werden</value>
   </data>
   <data name="ExperimentalFeatures" xml:space="preserve">
     <value>Experimentelle Funktionen</value>

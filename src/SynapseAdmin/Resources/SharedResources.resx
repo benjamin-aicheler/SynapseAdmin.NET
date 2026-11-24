@@ -1026,19 +1026,31 @@
     <value>Delete Local Media</value>
   </data>
   <data name="DeleteLocalMediaDescription" xml:space="preserve">
-    <value>Bulk delete local media files uploaded before a specific date, larger than a certain size, or not protected. This action cannot be undone.</value>
+    <value>Bulk delete local media files that were last accessed more than the given number of days ago (media never accessed counts from its upload) and that are larger than the given size. Both conditions must apply. Protected and quarantined media are always kept. This action cannot be undone.</value>
   </data>
   <data name="SizeGreaterThanMb" xml:space="preserve">
     <value>Size greater than (MB)</value>
   </data>
   <data name="KeepProfiles" xml:space="preserve">
-    <value>Keep profiles / avatar media</value>
+    <value>Keep profile pictures and room avatars</value>
   </data>
   <data name="DeleteMedia" xml:space="preserve">
     <value>Delete Media</value>
   </data>
   <data name="DeleteLocalMediaConfirmation" xml:space="preserve">
-    <value>Are you sure you want to delete local media files uploaded more than {0} days ago and larger than {1} MB? This action is irreversible!</value>
+    <value>Delete all local media files last accessed more than {0} days ago and larger than {1} MB?</value>
+  </data>
+  <data name="DeleteLocalMediaConfirmationAnySize" xml:space="preserve">
+    <value>Delete all local media files last accessed more than {0} days ago, whatever their size?</value>
+  </data>
+  <data name="DeleteLocalMediaKeepsAvatars" xml:space="preserve">
+    <value>Media used as a profile picture or room avatar is kept.</value>
+  </data>
+  <data name="DeleteLocalMediaDeletesAvatars" xml:space="preserve">
+    <value>Media used as a profile picture or room avatar is deleted too.</value>
+  </data>
+  <data name="DeleteLocalMediaIrreversible" xml:space="preserve">
+    <value>This action is irreversible!</value>
   </data>
   <data name="DeletedLocalMediaSuccess" xml:space="preserve">
     <value>Successfully deleted {0} local media files.</value>
@@ -1069,9 +1081,6 @@
   </data>
   <data name="ErrorDeletingLocalMedia" xml:space="preserve">
     <value>Error deleting local media.</value>
-  </data>
-  <data name="UploadedBeforeDays" xml:space="preserve">
-    <value>Uploaded before (days)</value>
   </data>
   <data name="MustStartWithAt" xml:space="preserve">
     <value>Must start with @</value>
@@ -1344,10 +1353,10 @@
     <value>Too many login attempts. Please wait a minute and try again.</value>
   </data>
   <data name="DeleteAllSizesWarning" xml:space="preserve">
-    <value>Setting the size threshold to 0 MB will delete all local media files older than the specified days regardless of file size.</value>
+    <value>A size of 0 MB means no minimum size: every local media file last accessed before the cutoff is deleted, whatever its size.</value>
   </data>
   <data name="ConfirmDeleteAllSizes" xml:space="preserve">
-    <value>I understand that all file sizes (0 MB minimum) will be deleted</value>
+    <value>I understand that files of every size will be deleted</value>
   </data>
   <data name="ExperimentalFeatures" xml:space="preserve">
     <value>Experimental Features</value>

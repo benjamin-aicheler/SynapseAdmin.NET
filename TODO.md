@@ -5,13 +5,10 @@
 
 ## 🔄 In Progress
 
-- [ ] [3.1] bUnit `MediaMaintenanceTests`: label, description, switch, both confirmation variants, success snackbar via real `MediaService` – red
+- [ ] [4.1] Wire tests: Synapse `DeleteLocalMediaAsync` request (characterization); Tuwunel refuses with no request – red
 
 ## ⏭️ Next Up
 
-- [ ] [3.2] Page, code-behind and resources per PLAN §4; remove `UploadedBeforeDays`
-- [ ] [3.3] Resource test: translations and placeholders of the changed and new keys
-- [ ] [4.1] Wire tests: Synapse `DeleteLocalMediaAsync` request (characterization); Tuwunel refuses with no request – red
 - [ ] [4.2] `TuwunelAdminGateway.DeleteLocalMediaAsync` override
 - [ ] [5.1] SPEC.md: remove `[Planned]`, name tests in AC-15, decision row
 - [ ] [5.2] AGENTS.md Known Pitfalls entry for `POST /_synapse/admin/v1/media/delete`
@@ -34,6 +31,7 @@
 - [x] 2026-11-24 – PLAN.md approved (wording as in §4, one success message for every total)
 - [x] 2026-11-24 – [1.1] SPEC.md: FR-8 `[Planned]` sentence, AC-15, §10 Tuwunel edge case
 - [x] 2026-11-24 – [2.1, 2.2] `DeleteLocal_Success_FormatsTheReportedTotal_WithoutLogging` (0, 2) red, then green with `string.Format(…, result.Total)`; `DeletedLocalMediaSuccess` has a single `{0}` in EN/DE/FR
+- [x] 2026-11-24 – [3.1–3.3] `MediaMaintenanceTests`: label test first passed by accident (outlined fields render the label text twice), rewritten to count `<label>` elements, then red with both confirmation tests; refusal test passes already (step 2). Page, code-behind (`DeleteLocalMediaConfirmationMessage`) and resources changed, `UploadedBeforeDays` removed; resource test `CardText_IsTranslated_WithExactlyItsPlaceholders` placed in `MediaMaintenanceTests` instead of next to `NotSupportedWarning_IsTranslated`; 1316 tests pass (EN and DE)
 
 ## Definition of Done (applies to every task)
 
