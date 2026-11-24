@@ -1,20 +1,34 @@
 # TODO
 
+<!--
+HOW TO USE THIS FILE (instructions for the AI agent):
+- This is the SINGLE-TASK execution checklist derived from the approved PLAN.md (ignore if PLAN.md is blank template or Done).
+- Work on ONE task at a time, top to bottom within "Next Up", unless the user says otherwise.
+- Before starting a task: move it to "In Progress".
+- After finishing a task: verify it (`dotnet build` & `dotnet test`), tick the checkbox, move it to "Done"
+  with the date and a short note (e.g. commit hash or files changed).
+- If you discover new work, add it to "Backlog" or "Bugs / Follow-ups" – do not silently expand the current task.
+- If a task is blocked, move it to "Blocked" with the reason and what is needed.
+- Keep entries short. Reference PLAN step IDs (e.g. [1.2]) and spec IDs (e.g. FR-15, AC-10).
+- ON COMPLETION (before merging the PR, or before starting the next task): finalize `[Planned]` items in SPEC.md and clear/reset this file (and PLAN.md) back to the blank template from `main` (optionally preserving any real unresolved follow-ups in Backlog, or moving them to GitHub Issues).
+-->
+
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-24
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] [5.1] SPEC.md: remove `[Planned]`, name tests in AC-15, decision row
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-- [ ] [5.2] AGENTS.md Known Pitfalls entry for `POST /_synapse/admin/v1/media/delete`
-- [ ] [5.3] Reset PLAN.md and TODO.md to the templates from `main`
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
-- [ ] 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
 
 ## 📋 Backlog
 
@@ -26,11 +40,7 @@
 
 ## ✅ Done
 
-- [x] 2026-11-24 – PLAN.md approved (wording as in §4, one success message for every total)
-- [x] 2026-11-24 – [1.1] SPEC.md: FR-8 `[Planned]` sentence, AC-15, §10 Tuwunel edge case
-- [x] 2026-11-24 – [2.1, 2.2] `DeleteLocal_Success_FormatsTheReportedTotal_WithoutLogging` (0, 2) red, then green with `string.Format(…, result.Total)`; `DeletedLocalMediaSuccess` has a single `{0}` in EN/DE/FR
-- [x] 2026-11-24 – [3.1–3.3] `MediaMaintenanceTests`: label test first passed by accident (outlined fields render the label text twice), rewritten to count `<label>` elements, then red with both confirmation tests; refusal test passes already (step 2). Page, code-behind (`DeleteLocalMediaConfirmationMessage`) and resources changed, `UploadedBeforeDays` removed; resource test `CardText_IsTranslated_WithExactlyItsPlaceholders` placed in `MediaMaintenanceTests` instead of next to `NotSupportedWarning_IsTranslated`; 1316 tests pass (EN and DE)
-- [x] 2026-11-24 – [4.1, 4.2] Synapse wire test (`keep_profiles` true/false, body `{}`) passes on unchanged code; Tuwunel refusal test red, then green with the override; no request sent
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
