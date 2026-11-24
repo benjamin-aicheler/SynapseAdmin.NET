@@ -466,6 +466,12 @@
   <data name="TokenStringLabel" xml:space="preserve">
     <value>Token-String (optional, leer lassen zum Generieren)</value>
   </data>
+  <data name="TokenTooLong" xml:space="preserve">
+    <value>Ein Token darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="TokenInvalidCharacters" xml:space="preserve">
+    <value>Ein Token darf nur die Buchstaben A bis Z und a bis z, Ziffern und die Zeichen . _ ~ - enthalten.</value>
+  </data>
   <data name="UsesAllowedLabel" xml:space="preserve">
     <value>Erlaubte Nutzungen (optional, leer für unbegrenzt)</value>
   </data>
