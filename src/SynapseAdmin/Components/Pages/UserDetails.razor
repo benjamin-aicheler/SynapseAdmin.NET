@@ -71,7 +71,11 @@ else
                             {
                                 <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["Deactivated"]</MudChip>
                             }
-                            else
+                            @if (user.Locked)
+                            {
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small">@L["Locked"]</MudChip>
+                            }
+                            @if (!user.Deactivated && !user.Locked)
                             {
                                 <MudChip T="string" Color="Color.Success" Size="Size.Small">@L["Active"]</MudChip>
                             }

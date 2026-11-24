@@ -43,6 +43,8 @@ else
             <MudTh><MudTableSortLabel SortLabel="admin" T="UserListViewModel">@L["Admin"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="is_guest" T="UserListViewModel">@L["Guest"]</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortLabel="deactivated" T="UserListViewModel">@L["Deactivated"]</MudTableSortLabel></MudTh>
+            @* Not sortable: locked isn't an order_by key the Admin API documents. *@
+            <MudTh>@L["Locked"]</MudTh>
             <MudTh><MudTableSortLabel SortLabel="creation_ts" T="UserListViewModel">@L["Created"]</MudTableSortLabel></MudTh>
             <MudTh>@L["Actions"]</MudTh>
         </HeaderContent>
@@ -69,6 +71,12 @@ else
                 @if (context.Deactivated)
                 {
                     <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["Deactivated"]</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="@L["Locked"]">
+                @if (context.Locked)
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">@L["Locked"]</MudChip>
                 }
             </MudTd>
             <MudTd DataLabel="@L["Created"]">@TimeZoneService.ToLocal(context.CreationTsDateTime).ToString("g")</MudTd>

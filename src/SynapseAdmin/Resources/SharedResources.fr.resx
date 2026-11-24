@@ -160,6 +160,9 @@
   <data name="Deactivated" xml:space="preserve">
     <value>Désactivé</value>
   </data>
+  <data name="Locked" xml:space="preserve">
+    <value>Verrouillé</value>
+  </data>
   <data name="User" xml:space="preserve">
     <value>Utilisateur</value>
   </data>

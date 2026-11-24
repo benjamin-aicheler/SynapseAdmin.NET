@@ -191,6 +191,9 @@
   <data name="Deactivated" xml:space="preserve">
     <value>Deactivated</value>
   </data>
+  <data name="Locked" xml:space="preserve">
+    <value>Locked</value>
+  </data>
   <data name="User" xml:space="preserve">
     <value>User</value>
   </data>
