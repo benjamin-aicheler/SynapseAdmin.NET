@@ -159,7 +159,7 @@ Technical and operational risks of the baseline (connect-time checks after login
 
 ## 14. Open Questions
 
-- **Minimum server versions per operation (deferred 2026-11-24):** Should a server's gateway check the server version before each operation (for example Tuwunel >= 1.8.1 for every admin operation, and a higher minimum for some) and throw `OperationNotSupportedByHomeserverException` below it? Open: whether Client-Server API methods are included or only admin API methods, how a version that can't be parsed counts (today `IsTuwunelAdminCapable` treats it as capable and lets the probe decide), and how a test covers the methods a server's gateway inherits without overriding them. First use case: shadow login exists on Tuwunel only from 1.8.2 (#558).
+- **Minimum server versions per operation (deferred 2026-11-24, #562):** Should a server's gateway check the server version before each operation (for example Tuwunel >= 1.8.1 for every admin operation, and a higher minimum for some) and throw `OperationNotSupportedByHomeserverException` below it? Open: whether Client-Server API methods are included or only admin API methods, how a version that can't be parsed counts (today `IsTuwunelAdminCapable` treats it as capable and lets the probe decide), and how a test covers the methods a server's gateway inherits without overriding them. First use case: shadow login exists on Tuwunel only from 1.8.2 (#558).
 
 ## 15. Decision Log
 
