@@ -461,6 +461,12 @@ public class SynapseAdminGateway(
         await PostEmptyAsync(url, cancellationToken);
     }
 
+    /// <summary>
+    /// Sends no body on purpose (#550). The reference's example shows <c>{}</c>, but neither Synapse's handler nor
+    /// Tuwunel's reads a body, and Synapse's own test sends none. RFC 9110 §9.3.5 warns that servers and proxies may
+    /// reject content on a DELETE. If a supported homeserver turns out to need <c>{}</c>, test that version behind
+    /// its proxy before adding a body.
+    /// </summary>
     public override async Task DeleteMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/media/{serverName.UrlEncode()}/{mediaId.UrlEncode()}";
