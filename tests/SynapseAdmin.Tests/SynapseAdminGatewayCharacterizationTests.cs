@@ -678,6 +678,28 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
             $"Unexpected exception: {ex}");
     }
 
+    // ---- Room messages (#549) ------------------------------------------------------------------------
+
+    /// <summary>
+    /// The first page leaves <c>from</c> out. The Admin API page calls it required, but Synapse (whose own admin test
+    /// requests <c>?dir=b</c> without it) and Tuwunel start backward history at the newest event when it is missing.
+    /// A later page sends the returned <c>end</c> token as it came, URL-encoded.
+    /// </summary>
+    [Fact]
+    public async Task GetRoomMessages_FirstPageOmitsFrom_ThenSendsTheEndTokenBack()
+    {
+        _homeserver.Respond = () => Results.Json(new { chunk = Array.Empty<object>(), start = "s1", end = "t+1/2=" });
+
+        var first = await _gateway.GetRoomMessagesAsync("!room:example.com", limit: 50, dir: "b");
+        await _gateway.GetRoomMessagesAsync("!room:example.com", limit: 50, from: first!.End, dir: "b");
+
+        Assert.Equal(new[]
+        {
+            "/_synapse/admin/v1/rooms/!room%3aexample.com/messages?limit=50&dir=b",
+            "/_synapse/admin/v1/rooms/!room%3aexample.com/messages?limit=50&from=t%2b1%2f2%3d&dir=b",
+        }, _homeserver.RequestTargets);
+    }
+
     // ---- Room deletion (#518) ------------------------------------------------------------------------
 
     private static Task<SynapseAdminRoomDeleteResponse?> DeleteRoom(SynapseAdminGateway gateway) =>
