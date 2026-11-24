@@ -285,18 +285,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public Task<OperationResult<RoomDeletionStatusViewModel?>> GetActiveRoomDeletionAsync(string roomId, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomDeletionStatus",
-            ex =>
-            {
-                // The room page runs this lookup whenever a room opens: a homeserver that refuses it (#559) isn't an error.
-                if (ex is OperationNotSupportedByHomeserverException)
-                {
-                    logger.LogDebug("The homeserver doesn't support looking up deletions of room {RoomId}", roomId.SanitizeForLogging());
-                }
-                else
-                {
-                    logger.LogError(ex, "Error looking up deletions of room {RoomId}", roomId.SanitizeForLogging());
-                }
-            },
+            ex => logger.LogError(ex, "Error looking up deletions of room {RoomId}", roomId.SanitizeForLogging()),
             async gateway =>
             {
                 var result = await gateway.GetRoomDeleteStatusesAsync(roomId, token);
@@ -307,7 +296,9 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     .ToList();
                 var active = running.FirstOrDefault(s => s.State == RoomDeletionState.Active) ?? running.FirstOrDefault();
                 return OperationResult<RoomDeletionStatusViewModel?>.Ok(active);
-            });
+            },
+            // A page loads this by itself: a homeserver that refuses it works as intended, so the refusal isn't an error.
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support looking up deletions of room {RoomId}", roomId.SanitizeForLogging()));
 
     public Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorQuarantiningRoomMedia",
@@ -378,7 +369,9 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
                 var result = (await Task.WhenAll(tasks)).ToList();
                 return OperationResult<List<RoomStatisticsViewModel>>.Ok(result);
-            });
+            },
+            // A page loads this by itself: a homeserver that refuses it works as intended, so the refusal isn't an error.
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support room statistics by database size"));
 
     public Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomMessages",

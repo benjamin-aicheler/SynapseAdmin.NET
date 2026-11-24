@@ -29,7 +29,9 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 var vms = result.Users.ToViewModels();
 
                 return OperationResult<(int Total, List<UserListViewModel> Users)>.Ok((result.Total, vms));
-            });
+            },
+            // A homeserver that can't sort by this key works as intended, and the dashboard asks for it by itself (#559).
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support sorting the user list by {OrderBy}", orderBy.SanitizeForLogging()));
 
     public Task<OperationResult<UserDetailViewModel>> GetUserDetailsAsync(string userId, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingUserDetails",
@@ -72,6 +74,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                     catch (OperationCanceledException)
                     {
                         throw;
+                    }
+                    catch (OperationNotSupportedByHomeserverException)
+                    {
+                        // Not a failure: the homeserver has no per-user features, so the page shows none.
+                        logger.LogDebug("The homeserver doesn't support experimental features for user {UserId}", userId.SanitizeForLogging());
+                        return null;
                     }
                     catch (Exception ex)
                     {
@@ -261,7 +269,9 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 if (result == null) return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok([]);
 
                 return OperationResult<List<UserExperimentalFeatureViewModel>>.Ok(MapExperimentalFeatures(result.Features));
-            });
+            },
+            // A page loads this by itself: a homeserver that refuses it works as intended, so the refusal isn't an error.
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support experimental features for user {UserId}", userId.SanitizeForLogging()));
 
     public Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorUpdatingExperimentalFeatures",

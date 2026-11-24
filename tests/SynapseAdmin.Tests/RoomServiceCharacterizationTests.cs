@@ -191,35 +191,37 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         AssertSingleLog(LogLevel.Error, operation.ErrorTemplate, operation.ErrorArguments, error);
     }
 
-    /// <summary>A gateway that refuses a deletion or a status read (ADR 0006, #559) gives the not-supported warning.</summary>
-    [Theory]
-    [InlineData("Delete")]
-    [InlineData("DeletionStatus")]
-    public async Task GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsError(string name)
+    // A read that a page runs by itself logs a refusal at Debug: the homeserver works as intended (#559). Every other
+    // refused operation logs its error, as for any failure.
+    private static readonly Dictionary<string, (string Template, Dictionary<string, object?> Arguments)> RefusalsLoggedAtDebug = new()
+    {
+        ["ActiveDeletion"] = ("The homeserver doesn't support looking up deletions of room {RoomId}", RoomArgument),
+        ["LargestRooms"] = ("The homeserver doesn't support room statistics by database size", []),
+    };
+
+    [Theory, MemberData(nameof(AllOperations))]
+    public async Task GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsAtTheOperationsLevel(string name)
     {
         var operation = Operations[name];
         var refusal = new OperationNotSupportedByHomeserverException(operation.GatewayMethod);
+        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal));
 
-        var result = await operation.Invoke(CreateService(Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal))), _cts.Token);
-
-        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
-        AssertSingleLog(LogLevel.Error, operation.ErrorTemplate, operation.ErrorArguments, refusal);
-    }
-
-    /// <summary>
-    /// The room page looks up a running deletion whenever a room opens, so a refused lookup is logged at Debug, not as an
-    /// error on every room opened on that homeserver (#559). Every other failure still logs an error.
-    /// </summary>
-    [Fact]
-    public async Task ActiveDeletion_GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsDebug()
-    {
-        var refusal = new OperationNotSupportedByHomeserverException("GetRoomDeleteStatusesAsync");
-        var service = CreateService(Stub.Create<IMatrixGateway>(s => s.Fault("GetRoomDeleteStatusesAsync", refusal)));
-
-        var result = await service.GetActiveRoomDeletionAsync(RoomId, _cts.Token);
+        var result = await operation.Invoke(CreateService(gateway), _cts.Token);
 
         ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
-        AssertSingleLog(LogLevel.Debug, "The homeserver doesn't support looking up deletions of room {RoomId}", RoomArgument, exception: null);
+        var entry = Assert.Single(_logger.Entries);
+        if (RefusalsLoggedAtDebug.TryGetValue(name, out var debug))
+        {
+            Assert.Equal((LogLevel.Debug, debug.Template), (entry.Level, entry.Template));
+            Assert.Equal(debug.Arguments, entry.Arguments);
+            Assert.Null(entry.Exception);
+        }
+        else
+        {
+            Assert.Equal((LogLevel.Error, operation.ErrorTemplate), (entry.Level, entry.Template));
+            Assert.Equal(operation.ErrorArguments, entry.Arguments);
+            Assert.Same(refusal, entry.Exception);
+        }
     }
 
     [Theory, MemberData(nameof(ActionOperations))]

@@ -123,6 +123,45 @@ public sealed class GatewayCallExtensionsTests
     }
 
     /// <summary>
+    /// A read that a page runs by itself can pass <c>logRefusal</c> to log a refusal differently (at Debug): it gets the
+    /// refusal instead of <c>logFailure</c>, and the result is the same warning.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NotSupportedByHomeserver_WithLogRefusal_GoesOnlyToLogRefusal(bool withData)
+    {
+        var error = new OperationNotSupportedByHomeserverException("GetLargestRoomsAsync");
+        var refusals = new List<OperationNotSupportedByHomeserverException>();
+
+        OperationResult result = withData
+            ? await Session().RunGatewayCallAsync<int>(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error, refusals.Add)
+            : await Session().RunGatewayCallAsync(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error, refusals.Add);
+
+        Assert.Equal(("OperationNotSupportedByHomeserver", Severity.Warning), (result.Message, result.Severity));
+        Assert.Same(error, Assert.Single(refusals));
+        Assert.Empty(_logged);
+    }
+
+    /// <summary><c>logRefusal</c> sees only refusals: every other failure still goes to <c>logFailure</c>.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OtherFailure_WithLogRefusal_StillGoesToLogFailure(bool withData)
+    {
+        var error = new InvalidOperationException("boom");
+        var refusals = new List<OperationNotSupportedByHomeserverException>();
+
+        OperationResult result = withData
+            ? await Session().RunGatewayCallAsync<int>(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error, refusals.Add)
+            : await Session().RunGatewayCallAsync(new KeyLocalizer(), "ErrorDoingThings", _logged.Add, _ => throw error, refusals.Add);
+
+        Assert.Equal(("ErrorDoingThings", Severity.Error), (result.Message, result.Severity));
+        Assert.Same(error, Assert.Single(_logged));
+        Assert.Empty(refusals);
+    }
+
+    /// <summary>
     /// A plain <see cref="NotSupportedException"/> comes from elsewhere (a stream, the JSON serializer, LibMatrix) and
     /// says nothing about the homeserver, so it stays an ordinary failure.
     /// </summary>

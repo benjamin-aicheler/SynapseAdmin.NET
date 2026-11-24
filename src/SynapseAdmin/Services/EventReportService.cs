@@ -23,7 +23,9 @@ public class EventReportService(IMatrixSessionService sessionService, ILogger<Ev
                 var vms = result.Reports.ToViewModels();
 
                 return OperationResult<(int Total, List<EventReportListViewModel> Reports)>.Ok((result.Total, vms));
-            });
+            },
+            // A page loads this by itself: a homeserver that refuses it works as intended, so the refusal isn't an error.
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support event reports"));
 
     public Task<OperationResult> DeleteEventReportAsync(string reportId, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorDeletingEventReport",

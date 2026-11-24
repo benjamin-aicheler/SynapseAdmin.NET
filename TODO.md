@@ -22,8 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [3.1] `RunGatewayCallAsync`: optional `logRefusal` callback, with `GatewayCallExtensionsTests`
-- [ ] [3.2] Refused reads log `Debug` (event report list, largest rooms, background update status, experimental features, user list, user details' safe feature fetch); #559 lookup uses `logRefusal`; service tests
 - [ ] [3.3] Dashboard: total users from its own `name` request; refused latest-users read leaves the card empty without a snackbar; bUnit test
 - [ ] [3.4] "Unknown" creation date in `Users`, `UserDetails`, `Home` (new resource key EN/DE/FR); bUnit tests; `dotnet build`, `dotnet test`
 - [ ] [4.1] Remove `[Planned]` tags; Tuwunel >= 1.8.2 in AGENTS.md, ARCHITECTURE.md, README.md; Known Pitfall for Tuwunel refusals
@@ -43,6 +41,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-24 – [3.1–3.2] `logRefusal` in `RunGatewayCallAsync`; refused page-load reads log at Debug (event reports, largest rooms, background update status, experimental features, user list, the #559 lookup, user details' feature fetch); a refusal test per operation in the four service suites
 - [x] 2026-11-24 – [2.1–2.3] Tuwunel refusals (16 methods, user list sort), `creation_ts` 0 → unknown, Tuwunel >= 1.8.2; wire, probe and mapper tests. The "unknown" resource key and the three page cells from [3.4] came along (needed to compile)
 - [x] 2026-11-24 – [1.1] SPEC.md `[Planned]`: Tuwunel >= 1.8.2, AC-17, five §10 bullets, three Decision Log rows
 
