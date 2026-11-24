@@ -1028,7 +1028,7 @@
     <value>Sind Sie sicher, dass Sie lokale Mediendateien löschen möchten, die vor mehr als {0} Tagen hochgeladen wurden und größer als {1} MB sind? Diese Aktion ist unumkehrbar!</value>
   </data>
   <data name="DeletedLocalMediaSuccess" xml:space="preserve">
-    <value>Erfolgreich {0} lokale Mediendateien gelöscht ({1} insgesamt gelöscht).</value>
+    <value>{0} lokale Mediendateien erfolgreich gelöscht.</value>
   </data>
   <data name="Protect" xml:space="preserve">
     <value>Schützen</value>

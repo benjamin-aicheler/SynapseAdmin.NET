@@ -103,6 +103,6 @@ public class MediaService(IMatrixSessionService sessionService, ILogger<MediaSer
             {
                 var result = await gateway.DeleteLocalMediaAsync(beforeTs, sizeGt, keepProfiles, token);
                 if (result == null) return OperationResult<SynapseAdminDeleteMediaResponse>.Failure(L["ErrorDeletingLocalMedia"]);
-                return OperationResult<SynapseAdminDeleteMediaResponse>.Ok(result, L["DeletedLocalMediaSuccess"]);
+                return OperationResult<SynapseAdminDeleteMediaResponse>.Ok(result, string.Format(L["DeletedLocalMediaSuccess"], result.Total));
             });
 }

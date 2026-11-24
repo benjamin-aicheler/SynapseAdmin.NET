@@ -5,12 +5,10 @@
 
 ## 🔄 In Progress
 
-- [ ] [2.1] `MediaServiceCharacterizationTests`: success message formatted with `Total` (0 and 2) – red
+- [ ] [3.1] bUnit `MediaMaintenanceTests`: label, description, switch, both confirmation variants, success snackbar via real `MediaService` – red
 
 ## ⏭️ Next Up
 
-- [ ] [2.2] `string.Format(L["DeletedLocalMediaSuccess"], result.Total)` + single-placeholder text EN/DE/FR
-- [ ] [3.1] bUnit `MediaMaintenanceTests`: label, description, switch, both confirmation variants, success snackbar via real `MediaService` – red
 - [ ] [3.2] Page, code-behind and resources per PLAN §4; remove `UploadedBeforeDays`
 - [ ] [3.3] Resource test: translations and placeholders of the changed and new keys
 - [ ] [4.1] Wire tests: Synapse `DeleteLocalMediaAsync` request (characterization); Tuwunel refuses with no request – red
@@ -35,6 +33,7 @@
 
 - [x] 2026-11-24 – PLAN.md approved (wording as in §4, one success message for every total)
 - [x] 2026-11-24 – [1.1] SPEC.md: FR-8 `[Planned]` sentence, AC-15, §10 Tuwunel edge case
+- [x] 2026-11-24 – [2.1, 2.2] `DeleteLocal_Success_FormatsTheReportedTotal_WithoutLogging` (0, 2) red, then green with `string.Format(…, result.Total)`; `DeletedLocalMediaSuccess` has a single `{0}` in EN/DE/FR
 
 ## Definition of Done (applies to every task)
 

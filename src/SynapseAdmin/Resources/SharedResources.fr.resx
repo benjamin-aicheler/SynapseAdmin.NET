@@ -1028,7 +1028,7 @@
     <value>Êtes-vous sûr de vouloir supprimer les fichiers médias locaux mis en ligne il y a plus de {0} jours et d'une taille supérieure à {1} Mo ? Cette action est irréversible !</value>
   </data>
   <data name="DeletedLocalMediaSuccess" xml:space="preserve">
-    <value>{0} fichiers médias locaux supprimés avec succès ({1} au total).</value>
+    <value>{0} fichiers médias locaux supprimés avec succès.</value>
   </data>
   <data name="Protect" xml:space="preserve">
     <value>Protéger</value>

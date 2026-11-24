@@ -1041,7 +1041,7 @@
     <value>Are you sure you want to delete local media files uploaded more than {0} days ago and larger than {1} MB? This action is irreversible!</value>
   </data>
   <data name="DeletedLocalMediaSuccess" xml:space="preserve">
-    <value>Successfully deleted {0} local media files ({1} total deleted).</value>
+    <value>Successfully deleted {0} local media files.</value>
   </data>
   <data name="Protect" xml:space="preserve">
     <value>Protect</value>
