@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-11-23
+**Last updated:** 2026-11-24
 **Maintainer(s):** Benjamin Aicheler
 
 ## 1. Context
@@ -107,6 +107,7 @@ flowchart TB
 - **Presentation -> Interfaces & ViewModels only:** `.razor` and `.razor.cs` files must use the code-behind pattern (no inline `@code` blocks), bind only to `Models/ViewModels/`, check server capabilities via `IMatrixGateway.SupportsAdminApi` rather than concrete gateway type checks, and use the login state through `IMatrixAuthStateService` rather than the concrete `MatrixAuthenticationStateProvider`.
 - **Services -> Gateways via Interfaces:** Every service has an `I*Service` interface in `Interfaces/` and interacts with Matrix exclusively through `IMatrixAuthGateway` / `IMatrixGateway`. All service methods return `OperationResult` or `OperationResult<T>` and run their gateway calls through `GatewayCallExtensions.RunGatewayCallAsync`, which turns `OperationCanceledException` into a silent `Cancelled()` result (`Severity.Normal`) and any other exception into a logged failure with a localized, user-safe message (§8). Services map DTOs to ViewModels with the extension methods in `Extensions/Mapping/`.
 - **Gateways encapsulate wire & SDK concerns:** Gateways own HTTP calls, URI encoding, JSON type coercion (`SynapseCompatibilityJsonOptions`), and response disposal (`ResponseOwningStream`), never exposing raw `HttpResponseMessage` or raw `LibMatrix` objects to the UI.
+- **Synapse Admin API as the contract (ADR 0006):** Presentation and services follow the Synapse Admin API and never vary by homeserver; only the gateway layer knows the server type. A gateway corrects a compatible server's deviation so that its result matches Synapse's (today the room list's sort direction on Tuwunel, #541), and throws `NotSupportedException` for an operation whose result it can't match.
 - **Submodule isolation:** `LibMatrix/` and `ArcaneLibs/` are treated as immutable upstream dependencies; missing Synapse Admin endpoints or server quirks are implemented in `SynapseCompatibleAdminGateway` and `Models/`.
 
 ## 4. Data
@@ -298,6 +299,7 @@ sequenceDiagram
 | 0003 | Route all unauthenticated discovery and password login through `HomeserverDiscoveryClient` + `IHomeserverDestinationPolicy` (`HOMESERVER_ALLOWLIST`) with connect-time IP validation (`SocketsHttpHandler.ConnectCallback`), bypassing `LibMatrix`'s unvalidated resolver. | Accepted | 2026 |
 | 0004 | Encrypt ASP.NET Core Data Protection keys on disk using PBKDF2-SHA256 + AES-256-GCM (`AesXmlEncryptor`/`AesXmlDecryptor`) keyed by `DP_PASSPHRASE` with no external database. | Accepted | 2026 |
 | 0005 | Stream protected media via `MatrixGatewayBase.OpenMediaAsync` (`SendUnhandledAsync` + `ResponseOwningStream`), validating session and media existence before `304` and relaying upstream `206`/`416` byte ranges directly. | Accepted | 2026 |
+| 0006 | Treat the Synapse Admin API as the contract for every homeserver: the UI and services follow Synapse only and don't vary by server. Each server type gets its own gateway class. `SynapseAdminGateway` (today's `SynapseCompatibleAdminGateway`, renamed; unrelated to the SDK-based class removed in #397) implements the contract and also serves a server of unknown brand that answers the admin API. `TuwunelAdminGateway` derives from it and overrides only the methods where Tuwunel deviates, either matching Synapse's result or throwing `NotSupportedException`. `MatrixAuthGateway` picks the class after the probe. Inheritance rather than a decorator, because a decorator would forward every `IMatrixGateway` member to change a few. | Accepted (implementation planned) | 2026-11-24 |
 
 ## 10. Technical Debt & Risks
 
