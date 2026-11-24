@@ -1,5 +1,6 @@
 using LibMatrix.Homeservers;
 using SynapseAdmin.Infrastructure.Helpers;
+using SynapseAdmin.Models;
 using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
@@ -27,4 +28,12 @@ internal sealed class TuwunelAdminGateway(
 
         return base.GetRoomListAsync(offset, limit, orderBy, direction, searchTerm, cancellationToken);
     }
+
+    /// <summary>
+    /// Refused (#542). Tuwunel 1.8.1 selects media for <c>POST /_synapse/admin/v1/media/delete</c> by upload time
+    /// instead of last access and ignores <c>keep_profiles</c>, so it would delete recently used media and avatars that
+    /// Synapse keeps. No correction in the gateway can make the result match, so nothing is sent.
+    /// </summary>
+    public override Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
 }

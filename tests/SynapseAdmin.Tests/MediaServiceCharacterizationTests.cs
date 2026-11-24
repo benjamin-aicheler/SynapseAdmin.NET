@@ -251,15 +251,18 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
         Assert.Empty(_logger.Entries);
     }
 
-    [Fact]
-    public async Task DeleteLocal_Success_ReturnsTheResponse_WithoutLogging()
+    // The message names the number of deleted files the homeserver reports (#542), also when nothing matched.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task DeleteLocal_Success_FormatsTheReportedTotal_WithoutLogging(int total)
     {
-        var response = new SynapseAdminDeleteMediaResponse { Total = 2, DeletedMedia = ["a", "b"] };
+        var response = new SynapseAdminDeleteMediaResponse { Total = total, DeletedMedia = [.. Enumerable.Range(0, total).Select(i => $"media{i}")] };
         var gateway = Stub.Create<IMatrixGateway>(s => s.On("DeleteLocalMediaAsync", _ => Task.FromResult<SynapseAdminDeleteMediaResponse?>(response)));
 
         var result = await CreateService(gateway).DeleteLocalMediaAsync(BeforeTs, SizeGt, true, _cts.Token);
 
-        ResultAssert.Success(result, "DeletedLocalMediaSuccess");
+        ResultAssert.Success(result, $"DeletedLocalMediaSuccess: {total}");
         Assert.Same(response, result.Data);
         Assert.Empty(_logger.Entries);
     }
@@ -267,11 +270,11 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
     private MediaService CreateService(IMatrixGateway? gateway)
     {
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
-        // Returns the key, except for the one message that formats a number into its localized text.
+        // Returns the key, except for the messages that format a count into their localized text.
         var localizer = Stub.Create<IStringLocalizer<SharedResources>>(s => s.On("get_Item", args =>
         {
             var key = (string)args[0]!;
-            return new LocalizedString(key, key == "PurgedCacheSuccess" ? "PurgedCacheSuccess: {0}" : key);
+            return new LocalizedString(key, key is "PurgedCacheSuccess" or "DeletedLocalMediaSuccess" ? $"{key}: {{0}}" : key);
         }));
         return new MediaService(session, _logger, localizer);
     }

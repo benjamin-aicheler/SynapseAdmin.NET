@@ -1013,22 +1013,34 @@
     <value>Supprimer les médias locaux</value>
   </data>
   <data name="DeleteLocalMediaDescription" xml:space="preserve">
-    <value>Suppression en masse des fichiers médias locaux téléchargés avant une date spécifique, dépassant une certaine taille ou non protégés. Cette action ne peut pas être annulée.</value>
+    <value>Supprime en masse les fichiers médias locaux dont le dernier accès remonte à plus du nombre de jours indiqué (pour un média jamais consulté, sa mise en ligne compte) et dont la taille dépasse la taille indiquée. Les deux conditions doivent être remplies. Les médias protégés et en quarantaine sont toujours conservés. Cette action ne peut pas être annulée.</value>
   </data>
   <data name="SizeGreaterThanMb" xml:space="preserve">
     <value>Taille supérieure à (Mo)</value>
   </data>
   <data name="KeepProfiles" xml:space="preserve">
-    <value>Conserver les médias de profil / avatars</value>
+    <value>Conserver les photos de profil et les avatars de salon</value>
   </data>
   <data name="DeleteMedia" xml:space="preserve">
     <value>Supprimer les médias</value>
   </data>
   <data name="DeleteLocalMediaConfirmation" xml:space="preserve">
-    <value>Êtes-vous sûr de vouloir supprimer les fichiers médias locaux mis en ligne il y a plus de {0} jours et d'une taille supérieure à {1} Mo ? Cette action est irréversible !</value>
+    <value>Supprimer tous les fichiers médias locaux dont le dernier accès remonte à plus de {0} jours et dont la taille dépasse {1} Mo ?</value>
+  </data>
+  <data name="DeleteLocalMediaConfirmationAnySize" xml:space="preserve">
+    <value>Supprimer tous les fichiers médias locaux dont le dernier accès remonte à plus de {0} jours, quelle que soit leur taille ?</value>
+  </data>
+  <data name="DeleteLocalMediaKeepsAvatars" xml:space="preserve">
+    <value>Les médias utilisés comme photo de profil ou avatar de salon sont conservés.</value>
+  </data>
+  <data name="DeleteLocalMediaDeletesAvatars" xml:space="preserve">
+    <value>Les médias utilisés comme photo de profil ou avatar de salon sont également supprimés.</value>
+  </data>
+  <data name="DeleteLocalMediaIrreversible" xml:space="preserve">
+    <value>Cette action est irréversible !</value>
   </data>
   <data name="DeletedLocalMediaSuccess" xml:space="preserve">
-    <value>{0} fichiers médias locaux supprimés avec succès ({1} au total).</value>
+    <value>{0} fichiers médias locaux supprimés avec succès.</value>
   </data>
   <data name="Protect" xml:space="preserve">
     <value>Protéger</value>
@@ -1056,9 +1068,6 @@
   </data>
   <data name="ErrorDeletingLocalMedia" xml:space="preserve">
     <value>Erreur lors de la suppression des médias locaux.</value>
-  </data>
-  <data name="UploadedBeforeDays" xml:space="preserve">
-    <value>Mis en ligne il y a plus de (jours)</value>
   </data>
   <data name="MustStartWithAt" xml:space="preserve">
     <value>Doit commencer par @</value>
@@ -1343,10 +1352,10 @@
     <value>Trop de tentatives de connexion. Veuillez patienter une minute et réessayer.</value>
   </data>
   <data name="DeleteAllSizesWarning" xml:space="preserve">
-    <value>Définir le seuil de taille à 0 Mo supprimera tous les fichiers médias locaux plus anciens que le nombre de jours spécifié, quelle que soit leur taille.</value>
+    <value>Une taille de 0 Mo signifie aucune taille minimale : tous les fichiers médias locaux dont le dernier accès précède la date limite sont supprimés, quelle que soit leur taille.</value>
   </data>
   <data name="ConfirmDeleteAllSizes" xml:space="preserve">
-    <value>Je comprends que toutes les tailles de fichiers (minimum 0 Mo) seront supprimées</value>
+    <value>Je comprends que les fichiers de toutes tailles seront supprimés</value>
   </data>
   <data name="ExperimentalFeatures" xml:space="preserve">
     <value>Fonctionnalités expérimentales</value>

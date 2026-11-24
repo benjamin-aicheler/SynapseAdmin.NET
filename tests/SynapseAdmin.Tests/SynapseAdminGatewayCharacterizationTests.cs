@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SynapseAdmin.Infrastructure.Gateways;
+using SynapseAdmin.Models;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using Xunit;
@@ -379,6 +380,43 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal(
             new CapturedRequest("POST", "/_synapse/admin/v1/registration_tokens/new", "application/json; charset=utf-8", """{"uses_allowed":1}"""),
             Assert.Single(_homeserver.Requests));
+    }
+
+    // ---- Bulk local media deletion (#542) ------------------------------------------------------------
+
+    // Synapse's documented request: before_ts, size_gt and keep_profiles as query parameters, an empty JSON body.
+    [Theory]
+    [InlineData(true, "true")]
+    [InlineData(false, "false")]
+    public async Task DeleteLocalMedia_SendsTheCutoffSizeAndAvatarOptionAsQueryParameters(bool keepProfiles, string sentKeepProfiles)
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { deleted_media = new[] { "a", "b" }, total = 2 });
+
+        var response = await _gateway.DeleteLocalMediaAsync(1_700_000_000_000, 10_485_760, keepProfiles);
+
+        Assert.Equal(
+            new CapturedRequest("POST", $"/_synapse/admin/v1/media/delete?before_ts=1700000000000&size_gt=10485760&keep_profiles={sentKeepProfiles}",
+                "application/json; charset=utf-8", "{}"),
+            Assert.Single(_homeserver.Requests));
+        Assert.Equal(2, response!.Total);
+        Assert.Equal(["a", "b"], response.DeletedMedia);
+    }
+
+    // Tuwunel 1.8.1 selects by upload time instead of last access and ignores keep_profiles, so its result can't match
+    // Synapse's: the gateway refuses before sending anything (ADR 0006, AC-15).
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Tuwunel_DeleteLocalMedia_RefusesWithoutARequest(bool keepProfiles)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(
+            () => gateway.DeleteLocalMediaAsync(1_700_000_000_000, 0, keepProfiles));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.DeleteLocalMediaAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
     }
 
     // ---- Room list sort direction (#541) -------------------------------------------------------------

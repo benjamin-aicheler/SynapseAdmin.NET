@@ -78,10 +78,9 @@ public partial class MediaMaintenance : IDisposable
             return;
         }
 
-        var message = string.Format(L["DeleteLocalMediaConfirmation"], deleteLocalDays, deleteLocalSizeMb);
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
             L["DeleteLocalMedia"],
-            message,
+            DeleteLocalMediaConfirmationMessage(),
             yesText: L["DeleteMedia"], cancelText: L["Cancel"]);
 
         if (confirmed == true)
@@ -98,7 +97,6 @@ public partial class MediaMaintenance : IDisposable
                 var result = await MediaService.DeleteLocalMediaAsync(beforeTs, sizeGtBytes, keepProfiles, _cts.Token);
                 if (result.Success && result.Data != null)
                 {
-                    // For the success message, we can show total deleted media count, or use the direct returned message
                     Snackbar.Add(result.Message, Severity.Success);
                 }
                 else
@@ -113,6 +111,19 @@ public partial class MediaMaintenance : IDisposable
                 StateHasChanged();
             }
         }
+    }
+
+    /// <summary>
+    /// What the deletion will do, as Synapse runs it (#542): the criteria (no minimum for 0 MB), what happens to media
+    /// used as a profile picture or room avatar, and that it can't be undone.
+    /// </summary>
+    private string DeleteLocalMediaConfirmationMessage()
+    {
+        var criteria = deleteLocalSizeMb == 0
+            ? string.Format(L["DeleteLocalMediaConfirmationAnySize"], deleteLocalDays)
+            : string.Format(L["DeleteLocalMediaConfirmation"], deleteLocalDays, deleteLocalSizeMb);
+        var avatars = keepProfiles ? L["DeleteLocalMediaKeepsAvatars"] : L["DeleteLocalMediaDeletesAvatars"];
+        return $"{criteria} {avatars} {L["DeleteLocalMediaIrreversible"]}";
     }
 
     public void Dispose()
