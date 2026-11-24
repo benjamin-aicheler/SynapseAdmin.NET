@@ -1,34 +1,28 @@
 # TODO
 
-<!--
-HOW TO USE THIS FILE (instructions for the AI agent):
-- This is the SINGLE-TASK execution checklist derived from the approved PLAN.md (ignore if PLAN.md is blank template or Done).
-- Work on ONE task at a time, top to bottom within "Next Up", unless the user says otherwise.
-- Before starting a task: move it to "In Progress".
-- After finishing a task: verify it (`dotnet build` & `dotnet test`), tick the checkbox, move it to "Done"
-  with the date and a short note (e.g. commit hash or files changed).
-- If you discover new work, add it to "Backlog" or "Bugs / Follow-ups" – do not silently expand the current task.
-- If a task is blocked, move it to "Blocked" with the reason and what is needed.
-- Keep entries short. Reference PLAN step IDs (e.g. [1.2]) and spec IDs (e.g. FR-15, AC-10).
-- ON COMPLETION (before merging the PR, or before starting the next task): finalize `[Planned]` items in SPEC.md and clear/reset this file (and PLAN.md) back to the blank template from `main` (optionally preserving any real unresolved follow-ups in Backlog, or moving them to GitHub Issues).
--->
-
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-24
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] [1.1] SPEC.md `[Planned]`: FR-8 wording, AC-15 (#542), §10 Tuwunel refusal
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [2.1] `MediaServiceCharacterizationTests`: success message formatted with `Total` (0 and 2) – red
+- [ ] [2.2] `string.Format(L["DeletedLocalMediaSuccess"], result.Total)` + single-placeholder text EN/DE/FR
+- [ ] [3.1] bUnit `MediaMaintenanceTests`: label, description, switch, both confirmation variants, success snackbar via real `MediaService` – red
+- [ ] [3.2] Page, code-behind and resources per PLAN §4; remove `UploadedBeforeDays`
+- [ ] [3.3] Resource test: translations and placeholders of the changed and new keys
+- [ ] [4.1] Wire tests: Synapse `DeleteLocalMediaAsync` request (characterization); Tuwunel refuses with no request – red
+- [ ] [4.2] `TuwunelAdminGateway.DeleteLocalMediaAsync` override
+- [ ] [5.1] SPEC.md: remove `[Planned]`, name tests in AC-15, decision row
+- [ ] [5.2] AGENTS.md Known Pitfalls entry for `POST /_synapse/admin/v1/media/delete`
+- [ ] [5.3] Reset PLAN.md and TODO.md to the templates from `main`
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
@@ -40,7 +34,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-24 – PLAN.md approved (wording as in §4, one success message for every total)
 
 ## Definition of Done (applies to every task)
 
