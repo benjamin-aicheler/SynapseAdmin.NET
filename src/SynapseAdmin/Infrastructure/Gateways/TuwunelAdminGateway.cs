@@ -32,9 +32,10 @@ internal sealed class TuwunelAdminGateway(
     }
 
     /// <summary>
-    /// Refused (#542). Tuwunel 1.8.1 selects media for <c>POST /_synapse/admin/v1/media/delete</c> by upload time
-    /// instead of last access and ignores <c>keep_profiles</c>, so it would delete recently used media and avatars that
-    /// Synapse keeps. No correction in the gateway can make the result match, so nothing is sent.
+    /// Refused (#542). Tuwunel (1.8.1 to 2.0.0) selects media for <c>POST /_synapse/admin/v1/media/delete</c> by the
+    /// file's modification time (about the upload) instead of last access, so it would delete recently used media that
+    /// Synapse keeps. It honors <c>keep_profiles</c>, but no correction in the gateway can make the selection match, so
+    /// nothing is sent.
     /// </summary>
     public override Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default) =>
         throw new OperationNotSupportedByHomeserverException();
@@ -57,10 +58,10 @@ internal sealed class TuwunelAdminGateway(
     public override Task<SynapseAdminRoomDeleteStatusListResponse?> GetRoomDeleteStatusesAsync(string roomId, CancellationToken cancellationToken = default) =>
         throw new OperationNotSupportedByHomeserverException();
 
-    // Tuwunel 1.8.1 deletes a registration token as soon as it is invalid, the next time tokens are listed or checked:
-    // when its uses reach the cap or its expiry passes. Synapse keeps such a token (a cap of 0 is its documented way to
-    // invalidate one without deleting it) and rejects an expiry in the past. A create or update that would leave the
-    // token invalid at once is therefore refused, so Tuwunel doesn't delete it (#548).
+    // Tuwunel (1.8.1 to 2.0.0) deletes a registration token as soon as it is invalid, the next time tokens are listed or
+    // checked: when its uses reach the cap or its expiry passes. Synapse keeps such a token (a cap of 0 is its documented
+    // way to invalidate one without deleting it) and rejects an expiry in the past. A create or update that would leave
+    // the token invalid at once is therefore refused, so Tuwunel doesn't delete it (#548).
 
     /// <summary>Refuses a cap of 0 or an expiry in the past, which Tuwunel would answer by deleting the token (#548).</summary>
     public override Task<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken?> CreateRegistrationTokenAsync(SynapseAdminRegistrationTokenCreateRequest request, CancellationToken cancellationToken = default)

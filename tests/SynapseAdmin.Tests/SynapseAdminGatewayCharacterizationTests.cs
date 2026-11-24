@@ -552,8 +552,8 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal(["a", "b"], response.DeletedMedia);
     }
 
-    // Tuwunel 1.8.1 selects by upload time instead of last access and ignores keep_profiles, so its result can't match
-    // Synapse's: the gateway refuses before sending anything (ADR 0006, AC-15).
+    // Tuwunel (1.8.1 to 2.0.0) selects by the file's modification time (about the upload) instead of last access, so its
+    // result can't match Synapse's: the gateway refuses before sending anything (ADR 0006, AC-15).
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
