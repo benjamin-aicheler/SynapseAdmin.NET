@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using MudBlazor;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
@@ -157,6 +158,22 @@ public sealed class MediaServiceCharacterizationTests : IDisposable
         Assert.Equal(operation.ErrorTemplate, entry.Template);
         Assert.Equal(operation.ErrorArguments, entry.Arguments);
         Assert.Same(error, entry.Exception);
+    }
+
+    // A gateway that can't carry out the operation with Synapse's result refuses it (AC-14, ADR 0006): the service
+    // reports the shared "not supported" warning instead of its own failure key, and logs the refusal with its template.
+    [Theory, MemberData(nameof(AllOperations))]
+    public async Task GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsIt(string name)
+    {
+        var operation = Operations[name];
+        var refusal = new OperationNotSupportedByHomeserverException(operation.GatewayMethod);
+
+        var result = await operation.Invoke(CreateService(Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal))), Mxc, _cts.Token);
+
+        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
+        var entry = Assert.Single(_logger.Entries);
+        Assert.Equal(operation.ErrorTemplate, entry.Template);
+        Assert.Same(refusal, entry.Exception);
     }
 
     [Theory]

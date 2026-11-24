@@ -1445,4 +1445,7 @@
   <data name="UserMediaPageSummary" xml:space="preserve">
     <value>This page: items {0}–{1}, {2}</value>
   </data>
+  <data name="OperationNotSupportedByHomeserver" xml:space="preserve">
+    <value>This operation is not supported by this homeserver.</value>
+  </data>
 </root>
