@@ -5,11 +5,10 @@
 
 ## 🔄 In Progress
 
-- [ ] [1.1] SPEC.md `[Planned]`: FR-8 wording, AC-15 (#542), §10 Tuwunel refusal
+- [ ] [2.1] `MediaServiceCharacterizationTests`: success message formatted with `Total` (0 and 2) – red
 
 ## ⏭️ Next Up
 
-- [ ] [2.1] `MediaServiceCharacterizationTests`: success message formatted with `Total` (0 and 2) – red
 - [ ] [2.2] `string.Format(L["DeletedLocalMediaSuccess"], result.Total)` + single-placeholder text EN/DE/FR
 - [ ] [3.1] bUnit `MediaMaintenanceTests`: label, description, switch, both confirmation variants, success snackbar via real `MediaService` – red
 - [ ] [3.2] Page, code-behind and resources per PLAN §4; remove `UploadedBeforeDays`
@@ -35,6 +34,7 @@
 ## ✅ Done
 
 - [x] 2026-11-24 – PLAN.md approved (wording as in §4, one success message for every total)
+- [x] 2026-11-24 – [1.1] SPEC.md: FR-8 `[Planned]` sentence, AC-15, §10 Tuwunel edge case
 
 ## Definition of Done (applies to every task)
 
