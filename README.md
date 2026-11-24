@@ -41,7 +41,7 @@ SynapseAdmin.NET follows the [Synapse Admin API](https://element-hq.github.io/sy
 
 - operations Tuwunel doesn't offer: media quarantine and protection, event reports, account validity, per-user experimental features, background updates, and room sizes on the dashboard;
 - deleting a room, because Tuwunel purges a room even when it couldn't remove all local users and doesn't report every failed step;
-- bulk local media deletion, because Tuwunel selects media by upload time instead of last access and doesn't keep avatars, and the remote media cache purge, because it selects by download time instead of last access;
+- bulk local media deletion, because Tuwunel selects media by upload time instead of last access, and the remote media cache purge, because it selects by download time instead of last access;
 - creating or editing a registration token so that it is invalid at once (0 uses allowed, no more uses than it already had, or an expiry in the past), because Tuwunel deletes an invalid token where Synapse keeps it. For the same reason, a token whose uses run out or whose expiry passes later disappears from the list on Tuwunel;
 - sorting the user list by anything but user ID, because Tuwunel always sorts by user ID. Tuwunel doesn't store when an account was created, so the creation date shows as "Unknown".
 

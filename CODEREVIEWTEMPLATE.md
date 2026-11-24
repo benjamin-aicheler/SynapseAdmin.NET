@@ -69,7 +69,10 @@ These look like mistakes but are decided and documented. If you think one is wro
 - Code without a static caller that "Dynamically Wired Code" lists.
 - `MatrixSessionService` keeping its own catch blocks instead of `RunGatewayCallAsync`.
 - UI text that describes Synapse's behavior even where another homeserver behaves differently: that server's gateway corrects the difference or refuses the operation (ADR 0006).
-- A gateway's refusal (`OperationNotSupportedByHomeserverException`) logged at `Error` through the method's `logFailure`, and a plain `NotSupportedException` keeping the method's failure key instead of the "not supported" warning (SPEC.md §15, 2026-11-24).
+- A gateway's refusal (`OperationNotSupportedByHomeserverException`) logged at `Error` through the method's `logFailure` for an action the admin started, and at `Debug` through `logRefusal` for a read that a page runs by itself (AGENTS.md "What Tuwunel Refuses"), and a plain `NotSupportedException` keeping the method's failure key instead of the "not supported" warning (SPEC.md §15, 2026-11-24).
+- `TuwunelAdminGateway` refusing operations whose route Tuwunel serves: room deletion and its status reads, bulk local media deletion, the remote media cache purge and user list sorts other than `name`. Tuwunel runs them with different semantics (SPEC.md §10).
+- The dashboard's two user list requests: one by `name` for the count and one by `creation_ts` for the latest users, so a homeserver that refuses the sort keeps the count.
+- A nullable `CreationTs`, shown as "Unknown": Tuwunel stores no creation time and sends `0`, which its gateway turns into `null`.
 - The first room messages request without `from`, which the Admin API page calls required: Synapse and Tuwunel start at the newest event without it (#549, SPEC.md §15).
 - The `AuthenticationStateProvider` registration next to `IMatrixAuthStateService` in `Program.cs`.
 - Tuning values as named constants rather than configuration.
