@@ -36,6 +36,7 @@ namespace SynapseAdmin.Tests;
 /// mean "no status".
 /// Also the room list's sort direction per brand (#541).
 /// Also the shadow login (#539): the token's expiry travels in the body, not the query string.
+/// Also the federation destinations' <c>from</c>, the previous <c>next_token</c> passed back unchanged (#551).
 /// </summary>
 public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -73,8 +74,8 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
             "/_synapse/admin/v1/users/%40alice%3aexample.com/media?from=100&limit=25&order_by=created_ts&dir=b",
             async g => (await g.GetUserMediaAsync("@alice:example.com", 100, 25))?.NextToken),
         nameof(SynapseAdminGateway.GetFederationDestinationListAsync) => (
-            "/_synapse/admin/v1/federation/destinations?from=0&limit=50&dir=b",
-            async g => (await g.GetFederationDestinationListAsync(0, 50, "b"))?.NextToken),
+            "/_synapse/admin/v1/federation/destinations?from=100&limit=50&dir=b",
+            async g => (await g.GetFederationDestinationListAsync("100", 50, "b"))?.NextToken),
         nameof(SynapseAdminGateway.GetEventReportListAsync) => (
             "/_synapse/admin/v1/event_reports?from=5&limit=10&dir=b&room_id=!room%3aexample.com",
             async g => (await g.GetEventReportListAsync(5, 10, "b", "!room:example.com"))?.NextToken),
@@ -94,6 +95,23 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         Assert.Equal(("100", "100"), (numeric, text));
         Assert.Equal(new[] { target, target }, _homeserver.RequestTargets);
+    }
+
+    /// <summary>
+    /// The first page sends no <c>from</c>; later pages pass the previous <c>next_token</c> back unchanged, encoded, so a
+    /// cursor that isn't a number also works (#551).
+    /// </summary>
+    [Theory]
+    [InlineData(null, "/_synapse/admin/v1/federation/destinations?limit=10000&dir=f")]
+    [InlineData("10000", "/_synapse/admin/v1/federation/destinations?from=10000&limit=10000&dir=f")]
+    [InlineData("s1 a+b/c&d=e", "/_synapse/admin/v1/federation/destinations?from=s1+a%2bb%2fc%26d%3de&limit=10000&dir=f")]
+    public async Task GetFederationDestinationList_PassesTheTokenBackUnchanged(string? from, string target)
+    {
+        _homeserver.Respond = () => Results.Json(new { destinations = Array.Empty<object>(), total = 0 });
+
+        await _gateway.GetFederationDestinationListAsync(from, 10000, "f");
+
+        Assert.Equal([target], _homeserver.RequestTargets);
     }
 
     /// <summary>

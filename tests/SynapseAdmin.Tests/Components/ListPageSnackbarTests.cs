@@ -25,8 +25,7 @@ public class ListPageSnackbarTests : DetailPageTestBase
     private OperationResult<(int Total, List<UserListViewModel> Users)> _userList = OperationResult<(int, List<UserListViewModel>)>.Ok((0, []));
     private OperationResult<(int Total, List<RoomListViewModel> Rooms)> _roomList = OperationResult<(int, List<RoomListViewModel>)>.Ok((0, []));
     private OperationResult<(int Total, List<EventReportListViewModel> Reports)> _reportList = OperationResult<(int, List<EventReportListViewModel>)>.Ok((0, []));
-    private OperationResult<(int Total, List<FederationDestinationListViewModel> Destinations)> _destinations =
-        OperationResult<(int, List<FederationDestinationListViewModel>)>.Ok((0, []));
+    private OperationResult<List<FederationDestinationListViewModel>> _destinations = OperationResult<List<FederationDestinationListViewModel>>.Ok([]);
 
     public ListPageSnackbarTests()
     {
@@ -40,7 +39,7 @@ public class ListPageSnackbarTests : DetailPageTestBase
             .On(nameof(IEventReportService.DeleteEventReportAsync), _ => Task.FromResult(_result));
         Services.AddSingleton(Stub.Create<IFederationService>(out _federation));
         _federation
-            .On(nameof(IFederationService.GetDestinationsAsync), _ => Task.FromResult(_destinations))
+            .On(nameof(IFederationService.GetAllDestinationsAsync), _ => Task.FromResult(_destinations))
             .On(nameof(IFederationService.ResetConnectionTimeoutAsync), _ => Task.FromResult(_result));
     }
 
@@ -93,8 +92,8 @@ public class ListPageSnackbarTests : DetailPageTestBase
                 RenderList<EventReports>(_reports, nameof(IEventReportService.GetEventReportsAsync));
                 break;
             default:
-                result = _destinations = Make<OperationResult<(int, List<FederationDestinationListViewModel>)>>(kind);
-                RenderList<FederationDestinations>(_federation, nameof(IFederationService.GetDestinationsAsync));
+                result = _destinations = Make<OperationResult<List<FederationDestinationListViewModel>>>(kind);
+                RenderList<FederationDestinations>(_federation, nameof(IFederationService.GetAllDestinationsAsync));
                 break;
         }
 
@@ -123,7 +122,7 @@ public class ListPageSnackbarTests : DetailPageTestBase
     public async Task ResetConnection_ReportsEveryResultExceptACancellation(string kind)
     {
         _result = Make<OperationResult>(kind);
-        var cut = RenderList<FederationDestinations>(_federation, nameof(IFederationService.GetDestinationsAsync));
+        var cut = RenderList<FederationDestinations>(_federation, nameof(IFederationService.GetAllDestinationsAsync));
 
         await ConfirmAsync(cut, "ResetConnection", "remote.org");
 

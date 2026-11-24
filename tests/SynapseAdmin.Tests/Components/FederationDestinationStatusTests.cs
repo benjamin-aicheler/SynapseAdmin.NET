@@ -23,14 +23,14 @@ public class FederationDestinationStatusTests : DetailPageTestBase
     public FederationDestinationStatusTests()
     {
         Services.AddSingleton(Stub.Create<IFederationService>(out _federation));
-        _federation.On(nameof(IFederationService.GetDestinationsAsync), _ =>
-            Task.FromResult(OperationResult<(int, List<FederationDestinationListViewModel>)>.Ok((4,
+        _federation.On(nameof(IFederationService.GetAllDestinationsAsync), _ =>
+            Task.FromResult(OperationResult<List<FederationDestinationListViewModel>>.Ok(
             [
                 new FederationDestinationListViewModel { Destination = "a-never-failed.org", RetryLastTs = 0, FailureTs = null },
                 new FederationDestinationListViewModel { Destination = "b-recovered.org", RetryLastTs = 0, FailureTs = 1_000 },
                 new FederationDestinationListViewModel { Destination = "c-failing.org", RetryLastTs = 2_000, FailureTs = 1_000 },
                 new FederationDestinationListViewModel { Destination = "d-retrying.org", RetryLastTs = 2_000, FailureTs = null },
-            ]))));
+            ])));
     }
 
     private IStringLocalizer<SharedResources> L => Services.GetRequiredService<IStringLocalizer<SharedResources>>();

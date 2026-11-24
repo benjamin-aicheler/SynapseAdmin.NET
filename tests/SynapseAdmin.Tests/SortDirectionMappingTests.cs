@@ -14,7 +14,7 @@ namespace SynapseAdmin.Tests;
 /// <summary>
 /// Characterization of the <c>dir</c> parameter ("f" forwards, "b" backwards) that the list services send to Synapse.
 /// Each list keeps its natural order when unsorted (AGENTS.md, Shared Helpers, whenUnsorted): room and user lists read forwards (A→Z),
-/// event reports and federation destinations read backwards (newest first). Room keys that Synapse sorts largest first
+/// event reports read backwards (newest first). Federation destinations are loaded whole and sorted on the page (#551). Room keys that Synapse sorts largest first
 /// reverse the mapping (#541).
 /// </summary>
 public sealed class SortDirectionMappingTests : IDisposable
@@ -22,7 +22,6 @@ public sealed class SortDirectionMappingTests : IDisposable
     private const string Rooms = "rooms";
     private const string Users = "users";
     private const string EventReports = "event reports";
-    private const string FederationDestinations = "federation destinations";
 
     private readonly MemoryCache _cache = new(new MemoryCacheOptions());
 
@@ -38,9 +37,6 @@ public sealed class SortDirectionMappingTests : IDisposable
     [InlineData(EventReports, SortDirection.None, "b")]
     [InlineData(EventReports, SortDirection.Ascending, "f")]
     [InlineData(EventReports, SortDirection.Descending, "b")]
-    [InlineData(FederationDestinations, SortDirection.None, "b")]
-    [InlineData(FederationDestinations, SortDirection.Ascending, "f")]
-    [InlineData(FederationDestinations, SortDirection.Descending, "b")]
     public async Task ListServices_SendTheirSynapseDir(string list, SortDirection direction, string expectedDir)
     {
         var gateway = Stub.Create<IMatrixGateway>(out var stub);
@@ -52,8 +48,7 @@ public sealed class SortDirectionMappingTests : IDisposable
         {
             Rooms => (nameof(IMatrixGateway.GetRoomListAsync), 3),
             Users => (nameof(IMatrixGateway.GetUserListAsync), 3),
-            EventReports => (nameof(IMatrixGateway.GetEventReportListAsync), 2),
-            _ => (nameof(IMatrixGateway.GetFederationDestinationListAsync), 2),
+            _ => (nameof(IMatrixGateway.GetEventReportListAsync), 2),
         };
         var success = list switch
         {
@@ -61,10 +56,8 @@ public sealed class SortDirectionMappingTests : IDisposable
                 .GetRoomListAsync(0, 10, "name", direction)).Success,
             Users => (await new UserService(session, NullLogger<UserService>.Instance, localizer)
                 .GetUserListAsync(0, 10, "name", direction)).Success,
-            EventReports => (await new EventReportService(session, NullLogger<EventReportService>.Instance, localizer)
+            _ => (await new EventReportService(session, NullLogger<EventReportService>.Instance, localizer)
                 .GetEventReportsAsync(0, 10, direction)).Success,
-            _ => (await new FederationService(session, NullLogger<FederationService>.Instance, localizer)
-                .GetDestinationsAsync(0, 10, direction)).Success,
         };
 
         Assert.True(success);

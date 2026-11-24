@@ -49,31 +49,16 @@ namespace SynapseAdmin.Components.Pages
         {
             if (_allDestinations == null)
             {
-                var result = await FederationService.GetDestinationsAsync(0, 10000, SortDirection.Ascending, token: token);
-
-                if (result.Success && result.Data != default)
-                {
-                    _allDestinations = result.Data.Destinations;
-                    var totalCount = result.Data.Total;
-                    while (_allDestinations.Count < totalCount)
-                    {
-                        var chunkResult = await FederationService.GetDestinationsAsync(_allDestinations.Count, 10000, SortDirection.Ascending, token: token);
-                        if (chunkResult.Success && chunkResult.Data != default && chunkResult.Data.Destinations.Count > 0)
-                        {
-                            _allDestinations.AddRange(chunkResult.Data.Destinations);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-                else
+                // Only a complete load is kept: a failure shows the snackbar and loads again on the next reload.
+                var result = await FederationService.GetAllDestinationsAsync(token);
+                if (!result.Success || result.Data == null)
                 {
                     Snackbar.ShowFailure(result);
                     totalDestinations = 0;
                     return new TableData<FederationDestinationListViewModel>() { TotalItems = 0, Items = new List<FederationDestinationListViewModel>() };
                 }
+
+                _allDestinations = result.Data;
             }
 
             var filtered = _allDestinations.AsEnumerable();
