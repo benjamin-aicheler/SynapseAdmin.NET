@@ -977,6 +977,131 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Null(user!.ExpirationTs);
     }
 
+    // ---- Tuwunel admin API coverage ---------------------------------------------------------------------
+
+    // Operations Tuwunel doesn't serve (its status page marks them not implemented or not applicable) and the remote
+    // media cache purge, which it selects by storage time instead of last access: the gateway refuses each before
+    // sending anything (ADR 0006).
+    private static readonly Dictionary<string, Func<SynapseAdminGateway, Task>> TuwunelRefusedOperations = new()
+    {
+        [nameof(SynapseAdminGateway.QuarantineMediaAsync)] = g => g.QuarantineMediaAsync("example.com", "media1"),
+        [nameof(SynapseAdminGateway.UnquarantineMediaAsync)] = g => g.UnquarantineMediaAsync("example.com", "media1"),
+        [nameof(SynapseAdminGateway.ProtectMediaAsync)] = g => g.ProtectMediaAsync("example.com", "media1"),
+        [nameof(SynapseAdminGateway.UnprotectMediaAsync)] = g => g.UnprotectMediaAsync("example.com", "media1"),
+        [nameof(SynapseAdminGateway.QuarantineMediaByRoomIdAsync)] = g => g.QuarantineMediaByRoomIdAsync("!room:example.com"),
+        [nameof(SynapseAdminGateway.QuarantineMediaByUserIdAsync)] = g => g.QuarantineMediaByUserIdAsync("@alice:example.com"),
+        [nameof(SynapseAdminGateway.GetEventReportListAsync)] = g => g.GetEventReportListAsync(0, 10, "b"),
+        [nameof(SynapseAdminGateway.DeleteEventReportAsync)] = g => g.DeleteEventReportAsync("1"),
+        [nameof(SynapseAdminGateway.RenewAccountValidityAsync)] = g => g.RenewAccountValidityAsync(
+            new SynapseAdminAccountValidityRequest { UserId = "@alice:example.com" }),
+        [nameof(SynapseAdminGateway.GetUserExperimentalFeaturesAsync)] = g => g.GetUserExperimentalFeaturesAsync("@alice:example.com"),
+        [nameof(SynapseAdminGateway.SetUserExperimentalFeaturesAsync)] = g => g.SetUserExperimentalFeaturesAsync("@alice:example.com",
+            new SynapseAdminExperimentalFeaturesRequest()),
+        [nameof(SynapseAdminGateway.GetBackgroundUpdatesStatusAsync)] = g => g.GetBackgroundUpdatesStatusAsync(),
+        [nameof(SynapseAdminGateway.SetBackgroundUpdatesEnabledAsync)] = g => g.SetBackgroundUpdatesEnabledAsync(false),
+        [nameof(SynapseAdminGateway.StartBackgroundUpdatesJobAsync)] = g => g.StartBackgroundUpdatesJobAsync("populate_stats_process_rooms"),
+        [nameof(SynapseAdminGateway.GetLargestRoomsAsync)] = g => g.GetLargestRoomsAsync(),
+        [nameof(SynapseAdminGateway.PurgeRemoteMediaCacheAsync)] = g => g.PurgeRemoteMediaCacheAsync(1_700_000_000_000),
+    };
+
+    public static TheoryData<string> TuwunelRefusedOperationNames => new(TuwunelRefusedOperations.Keys);
+
+    [Theory]
+    [MemberData(nameof(TuwunelRefusedOperationNames))]
+    public async Task Tuwunel_UnservedOrDeviatingOperation_RefusesWithoutARequest(string operation)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => TuwunelRefusedOperations[operation](gateway));
+
+        Assert.Equal(operation, error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>The media overloads that take an MXC URI reach the same refusal.</summary>
+    [Fact]
+    public async Task Tuwunel_MxcMediaOverloads_RefuseWithoutARequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        const string mxc = "mxc://example.com/media1";
+
+        await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.QuarantineMediaAsync(mxc));
+        await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.UnquarantineMediaAsync(mxc));
+        await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.ProtectMediaAsync(mxc));
+        await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.UnprotectMediaAsync(mxc));
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>Tuwunel ignores <c>order_by</c> on the user list and always sorts by user ID, so only <c>name</c> passes.</summary>
+    [Theory]
+    [InlineData("displayname")]
+    [InlineData("admin")]
+    [InlineData("is_guest")]
+    [InlineData("deactivated")]
+    [InlineData("creation_ts")]
+    [InlineData("Name")] // keys are compared ordinally, as Synapse matches them
+    public async Task Tuwunel_GetUserList_OtherKeyThanName_RefusesWithoutARequest(string orderBy)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.GetUserListAsync(0, 10, orderBy, "f"));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.GetUserListAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_GetUserList_ByName_SendsTheSynapseRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { users = Array.Empty<object>(), total = 0 });
+
+        await gateway.GetUserListAsync(20, 10, "name", "b", "alice");
+
+        Assert.Equal(["/_synapse/admin/v3/users?from=20&limit=10&dir=b&order_by=name&locked=true&name=alice"], _homeserver.RequestTargets);
+    }
+
+    /// <summary>
+    /// Tuwunel stores no creation time and sends <c>creation_ts: 0</c> (1.8.1 leaves it out): the gateway reports it as
+    /// unknown (<c>null</c>) instead of 1970. A real value passes unchanged, on Tuwunel and on Synapse.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"name":"@a:example.com","creation_ts":0}""", null)]
+    [InlineData("""{"name":"@a:example.com"}""", null)]
+    [InlineData("""{"name":"@a:example.com","creation_ts":1560432506}""", 1560432506L)]
+    public async Task Tuwunel_GetUserDetails_ZeroOrMissingCreationTs_IsUnknown(string body, long? expected)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Text(body, "application/json");
+
+        var user = await gateway.GetUserDetailsAsync("@a:example.com");
+
+        Assert.Equal(expected, user!.CreationTs);
+    }
+
+    [Fact]
+    public async Task Tuwunel_GetUserList_ZeroCreationTs_IsUnknown()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Text(
+            """{"users":[{"name":"@a:example.com","creation_ts":0},{"name":"@b:example.com","creation_ts":1560432506000}],"total":2}""",
+            "application/json");
+
+        var list = await gateway.GetUserListAsync(0, 10, "name", "f");
+
+        Assert.Equal(new long?[] { null, 1560432506000 }, list!.Users.Select(u => u.CreationTs));
+    }
+
+    [Fact]
+    public async Task Synapse_GetUserDetails_CreationTs_IsReadAsSent()
+    {
+        _homeserver.Respond = () => Results.Text("""{"name":"@a:example.com","creation_ts":1560432506}""", "application/json");
+
+        var user = await _gateway.GetUserDetailsAsync("@a:example.com");
+
+        Assert.Equal(1560432506L, user!.CreationTs);
+    }
+
     /// <summary>One request as the server received it. <see cref="Target"/> is the path and query exactly as sent.</summary>
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);
 

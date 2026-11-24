@@ -135,11 +135,17 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
         Assert.Equal(("Generic", expectedVersion), (gateway.ServerBrand, gateway.ServerVersion));
     }
 
-    /// <summary>Tuwunel versions and whether each counts as admin-capable (>= 1.8.1).</summary>
+    /// <summary>
+    /// Tuwunel versions and whether each counts as admin-capable (>= 1.8.2). 1.8.1 doesn't serve seven endpoints the app
+    /// calls, which 1.8.2 serves (SPEC.md §10, "Tuwunel versions").
+    /// </summary>
     public static TheoryData<string, bool> TuwunelVersions => new()
     {
-        { "1.8.1", true },
+        { "1.8.2", true },
+        { "1.8.1", false },
         { "1.8.0", false },
+        { "1.9.0", true },
+        { "2.0.0", true },
         { "1.9.0-dev", true },
         { "-1.0", true }, // dash at index 0: kept, so unparseable
         { "abc", true }, // unparseable: the active probe decides

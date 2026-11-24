@@ -130,6 +130,9 @@
   <data name="Created" xml:space="preserve">
     <value>Erstellt</value>
   </data>
+  <data name="CreationDateUnknown" xml:space="preserve">
+    <value>Unbekannt</value>
+  </data>
   <data name="Overview" xml:space="preserve">
     <value>Übersicht</value>
   </data>

@@ -45,8 +45,12 @@ public class SynapseAdminUserListResult
         [JsonPropertyName("avatar_url")]
         public string? AvatarUrl { get; set; }
 
+        /// <summary>
+        /// The account's creation time: milliseconds on the v3 user list, seconds on the v2 user details. <c>null</c> when
+        /// the homeserver doesn't know it (Tuwunel stores none).
+        /// </summary>
         [JsonPropertyName("creation_ts")]
-        public long CreationTs { get; set; }
+        public long? CreationTs { get; set; }
 
         [JsonPropertyName("last_seen_ts")]
         public long? LastSeenTs { get; set; }
