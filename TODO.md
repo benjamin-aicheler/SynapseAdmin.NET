@@ -1,25 +1,38 @@
 # TODO
 
+<!--
+HOW TO USE THIS FILE (instructions for the AI agent):
+- This is the SINGLE-TASK execution checklist derived from the approved PLAN.md (ignore if PLAN.md is blank template or Done).
+- Work on ONE task at a time, top to bottom within "Next Up", unless the user says otherwise.
+- Before starting a task: move it to "In Progress".
+- After finishing a task: verify it (`dotnet build` & `dotnet test`), tick the checkbox, move it to "Done"
+  with the date and a short note (e.g. commit hash or files changed).
+- If you discover new work, add it to "Backlog" or "Bugs / Follow-ups" – do not silently expand the current task.
+- If a task is blocked, move it to "Blocked" with the reason and what is needed.
+- Keep entries short. Reference PLAN step IDs (e.g. [1.2]) and spec IDs (e.g. FR-15, AC-10).
+- ON COMPLETION (before merging the PR, or before starting the next task): finalize `[Planned]` items in SPEC.md and clear/reset this file (and PLAN.md) back to the blank template from `main` (optionally preserving any real unresolved follow-ups in Backlog, or moving them to GitHub Issues).
+-->
+
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-24
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] [4.1] AGENTS.md: new names, contract rule, Room Size Semantics, Tuwunel & Generic Fallback
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-- [ ] [4.2] ARCHITECTURE.md: new names in §2, §3, §5, §6, §10; ADR 0006 → Accepted; ADR 0001 note
-- [ ] [4.3] Reset PLAN.md and TODO.md to the templates from `main`
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
-- [ ] 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
 
 ## 📋 Backlog
 
-- [ ] Step 2 (separate PR): `NotSupportedException` → localized "not supported" message in `RunGatewayCallAsync` (SPEC.md AC-14, §10)
-- [ ] Step 3 (separate PR): #542
+- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
@@ -27,10 +40,7 @@
 
 ## ✅ Done
 
-- [x] 2026-11-24 – PLAN.md approved
-- [x] 2026-11-24 – [1.1] `GetAuthenticated_RoomListDir_FollowsTheProbedServer` (6 rows) passes on `main`'s code; in-memory mutations caught: no reversal (2 Tuwunel rows fail), case-sensitive brand check (`tuwunel` row fails)
-- [x] 2026-11-24 – [2.1, 2.2] Gateway and test class renamed with `git mv` (7 files, 59 lines); no string references to the old names in `tests/`; build 0 errors, app project 0 warnings; 1233 tests pass
-- [x] 2026-11-24 – [3.1–3.3] `TuwunelAdminGateway` overrides `GetRoomListAsync`; brand check removed from `SynapseAdminGateway`; factory picks the class; `GetAuthenticated_TuwunelBrand_GetsTheTuwunelGateway` (3 casings); `RoomListDirs` split into `GetRoomList_SendsTheDirItIsGiven` (4) and `Tuwunel_GetRoomList_SendsTheDirThatGivesTheDocumentedOrder` (8); [1.1] test passes unchanged; no `ServerBrand` comparison left; 1236 tests pass (EN and DE)
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
