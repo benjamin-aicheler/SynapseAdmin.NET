@@ -21,7 +21,7 @@ using Xunit;
 namespace SynapseAdmin.Tests;
 
 /// <summary>
-/// Characterization of the five <see cref="SynapseCompatibleAdminGateway"/> reads that deserialize with
+/// Characterization of the five <see cref="SynapseAdminGateway"/> reads that deserialize with
 /// <c>SynapseCompatibilityJsonOptions</c>, against a real HTTP server: the exact request target, numeric and string
 /// <c>next_token</c>, and how non-success responses surface. LibMatrix's <c>MatrixHttpClient</c> throws before the
 /// gateway's own <c>EnsureSuccessStatusCode</c>: <see cref="MatrixException"/> for a Matrix JSON error body,
@@ -36,15 +36,15 @@ namespace SynapseAdmin.Tests;
 /// Also the room list's sort direction per brand (#541).
 /// Also the shadow login (#539): the token's expiry travels in the body, not the query string.
 /// </summary>
-public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifetime
+public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
     private readonly FakeHomeserver _homeserver = new();
-    private SynapseCompatibleAdminGateway _gateway = null!;
+    private SynapseAdminGateway _gateway = null!;
 
     public async Task InitializeAsync()
     {
         await _homeserver.StartAsync();
-        _gateway = new SynapseCompatibleAdminGateway(new AuthenticatedHomeserverGeneric(
+        _gateway = new SynapseAdminGateway(new AuthenticatedHomeserverGeneric(
             "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token"));
     }
 
@@ -52,29 +52,29 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
 
     public static TheoryData<string> Methods => new()
     {
-        nameof(SynapseCompatibleAdminGateway.GetUserListAsync),
-        nameof(SynapseCompatibleAdminGateway.GetUserMediaStatisticsAsync),
-        nameof(SynapseCompatibleAdminGateway.GetUserMediaAsync),
-        nameof(SynapseCompatibleAdminGateway.GetFederationDestinationListAsync),
-        nameof(SynapseCompatibleAdminGateway.GetEventReportListAsync),
+        nameof(SynapseAdminGateway.GetUserListAsync),
+        nameof(SynapseAdminGateway.GetUserMediaStatisticsAsync),
+        nameof(SynapseAdminGateway.GetUserMediaAsync),
+        nameof(SynapseAdminGateway.GetFederationDestinationListAsync),
+        nameof(SynapseAdminGateway.GetEventReportListAsync),
     };
 
     // Each method with fixed arguments: the request target it sends, and a call that returns the parsed next_token.
-    private static (string Target, Func<SynapseCompatibleAdminGateway, Task<string?>> Call) Method(string name) => name switch
+    private static (string Target, Func<SynapseAdminGateway, Task<string?>> Call) Method(string name) => name switch
     {
-        nameof(SynapseCompatibleAdminGateway.GetUserListAsync) => (
+        nameof(SynapseAdminGateway.GetUserListAsync) => (
             "/_synapse/admin/v3/users?from=20&limit=10&dir=f&order_by=name&user_id=%40alice%3aexample.com",
             async g => (await g.GetUserListAsync(20, 10, "name", "f", "@alice:example.com"))?.NextToken),
-        nameof(SynapseCompatibleAdminGateway.GetUserMediaStatisticsAsync) => (
+        nameof(SynapseAdminGateway.GetUserMediaStatisticsAsync) => (
             "/_synapse/admin/v1/statistics/users/media?limit=10&order_by=media_length&dir=b&search_term=alice",
             async g => (await g.GetUserMediaStatisticsAsync(10, "media_length", "b", "alice"))?.NextToken),
-        nameof(SynapseCompatibleAdminGateway.GetUserMediaAsync) => (
+        nameof(SynapseAdminGateway.GetUserMediaAsync) => (
             "/_synapse/admin/v1/users/%40alice%3aexample.com/media?from=100&limit=25&order_by=created_ts&dir=b",
             async g => (await g.GetUserMediaAsync("@alice:example.com", 100, 25))?.NextToken),
-        nameof(SynapseCompatibleAdminGateway.GetFederationDestinationListAsync) => (
+        nameof(SynapseAdminGateway.GetFederationDestinationListAsync) => (
             "/_synapse/admin/v1/federation/destinations?from=0&limit=50&dir=b",
             async g => (await g.GetFederationDestinationListAsync(0, 50, "b"))?.NextToken),
-        nameof(SynapseCompatibleAdminGateway.GetEventReportListAsync) => (
+        nameof(SynapseAdminGateway.GetEventReportListAsync) => (
             "/_synapse/admin/v1/event_reports?from=5&limit=10&dir=b&room_id=!room%3aexample.com",
             async g => (await g.GetEventReportListAsync(5, 10, "b", "!room:example.com"))?.NextToken),
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
@@ -119,28 +119,28 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
 
     public static TheoryData<string> DeleteMethods => new()
     {
-        nameof(SynapseCompatibleAdminGateway.DeleteRoomAsync),
-        nameof(SynapseCompatibleAdminGateway.DeleteEventReportAsync),
-        nameof(SynapseCompatibleAdminGateway.DeleteRegistrationTokenAsync),
-        nameof(SynapseCompatibleAdminGateway.DeleteMediaAsync),
+        nameof(SynapseAdminGateway.DeleteRoomAsync),
+        nameof(SynapseAdminGateway.DeleteEventReportAsync),
+        nameof(SynapseAdminGateway.DeleteRegistrationTokenAsync),
+        nameof(SynapseAdminGateway.DeleteMediaAsync),
     };
 
     // Each raw DELETE with fixed arguments and the exact request it sends. The room body uses default (not web)
     // serializer options: declared property order, nulls written.
-    private static (CapturedRequest Request, Func<SynapseCompatibleAdminGateway, Task> Call) DeleteMethod(string name) => name switch
+    private static (CapturedRequest Request, Func<SynapseAdminGateway, Task> Call) DeleteMethod(string name) => name switch
     {
-        nameof(SynapseCompatibleAdminGateway.DeleteRoomAsync) => (
+        nameof(SynapseAdminGateway.DeleteRoomAsync) => (
             new("DELETE", "/_synapse/admin/v2/rooms/!room%3aexample.com", "application/json; charset=utf-8",
                 """{"new_room_user_id":"@admin:example.com","room_name":null,"block":true,"purge":false,"message":"Moved"}"""),
             g => g.DeleteRoomAsync("!room:example.com",
                 new SynapseAdminRoomDeleteRequest { NewRoomUserId = "@admin:example.com", Block = true, Purge = false, Message = "Moved" })),
-        nameof(SynapseCompatibleAdminGateway.DeleteEventReportAsync) => (
+        nameof(SynapseAdminGateway.DeleteEventReportAsync) => (
             new("DELETE", "/_synapse/admin/v1/event_reports/42", null, ""),
             g => g.DeleteEventReportAsync("42")),
-        nameof(SynapseCompatibleAdminGateway.DeleteRegistrationTokenAsync) => (
+        nameof(SynapseAdminGateway.DeleteRegistrationTokenAsync) => (
             new("DELETE", "/_synapse/admin/v1/registration_tokens/invite%2b1", null, ""),
             g => g.DeleteRegistrationTokenAsync("invite+1")),
-        nameof(SynapseCompatibleAdminGateway.DeleteMediaAsync) => (
+        nameof(SynapseAdminGateway.DeleteMediaAsync) => (
             new("DELETE", "/_synapse/admin/v1/media/example.com/media-a", null, ""),
             g => g.DeleteMediaAsync("example.com", "media-a")),
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
@@ -182,38 +182,38 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
 
     public static TheoryData<string> EmptyBodyMethods => new()
     {
-        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByUserIdAsync),
-        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByRoomIdAsync),
-        nameof(SynapseCompatibleAdminGateway.ResetFederationConnectionTimeoutAsync),
-        nameof(SynapseCompatibleAdminGateway.QuarantineMediaAsync),
-        nameof(SynapseCompatibleAdminGateway.UnquarantineMediaAsync),
-        nameof(SynapseCompatibleAdminGateway.ProtectMediaAsync),
-        nameof(SynapseCompatibleAdminGateway.UnprotectMediaAsync),
+        nameof(SynapseAdminGateway.QuarantineMediaByUserIdAsync),
+        nameof(SynapseAdminGateway.QuarantineMediaByRoomIdAsync),
+        nameof(SynapseAdminGateway.ResetFederationConnectionTimeoutAsync),
+        nameof(SynapseAdminGateway.QuarantineMediaAsync),
+        nameof(SynapseAdminGateway.UnquarantineMediaAsync),
+        nameof(SynapseAdminGateway.ProtectMediaAsync),
+        nameof(SynapseAdminGateway.UnprotectMediaAsync),
     };
 
     // Each POST that sends an empty JSON object and reads no response body, with fixed arguments and the exact
     // request it sends. Protect/unprotect ignore serverName, so it doesn't appear in their targets.
-    private static (CapturedRequest Request, Func<SynapseCompatibleAdminGateway, Task> Call) EmptyBodyMethod(string name) => name switch
+    private static (CapturedRequest Request, Func<SynapseAdminGateway, Task> Call) EmptyBodyMethod(string name) => name switch
     {
-        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByUserIdAsync) => (
+        nameof(SynapseAdminGateway.QuarantineMediaByUserIdAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/user/%40alice%3aexample.com/media/quarantine"),
             g => g.QuarantineMediaByUserIdAsync("@alice:example.com")),
-        nameof(SynapseCompatibleAdminGateway.QuarantineMediaByRoomIdAsync) => (
+        nameof(SynapseAdminGateway.QuarantineMediaByRoomIdAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/room/!room%3aexample.com/media/quarantine"),
             g => g.QuarantineMediaByRoomIdAsync("!room:example.com")),
-        nameof(SynapseCompatibleAdminGateway.ResetFederationConnectionTimeoutAsync) => (
+        nameof(SynapseAdminGateway.ResetFederationConnectionTimeoutAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/federation/destinations/matrix.example.org%3a8448/reset_connection"),
             g => g.ResetFederationConnectionTimeoutAsync("matrix.example.org:8448")),
-        nameof(SynapseCompatibleAdminGateway.QuarantineMediaAsync) => (
+        nameof(SynapseAdminGateway.QuarantineMediaAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/media/quarantine/example.com/media-a"),
             g => g.QuarantineMediaAsync("example.com", "media-a")),
-        nameof(SynapseCompatibleAdminGateway.UnquarantineMediaAsync) => (
+        nameof(SynapseAdminGateway.UnquarantineMediaAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/media/unquarantine/example.com/media-a"),
             g => g.UnquarantineMediaAsync("example.com", "media-a")),
-        nameof(SynapseCompatibleAdminGateway.ProtectMediaAsync) => (
+        nameof(SynapseAdminGateway.ProtectMediaAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/media/protect/media-a"),
             g => g.ProtectMediaAsync("remote.example", "media-a")),
-        nameof(SynapseCompatibleAdminGateway.UnprotectMediaAsync) => (
+        nameof(SynapseAdminGateway.UnprotectMediaAsync) => (
             EmptyJsonObject("POST", "/_synapse/admin/v1/media/unprotect/media-a"),
             g => g.UnprotectMediaAsync("remote.example", "media-a")),
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
@@ -383,37 +383,55 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
 
     // ---- Room list sort direction (#541) -------------------------------------------------------------
 
-    // The dir a caller passes follows the Synapse docs, where these keys sort largest first. Tuwunel sorts every key
-    // ascending, so the gateway sends it the opposite dir for them. Other brands, including an unresolved one, get the
-    // documented behavior unchanged.
-    public static TheoryData<string, string, string, string> RoomListDirs => new()
+    // The dir a caller passes follows the Synapse docs, where these keys sort largest first. The Synapse gateway sends it
+    // unchanged, whatever brand it reports; Tuwunel sorts every key ascending, so its gateway sends the opposite dir for
+    // these keys. Which server gets which class is covered by MatrixAuthGatewayProbeTests.
+    public static TheoryData<string, string> SynapseRoomListDirs => new()
     {
-        { GatewayConstants.SynapseBrand, "joined_members", "f", "f" },
-        { GatewayConstants.SynapseBrand, "joined_members", "b", "b" },
-        { GatewayConstants.TuwunelBrand, "joined_members", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "joined_members", "b", "f" },
-        { "tuwunel", "joined_members", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "joined_local_members", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "version", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "state_events", "b", "f" },
-        { GatewayConstants.TuwunelBrand, "size", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "name", "f", "f" },
-        { GatewayConstants.TuwunelBrand, "public", "b", "b" },
-        { GatewayConstants.GenericBrand, "joined_members", "f", "f" },
+        { GatewayConstants.SynapseBrand, "f" },
+        { GatewayConstants.SynapseBrand, "b" },
+        { GatewayConstants.GenericBrand, "f" },
+        { GatewayConstants.TuwunelBrand, "f" }, // the brand is only reported, never used for a decision
     };
 
     [Theory]
-    [MemberData(nameof(RoomListDirs))]
-    public async Task GetRoomList_SendsTheDirThatGivesTheDocumentedOrder(string brand, string orderBy, string dir, string sentDir)
+    [MemberData(nameof(SynapseRoomListDirs))]
+    public async Task GetRoomList_SendsTheDirItIsGiven(string brand, string dir)
     {
-        var gateway = new SynapseCompatibleAdminGateway(new AuthenticatedHomeserverGeneric(
-            "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token"), brand);
+        var gateway = new SynapseAdminGateway(CreateHomeserver(), brand);
+        _homeserver.Respond = () => Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
+
+        await gateway.GetRoomListAsync(0, 10, "joined_members", dir);
+
+        Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir={dir}&order_by=joined_members", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    public static TheoryData<string, string, string> TuwunelRoomListDirs => new()
+    {
+        { "joined_members", "f", "b" },
+        { "joined_members", "b", "f" },
+        { "joined_local_members", "f", "b" },
+        { "version", "f", "b" },
+        { "state_events", "b", "f" },
+        { "size", "f", "b" },
+        { "name", "f", "f" },
+        { "public", "b", "b" },
+    };
+
+    [Theory]
+    [MemberData(nameof(TuwunelRoomListDirs))]
+    public async Task Tuwunel_GetRoomList_SendsTheDirThatGivesTheDocumentedOrder(string orderBy, string dir, string sentDir)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
         _homeserver.Respond = () => Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
 
         await gateway.GetRoomListAsync(0, 10, orderBy, dir);
 
         Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir={sentDir}&order_by={orderBy}", Assert.Single(_homeserver.RequestTargets));
     }
+
+    private AuthenticatedHomeserverGeneric CreateHomeserver() => new(
+        "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token");
 
     // ---- Shadow login (#539) -------------------------------------------------------------------------
 
@@ -447,7 +465,7 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
 
     // ---- Room deletion (#518) ------------------------------------------------------------------------
 
-    private static Task<SynapseAdminRoomDeleteResponse?> DeleteRoom(SynapseCompatibleAdminGateway gateway) =>
+    private static Task<SynapseAdminRoomDeleteResponse?> DeleteRoom(SynapseAdminGateway gateway) =>
         gateway.DeleteRoomAsync("!room:example.com", new SynapseAdminRoomDeleteRequest { Block = true, Purge = true });
 
     [Fact]
@@ -518,16 +536,16 @@ public sealed class SynapseCompatibleGatewayCharacterizationTests : IAsyncLifeti
 
     private static readonly string[] DeleteStatusMethodNames =
     [
-        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusAsync),
-        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusesAsync),
+        nameof(SynapseAdminGateway.GetRoomDeleteStatusAsync),
+        nameof(SynapseAdminGateway.GetRoomDeleteStatusesAsync),
     ];
 
     public static TheoryData<string> DeleteStatusMethods => new(DeleteStatusMethodNames);
 
-    private static Func<SynapseCompatibleAdminGateway, Task<object?>> DeleteStatusMethod(string name) => name switch
+    private static Func<SynapseAdminGateway, Task<object?>> DeleteStatusMethod(string name) => name switch
     {
-        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusAsync) => async g => await g.GetRoomDeleteStatusAsync("delete-1"),
-        nameof(SynapseCompatibleAdminGateway.GetRoomDeleteStatusesAsync) => async g => await g.GetRoomDeleteStatusesAsync("!room:example.com"),
+        nameof(SynapseAdminGateway.GetRoomDeleteStatusAsync) => async g => await g.GetRoomDeleteStatusAsync("delete-1"),
+        nameof(SynapseAdminGateway.GetRoomDeleteStatusesAsync) => async g => await g.GetRoomDeleteStatusesAsync("!room:example.com"),
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
     };
 
