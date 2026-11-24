@@ -213,6 +213,15 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
             ex => logger.LogError(ex, "Error creating user {UserId}", model.UserId.SanitizeForLogging()),
             async gateway =>
             {
+                // PUT /_synapse/admin/v2/users/{userId} creates the user or modifies an existing one: it would remove
+                // an admin's rights, reactivate the account and replace the password. Only a user the homeserver
+                // doesn't know is created.
+                if (await gateway.GetUserDetailsAsync(model.UserId, token) != null)
+                {
+                    logger.LogWarning("Refused to create user {UserId}: the account already exists", model.UserId.SanitizeForLogging());
+                    return OperationResult.Failure(L["UserAlreadyExists", model.UserId], Severity.Warning);
+                }
+
                 var req = new SynapseAdminUserUpsertRequest
                 {
                     Password = model.Password,

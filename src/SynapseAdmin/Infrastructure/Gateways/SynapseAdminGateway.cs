@@ -118,9 +118,21 @@ public class SynapseAdminGateway(
         return await GetWithCompatibilityOptionsAsync<SynapseAdminUserListResult>(url, cancellationToken);
     }
 
+    /// <summary>
+    /// Returns <c>null</c> for an unknown local user (404 <c>M_NOT_FOUND</c>, from Synapse and Tuwunel). Every other
+    /// error propagates, including <c>M_UNRECOGNIZED</c> and a bare 404, which don't say whether the user exists:
+    /// <c>UserService.CreateUserAsync</c> relies on this before it sends a <c>PUT</c> that would modify an account.
+    /// </summary>
     public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default)
     {
-        return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>($"/_synapse/admin/v2/users/{userId.UrlEncode()}", cancellationToken: cancellationToken);
+        try
+        {
+            return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>($"/_synapse/admin/v2/users/{userId.UrlEncode()}", cancellationToken: cancellationToken);
+        }
+        catch (LibMatrix.MatrixException ex) when (ex.ErrorCode == "M_NOT_FOUND")
+        {
+            return null;
+        }
     }
 
     public override async Task DeactivateUserAsync(string userId, bool erase, CancellationToken cancellationToken = default)

@@ -724,6 +724,9 @@
   <data name="UserCreatedSuccessfully" xml:space="preserve">
     <value>Utilisateur créé avec succès.</value>
   </data>
+  <data name="UserAlreadyExists" xml:space="preserve">
+    <value>L'utilisateur {0} existe déjà. Rien n'a été modifié, car la création modifierait le compte existant.</value>
+  </data>
   <data name="ErrorCreatingUser" xml:space="preserve">
     <value>Erreur lors de la création de l'utilisateur.</value>
   </data>
