@@ -70,6 +70,7 @@ These look like mistakes but are decided and documented. If you think one is wro
 - `MatrixSessionService` keeping its own catch blocks instead of `RunGatewayCallAsync`.
 - UI text that describes Synapse's behavior even where another homeserver behaves differently: that server's gateway corrects the difference or refuses the operation (ADR 0006).
 - A gateway's refusal (`OperationNotSupportedByHomeserverException`) logged at `Error` through the method's `logFailure`, and a plain `NotSupportedException` keeping the method's failure key instead of the "not supported" warning (SPEC.md §15, 2026-11-24).
+- The first room messages request without `from`, which the Admin API page calls required: Synapse and Tuwunel start at the newest event without it (#549, SPEC.md §15).
 - The `AuthenticationStateProvider` registration next to `IMatrixAuthStateService` in `Program.cs`.
 - Tuning values as named constants rather than configuration.
 - The floating `10.0` .NET versions (".NET Version Policy").
