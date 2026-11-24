@@ -943,7 +943,7 @@ public class SecurityInfrastructureTests
         public Task PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteRoomAliasAsync(string roomAlias, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<string>?> GetLocalRoomAliasesAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(string? from, int limit, string direction, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default) => throw new NotImplementedException();

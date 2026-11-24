@@ -64,7 +64,7 @@ public interface IMatrixGateway
     Task<List<string>?> GetLocalRoomAliasesAsync(string roomId, CancellationToken cancellationToken = default);
 
     // --- Federation (Admin/Synapse) ---
-    Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default);
+    Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(string? from, int limit, string direction, CancellationToken cancellationToken = default);
     Task ResetFederationConnectionTimeoutAsync(string destination, CancellationToken cancellationToken = default);
 
     // --- Event Reports (Admin/Synapse) ---

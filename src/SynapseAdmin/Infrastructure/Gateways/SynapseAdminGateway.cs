@@ -341,9 +341,14 @@ public class SynapseAdminGateway(
 
     // --- Federation ---
 
-    public override async Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(int offset, int limit, string direction, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// <c>from</c> is the <c>next_token</c> of the previous page, passed back unchanged (#551). Synapse documents it
+    /// as opaque, so the first request leaves it out instead of sending an offset of <c>0</c>.
+    /// </summary>
+    public override async Task<SynapseAdminDestinationListResult?> GetFederationDestinationListAsync(string? from, int limit, string direction, CancellationToken cancellationToken = default)
     {
-        var url = $"/_synapse/admin/v1/federation/destinations?from={offset}&limit={limit}&dir={direction.UrlEncode()}";
+        var fromQuery = from == null ? "" : $"from={from.UrlEncode()}&";
+        var url = $"/_synapse/admin/v1/federation/destinations?{fromQuery}limit={limit}&dir={direction.UrlEncode()}";
         return await GetWithCompatibilityOptionsAsync<SynapseAdminDestinationListResult>(url, cancellationToken);
     }
 
