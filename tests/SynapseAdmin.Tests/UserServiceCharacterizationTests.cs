@@ -124,7 +124,8 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     };
 
     public static TheoryData<string> AllOperations => new(Operations.Keys);
-    public static TheoryData<string> SingleCallOperations => new(Operations.Keys.Where(k => k != "Details"));
+    // Details reads three endpoints and Create checks for an existing account first: each has its own test.
+    public static TheoryData<string> SingleCallOperations => new(Operations.Keys.Where(k => k is not ("Details" or "Create")));
     public static TheoryData<string> ActionOperations => new(Operations.Where(o => o.Value.SuccessKey != null).Select(o => o.Key));
 
     private readonly CancellationTokenSource _cts = new();
@@ -228,6 +229,55 @@ public sealed class UserServiceCharacterizationTests : IDisposable
 
         ResultAssert.Failure(result, key);
         Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>
+    /// <c>PUT /_synapse/admin/v2/users/{userId}</c> modifies an account that exists, so creating checks first and sends
+    /// the <c>PUT</c> only when the homeserver doesn't know the user.
+    /// </summary>
+    [Fact]
+    public async Task Create_ChecksForAnExistingUser_ThenSendsThePut()
+    {
+        var operation = Operations["Create"];
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+
+        await operation.Invoke(CreateService(gateway), _cts.Token);
+
+        Assert.Equal(["GetUserDetailsAsync", "UpdateUserAsync"], stub.Calls.Select(c => c.Method));
+        Assert.Equal(new object?[] { UserId, _cts.Token }, stub.Calls[0].Args);
+        operation.AssertGatewayArgs(stub.Calls[1].Args, _cts.Token);
+    }
+
+    /// <summary>
+    /// The <c>PUT</c> would remove an admin's rights, reactivate a deactivated account and replace the password, and
+    /// still report success, so an existing user ID is refused before anything is sent.
+    /// </summary>
+    [Fact]
+    public async Task Create_ExistingUser_FailsWithAWarning_WithoutThePut()
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        stub.On("GetUserDetailsAsync", _ => Task.FromResult<User?>(new User { Name = UserId, Admin = true }));
+
+        var result = await Operations["Create"].Invoke(CreateService(gateway), _cts.Token);
+
+        ResultAssert.Failure(result, "UserAlreadyExists", Severity.Warning);
+        Assert.Equal(["GetUserDetailsAsync"], stub.Calls.Select(c => c.Method));
+        AssertSingleLog(LogLevel.Warning, "Refused to create user {UserId}: the account already exists", UserArgument, exception: null);
+    }
+
+    /// <summary>When the check fails, nothing says the user is new, so the <c>PUT</c> isn't sent.</summary>
+    [Fact]
+    public async Task Create_CheckFails_FailsWithTheCreateKey_WithoutThePut()
+    {
+        var error = new InvalidOperationException("boom");
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        stub.Fault("GetUserDetailsAsync", error);
+
+        var result = await Operations["Create"].Invoke(CreateService(gateway), _cts.Token);
+
+        ResultAssert.Failure(result, "ErrorCreatingUser");
+        Assert.Equal(["GetUserDetailsAsync"], stub.Calls.Select(c => c.Method));
+        AssertSingleLog(LogLevel.Error, "Error creating user {UserId}", UserArgument, error);
     }
 
     [Fact]

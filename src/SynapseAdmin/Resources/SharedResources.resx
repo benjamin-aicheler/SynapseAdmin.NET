@@ -100,6 +100,9 @@
   <data name="UserCreatedSuccessfully" xml:space="preserve">
     <value>User created successfully.</value>
   </data>
+  <data name="UserAlreadyExists" xml:space="preserve">
+    <value>User {0} already exists. Nothing was changed, because creating it would modify the existing account.</value>
+  </data>
   <data name="ErrorCreatingUser" xml:space="preserve">
     <value>Error creating user.</value>
   </data>

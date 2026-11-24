@@ -501,6 +501,52 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal("@alice:example.com", response.UserId);
     }
 
+    // ---- User details ----------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetUserDetails_SendsAGetForTheUser_AndReadsIt()
+    {
+        _homeserver.Respond = () => Results.Json(new { name = "@alice:example.com", admin = true });
+
+        var user = await _gateway.GetUserDetailsAsync("@alice:example.com");
+
+        Assert.Equal(("@alice:example.com", true), (user?.Name, user?.Admin));
+        Assert.Equal(new CapturedRequest("GET", "/_synapse/admin/v2/users/%40alice%3aexample.com", null, ""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    /// <summary>
+    /// Synapse and Tuwunel answer an unknown local user with 404 <c>M_NOT_FOUND</c>: the user doesn't exist. Creating a
+    /// user relies on this answer before it sends the <c>PUT</c> that would modify an existing account.
+    /// </summary>
+    [Fact]
+    public async Task GetUserDetails_UnknownUser_ReturnsNull()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "User not found" }, statusCode: 404);
+
+        Assert.Null(await _gateway.GetUserDetailsAsync("@alice:example.com"));
+    }
+
+    /// <summary>
+    /// A homeserver without the endpoint (<c>M_UNRECOGNIZED</c>) or a bare 404 from a proxy doesn't say whether the user
+    /// exists, so they stay errors: creating a user must not take them for "no such user".
+    /// </summary>
+    [Theory]
+    [InlineData(404, "M_UNRECOGNIZED")]
+    [InlineData(405, "M_UNRECOGNIZED")]
+    [InlineData(404, null)]
+    public async Task GetUserDetails_MissingEndpoint_Throws(int statusCode, string? errcode)
+    {
+        _homeserver.Respond = () => errcode == null
+            ? Results.Text("Not Found", statusCode: statusCode)
+            : Results.Json(new { errcode, error = "Unrecognized request" }, statusCode: statusCode);
+
+        var ex = await Record.ExceptionAsync(() => _gateway.GetUserDetailsAsync("@alice:example.com"));
+
+        Assert.True(ex is MatrixException { ErrorCode: "M_UNRECOGNIZED" } or HttpRequestException { StatusCode: HttpStatusCode.NotFound },
+            $"Unexpected exception: {ex}");
+    }
+
     // ---- Room deletion (#518) ------------------------------------------------------------------------
 
     private static Task<SynapseAdminRoomDeleteResponse?> DeleteRoom(SynapseAdminGateway gateway) =>
