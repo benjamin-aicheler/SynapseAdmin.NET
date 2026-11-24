@@ -69,6 +69,11 @@ public class SynapseAdminUserListResult
         [JsonPropertyName("consent_server_notice_sent")]
         public string? ConsentServerNoticeSent { get; set; }
 
+        /// <summary>
+        /// Not part of Synapse's user list or user details (#546): only renewing account validity returns an
+        /// <c>expiration_ts</c>. Kept for a compatible homeserver that sends it. <c>null</c> means unknown, not "never
+        /// expires".
+        /// </summary>
         [JsonPropertyName("expiration_ts")]
         public long? ExpirationTs { get; set; }
     }

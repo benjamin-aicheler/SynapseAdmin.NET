@@ -720,6 +720,63 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
 
+    // ---- User create or modify, user details (#546) ------------------------------------------------------
+
+    /// <summary>The body parameters <c>PUT /_synapse/admin/v2/users/{userId}</c> documents.</summary>
+    private static readonly string[] UserUpsertParameters =
+        ["password", "logout_devices", "displayname", "avatar_url", "threepids", "external_ids", "admin", "deactivated", "locked", "user_type"];
+
+    /// <summary>
+    /// The request declares only parameters the endpoint accepts. <c>shadow_banned</c> isn't one of them: shadow-banning
+    /// has its own endpoint, <c>/_synapse/admin/v1/users/{userId}/shadow_ban</c>.
+    /// </summary>
+    [Fact]
+    public void UserUpsertRequest_DeclaresOnlyDocumentedParameters()
+    {
+        var names = typeof(SynapseAdminUserUpsertRequest).GetProperties()
+            .Select(p => p.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute), false)
+                .Cast<System.Text.Json.Serialization.JsonPropertyNameAttribute>().Single().Name);
+
+        Assert.All(names, name => Assert.Contains(name, UserUpsertParameters));
+    }
+
+    /// <summary>
+    /// A field left <c>null</c> is omitted (<c>MatrixHttpClient</c> drops nulls), which the endpoint reads as "unchanged".
+    /// For <c>user_type</c> that means this request can't clear the type, which takes an explicit <c>null</c>.
+    /// </summary>
+    [Fact]
+    public async Task UpdateUser_CreateShapedRequest_SendsOnlyTheSetFields()
+    {
+        _homeserver.Respond = () => Results.Json(new { name = "@alice:example.com" }, statusCode: 201);
+
+        await _gateway.UpdateUserAsync("@alice:example.com",
+            new SynapseAdminUserUpsertRequest { Password = "pw", DisplayName = "Al", Admin = true, Deactivated = false });
+
+        var request = Assert.Single(_homeserver.Requests);
+        Assert.Equal(("PUT", "/_synapse/admin/v2/users/%40alice%3aexample.com"), (request.Method, request.Target));
+        Assert.Equal("""{"password":"pw","displayname":"Al","admin":true,"deactivated":false}""", request.Body);
+    }
+
+    /// <summary>
+    /// Synapse's user details have no <c>expiration_ts</c> (only renewing account validity returns one), so the
+    /// expiration is unknown, not "never", after a standard load.
+    /// </summary>
+    [Fact]
+    public async Task GetUserDetails_DocumentedResponse_HasNoExpiration()
+    {
+        _homeserver.Respond = () => Results.Text("""
+            {"name":"@user:example.com","displayname":"User","threepids":[],"avatar_url":null,"is_guest":false,
+             "admin":false,"deactivated":false,"erased":false,"shadow_banned":false,"creation_ts":1560432506,
+             "last_seen_ts":1732919539393,"appservice_id":null,"consent_server_notice_sent":null,"consent_version":null,
+             "consent_ts":null,"external_ids":[],"user_type":null,"locked":false,"suspended":false}
+            """, "application/json");
+
+        var user = await _gateway.GetUserDetailsAsync("@user:example.com");
+
+        Assert.Equal("@user:example.com", user?.Name);
+        Assert.Null(user!.ExpirationTs);
+    }
+
     /// <summary>One request as the server received it. <see cref="Target"/> is the path and query exactly as sent.</summary>
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);
 
