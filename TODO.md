@@ -14,17 +14,23 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-24
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] 
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [2.1] Wire tests (red): the 16 refused Tuwunel methods send nothing; `GetUserListAsync` refuses every key but `name`; `creation_ts` 0 → `null` on list and details; Synapse cases unchanged
+- [ ] [2.2] Probe tests (red): Tuwunel 1.8.1 → no admin API; 1.8.2, 1.9.0, 2.0.0 → `TuwunelAdminGateway`; unparseable version stays capable
+- [ ] [2.3] `TuwunelAdminGateway` overrides, `MatrixAuthGateway` threshold 1.8.2, nullable `CreationTs` (DTO, mapper, view models; keep the ms/s conversions)
+- [ ] [3.1] `RunGatewayCallAsync`: optional `logRefusal` callback, with `GatewayCallExtensionsTests`
+- [ ] [3.2] Refused reads log `Debug` (event report list, largest rooms, background update status, experimental features, user list, user details' safe feature fetch); #559 lookup uses `logRefusal`; service tests
+- [ ] [3.3] Dashboard: total users from its own `name` request; refused latest-users read leaves the card empty without a snackbar; bUnit test
+- [ ] [3.4] "Unknown" creation date in `Users`, `UserDetails`, `Home` (new resource key EN/DE/FR); bUnit tests; `dotnet build`, `dotnet test`
+- [ ] [4.1] Remove `[Planned]` tags; Tuwunel >= 1.8.2 in AGENTS.md, ARCHITECTURE.md, README.md; Known Pitfall for Tuwunel refusals
+- [ ] [4.2] Reset PLAN.md and TODO.md; PR (no issue)
 
 ## ⛔ Blocked
 
@@ -40,7 +46,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-24 – [1.1] SPEC.md `[Planned]`: Tuwunel >= 1.8.2, AC-17, five §10 bullets, three Decision Log rows
 
 ## Definition of Done (applies to every task)
 
