@@ -1,38 +1,30 @@
 # TODO
 
-<!--
-HOW TO USE THIS FILE (instructions for the AI agent):
-- This is the SINGLE-TASK execution checklist derived from the approved PLAN.md (ignore if PLAN.md is blank template or Done).
-- Work on ONE task at a time, top to bottom within "Next Up", unless the user says otherwise.
-- Before starting a task: move it to "In Progress".
-- After finishing a task: verify it (`dotnet build` & `dotnet test`), tick the checkbox, move it to "Done"
-  with the date and a short note (e.g. commit hash or files changed).
-- If you discover new work, add it to "Backlog" or "Bugs / Follow-ups" – do not silently expand the current task.
-- If a task is blocked, move it to "Blocked" with the reason and what is needed.
-- Keep entries short. Reference PLAN step IDs (e.g. [1.2]) and spec IDs (e.g. FR-15, AC-10).
-- ON COMPLETION (before merging the PR, or before starting the next task): finalize `[Planned]` items in SPEC.md and clear/reset this file (and PLAN.md) back to the blank template from `main` (optionally preserving any real unresolved follow-ups in Backlog, or moving them to GitHub Issues).
--->
-
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-24
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] [1.1] Tests: `RunGatewayCallAsync` (both overloads) maps `OperationNotSupportedByHomeserverException` to `OperationNotSupportedByHomeserver` (`Warning`, logged once); a plain `NotSupportedException` keeps the failure key; `Operation` is the caller's name (AC-14)
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [1.2] Add `Models/OperationNotSupportedByHomeserverException.cs` and the catch in both overloads
+- [ ] [1.3] Resource key `OperationNotSupportedByHomeserver` in EN, DE, FR + a three-culture resource test
+- [ ] [2.1] Reflection test: every method `GenericMatrixGateway` declares throws the new exception with its own name
+- [ ] [2.2] Replace the 49 throws in `GenericMatrixGateway`
+- [ ] [3.1] `MediaServiceCharacterizationTests`: `DeleteLocalMediaAsync` refusal → `OperationNotSupportedByHomeserver`, `Warning`
+- [ ] [4.1] SPEC.md: remove `[Planned]` from §3 Goals, AC-14, §10; name the tests in AC-14
+- [ ] [4.2] AGENTS.md (Error Handling, Contract rule) and ARCHITECTURE.md (§8, layering rule)
+- [ ] [4.3] Reset PLAN.md and TODO.md to the templates from `main`
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
-- [ ] 
+- [ ] Step 3 (separate PR): #542
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
@@ -40,7 +32,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-24 – PLAN.md approved (`Warning`, wording as proposed)
 
 ## Definition of Done (applies to every task)
 
