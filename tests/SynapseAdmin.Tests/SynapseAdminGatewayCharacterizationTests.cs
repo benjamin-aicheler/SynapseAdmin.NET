@@ -891,6 +891,35 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
 
+    // Tuwunel purges a room even when it couldn't evict local users, where Synapse refuses to, and doesn't report some
+    // failed purge steps, so its "complete" can mean less than Synapse's. The gateway refuses the deletion and both status
+    // reads before sending anything (ADR 0006, #559).
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Tuwunel_DeleteRoom_RefusesWithoutARequest(bool block)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() =>
+            gateway.DeleteRoomAsync("!room:example.com", new SynapseAdminRoomDeleteRequest { Block = block, Purge = true }));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.DeleteRoomAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Theory]
+    [MemberData(nameof(DeleteStatusMethods))]
+    public async Task Tuwunel_GetDeleteStatus_RefusesWithoutARequest(string method)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => DeleteStatusMethod(method)(gateway));
+
+        Assert.Equal(method, error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
     // ---- User create or modify, user details (#546) ------------------------------------------------------
 
     /// <summary>The body parameters <c>PUT /_synapse/admin/v2/users/{userId}</c> documents.</summary>

@@ -285,7 +285,18 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
 
     public Task<OperationResult<RoomDeletionStatusViewModel?>> GetActiveRoomDeletionAsync(string roomId, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomDeletionStatus",
-            ex => logger.LogError(ex, "Error looking up deletions of room {RoomId}", roomId.SanitizeForLogging()),
+            ex =>
+            {
+                // The room page runs this lookup whenever a room opens: a homeserver that refuses it (#559) isn't an error.
+                if (ex is OperationNotSupportedByHomeserverException)
+                {
+                    logger.LogDebug("The homeserver doesn't support looking up deletions of room {RoomId}", roomId.SanitizeForLogging());
+                }
+                else
+                {
+                    logger.LogError(ex, "Error looking up deletions of room {RoomId}", roomId.SanitizeForLogging());
+                }
+            },
             async gateway =>
             {
                 var result = await gateway.GetRoomDeleteStatusesAsync(roomId, token);
