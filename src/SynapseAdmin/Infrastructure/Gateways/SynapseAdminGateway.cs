@@ -103,7 +103,9 @@ public class SynapseAdminGateway(
 
     public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
-        var url = $"/_synapse/admin/v3/users?from={offset}&limit={limit}&dir={direction.UrlEncode()}&order_by={orderBy.UrlEncode()}";
+        // locked defaults to false, which leaves locked users out of the rows and the total (#547). Without
+        // deactivated, v3 includes deactivated users, so the list is every account.
+        var url = $"/_synapse/admin/v3/users?from={offset}&limit={limit}&dir={direction.UrlEncode()}&order_by={orderBy.UrlEncode()}&locked=true";
         if (!string.IsNullOrEmpty(searchTerm))
         {
             if (searchTerm.StartsWith("@"))

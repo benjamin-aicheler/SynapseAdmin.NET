@@ -64,7 +64,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
     private static (string Target, Func<SynapseAdminGateway, Task<string?>> Call) Method(string name) => name switch
     {
         nameof(SynapseAdminGateway.GetUserListAsync) => (
-            "/_synapse/admin/v3/users?from=20&limit=10&dir=f&order_by=name&user_id=%40alice%3aexample.com",
+            "/_synapse/admin/v3/users?from=20&limit=10&dir=f&order_by=name&locked=true&user_id=%40alice%3aexample.com",
             async g => (await g.GetUserListAsync(20, 10, "name", "f", "@alice:example.com"))?.NextToken),
         nameof(SynapseAdminGateway.GetUserMediaStatisticsAsync) => (
             "/_synapse/admin/v1/statistics/users/media?limit=10&order_by=media_length&dir=b&search_term=alice",
@@ -94,6 +94,23 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         Assert.Equal(("100", "100"), (numeric, text));
         Assert.Equal(new[] { target, target }, _homeserver.RequestTargets);
+    }
+
+    /// <summary>
+    /// <c>locked</c> defaults to <c>false</c>, which leaves locked users out of the rows and the total, so every list
+    /// request includes them (#547). Without <c>deactivated</c>, v3 includes deactivated users: the list is every account.
+    /// </summary>
+    [Theory]
+    [InlineData(null, "/_synapse/admin/v3/users?from=0&limit=10&dir=b&order_by=creation_ts&locked=true")]
+    [InlineData("alice", "/_synapse/admin/v3/users?from=0&limit=10&dir=b&order_by=creation_ts&locked=true&name=alice")]
+    [InlineData("@alice:example.com", "/_synapse/admin/v3/users?from=0&limit=10&dir=b&order_by=creation_ts&locked=true&user_id=%40alice%3aexample.com")]
+    public async Task GetUserList_IncludesLockedUsers(string? searchTerm, string target)
+    {
+        _homeserver.Respond = () => Results.Json(new { users = Array.Empty<object>(), total = 0 });
+
+        await _gateway.GetUserListAsync(0, 10, "creation_ts", "b", searchTerm);
+
+        Assert.Equal([target], _homeserver.RequestTargets);
     }
 
     [Theory]
