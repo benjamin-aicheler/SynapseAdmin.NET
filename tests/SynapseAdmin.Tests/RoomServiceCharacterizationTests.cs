@@ -191,6 +191,37 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         AssertSingleLog(LogLevel.Error, operation.ErrorTemplate, operation.ErrorArguments, error);
     }
 
+    /// <summary>A gateway that refuses a deletion or a status read (ADR 0006, #559) gives the not-supported warning.</summary>
+    [Theory]
+    [InlineData("Delete")]
+    [InlineData("DeletionStatus")]
+    public async Task GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsError(string name)
+    {
+        var operation = Operations[name];
+        var refusal = new OperationNotSupportedByHomeserverException(operation.GatewayMethod);
+
+        var result = await operation.Invoke(CreateService(Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal))), _cts.Token);
+
+        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
+        AssertSingleLog(LogLevel.Error, operation.ErrorTemplate, operation.ErrorArguments, refusal);
+    }
+
+    /// <summary>
+    /// The room page looks up a running deletion whenever a room opens, so a refused lookup is logged at Debug, not as an
+    /// error on every room opened on that homeserver (#559). Every other failure still logs an error.
+    /// </summary>
+    [Fact]
+    public async Task ActiveDeletion_GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsDebug()
+    {
+        var refusal = new OperationNotSupportedByHomeserverException("GetRoomDeleteStatusesAsync");
+        var service = CreateService(Stub.Create<IMatrixGateway>(s => s.Fault("GetRoomDeleteStatusesAsync", refusal)));
+
+        var result = await service.GetActiveRoomDeletionAsync(RoomId, _cts.Token);
+
+        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
+        AssertSingleLog(LogLevel.Debug, "The homeserver doesn't support looking up deletions of room {RoomId}", RoomArgument, exception: null);
+    }
+
     [Theory, MemberData(nameof(ActionOperations))]
     public async Task Action_Success_ReturnsLocalizedMessage_AndLogsInformationIfAny(string name)
     {

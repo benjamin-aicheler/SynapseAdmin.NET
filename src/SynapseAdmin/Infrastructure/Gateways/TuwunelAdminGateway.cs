@@ -39,6 +39,24 @@ internal sealed class TuwunelAdminGateway(
     public override Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default) =>
         throw new OperationNotSupportedByHomeserverException();
 
+    // Room deletion is refused with both of its status reads (#559). Tuwunel (1.8.1, 2.0.0) serves the three routes with
+    // Synapse's status names, but it purges a room even when it couldn't evict local users, where Synapse refuses to,
+    // and logs some failed purge steps without reporting them. Its "complete" can therefore report a deletion Synapse
+    // would have failed, and its status has no error text. The status reads are refused too, so that a deletion started
+    // in another tool isn't reported as done either.
+
+    /// <summary>Refused (#559): Tuwunel's deletion can purge after failed evictions and hide failed purge steps.</summary>
+    public override Task<SynapseAdminRoomDeleteResponse?> DeleteRoomAsync(string roomId, SynapseAdminRoomDeleteRequest request, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused (#559): Tuwunel's <c>complete</c> doesn't mean what Synapse's does.</summary>
+    public override Task<SynapseAdminRoomDeleteStatusResponse?> GetRoomDeleteStatusAsync(string deleteId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused (#559): Tuwunel's <c>complete</c> doesn't mean what Synapse's does.</summary>
+    public override Task<SynapseAdminRoomDeleteStatusListResponse?> GetRoomDeleteStatusesAsync(string roomId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
     // Tuwunel 1.8.1 deletes a registration token as soon as it is invalid, the next time tokens are listed or checked:
     // when its uses reach the cap or its expiry passes. Synapse keeps such a token (a cap of 0 is its documented way to
     // invalidate one without deleting it) and rejects an expiry in the past. A create or update that would leave the

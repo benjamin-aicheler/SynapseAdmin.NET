@@ -141,6 +141,25 @@ public class RoomDetailsRoomDeletionTests : DetailPageTestBase
         Assert.Empty(StatusCalls);
     }
 
+    /// <summary>A homeserver that refuses room deletion (Tuwunel, #559): the warning, and nothing to follow.</summary>
+    [Theory]
+    [InlineData("DeleteRoom")]
+    [InlineData("DeleteAndBlockRoom")]
+    public async Task Delete_NotSupported_ShowsTheWarning_KeepsTheRoom_WithoutABanner(string handler)
+    {
+        var notSupported = Localizer["OperationNotSupportedByHomeserver"].Value;
+        _deleteResult = OperationResult<string>.Failure(notSupported, Severity.Warning);
+        var cut = RenderRoom();
+
+        await DeleteAsync(cut, handler);
+        await Task.Delay(300);
+
+        AssertSnackbars((notSupported, Severity.Warning));
+        Assert.Contains("Alpha Lounge", cut.Markup);
+        Assert.DoesNotContain(Banner, Markup(cut));
+        Assert.Empty(StatusCalls);
+    }
+
     // ---- Following the deletion --------------------------------------------------------------------
 
     [Fact]
@@ -318,7 +337,23 @@ public class RoomDetailsRoomDeletionTests : DetailPageTestBase
         Assert.Empty(StatusCalls);
     }
 
-    // ---- Late answers (AC-5) -----------------------------------------------------------------------
+    /// <summary>A homeserver that refuses the lookup (Tuwunel, #559) opens the room quietly, without its warning.</summary>
+    [Fact]
+    public async Task NotSupportedLookup_OnLoad_ShowsNoBannerAndNoSnackbar()
+    {
+        _running = _ => Task.FromResult(OperationResult<RoomDeletionStatusViewModel?>.Failure(
+            Localizer["OperationNotSupportedByHomeserver"].Value, Severity.Warning));
+
+        var cut = RenderRoom();
+        await Task.Delay(300);
+
+        Assert.Single(_rooms.CallsTo(nameof(IRoomService.GetActiveRoomDeletionAsync)));
+        Assert.DoesNotContain(Banner, Markup(cut));
+        Assert.Empty(SnackbarCalls);
+        Assert.Empty(StatusCalls);
+    }
+
+    // ---- Late answers (AC-5)-----------------------------------------------------------------------
 
     /// <summary>Navigating away stops the checks: a late "complete" for room A changes nothing on room B.</summary>
     [Fact]
