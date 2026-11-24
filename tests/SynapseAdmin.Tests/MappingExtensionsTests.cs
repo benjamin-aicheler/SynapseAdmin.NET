@@ -46,6 +46,21 @@ public class MappingExtensionsTests
         Assert.False(vm.IsGuest);
     }
 
+    /// <summary>An unknown creation time (Tuwunel stores none) stays unknown, so the pages show "unknown", not 1970.</summary>
+    [Fact]
+    public void UserMappers_UnknownCreationTs_StaysNull()
+    {
+        var dto = new SynapseAdminUserListResult.SynapseAdminUserListResultUser { Name = "@carol:example.com", CreationTs = null };
+
+        var list = dto.ToViewModel();
+        var details = dto.ToDetailViewModel();
+
+        Assert.Null(list.CreationTs);
+        Assert.Null(list.CreationTsDateTime);
+        Assert.Null(details.CreationTs);
+        Assert.Null(details.CreationTsDateTime);
+    }
+
     [Fact]
     public void UserToDetailViewModel_ConvertsCreationTsFromSecondsToMilliseconds()
     {

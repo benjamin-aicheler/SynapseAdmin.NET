@@ -55,7 +55,7 @@ else
 
                     <MudList T="string" Dense="true">
                         <MudListItem T="string"><b>@L["ID"]:</b> <MudText Typo="Typo.caption" Style="word-break: break-all;">@user.UserId</MudText></MudListItem>
-                        <MudListItem T="string"><b>@L["Created"]:</b> @TimeZoneService.ToLocal(user.CreationTsDateTime).ToString("f")</MudListItem>
+                        <MudListItem T="string"><b>@L["Created"]:</b> @(user.CreationTsDateTime is { } created ? TimeZoneService.ToLocal(created).ToString("f") : L["CreationDateUnknown"].Value)</MudListItem>
                         @if (user.ExpirationTsDateTime.HasValue)
                         {
                             <MudListItem T="string">

@@ -151,7 +151,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         // 2. Double-check with an active probe to /_synapse/admin/v1/server_version
         // Only run the active probe if:
         // - We didn't resolve a brand (e.g. federation disabled), so we fallback to testing the endpoint
-        // - Or we identified a compatible brand (Synapse or Tuwunel >= 1.8.1) and want to make sure it's active
+        // - Or we identified a compatible brand (Synapse or Tuwunel >= 1.8.2) and want to make sure it's active
         if (!brandResolved || supportsAdmin)
         {
             (supportsAdmin, version) = await ProbeAdminApiAsync(authenticatedHomeserver, version, cancellationToken);
@@ -193,7 +193,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 
     /// <summary>
     /// Reads brand and version from <c>/_matrix/federation/v1/version</c>. <c>SupportsAdmin</c> is set for brands known
-    /// to support the Synapse Admin API (Synapse, Tuwunel >= 1.8.1); the active probe then confirms it.
+    /// to support the Synapse Admin API (Synapse, Tuwunel >= 1.8.2); the active probe then confirms it.
     /// </summary>
     private static async Task<(string Brand, string Version, bool BrandResolved, bool SupportsAdmin)> ProbeFederationVersionAsync(
         AuthenticatedHomeserverGeneric homeserver, CancellationToken cancellationToken)
@@ -273,9 +273,9 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
     }
 
     /// <summary>
-    /// Whether a Tuwunel version is new enough for the Synapse Admin API (>= 1.8.1). A suffix after the first <c>-</c>
-    /// is dropped, except when the dash is the first character. An unparseable version counts as capable, so the
-    /// active probe decides.
+    /// Whether a Tuwunel version is new enough for the Synapse Admin API (>= 1.8.2: 1.8.1 doesn't serve seven endpoints
+    /// the app calls). A suffix after the first <c>-</c> is dropped, except when the dash is the first character. An
+    /// unparseable version counts as capable, so the active probe decides.
     /// </summary>
     internal static bool IsTuwunelAdminCapable(string version)
     {
@@ -289,7 +289,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 
         if (System.Version.TryParse(cleanVersion, out var parsedVersion))
         {
-            if (parsedVersion >= new System.Version(1, 8, 1))
+            if (parsedVersion >= new System.Version(1, 8, 2))
             {
                 supportsAdmin = true;
             }

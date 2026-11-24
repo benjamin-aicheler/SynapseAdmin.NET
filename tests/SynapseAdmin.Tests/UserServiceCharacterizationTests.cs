@@ -179,6 +179,39 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         AssertSingleLog(LogLevel.Error, operation.ErrorTemplate, operation.ErrorArguments, error);
     }
 
+    // A read that a page runs by itself logs a refusal at Debug: the homeserver works as intended (#559). Every other
+    // refused operation logs its error, as for any failure.
+    private static readonly Dictionary<string, (string Template, Dictionary<string, object?> Arguments)> RefusalsLoggedAtDebug = new()
+    {
+        ["List"] = ("The homeserver doesn't support sorting the user list by {OrderBy}", new() { ["OrderBy"] = "name" }),
+        ["ExperimentalFeatures"] = ("The homeserver doesn't support experimental features for user {UserId}", new() { ["UserId"] = SanitizedUserId }),
+    };
+
+    [Theory, MemberData(nameof(AllOperations))]
+    public async Task GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsAtTheOperationsLevel(string name)
+    {
+        var operation = Operations[name];
+        var refusal = new OperationNotSupportedByHomeserverException(operation.GatewayMethod);
+        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal));
+
+        var result = await operation.Invoke(CreateService(gateway), _cts.Token);
+
+        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
+        var entry = Assert.Single(_logger.Entries);
+        if (RefusalsLoggedAtDebug.TryGetValue(name, out var debug))
+        {
+            Assert.Equal((LogLevel.Debug, debug.Template), (entry.Level, entry.Template));
+            Assert.Equal(debug.Arguments, entry.Arguments);
+            Assert.Null(entry.Exception);
+        }
+        else
+        {
+            Assert.Equal((LogLevel.Error, operation.ErrorTemplate), (entry.Level, entry.Template));
+            Assert.Equal(operation.ErrorArguments, entry.Arguments);
+            Assert.Same(refusal, entry.Exception);
+        }
+    }
+
     [Theory, MemberData(nameof(ActionOperations))]
     public async Task Action_Success_ReturnsLocalizedMessage_AndLogsInformation(string name)
     {
@@ -384,6 +417,19 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         ResultAssert.Success(result, "");
         Assert.Null(result.Data!.ExperimentalFeatures);
         AssertSingleLog(LogLevel.Warning, "Failed to fetch experimental features for user {UserId}. Continuing without experimental features.", UserArgument, error);
+    }
+
+    /// <summary>A homeserver without per-user features (Tuwunel) refuses the read: the details show none, logged at Debug.</summary>
+    [Fact]
+    public async Task Details_ExperimentalFeaturesRefused_ContinueWithoutThem_AndLogAtDebug()
+    {
+        var refusal = new OperationNotSupportedByHomeserverException("GetUserExperimentalFeaturesAsync");
+
+        var result = await CreateService(DetailsGateway(s => s.Fault("GetUserExperimentalFeaturesAsync", refusal))).GetUserDetailsAsync(UserId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Null(result.Data!.ExperimentalFeatures);
+        AssertSingleLog(LogLevel.Debug, "The homeserver doesn't support experimental features for user {UserId}", UserArgument, exception: null);
     }
 
     [Fact]

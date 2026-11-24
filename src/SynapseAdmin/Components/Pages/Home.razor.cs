@@ -54,26 +54,34 @@ namespace SynapseAdmin.Components.Pages
             loading = true;
             try
             {
-                var userTask = UserService.GetUserListAsync(0, 5, "creation_ts", SortDirection.Descending, token: _cts.Token);
+                // The count has its own request by name, the key every homeserver sorts by: a server that can't sort by
+                // creation time refuses the latest users, which mustn't take the count with it.
+                var userCountTask = UserService.GetUserListAsync(0, 1, "name", SortDirection.Ascending, token: _cts.Token);
+                var latestUsersTask = UserService.GetUserListAsync(0, 5, "creation_ts", SortDirection.Descending, token: _cts.Token);
                 var roomTask = RoomService.GetRoomListAsync(0, 1, "name", SortDirection.Ascending, token: _cts.Token);
                 var reportTask = EventReportService.GetEventReportsAsync(0, 5, SortDirection.Descending, token: _cts.Token);
                 var largestRoomsTask = RoomService.GetLargestRoomsAsync(_cts.Token);
                 var topMediaUsersTask = UserService.GetTopMediaUsersAsync(10, _cts.Token);
                 var versionTask = MatrixSession.GetServerVersionAsync(_cts.Token);
 
-                await Task.WhenAll(userTask, roomTask, reportTask, largestRoomsTask, topMediaUsersTask, versionTask);
+                await Task.WhenAll(userCountTask, latestUsersTask, roomTask, reportTask, largestRoomsTask, topMediaUsersTask, versionTask);
 
-                var userResult = await userTask;
+                var userCountResult = await userCountTask;
+                var latestUsersResult = await latestUsersTask;
                 var roomResult = await roomTask;
                 var reportResult = await reportTask;
                 var largestRoomsResult = await largestRoomsTask;
                 var topMediaUsersResult = await topMediaUsersTask;
                 serverVersion = await versionTask;
 
-                if (userResult.Success)
+                if (userCountResult.Success)
                 {
-                    totalUsers = userResult.Data.Total;
-                    latestUsers = userResult.Data.Users;
+                    totalUsers = userCountResult.Data.Total;
+                }
+
+                if (latestUsersResult.Success)
+                {
+                    latestUsers = latestUsersResult.Data.Users;
                 }
 
                 if (roomResult.Success)

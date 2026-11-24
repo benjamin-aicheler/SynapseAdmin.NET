@@ -35,7 +35,7 @@ public static class UserMappingExtensions
             AvatarUrl = user.AvatarUrl,
             Deactivated = user.Deactivated,
             Admin = user.Admin == true,
-            CreationTs = DateTimeOffset.FromUnixTimeSeconds(user.CreationTs).ToUnixTimeMilliseconds(),
+            CreationTs = user.CreationTs is { } seconds ? DateTimeOffset.FromUnixTimeSeconds(seconds).ToUnixTimeMilliseconds() : null,
             UserType = user.UserType ?? "user",
             Locked = user.Locked,
             ShadowBanned = user.ShadowBanned,

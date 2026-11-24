@@ -14,7 +14,9 @@ namespace SynapseAdmin.Extensions;
 /// <c>logFailure</c> and returns the localized <c>OperationNotSupportedByHomeserver</c> warning (ADR 0006); any other
 /// exception, including a plain <see cref="NotSupportedException"/>, goes to <c>logFailure</c> and returns the localized
 /// <c>failureKey</c>. The session's gateway is read once and passed to <c>call</c>. Validation that has to run after
-/// the session check belongs at the start of <c>call</c>.
+/// the session check belongs at the start of <c>call</c>. A read that a page runs by itself passes <c>logRefusal</c>,
+/// which then gets the refusal instead of <c>logFailure</c>, to log it at Debug: the homeserver works as intended, so it
+/// isn't an error (#559).
 /// </summary>
 internal static class GatewayCallExtensions
 {
@@ -22,7 +24,8 @@ internal static class GatewayCallExtensions
 
     public static async Task<OperationResult> RunGatewayCallAsync(this IMatrixSessionService session,
         IStringLocalizer<SharedResources> localizer, string failureKey, Action<Exception> logFailure,
-        Func<IMatrixGateway, Task<OperationResult>> call)
+        Func<IMatrixGateway, Task<OperationResult>> call,
+        Action<OperationNotSupportedByHomeserverException>? logRefusal = null)
     {
         var gateway = session.Gateway;
         if (gateway == null) return OperationResult.Failure(localizer["NotAuthenticated"]);
@@ -37,7 +40,7 @@ internal static class GatewayCallExtensions
         }
         catch (OperationNotSupportedByHomeserverException ex)
         {
-            logFailure(ex);
+            (logRefusal ?? logFailure)(ex);
             return OperationResult.Failure(localizer[NotSupportedKey], Severity.Warning);
         }
         catch (Exception ex)
@@ -49,7 +52,8 @@ internal static class GatewayCallExtensions
 
     public static async Task<OperationResult<T>> RunGatewayCallAsync<T>(this IMatrixSessionService session,
         IStringLocalizer<SharedResources> localizer, string failureKey, Action<Exception> logFailure,
-        Func<IMatrixGateway, Task<OperationResult<T>>> call)
+        Func<IMatrixGateway, Task<OperationResult<T>>> call,
+        Action<OperationNotSupportedByHomeserverException>? logRefusal = null)
     {
         var gateway = session.Gateway;
         if (gateway == null) return OperationResult<T>.Failure(localizer["NotAuthenticated"]);
@@ -64,7 +68,7 @@ internal static class GatewayCallExtensions
         }
         catch (OperationNotSupportedByHomeserverException ex)
         {
-            logFailure(ex);
+            (logRefusal ?? logFailure)(ex);
             return OperationResult<T>.Failure(localizer[NotSupportedKey], Severity.Warning);
         }
         catch (Exception ex)

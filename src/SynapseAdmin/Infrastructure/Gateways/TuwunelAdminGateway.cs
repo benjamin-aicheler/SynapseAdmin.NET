@@ -8,7 +8,7 @@ using SynapseAdmin.Models.Responses;
 namespace SynapseAdmin.Infrastructure.Gateways;
 
 /// <summary>
-/// The gateway for Tuwunel (>= 1.8.1), which serves the Synapse Admin API with known deviations (ADR 0006). It inherits
+/// The gateway for Tuwunel (>= 1.8.2), which serves the Synapse Admin API with known deviations (ADR 0006). It inherits
 /// the Synapse contract and overrides only the methods where Tuwunel deviates, so that each returns Synapse's result.
 /// <c>MatrixAuthGateway</c> picks it when the federation reports the Tuwunel brand, in any casing.
 /// </summary>
@@ -96,6 +96,120 @@ internal sealed class TuwunelAdminGateway(
 
         await base.UpdateRegistrationTokenAsync(token, request, cancellationToken);
     }
+
+    // ---- User list and details --------------------------------------------------------------------------
+
+    /// <summary>
+    /// Tuwunel ignores <c>order_by</c> and always sorts users by user ID, so any other key would return a different
+    /// order than requested: only <c>name</c> is sent. Its <c>creation_ts</c> of 0 is reported as unknown.
+    /// </summary>
+    public override async Task<SynapseAdminUserListResult?> GetUserListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(orderBy, "name", StringComparison.Ordinal))
+        {
+            throw new OperationNotSupportedByHomeserverException();
+        }
+
+        var result = await base.GetUserListAsync(offset, limit, orderBy, direction, searchTerm, cancellationToken);
+        foreach (var user in result?.Users ?? [])
+        {
+            ClearUnknownCreationTs(user);
+        }
+
+        return result;
+    }
+
+    public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await base.GetUserDetailsAsync(userId, cancellationToken);
+        if (user != null)
+        {
+            ClearUnknownCreationTs(user);
+        }
+
+        return user;
+    }
+
+    /// <summary>Tuwunel stores no creation time and sends 0 for it, which would show as 1970.</summary>
+    private static void ClearUnknownCreationTs(SynapseAdminUserListResult.SynapseAdminUserListResultUser user)
+    {
+        if (user.CreationTs == 0)
+        {
+            user.CreationTs = null;
+        }
+    }
+
+    // ---- Operations Tuwunel doesn't serve --------------------------------------------------------------
+    // Tuwunel's status page (tuwunel-admin-api-2026-11-24.md) marks these endpoints as not implemented or not
+    // applicable, and Tuwunel answers them with 404 M_UNRECOGNIZED. They are refused before anything is sent, so the
+    // admin sees the "not supported" warning instead of an error.
+
+    /// <summary>Refused: Tuwunel has no media quarantine.</summary>
+    public override Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no media quarantine.</summary>
+    public override Task UnquarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no media quarantine.</summary>
+    public override Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no media quarantine.</summary>
+    public override Task QuarantineMediaByUserIdAsync(string userId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no protection from quarantine.</summary>
+    public override Task ProtectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no protection from quarantine.</summary>
+    public override Task UnprotectMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no event report store.</summary>
+    public override Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no event report store.</summary>
+    public override Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no account validity.</summary>
+    public override Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel's feature flags are server-wide, not per user.</summary>
+    public override Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel's feature flags are server-wide, not per user.</summary>
+    public override Task SetUserExperimentalFeaturesAsync(string userId, SynapseAdminExperimentalFeaturesRequest request, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel's database (RocksDB) has no background updates.</summary>
+    public override Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel's database (RocksDB) has no background updates.</summary>
+    public override Task<SynapseAdminBackgroundUpdatesEnabledResponse?> SetBackgroundUpdatesEnabledAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel's database (RocksDB) has no background updates.</summary>
+    public override Task StartBackgroundUpdatesJobAsync(string jobName, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: the room size estimate is PostgreSQL-only, even in Synapse.</summary>
+    public override Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>
+    /// Refused. Tuwunel selects cached remote media for <c>POST /_synapse/admin/v1/purge_media_cache</c> by when the file
+    /// was stored instead of when it was last accessed, so it would also remove recently used media that Synapse keeps.
+    /// </summary>
+    public override Task<SynapseAdminPurgeMediaCacheResponse?> PurgeRemoteMediaCacheAsync(long beforeTs, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
 
     private static bool IsInThePast(long? unixMs) =>
         unixMs is { } ms && ms < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

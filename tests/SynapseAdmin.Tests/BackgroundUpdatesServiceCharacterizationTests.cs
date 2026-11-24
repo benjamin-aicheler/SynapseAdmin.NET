@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MudBlazor;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
@@ -93,6 +94,38 @@ public sealed class BackgroundUpdatesServiceCharacterizationTests : IDisposable
         Assert.Equal((LogLevel.Error, operation.ErrorTemplate), (entry.Level, entry.Template));
         Assert.Equal(operation.ErrorArguments, entry.Arguments);
         Assert.Same(error, entry.Exception);
+    }
+
+    // A read that a page runs by itself logs a refusal at Debug: the homeserver works as intended (#559). Every other
+    // refused operation logs its error, as for any failure.
+    private static readonly Dictionary<string, (string Template, Dictionary<string, object?> Arguments)> RefusalsLoggedAtDebug = new()
+    {
+        ["Status"] = ("The homeserver doesn't support background updates", []),
+    };
+
+    [Theory, MemberData(nameof(AllOperations))]
+    public async Task GatewayRefuses_ReturnsTheNotSupportedWarning_AndLogsAtTheOperationsLevel(string name)
+    {
+        var operation = Operations[name];
+        var refusal = new OperationNotSupportedByHomeserverException(operation.GatewayMethod);
+        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal));
+
+        var result = await operation.Invoke(CreateService(gateway), _cts.Token);
+
+        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
+        var entry = Assert.Single(_logger.Entries);
+        if (RefusalsLoggedAtDebug.TryGetValue(name, out var debug))
+        {
+            Assert.Equal((LogLevel.Debug, debug.Template), (entry.Level, entry.Template));
+            Assert.Equal(debug.Arguments, entry.Arguments);
+            Assert.Null(entry.Exception);
+        }
+        else
+        {
+            Assert.Equal((LogLevel.Error, operation.ErrorTemplate), (entry.Level, entry.Template));
+            Assert.Equal(operation.ErrorArguments, entry.Arguments);
+            Assert.Same(refusal, entry.Exception);
+        }
     }
 
     [Theory]

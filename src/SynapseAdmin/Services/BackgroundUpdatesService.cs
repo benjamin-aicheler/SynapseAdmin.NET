@@ -22,7 +22,9 @@ public class BackgroundUpdatesService(
                 if (status == null) return OperationResult<BackgroundUpdatesStatusViewModel>.Failure(L["ErrorFetchingBackgroundUpdatesStatus"]);
                 var vm = status.ToViewModel();
                 return OperationResult<BackgroundUpdatesStatusViewModel>.Ok(vm);
-            });
+            },
+            // A page loads this by itself: a homeserver that refuses it works as intended, so the refusal isn't an error.
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support background updates"));
 
     public Task<OperationResult<bool>> SetEnabledAsync(bool enabled, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorTogglingBackgroundUpdates",
