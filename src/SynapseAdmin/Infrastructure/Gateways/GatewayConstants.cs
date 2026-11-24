@@ -2,7 +2,8 @@ namespace SynapseAdmin.Infrastructure.Gateways;
 
 /// <summary>
 /// Brand and version sentinels of the gateways, and the Synapse Admin API path that reports the server version.
-/// These are <c>const</c> because <see cref="SynapseAdminGateway"/> uses them as default parameter values.
+/// These are <c>const</c> because <see cref="SynapseAdminGateway"/> and <see cref="TuwunelAdminGateway"/> use them as
+/// default parameter values.
 /// </summary>
 public static class GatewayConstants
 {

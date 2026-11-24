@@ -5,15 +5,17 @@ using SynapseAdmin.Models.Requests;
 using System.Text;
 using System.Text.Json;
 using ArcaneLibs.Extensions;
-using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Infrastructure.Serialization;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
 
 /// <summary>
-/// A Synapse-compatible implementation of the Matrix gateway.
-/// Does not depend on LibMatrix's SDK-level .Admin properties, allowing support for homeservers (such as Tuwunel >= 1.8.1)
-/// that implement the Synapse Admin API but return AuthenticatedHomeserverGeneric instead of AuthenticatedHomeserverSynapse.
+/// The Synapse Admin API contract (ADR 0006): every request follows the Synapse Admin API reference. Serves Synapse and
+/// any homeserver that answers the admin API without a gateway class of its own. A server that deviates gets a subclass
+/// that overrides the deviating methods, such as <see cref="TuwunelAdminGateway"/>. <c>serverBrand</c> is
+/// only reported, never used for a decision.
+/// Does not depend on LibMatrix's SDK-level .Admin properties, so it also works on homeservers that return
+/// AuthenticatedHomeserverGeneric instead of AuthenticatedHomeserverSynapse.
 /// </summary>
 public class SynapseAdminGateway(
     AuthenticatedHomeserverGeneric homeserver,
@@ -226,13 +228,6 @@ public class SynapseAdminGateway(
 
     public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
-        // Callers pass the dir of Synapse's documented order. Tuwunel sorts the keys Synapse sorts largest first
-        // ascending instead, so it needs the opposite dir for the same order (#541).
-        if (RoomSortKeys.IsLargestFirst(orderBy) && string.Equals(ServerBrand, GatewayConstants.TuwunelBrand, StringComparison.OrdinalIgnoreCase))
-        {
-            direction = RoomSortKeys.Reverse(direction);
-        }
-
         var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={limit}&dir={direction.UrlEncode()}&order_by={orderBy.UrlEncode()}";
         if (!string.IsNullOrEmpty(searchTerm)) url += $"&search_term={searchTerm.UrlEncode()}";
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: cancellationToken);

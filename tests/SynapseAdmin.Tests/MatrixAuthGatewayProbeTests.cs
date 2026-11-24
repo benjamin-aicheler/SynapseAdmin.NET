@@ -49,6 +49,23 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// The Tuwunel brand, in any casing, gets the Tuwunel gateway (ADR 0006), which keeps the casing the server reports.
+    /// </summary>
+    [Theory]
+    [InlineData("Tuwunel")]
+    [InlineData("tuwunel")]
+    [InlineData("TUWUNEL")]
+    public async Task GetAuthenticated_TuwunelBrand_GetsTheTuwunelGateway(string brand)
+    {
+        _homeserver.FederationVersion = () => Results.Json(new { server = new { name = brand, version = "1.9.0" } });
+
+        var gateway = await CreateAuthGateway().GetAuthenticatedAsync(_homeserver.Url, AccessToken);
+
+        Assert.IsType<TuwunelAdminGateway>(gateway);
+        Assert.Equal((brand, "1.9.0"), (gateway.ServerBrand, gateway.ServerVersion));
+    }
+
+    /// <summary>
     /// Issue #391: cancelling the request while a capability probe is in flight must not leave a gateway
     /// without admin API in the cache for that access token.
     /// </summary>

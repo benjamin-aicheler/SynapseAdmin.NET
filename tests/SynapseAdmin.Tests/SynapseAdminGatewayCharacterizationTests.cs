@@ -383,37 +383,55 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
     // ---- Room list sort direction (#541) -------------------------------------------------------------
 
-    // The dir a caller passes follows the Synapse docs, where these keys sort largest first. Tuwunel sorts every key
-    // ascending, so the gateway sends it the opposite dir for them. Other brands, including an unresolved one, get the
-    // documented behavior unchanged.
-    public static TheoryData<string, string, string, string> RoomListDirs => new()
+    // The dir a caller passes follows the Synapse docs, where these keys sort largest first. The Synapse gateway sends it
+    // unchanged, whatever brand it reports; Tuwunel sorts every key ascending, so its gateway sends the opposite dir for
+    // these keys. Which server gets which class is covered by MatrixAuthGatewayProbeTests.
+    public static TheoryData<string, string> SynapseRoomListDirs => new()
     {
-        { GatewayConstants.SynapseBrand, "joined_members", "f", "f" },
-        { GatewayConstants.SynapseBrand, "joined_members", "b", "b" },
-        { GatewayConstants.TuwunelBrand, "joined_members", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "joined_members", "b", "f" },
-        { "tuwunel", "joined_members", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "joined_local_members", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "version", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "state_events", "b", "f" },
-        { GatewayConstants.TuwunelBrand, "size", "f", "b" },
-        { GatewayConstants.TuwunelBrand, "name", "f", "f" },
-        { GatewayConstants.TuwunelBrand, "public", "b", "b" },
-        { GatewayConstants.GenericBrand, "joined_members", "f", "f" },
+        { GatewayConstants.SynapseBrand, "f" },
+        { GatewayConstants.SynapseBrand, "b" },
+        { GatewayConstants.GenericBrand, "f" },
+        { GatewayConstants.TuwunelBrand, "f" }, // the brand is only reported, never used for a decision
     };
 
     [Theory]
-    [MemberData(nameof(RoomListDirs))]
-    public async Task GetRoomList_SendsTheDirThatGivesTheDocumentedOrder(string brand, string orderBy, string dir, string sentDir)
+    [MemberData(nameof(SynapseRoomListDirs))]
+    public async Task GetRoomList_SendsTheDirItIsGiven(string brand, string dir)
     {
-        var gateway = new SynapseAdminGateway(new AuthenticatedHomeserverGeneric(
-            "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token"), brand);
+        var gateway = new SynapseAdminGateway(CreateHomeserver(), brand);
+        _homeserver.Respond = () => Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
+
+        await gateway.GetRoomListAsync(0, 10, "joined_members", dir);
+
+        Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir={dir}&order_by=joined_members", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    public static TheoryData<string, string, string> TuwunelRoomListDirs => new()
+    {
+        { "joined_members", "f", "b" },
+        { "joined_members", "b", "f" },
+        { "joined_local_members", "f", "b" },
+        { "version", "f", "b" },
+        { "state_events", "b", "f" },
+        { "size", "f", "b" },
+        { "name", "f", "f" },
+        { "public", "b", "b" },
+    };
+
+    [Theory]
+    [MemberData(nameof(TuwunelRoomListDirs))]
+    public async Task Tuwunel_GetRoomList_SendsTheDirThatGivesTheDocumentedOrder(string orderBy, string dir, string sentDir)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
         _homeserver.Respond = () => Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
 
         await gateway.GetRoomListAsync(0, 10, orderBy, dir);
 
         Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir={sentDir}&order_by={orderBy}", Assert.Single(_homeserver.RequestTargets));
     }
+
+    private AuthenticatedHomeserverGeneric CreateHomeserver() => new(
+        "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token");
 
     // ---- Shadow login (#539) -------------------------------------------------------------------------
 

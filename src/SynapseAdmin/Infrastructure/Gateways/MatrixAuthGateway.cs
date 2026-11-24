@@ -159,7 +159,11 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 
         if (supportsAdmin)
         {
-            return new SynapseAdminGateway(authenticatedHomeserver, brand, version);
+            // A server with known deviations from the Synapse Admin API gets its own gateway class (ADR 0006);
+            // every other server, including one whose brand couldn't be resolved, gets the Synapse contract.
+            return string.Equals(brand, GatewayConstants.TuwunelBrand, StringComparison.OrdinalIgnoreCase)
+                ? new TuwunelAdminGateway(authenticatedHomeserver, brand, version)
+                : new SynapseAdminGateway(authenticatedHomeserver, brand, version);
         }
 
         return new GenericMatrixGateway(authenticatedHomeserver);

@@ -5,13 +5,10 @@
 
 ## 🔄 In Progress
 
-- [ ] [3.1] Add `TuwunelAdminGateway` with the `GetRoomListAsync` override; remove the brand check from `SynapseAdminGateway`
+- [ ] [4.1] AGENTS.md: new names, contract rule, Room Size Semantics, Tuwunel & Generic Fallback
 
 ## ⏭️ Next Up
 
-- [ ] [3.2] Factory returns `TuwunelAdminGateway` for the Tuwunel brand (`OrdinalIgnoreCase`), `SynapseAdminGateway` otherwise
-- [ ] [3.3] Tests: exact class per probe outcome; split `RoomListDirs` by class
-- [ ] [4.1] AGENTS.md: new names, contract rule, Room Size Semantics, Tuwunel & Generic Fallback
 - [ ] [4.2] ARCHITECTURE.md: new names in §2, §3, §5, §6, §10; ADR 0006 → Accepted; ADR 0001 note
 - [ ] [4.3] Reset PLAN.md and TODO.md to the templates from `main`
 
@@ -33,6 +30,7 @@
 - [x] 2026-11-24 – PLAN.md approved
 - [x] 2026-11-24 – [1.1] `GetAuthenticated_RoomListDir_FollowsTheProbedServer` (6 rows) passes on `main`'s code; in-memory mutations caught: no reversal (2 Tuwunel rows fail), case-sensitive brand check (`tuwunel` row fails)
 - [x] 2026-11-24 – [2.1, 2.2] Gateway and test class renamed with `git mv` (7 files, 59 lines); no string references to the old names in `tests/`; build 0 errors, app project 0 warnings; 1233 tests pass
+- [x] 2026-11-24 – [3.1–3.3] `TuwunelAdminGateway` overrides `GetRoomListAsync`; brand check removed from `SynapseAdminGateway`; factory picks the class; `GetAuthenticated_TuwunelBrand_GetsTheTuwunelGateway` (3 casings); `RoomListDirs` split into `GetRoomList_SendsTheDirItIsGiven` (4) and `Tuwunel_GetRoomList_SendsTheDirThatGivesTheDocumentedOrder` (8); [1.1] test passes unchanged; no `ServerBrand` comparison left; 1236 tests pass (EN and DE)
 
 ## Definition of Done (applies to every task)
 
