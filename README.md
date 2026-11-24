@@ -37,7 +37,15 @@ SynapseAdmin.NET provides a comprehensive suite of tools to manage your Matrix h
 
 ## Homeserver Compatibility
 
-SynapseAdmin.NET follows the [Synapse Admin API](https://element-hq.github.io/synapse/latest/usage/administration/admin_api/) and describes every operation the way Synapse runs it, whichever homeserver you manage. On a compatible homeserver such as Tuwunel (1.8.1 or later), the app corrects known differences so that the result matches Synapse's. If it can't, it doesn't run the operation with different results: it shows "This operation is not supported by this homeserver." instead. On Tuwunel this currently applies to bulk local media deletion, because Tuwunel selects media by upload time instead of last access and doesn't keep avatars. It also applies to creating or editing a registration token so that it is invalid at once (0 uses allowed, no more uses than it already had, or an expiry in the past), because Tuwunel deletes an invalid token where Synapse keeps it. For the same reason, a token whose uses run out or whose expiry passes later disappears from the list on Tuwunel. On a homeserver without the Synapse Admin API, the admin features are not available.
+SynapseAdmin.NET follows the [Synapse Admin API](https://element-hq.github.io/synapse/latest/usage/administration/admin_api/) and describes every operation the way Synapse runs it, whichever homeserver you manage. On a compatible homeserver such as Tuwunel (1.8.2 or later), the app corrects known differences so that the result matches Synapse's. If it can't, it doesn't run the operation with different results: it shows "This operation is not supported by this homeserver." instead, and the page itself looks the same as on Synapse. On Tuwunel this currently applies to:
+
+- operations Tuwunel doesn't offer: media quarantine and protection, event reports, account validity, per-user experimental features, background updates, and room sizes on the dashboard;
+- deleting a room, because Tuwunel purges a room even when it couldn't remove all local users and doesn't report every failed step;
+- bulk local media deletion, because Tuwunel selects media by upload time instead of last access and doesn't keep avatars, and the remote media cache purge, because it selects by download time instead of last access;
+- creating or editing a registration token so that it is invalid at once (0 uses allowed, no more uses than it already had, or an expiry in the past), because Tuwunel deletes an invalid token where Synapse keeps it. For the same reason, a token whose uses run out or whose expiry passes later disappears from the list on Tuwunel;
+- sorting the user list by anything but user ID, because Tuwunel always sorts by user ID. Tuwunel doesn't store when an account was created, so the creation date shows as "Unknown".
+
+Tuwunel 1.8.1 lacks several endpoints the app needs, so it is treated as a homeserver without the Synapse Admin API. On a homeserver without the Synapse Admin API, the admin features are not available.
 
 ## Security
 
