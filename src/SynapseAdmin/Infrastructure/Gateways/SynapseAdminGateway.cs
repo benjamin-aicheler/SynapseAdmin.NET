@@ -305,6 +305,12 @@ public class SynapseAdminGateway(
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<RoomStatisticsResponse>("/_synapse/admin/v1/statistics/database/rooms", cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// A null <paramref name="from"/> is left out on purpose for the first page (#549). The Admin API page calls
+    /// <c>from</c> required, but Synapse (v1.165.0, which tests <c>?dir=b</c> without it) and Tuwunel (1.8.1) start
+    /// backward history at the newest event when it is missing, as the Client-Server <c>/messages</c> does. Don't send
+    /// a made-up token such as <c>END</c> instead: tokens are server-specific.
+    /// </summary>
     public override async Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/messages";
