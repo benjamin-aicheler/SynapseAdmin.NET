@@ -5,7 +5,6 @@
 
 ## 🔄 In Progress
 
-- [ ] [0.3] Check Tuwunel's handlers (v1.8.2, v2.0.0) for the requests of phases 1–4 (FR-4, AC-19 to AC-22)
 
 ## ⏭️ Next Up
 
@@ -15,9 +14,9 @@
 - [ ] [2.2] Gateway `SetUserSuspendedAsync`, `SetUserShadowBannedAsync`; Generic refuses; Tuwunel refuses shadow-ban (AC-20)
 - [ ] [2.3] Service `SetUserLockedAsync`, `SetUserAdminAsync`, `SetUserSuspendedAsync`, `SetUserShadowBannedAsync` (AC-20)
 - [ ] [2.4] Actions card toggles; own-account actions disabled with a hint, Deactivate included (AC-20)
-- [ ] [3.1] Gateway `ResetPasswordAsync`; Generic refuses; Tuwunel refuses the signed-in admin's own ID (AC-21)
+- [ ] [3.1] Gateway `ResetPasswordAsync`; Generic refuses; Tuwunel refuses the signed-in admin's own ID and a deactivated account (AC-21)
 - [ ] [3.2] Service `ResetPasswordAsync`, `ReactivateUserAsync`; no password in logs (AC-21)
-- [ ] [3.3] `ResetPasswordDialog` (logout off by default, own-account hint), `ReactivateUserDialog`, page wiring (AC-21)
+- [ ] [3.3] `ResetPasswordDialog` (logout off by default, own-account hint), `ReactivateUserDialog`, page wiring; Reset password disabled for deactivated accounts (AC-21)
 - [ ] [4.1] Service `UpdateUserProfileAsync`: only changed fields, no change sends nothing (AC-22)
 - [ ] [4.2] `UserProfileDialog` and page wiring (AC-22)
 - [ ] [4.3] Finish: drop `[Planned]` tags, decision log, AGENTS.md "What Tuwunel Refuses", reset PLAN.md and TODO.md
@@ -34,6 +33,7 @@
 
 - [x] 2026-11-25 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-19 to AC-22, §8, §10, §13
 - [x] 2026-11-25 – [0.2] PLAN.md approved; TODO.md filled
+- [x] 2026-11-25 – [0.3] Tuwunel handlers checked; one new refusal planned (reset of a deactivated account), see PLAN.md §10
 
 ## Definition of Done (applies to every task)
 
