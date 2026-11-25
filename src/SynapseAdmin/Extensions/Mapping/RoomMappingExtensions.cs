@@ -43,6 +43,12 @@ public static class RoomMappingExtensions
         }
     };
 
+    public static RoomBlockStatusViewModel ToViewModel(this SynapseAdminRoomBlockStatusResponse status) => new()
+    {
+        IsBlocked = status.Block,
+        BlockedBy = status.UserId ?? string.Empty
+    };
+
     public static List<RoomListViewModel> ToViewModels(this IEnumerable<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom> rooms)
     {
         return rooms.Select(ToViewModel).ToList();

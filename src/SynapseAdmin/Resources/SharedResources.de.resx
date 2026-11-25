@@ -269,7 +269,46 @@
     <value>Raum löschen &amp; blockieren</value>
   </data>
   <data name="BlockRoom" xml:space="preserve">
-    <value>Raum blockieren</value>
+    <value>Raum sperren</value>
+  </data>
+  <data name="Block" xml:space="preserve">
+    <value>Sperren</value>
+  </data>
+  <data name="Unblock" xml:space="preserve">
+    <value>Entsperren</value>
+  </data>
+  <data name="UnblockRoom" xml:space="preserve">
+    <value>Raum entsperren</value>
+  </data>
+  <data name="BlockRoomTitle" xml:space="preserve">
+    <value>Raum sperren</value>
+  </data>
+  <data name="BlockRoomConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Raum „{0}“ sperren möchten? Benutzer dieses Homeservers können ihm dann nicht mehr beitreten.</value>
+  </data>
+  <data name="UnblockRoomTitle" xml:space="preserve">
+    <value>Raum entsperren</value>
+  </data>
+  <data name="UnblockRoomConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Raum „{0}“ entsperren möchten? Benutzer dieses Homeservers können ihm dann wieder beitreten.</value>
+  </data>
+  <data name="BlockState" xml:space="preserve">
+    <value>Sperre</value>
+  </data>
+  <data name="Blocked" xml:space="preserve">
+    <value>Gesperrt</value>
+  </data>
+  <data name="BlockedBy" xml:space="preserve">
+    <value>von {0}</value>
+  </data>
+  <data name="NotBlocked" xml:space="preserve">
+    <value>Nicht gesperrt</value>
+  </data>
+  <data name="BlockStatusUnknown" xml:space="preserve">
+    <value>Unbekannt</value>
+  </data>
+  <data name="ErrorFetchingRoomBlockStatus" xml:space="preserve">
+    <value>Fehler beim Prüfen, ob der Raum gesperrt ist.</value>
   </data>
   <data name="StateEvents" xml:space="preserve">
     <value>Statusereignisse</value>

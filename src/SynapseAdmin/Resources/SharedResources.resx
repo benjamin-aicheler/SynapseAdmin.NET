@@ -305,6 +305,45 @@
   <data name="BlockRoom" xml:space="preserve">
     <value>Block Room</value>
   </data>
+  <data name="Block" xml:space="preserve">
+    <value>Block</value>
+  </data>
+  <data name="Unblock" xml:space="preserve">
+    <value>Unblock</value>
+  </data>
+  <data name="UnblockRoom" xml:space="preserve">
+    <value>Unblock Room</value>
+  </data>
+  <data name="BlockRoomTitle" xml:space="preserve">
+    <value>Block Room</value>
+  </data>
+  <data name="BlockRoomConfirmation" xml:space="preserve">
+    <value>Are you sure you want to block the room "{0}"? Users of this homeserver will no longer be able to join it.</value>
+  </data>
+  <data name="UnblockRoomTitle" xml:space="preserve">
+    <value>Unblock Room</value>
+  </data>
+  <data name="UnblockRoomConfirmation" xml:space="preserve">
+    <value>Are you sure you want to unblock the room "{0}"? Users of this homeserver will be able to join it again.</value>
+  </data>
+  <data name="BlockState" xml:space="preserve">
+    <value>Blocking</value>
+  </data>
+  <data name="Blocked" xml:space="preserve">
+    <value>Blocked</value>
+  </data>
+  <data name="BlockedBy" xml:space="preserve">
+    <value>by {0}</value>
+  </data>
+  <data name="NotBlocked" xml:space="preserve">
+    <value>Not blocked</value>
+  </data>
+  <data name="BlockStatusUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="ErrorFetchingRoomBlockStatus" xml:space="preserve">
+    <value>Error checking whether the room is blocked.</value>
+  </data>
   <data name="StateEvents" xml:space="preserve">
     <value>State Events</value>
   </data>

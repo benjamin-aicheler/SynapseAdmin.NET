@@ -119,6 +119,25 @@ else
                         }
                         <MudListItem T="string"><b>@L["Members"]:</b> @room.JoinedMembers (@L["Local"]: @room.JoinedLocalMembers)</MudListItem>
                         <MudListItem T="string"><b>@L["Public"]:</b> @room.Public</MudListItem>
+                        @* The room's block state (#586); unknown while it loads or when it can't be read. *@
+                        <MudListItem T="string" Class="room-block-status"><b>@L["BlockState"]:</b>
+                            @if (blockStatus == null)
+                            {
+                                <MudChip T="string" Color="Color.Default" Size="Size.Small">@L["BlockStatusUnknown"]</MudChip>
+                            }
+                            else if (blockStatus.IsBlocked)
+                            {
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small">@L["Blocked"]</MudChip>
+                                @if (!string.IsNullOrEmpty(blockStatus.BlockedBy))
+                                {
+                                    <MudText Typo="Typo.caption" Class="room-block-blocker">@L["BlockedBy", blockStatus.BlockedBy]</MudText>
+                                }
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small">@L["NotBlocked"]</MudChip>
+                            }
+                        </MudListItem>
                         <MudListItem T="string"><b>@L["JoinRules"]:</b> @room.JoinRules</MudListItem>
                         <MudListItem T="string"><b>@L["GuestAccess"]:</b> @room.GuestAccess</MudListItem>
                         <MudListItem T="string"><b>@L["HistoryVisibility"]:</b> @room.HistoryVisibility</MudListItem>
@@ -137,7 +156,15 @@ else
                 <MudCardContent>
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["DeleteRoom"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["DeleteAndBlockRoom"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["BlockRoom"]</MudButton>
+                    @* Block or Unblock by the room's block state; both while it is unknown (#586). *@
+                    @if (blockStatus?.IsBlocked != true)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["BlockRoom"]</MudButton>
+                    }
+                    @if (blockStatus?.IsBlocked != false)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="UnblockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["UnblockRoom"]</MudButton>
+                    }
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["QuarantineMedia"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OpenPurgeHistoryDialog" Disabled="IsRoomOperationRunning" Class="mb-2">@L["PurgeHistory"]</MudButton>
                 </MudCardContent>

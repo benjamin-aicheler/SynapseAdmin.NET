@@ -271,6 +271,45 @@
   <data name="BlockRoom" xml:space="preserve">
     <value>Bloquer le salon</value>
   </data>
+  <data name="Block" xml:space="preserve">
+    <value>Bloquer</value>
+  </data>
+  <data name="Unblock" xml:space="preserve">
+    <value>Débloquer</value>
+  </data>
+  <data name="UnblockRoom" xml:space="preserve">
+    <value>Débloquer le salon</value>
+  </data>
+  <data name="BlockRoomTitle" xml:space="preserve">
+    <value>Bloquer le salon</value>
+  </data>
+  <data name="BlockRoomConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir bloquer le salon « {0} » ? Les utilisateurs de ce serveur d'accueil ne pourront plus le rejoindre.</value>
+  </data>
+  <data name="UnblockRoomTitle" xml:space="preserve">
+    <value>Débloquer le salon</value>
+  </data>
+  <data name="UnblockRoomConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir débloquer le salon « {0} » ? Les utilisateurs de ce serveur d'accueil pourront à nouveau le rejoindre.</value>
+  </data>
+  <data name="BlockState" xml:space="preserve">
+    <value>Blocage</value>
+  </data>
+  <data name="Blocked" xml:space="preserve">
+    <value>Bloqué</value>
+  </data>
+  <data name="BlockedBy" xml:space="preserve">
+    <value>par {0}</value>
+  </data>
+  <data name="NotBlocked" xml:space="preserve">
+    <value>Non bloqué</value>
+  </data>
+  <data name="BlockStatusUnknown" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+  <data name="ErrorFetchingRoomBlockStatus" xml:space="preserve">
+    <value>Erreur lors de la vérification du blocage du salon.</value>
+  </data>
   <data name="StateEvents" xml:space="preserve">
     <value>Événements d'état</value>
   </data>
