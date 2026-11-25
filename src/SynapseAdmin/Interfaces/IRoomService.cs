@@ -20,6 +20,7 @@ public interface IRoomService
     Task<OperationResult<RoomDeletionStatusViewModel?>> GetActiveRoomDeletionAsync(string roomId, CancellationToken token = default);
     Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default);
     Task<OperationResult> BlockRoomAsync(string roomId, bool block, CancellationToken token = default);
+    Task<OperationResult<RoomBlockStatusViewModel>> GetRoomBlockStatusAsync(string roomId, CancellationToken token = default);
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);
     Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default);
     Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default);

@@ -275,6 +275,10 @@ public class SynapseAdminGateway(
         resp.EnsureSuccessStatusCode();
     }
 
+    public override Task<SynapseAdminRoomBlockStatusResponse?> GetRoomBlockStatusAsync(string roomId, CancellationToken cancellationToken = default) =>
+        GetWithCompatibilityOptionsAsync<SynapseAdminRoomBlockStatusResponse>(
+            $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/block", cancellationToken);
+
     public override async Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default)
     {
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<RoomStatisticsResponse>("/_synapse/admin/v1/statistics/database/rooms", cancellationToken: cancellationToken);

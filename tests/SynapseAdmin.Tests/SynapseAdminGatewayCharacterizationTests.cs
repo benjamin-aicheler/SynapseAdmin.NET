@@ -30,6 +30,8 @@ namespace SynapseAdmin.Tests;
 /// Also the four raw DELETEs: the exact request (method, target, Content-Type, body) and the same error behavior.
 /// Also the registration token update and create bodies (explicit vs omitted nulls).
 /// Also setting room directory visibility: the exact PUT, its cancellation token and the same error behavior.
+/// Also blocking and unblocking a room and reading its block state (#586): the exact PUT and GET, their cancellation
+/// token and the same error behavior.
 /// Also the Client-Server alias and directory calls (#580): their results and the same error behavior.
 /// Also the seven POSTs that send <c>{}</c> and read no response body: the exact request, that a server accepting only
 /// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
@@ -376,6 +378,115 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         var ex = await Assert.ThrowsAsync<HttpRequestException>(
             () => _gateway.SetRoomDirectoryVisibilityAsync("!room:example.com", "private"));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // Blocking and unblocking a room (#586): one PUT on /_synapse/admin/v1/rooms/{roomId}/block with {"block": true | false}.
+    private const string RoomBlockTarget = "/_synapse/admin/v1/rooms/!room%3aexample.com/block";
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task BlockRoom_SendsPutWithBlock(bool block)
+    {
+        _homeserver.AllowedMethod = "PUT";
+        _homeserver.Respond = () => Results.Json(new { block });
+
+        await _gateway.BlockRoomAsync("!room:example.com", block);
+
+        Assert.Equal(
+            new CapturedRequest("PUT", RoomBlockTarget, "application/json; charset=utf-8", $$"""{"block":{{(block ? "true" : "false")}}}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task BlockRoom_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { block = true });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _gateway.BlockRoomAsync("!room:example.com", true, cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task BlockRoom_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_FORBIDDEN", error = "You are not a server admin" }, statusCode: 403);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.BlockRoomAsync("!room:example.com", false));
+
+        Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task BlockRoom_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => _gateway.BlockRoomAsync("!room:example.com", true));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // Reading a room's block state (#586): GET on the same path; user_id is only present for a blocked room, and Tuwunel
+    // may leave it out even then.
+    [Fact]
+    public async Task GetRoomBlockStatus_Blocked_ReadsTheBlocker()
+    {
+        _homeserver.Respond = () => Results.Json(new { block = true, user_id = "@admin:example.com" });
+
+        var status = await _gateway.GetRoomBlockStatusAsync("!room:example.com");
+
+        Assert.Equal((true, "@admin:example.com"), (status!.Block, status.UserId));
+        Assert.Equal(new CapturedRequest("GET", RoomBlockTarget, null, ""), Assert.Single(_homeserver.Requests));
+    }
+
+    [Theory]
+    [InlineData("""{"block":false}""", false)]
+    [InlineData("""{"block":true}""", true)]
+    public async Task GetRoomBlockStatus_WithoutUserId_ReadsNoBlocker(string body, bool blocked)
+    {
+        _homeserver.Respond = () => Results.Text(body, "application/json");
+
+        var status = await _gateway.GetRoomBlockStatusAsync("!room:example.com");
+
+        Assert.Equal((blocked, (string?)null), (status!.Block, status.UserId));
+    }
+
+    [Fact]
+    public async Task GetRoomBlockStatus_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { block = false });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _gateway.GetRoomBlockStatusAsync("!room:example.com", cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task GetRoomBlockStatus_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_FORBIDDEN", error = "You are not a server admin" }, statusCode: 403);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.GetRoomBlockStatusAsync("!room:example.com"));
+
+        Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task GetRoomBlockStatus_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => _gateway.GetRoomBlockStatusAsync("!room:example.com"));
 
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }

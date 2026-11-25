@@ -421,4 +421,23 @@ public class MappingExtensionsTests
 
         Assert.Equal((string.Empty, string.Empty, RoomDeletionState.Unknown), (vm.DeleteId, vm.RoomId, vm.State));
     }
+
+    // Room block state (#586): user_id is only sent for a blocked room, and Tuwunel may leave it out even then.
+    [Theory]
+    [InlineData(true, "@admin:example.com")]
+    [InlineData(false, "@admin:example.com")]
+    public void RoomBlockStatusMapping_MapsAllProperties(bool block, string userId)
+    {
+        var vm = new SynapseAdminRoomBlockStatusResponse { Block = block, UserId = userId }.ToViewModel();
+
+        Assert.Equal((block, userId), (vm.IsBlocked, vm.BlockedBy));
+    }
+
+    [Fact]
+    public void RoomBlockStatusMapping_MissingFields_BecomeEmpty()
+    {
+        var vm = JsonSerializer.Deserialize<SynapseAdminRoomBlockStatusResponse>("{}")!.ToViewModel();
+
+        Assert.Equal((false, string.Empty), (vm.IsBlocked, vm.BlockedBy));
+    }
 }

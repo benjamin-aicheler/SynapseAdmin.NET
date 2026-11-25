@@ -75,7 +75,7 @@ public class RoomDetailsSnackbarTests : DetailPageTestBase
     public static TheoryData<string, string> Actions()
     {
         var data = new TheoryData<string, string>();
-        foreach (var handler in new[] { "DeleteRoom", "QuarantineMedia", "BlockRoom", "QuarantineSingleMedia", "UnquarantineSingleMedia", "DeleteSingleMedia", "ToggleMediaProtection" })
+        foreach (var handler in new[] { "DeleteRoom", "QuarantineMedia", "BlockRoom", "UnblockRoom", "QuarantineSingleMedia", "UnquarantineSingleMedia", "DeleteSingleMedia", "ToggleMediaProtection" })
         {
             foreach (var kind in new[] { "success", "failure", "cancelled" }) data.Add(handler, kind);
         }
@@ -96,7 +96,7 @@ public class RoomDetailsSnackbarTests : DetailPageTestBase
         };
 
         var action = InvokeHandler(cut, handler, args);
-        if (handler is not ("BlockRoom" or "ToggleMediaProtection"))
+        if (handler is not "ToggleMediaProtection")
         {
             cut.WaitForAssertion(() => Assert.Single(Confirmations));
             Confirmations[0].Result.SetResult(true);

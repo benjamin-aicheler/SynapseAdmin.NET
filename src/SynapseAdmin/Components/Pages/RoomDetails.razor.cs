@@ -56,6 +56,12 @@ namespace SynapseAdmin.Components.Pages
         private RoomDeletionState activeDeletionState;
         private CancellationTokenSource? _deletionPollingCts;
 
+        // The room's block state (#586). Null while it is unknown (loading, or the read failed): the page then offers both
+        // Block and Unblock. Each read gets a number, and only the latest one applies, so a slow first read can't
+        // overwrite the state read again after an action.
+        private RoomBlockStatusViewModel? blockStatus;
+        private int _blockStatusRequest;
+
         /// <summary>A deletion or a purge is running: every room action is disabled until it ends (#518).</summary>
         private bool IsRoomOperationRunning => activeDeleteId != null || !string.IsNullOrEmpty(activePurgeId);
 
@@ -90,11 +96,15 @@ namespace SynapseAdmin.Components.Pages
             activePurgeStatus = null;
             activeDeleteId = null;
             activeDeletionState = RoomDeletionState.Unknown;
+            blockStatus = null;
 
             await TimeZoneService.InitializeAsync();
             if (token.IsCancellationRequested) return;
 
             await LoadRoomDetails(roomId, token);
+            if (token.IsCancellationRequested) return;
+
+            await LoadBlockStatusAsync(roomId, token);
             if (token.IsCancellationRequested) return;
 
             await LoadMessages(roomId, null, token);
@@ -159,6 +169,41 @@ namespace SynapseAdmin.Components.Pages
                 }
             }
             isLoading = false;
+        }
+
+        /// <summary>
+        /// Reads whether the shown room is blocked (#586). A failed read leaves the state unknown and reports the failure.
+        /// </summary>
+        private async Task LoadBlockStatusAsync(string roomId, CancellationToken token)
+        {
+            if (_displayedRoomId != roomId) return;
+
+            var request = ++_blockStatusRequest;
+            var result = await RoomService.GetRoomBlockStatusAsync(roomId, token);
+            if (token.IsCancellationRequested || request != _blockStatusRequest || roomId != _loadedRoomId || _displayedRoomId != roomId) return;
+
+            if (result is { Success: true, Data: { } status })
+            {
+                blockStatus = status;
+            }
+            else
+            {
+                blockStatus = null;
+                if (result != null) Snackbar.ShowFailure(result);
+            }
+        }
+
+        private Task ReloadBlockStatus() =>
+            _displayedRoomId is { } roomId ? LoadBlockStatusAsync(roomId, LoadToken) : Task.CompletedTask;
+
+        /// <summary>
+        /// Reads the block state again after a deletion that ended without deleting the room, which Delete &amp; Block
+        /// may still have blocked. Runs outside an event handler, so it renders by itself.
+        /// </summary>
+        private async Task RefreshBlockStatusAfterDeletionAsync()
+        {
+            await ReloadBlockStatus();
+            if (!_cts.IsCancellationRequested) StateHasChanged();
         }
 
         private Task ReloadRoomDetails() =>
@@ -294,12 +339,31 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
-        private async Task BlockRoom()
+        private Task BlockRoom() => ConfirmAndSetBlockAsync(block: true);
+
+        private Task UnblockRoom() => ConfirmAndSetBlockAsync(block: false);
+
+        /// <summary>
+        /// Blocks or unblocks the shown room after a confirmation that names it, then reads its block state again (#586).
+        /// </summary>
+        private async Task ConfirmAndSetBlockAsync(bool block)
         {
             if (GetDisplayedTarget() is not { } target) return;
 
-            var result = await RoomService.BlockRoomAsync(target, true, _cts.Token);
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L[block ? "BlockRoomTitle" : "UnblockRoomTitle"],
+                L[block ? "BlockRoomConfirmation" : "UnblockRoomConfirmation", FormatTarget(room, target)],
+                yesText: L[block ? "Block" : "Unblock"], cancelText: L["Cancel"]);
+
+            if (confirmed != true || !IsStillDisplayed(target)) return;
+
+            var result = await RoomService.BlockRoomAsync(target, block, _cts.Token);
             Snackbar.ShowResult(result);
+
+            if (result.Success && GetDisplayedTarget() == target)
+            {
+                await LoadBlockStatusAsync(target, LoadToken);
+            }
         }
 
         private async Task QuarantineSingleMedia(string mxc)
@@ -557,11 +621,13 @@ namespace SynapseAdmin.Components.Pages
                     // Synapse's error text is only in the log (RoomService); the page shows a localized message.
                     ClearActiveDeletion();
                     Snackbar.Add(L["RoomDeletionFailed"], Severity.Error);
+                    _ = RefreshBlockStatusAfterDeletionAsync();
                     break;
 
                 default:
                     ClearActiveDeletion();
                     Snackbar.Add(L["RoomDeletionStatusUnknown"], Severity.Warning);
+                    _ = RefreshBlockStatusAfterDeletionAsync();
                     break;
             }
 
@@ -574,6 +640,7 @@ namespace SynapseAdmin.Components.Pages
             ClearActiveDeletion();
             Snackbar.Add(L["ErrorFetchingRoomDeletionStatus"], Severity.Error);
             StateHasChanged();
+            _ = RefreshBlockStatusAfterDeletionAsync();
         }
 
         private void ClearActiveDeletion()

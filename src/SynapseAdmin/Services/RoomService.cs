@@ -320,6 +320,20 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 return OperationResult.Ok(block ? L["RoomBlockedSuccessfully"] : L["RoomUnblockedSuccessfully"]);
             });
 
+    public Task<OperationResult<RoomBlockStatusViewModel>> GetRoomBlockStatusAsync(string roomId, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomBlockStatus",
+            ex => logger.LogError(ex, "Error fetching block status for room {RoomId}", roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var status = await gateway.GetRoomBlockStatusAsync(roomId, token);
+                // Single-resource read: Synapse always answers with the state, so null is a failure (#395, #586).
+                return status == null
+                    ? OperationResult<RoomBlockStatusViewModel>.Failure(L["ErrorFetchingRoomBlockStatus"])
+                    : OperationResult<RoomBlockStatusViewModel>.Ok(status.ToViewModel());
+            },
+            // A page loads this by itself: a homeserver that refuses it works as intended, so the refusal isn't an error.
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support reading the block status of room {RoomId}", roomId.SanitizeForLogging()));
+
     public Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingLargestRooms",
             ex => logger.LogError(ex, "Error fetching largest rooms"),

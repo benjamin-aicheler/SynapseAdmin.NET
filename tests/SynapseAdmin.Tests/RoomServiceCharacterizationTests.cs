@@ -80,6 +80,8 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         ["Unblock"] = new("BlockRoomAsync", (s, ct) => s.BlockRoomAsync(RoomId, false, ct),
             Args(RoomId, false), "ErrorUnblockingRoom", "Error blocking/unblocking room {RoomId}", RoomArgument,
             "RoomUnblockedSuccessfully", "Successfully {Action} room {RoomId}", new() { ["Action"] = "unblocked", ["RoomId"] = SanitizedRoomId }),
+        ["BlockStatus"] = new("GetRoomBlockStatusAsync", async (s, ct) => await s.GetRoomBlockStatusAsync(RoomId, ct),
+            Args(RoomId), "ErrorFetchingRoomBlockStatus", "Error fetching block status for room {RoomId}", RoomArgument),
         ["LargestRooms"] = new("GetLargestRoomsAsync", async (s, ct) => await s.GetLargestRoomsAsync(ct),
             Args(), "ErrorFetchingLargestRooms", "Error fetching largest rooms", []),
         ["Messages"] = new("GetRoomMessagesAsync", async (s, ct) => await s.GetRoomMessagesAsync(RoomId, "from", 5, "b", "filter", "to", ct),
@@ -196,6 +198,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     private static readonly Dictionary<string, (string Template, Dictionary<string, object?> Arguments)> RefusalsLoggedAtDebug = new()
     {
         ["ActiveDeletion"] = ("The homeserver doesn't support looking up deletions of room {RoomId}", RoomArgument),
+        ["BlockStatus"] = ("The homeserver doesn't support reading the block status of room {RoomId}", RoomArgument),
         ["LargestRooms"] = ("The homeserver doesn't support room statistics by database size", []),
     };
 
@@ -241,6 +244,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     [InlineData("Purge", "ErrorPurgingHistory")]
     [InlineData("PurgeStatus", "ErrorFetchingPurgeStatus")]
     [InlineData("GetVisibility", "ErrorFetchingRoomDirectoryVisibility")]
+    [InlineData("BlockStatus", "ErrorFetchingRoomBlockStatus")]
     public async Task SingleResource_NullGatewayResult_Fails_WithoutLogging(string name, string key)
     {
         var result = await Operations[name].Invoke(CreateService(Stub.Create<IMatrixGateway>()), _cts.Token);
@@ -472,6 +476,21 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         Assert.Equal("", result.Data);
         Assert.Null(service.GetActivePurgeId(RoomId));
         AssertSingleLog(LogLevel.Warning, "Purge history request for room {RoomId} succeeded without returning a purge_id", RoomArgument, exception: null);
+    }
+
+    [Theory]
+    [InlineData(true, "@admin:example.com")]
+    [InlineData(false, null)]
+    public async Task BlockStatus_Success_ReturnsTheMappedState_WithoutLogging(bool block, string? userId)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(s => s.On("GetRoomBlockStatusAsync",
+            _ => Task.FromResult<SynapseAdminRoomBlockStatusResponse?>(new() { Block = block, UserId = userId })));
+
+        var result = await CreateService(gateway).GetRoomBlockStatusAsync(RoomId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Equal((block, userId ?? string.Empty), (result.Data!.IsBlocked, result.Data.BlockedBy));
+        Assert.Empty(_logger.Entries);
     }
 
     [Theory]

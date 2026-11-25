@@ -94,6 +94,7 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
         await InvokeHandler(cut, "DeleteAndBlockRoom");
         await InvokeHandler(cut, "QuarantineMedia");
         await InvokeHandler(cut, "BlockRoom");
+        await InvokeHandler(cut, "UnblockRoom");
         Assert.Empty(Confirmations);
         Assert.Empty(DeleteCalls);
         Assert.Empty(_rooms.CallsTo(nameof(IRoomService.QuarantineMediaAsync)));
@@ -136,6 +137,8 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
     [InlineData("DeleteRoom")]
     [InlineData("DeleteAndBlockRoom")]
     [InlineData("QuarantineMedia")]
+    [InlineData("BlockRoom")]
+    [InlineData("UnblockRoom")]
     public async Task NavigationDuringConfirmation_AbortsActionInsteadOfRetargeting(string handler)
     {
         var cut = RenderRoom(RoomA);
@@ -154,6 +157,7 @@ public class RoomDetailsStaleSelectionTests : DetailPageTestBase
 
         Assert.Empty(DeleteCalls);
         Assert.Empty(_rooms.CallsTo(nameof(IRoomService.QuarantineMediaAsync)));
+        Assert.Empty(_rooms.CallsTo(nameof(IRoomService.BlockRoomAsync)));
         Assert.True(WarningShown());
     }
 
