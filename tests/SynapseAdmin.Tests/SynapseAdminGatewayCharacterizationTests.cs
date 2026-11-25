@@ -30,6 +30,7 @@ namespace SynapseAdmin.Tests;
 /// Also the four raw DELETEs: the exact request (method, target, Content-Type, body) and the same error behavior.
 /// Also the registration token update and create bodies (explicit vs omitted nulls).
 /// Also setting room directory visibility: the exact PUT, its cancellation token and the same error behavior.
+/// Also the Client-Server alias and directory calls (#580): their results and the same error behavior.
 /// Also the seven POSTs that send <c>{}</c> and read no response body: the exact request, that a server accepting only
 /// the documented POST (as Synapse does) accepts them (#516), and the same error behavior.
 /// Also room deletion (#518): the <c>delete_id</c> the DELETE returns, and the two status reads with the answers that
@@ -377,6 +378,197 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
             () => _gateway.SetRoomDirectoryVisibilityAsync("!room:example.com", "private"));
 
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // The Client-Server alias and directory calls in MatrixGatewayBase (#580): what each returns, and how errors surface.
+    public static TheoryData<string> ClientServerMethods => new()
+    {
+        nameof(SynapseAdminGateway.PutRoomAliasAsync),
+        nameof(SynapseAdminGateway.DeleteRoomAliasAsync),
+        nameof(SynapseAdminGateway.GetLocalRoomAliasesAsync),
+        nameof(SynapseAdminGateway.GetRoomDirectoryVisibilityAsync),
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":get",
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":post",
+    };
+
+    // Each call with fixed arguments and a cancellation token. The public room directory sends a GET without a search
+    // term and a POST with one.
+    private static Func<SynapseAdminGateway, CancellationToken, Task> ClientServerMethod(string name) => name switch
+    {
+        nameof(SynapseAdminGateway.PutRoomAliasAsync) => (g, ct) => g.PutRoomAliasAsync("#lobby:example.com", "!room:example.com", ct),
+        nameof(SynapseAdminGateway.DeleteRoomAliasAsync) => (g, ct) => g.DeleteRoomAliasAsync("#lobby:example.com", ct),
+        nameof(SynapseAdminGateway.GetLocalRoomAliasesAsync) => (g, ct) => g.GetLocalRoomAliasesAsync("!room:example.com", ct),
+        nameof(SynapseAdminGateway.GetRoomDirectoryVisibilityAsync) => (g, ct) => g.GetRoomDirectoryVisibilityAsync("!room:example.com", ct),
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":get" => (g, ct) => g.GetPublicRoomsAsync(50, "next", null, ct),
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":post" => (g, ct) => g.GetPublicRoomsAsync(50, "next", "lobby", ct),
+        _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+    };
+
+    // The exact request each call sends. An alias is escaped with Uri.EscapeDataString, so whitespace can't turn into a
+    // literal '+' in the path (#580); room IDs keep the form encoding every other path uses.
+    private static CapturedRequest ClientServerRequest(string name) => name switch
+    {
+        nameof(SynapseAdminGateway.PutRoomAliasAsync) => new("PUT", "/_matrix/client/v3/directory/room/%23lobby%3Aexample.com",
+            "application/json; charset=utf-8", """{"room_id":"!room:example.com"}"""),
+        nameof(SynapseAdminGateway.DeleteRoomAliasAsync) => new("DELETE", "/_matrix/client/v3/directory/room/%23lobby%3Aexample.com", null, ""),
+        nameof(SynapseAdminGateway.GetLocalRoomAliasesAsync) => new("GET", "/_matrix/client/v3/rooms/!room%3aexample.com/aliases", null, ""),
+        nameof(SynapseAdminGateway.GetRoomDirectoryVisibilityAsync) => new("GET", DirectoryVisibilityTarget, null, ""),
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":get" => new("GET", "/_matrix/client/v3/publicRooms?limit=50&since=next", null, ""),
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":post" => new("POST", "/_matrix/client/v3/publicRooms",
+            "application/json; charset=utf-8", """{"filter":{"generic_search_term":"lobby"},"limit":50,"since":"next"}"""),
+        _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+    };
+
+    [Theory]
+    [MemberData(nameof(ClientServerMethods))]
+    public async Task ClientServer_SendsTheDocumentedRequest(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { aliases = Array.Empty<string>(), visibility = "public", chunk = Array.Empty<object>() });
+
+        await ClientServerMethod(method)(_gateway, CancellationToken.None);
+
+        Assert.Equal(ClientServerRequest(method), Assert.Single(_homeserver.Requests));
+    }
+
+    [Theory]
+    [MemberData(nameof(ClientServerMethods))]
+    public async Task ClientServer_CancelledToken_SendsNoRequest(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { aliases = Array.Empty<string>(), visibility = "public", chunk = Array.Empty<object>() });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ClientServerMethod(method)(_gateway, cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>
+    /// Synapse rejects whitespace in an alias, but only if it arrives as whitespace: form encoding would send a space as
+    /// '+', which a path keeps, and create <c>#two+words</c> instead (#580).
+    /// </summary>
+    [Fact]
+    public async Task PutAndDeleteRoomAlias_EscapeTheAliasAsAPathSegment()
+    {
+        const string target = "/_matrix/client/v3/directory/room/%23two%20words%2Bcaf%C3%A9%2F%3F%3Aexample.com";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.PutRoomAliasAsync("#two words+café/?:example.com", "!room:example.com");
+        await _gateway.DeleteRoomAliasAsync("#two words+café/?:example.com");
+
+        Assert.Equal([target, target], _homeserver.RequestTargets);
+    }
+
+    /// <summary>
+    /// Synapse's <c>next_batch</c> is standard base64 and can contain '+' and '/', which a query string must encode:
+    /// an unencoded '+' reaches Synapse as a space and breaks the next page (#580). The POST carries it in JSON.
+    /// </summary>
+    [Fact]
+    public async Task GetPublicRooms_EncodesTheSinceToken()
+    {
+        _homeserver.Respond = () => Results.Json(new { chunk = Array.Empty<object>() });
+
+        await _gateway.GetPublicRoomsAsync(50, "a+b/c&d=e#f");
+
+        Assert.Equal(["/_matrix/client/v3/publicRooms?limit=50&since=a%2bb%2fc%26d%3de%23f"], _homeserver.RequestTargets);
+    }
+
+    [Fact]
+    public async Task PutAndDeleteRoomAlias_Succeed()
+    {
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.PutRoomAliasAsync("#lobby:example.com", "!room:example.com");
+        await _gateway.DeleteRoomAliasAsync("#lobby:example.com");
+
+        Assert.Equal(["PUT", "DELETE"], _homeserver.Requests.Select(r => r.Method));
+    }
+
+    [Fact]
+    public async Task GetLocalRoomAliases_ReturnsTheAliases()
+    {
+        _homeserver.Respond = () => Results.Json(new { aliases = new[] { "#lobby:example.com", "#hall:example.com" } });
+
+        var aliases = await _gateway.GetLocalRoomAliasesAsync("!room:example.com");
+
+        Assert.Equal(["#lobby:example.com", "#hall:example.com"], aliases);
+    }
+
+    [Theory]
+    [InlineData("public")]
+    [InlineData("private")]
+    public async Task GetRoomDirectoryVisibility_ReturnsTheVisibility(string visibility)
+    {
+        _homeserver.Respond = () => Results.Json(new { visibility });
+
+        Assert.Equal(visibility, await _gateway.GetRoomDirectoryVisibilityAsync("!room:example.com"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("lobby")]
+    public async Task GetPublicRooms_MapsTheResponse(string? searchTerm)
+    {
+        _homeserver.Respond = () => Results.Json(new
+        {
+            chunk = new[]
+            {
+                new
+                {
+                    avatar_url = "mxc://example.com/avatar", canonical_alias = "#lobby:example.com", guest_can_join = true,
+                    join_rule = "public", name = "Lobby", num_joined_members = 3, room_id = "!room:example.com",
+                    topic = "Welcome", world_readable = true
+                }
+            },
+            next_batch = "n1",
+            prev_batch = "p1",
+            total_room_count_estimate = 7
+        });
+
+        var result = await _gateway.GetPublicRoomsAsync(50, "next", searchTerm);
+
+        Assert.NotNull(result);
+        Assert.Equal(("n1", "p1", (int?)7), (result.NextBatch, result.PrevBatch, result.TotalRoomCountEstimate));
+        var room = Assert.Single(result.Chunk);
+        Assert.Equal(
+            ("mxc://example.com/avatar", "#lobby:example.com", true, "public", "Lobby", 3, "!room:example.com", "Welcome", true),
+            (room.AvatarUrl, room.CanonicalAlias, room.GuestCanJoin, room.JoinRule, room.Name, room.NumJoinedMembers, room.RoomId,
+                room.Topic, room.WorldReadable));
+    }
+
+    /// <summary>A missing estimate reads as 0, as LibMatrix's response type has always reported it.</summary>
+    [Fact]
+    public async Task GetPublicRooms_MissingFields_ReadAsDefaults()
+    {
+        _homeserver.Respond = () => Results.Json(new { chunk = Array.Empty<object>() });
+
+        var result = await _gateway.GetPublicRoomsAsync(50);
+
+        Assert.NotNull(result);
+        Assert.Equal((null, null, (int?)0), (result.NextBatch, result.PrevBatch, result.TotalRoomCountEstimate));
+        Assert.Empty(result.Chunk);
+    }
+
+    [Theory]
+    [MemberData(nameof(ClientServerMethods))]
+    public async Task ClientServer_MatrixErrorResponse_ThrowsMatrixException(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "Not found" }, statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => ClientServerMethod(method)(_gateway, CancellationToken.None));
+
+        Assert.Equal("M_NOT_FOUND", ex.ErrorCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(ClientServerMethods))]
+    public async Task ClientServer_NonJsonErrorResponse_ThrowsHttpRequestException(string method)
+    {
+        _homeserver.Respond = () => Results.Text("Not Found", statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => ClientServerMethod(method)(_gateway, CancellationToken.None));
+
+        Assert.Equal(HttpStatusCode.NotFound, ex.StatusCode);
     }
 
     // Registration token update (#519): Synapse leaves an omitted field unchanged and removes the limit for an explicit

@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using ArcaneLibs.Extensions;
 using LibMatrix.Homeservers;
+using LibMatrix.RoomTypes;
 using LibMatrix.StructuredData;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models.Responses;
@@ -28,6 +30,33 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public virtual bool SupportsAdminApi => false;
     public virtual string ServerBrand => GatewayConstants.GenericBrand;
     public virtual string ServerVersion => GatewayConstants.UnknownVersion;
+
+    // --- Request helpers ---
+
+    /// <summary>
+    /// Raw DELETE with an optional body. LibMatrix's DeleteAsync/DeleteAsJsonAsync have no CancellationToken overload,
+    /// so the request is built here and sent through ClientHttpClient.SendAsync.
+    /// </summary>
+    protected async Task SendDeleteAsync(string url, HttpContent? content, CancellationToken cancellationToken)
+    {
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Raw DELETE like <see cref="SendDeleteAsync(string, HttpContent?, CancellationToken)"/> that also reads the JSON
+    /// response body. An empty body returns <c>null</c>; a body that isn't JSON throws <see cref="JsonException"/>.
+    /// </summary>
+    protected async Task<TResponse?> SendDeleteAsync<TResponse>(string url, HttpContent? content, CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        var body = await resp.Content.ReadAsStringAsync(cancellationToken);
+        return string.IsNullOrWhiteSpace(body) ? null : JsonSerializer.Deserialize<TResponse>(body);
+    }
 
     // --- Standard Matrix CS API Implementation ---
 
@@ -253,19 +282,36 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task<SynapseAdminDeleteMediaResponse?> DeleteLocalMediaAsync(long beforeTs, long sizeGt, bool keepProfiles, CancellationToken cancellationToken = default);
 
     // --- Room Directory (Standard CS API) ---
+    // LibMatrix's alias and directory methods aren't used (#580): they take no token, append the publicRooms since
+    // token to the query unencoded and form-encode the alias in the path.
+
+    /// <summary>
+    /// Lists the published room directory: a <c>GET</c> with the paging token in the query, or a <c>POST</c> with the
+    /// search term as a filter. The token is opaque and can contain '+' and '/' (Synapse's is standard base64), so it is
+    /// always encoded.
+    /// </summary>
     public virtual async Task<MatrixPublicRoomDirectoryResult?> GetPublicRoomsAsync(int limit, string? since = null, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
-        RoomDirectoryFilter? filter = null;
-        if (!string.IsNullOrEmpty(searchTerm))
+        const string url = "/_matrix/client/v3/publicRooms";
+        PublicRoomDirectoryResult result;
+        if (string.IsNullOrEmpty(searchTerm))
         {
-            filter = new RoomDirectoryFilter
-            {
-                GenericSearchTerm = searchTerm
-            };
+            var query = $"{url}?limit={limit}";
+            if (!string.IsNullOrWhiteSpace(since)) query += $"&since={since.UrlEncode()}";
+            result = await Homeserver.ClientHttpClient.GetFromJsonAsync<PublicRoomDirectoryResult>(query, cancellationToken: cancellationToken);
         }
-
-        var result = await Homeserver.GetPublicRoomsAsync(limit, since: since, filter: filter);
-        if (result == null) return null;
+        else
+        {
+            var request = new RoomDirectoryFilteredRequest
+            {
+                Limit = limit,
+                Since = since,
+                Filter = new RoomDirectoryFilter { GenericSearchTerm = searchTerm }
+            };
+            using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+            resp.EnsureSuccessStatusCode();
+            result = await resp.Content.ReadFromJsonAsync<PublicRoomDirectoryResult>(cancellationToken) ?? throw new InvalidOperationException();
+        }
 
         return new MatrixPublicRoomDirectoryResult
         {
@@ -289,8 +335,9 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     public virtual async Task<string?> GetRoomDirectoryVisibilityAsync(string roomId, CancellationToken cancellationToken = default)
     {
-        var result = await Homeserver.GetRoomDirectoryVisibilityAsync(roomId);
-        return result?.Visibility.ToString().ToLowerInvariant();
+        var result = await Homeserver.ClientHttpClient.GetFromJsonAsync<RoomDirectoryVisibilityResponse>(
+            $"/_matrix/client/v3/directory/list/room/{roomId.UrlEncode()}", cancellationToken: cancellationToken);
+        return result.Visibility.ToString().ToLowerInvariant();
     }
 
     /// <summary>
@@ -311,19 +358,27 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     public virtual async Task PutRoomAliasAsync(string roomAlias, string roomId, CancellationToken cancellationToken = default)
     {
-        await Homeserver.SetRoomAliasAsync(roomAlias, roomId);
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(RoomAliasUrl(roomAlias), new RoomIdResponse { RoomId = roomId },
+            cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
     }
 
-    public virtual async Task DeleteRoomAliasAsync(string roomAlias, CancellationToken cancellationToken = default)
-    {
-        await Homeserver.DeleteRoomAliasAsync(roomAlias);
-    }
+    public virtual Task DeleteRoomAliasAsync(string roomAlias, CancellationToken cancellationToken = default) =>
+        SendDeleteAsync(RoomAliasUrl(roomAlias), null, cancellationToken);
 
     public virtual async Task<List<string>?> GetLocalRoomAliasesAsync(string roomId, CancellationToken cancellationToken = default)
     {
-        var result = await Homeserver.GetLocalRoomAliasesAsync(roomId);
-        return result?.Aliases;
+        var result = await Homeserver.ClientHttpClient.GetFromJsonAsync<AuthenticatedHomeserverGeneric.RoomAliasesResponse>(
+            $"/_matrix/client/v3/rooms/{roomId.UrlEncode()}/aliases", cancellationToken: cancellationToken);
+        return result.Aliases;
     }
+
+    /// <summary>
+    /// An alias may contain whitespace, which Synapse rejects. Form encoding (<c>.UrlEncode()</c>) would send a space
+    /// as '+', which a path keeps, so the request would create or delete another alias instead (#580).
+    /// </summary>
+    private static string RoomAliasUrl(string roomAlias) =>
+        $"/_matrix/client/v3/directory/room/{Uri.EscapeDataString(roomAlias)}";
 
     // --- Background Updates ---
     public abstract Task<SynapseAdminBackgroundUpdatesStatusResponse?> GetBackgroundUpdatesStatusAsync(CancellationToken cancellationToken = default);

@@ -48,31 +48,6 @@ public class SynapseAdminGateway(
     }
 
     /// <summary>
-    /// Raw DELETE with an optional body. LibMatrix's DeleteAsync/DeleteAsJsonAsync have no CancellationToken overload,
-    /// so the request is built here and sent through ClientHttpClient.SendAsync.
-    /// </summary>
-    private async Task SendDeleteAsync(string url, HttpContent? content, CancellationToken cancellationToken)
-    {
-        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
-        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
-        resp.EnsureSuccessStatusCode();
-    }
-
-    /// <summary>
-    /// Raw DELETE like <see cref="SendDeleteAsync(string, HttpContent?, CancellationToken)"/> that also reads the JSON
-    /// response body. An empty body returns <c>null</c>; a body that isn't JSON throws <see cref="JsonException"/>.
-    /// </summary>
-    private async Task<TResponse?> SendDeleteAsync<TResponse>(string url, HttpContent? content, CancellationToken cancellationToken)
-        where TResponse : class
-    {
-        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
-        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
-        resp.EnsureSuccessStatusCode();
-        var body = await resp.Content.ReadAsStringAsync(cancellationToken);
-        return string.IsNullOrWhiteSpace(body) ? null : JsonSerializer.Deserialize<TResponse>(body);
-    }
-
-    /// <summary>
     /// GET a status that may not exist: <c>null</c> for a 404 (<c>M_NOT_FOUND</c> or a bare 404 from a proxy) and for
     /// <c>M_UNRECOGNIZED</c> (a homeserver without the endpoint, as 404 or 405). Every other error propagates.
     /// </summary>
