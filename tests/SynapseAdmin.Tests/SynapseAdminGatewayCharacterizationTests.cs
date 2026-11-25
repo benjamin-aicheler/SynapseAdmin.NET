@@ -404,6 +404,75 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
     };
 
+    // The exact request each call sends. An alias is escaped with Uri.EscapeDataString, so whitespace can't turn into a
+    // literal '+' in the path (#580); room IDs keep the form encoding every other path uses.
+    private static CapturedRequest ClientServerRequest(string name) => name switch
+    {
+        nameof(SynapseAdminGateway.PutRoomAliasAsync) => new("PUT", "/_matrix/client/v3/directory/room/%23lobby%3Aexample.com",
+            "application/json; charset=utf-8", """{"room_id":"!room:example.com"}"""),
+        nameof(SynapseAdminGateway.DeleteRoomAliasAsync) => new("DELETE", "/_matrix/client/v3/directory/room/%23lobby%3Aexample.com", null, ""),
+        nameof(SynapseAdminGateway.GetLocalRoomAliasesAsync) => new("GET", "/_matrix/client/v3/rooms/!room%3aexample.com/aliases", null, ""),
+        nameof(SynapseAdminGateway.GetRoomDirectoryVisibilityAsync) => new("GET", DirectoryVisibilityTarget, null, ""),
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":get" => new("GET", "/_matrix/client/v3/publicRooms?limit=50&since=next", null, ""),
+        nameof(SynapseAdminGateway.GetPublicRoomsAsync) + ":post" => new("POST", "/_matrix/client/v3/publicRooms",
+            "application/json; charset=utf-8", """{"filter":{"generic_search_term":"lobby"},"limit":50,"since":"next"}"""),
+        _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+    };
+
+    [Theory]
+    [MemberData(nameof(ClientServerMethods))]
+    public async Task ClientServer_SendsTheDocumentedRequest(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { aliases = Array.Empty<string>(), visibility = "public", chunk = Array.Empty<object>() });
+
+        await ClientServerMethod(method)(_gateway, CancellationToken.None);
+
+        Assert.Equal(ClientServerRequest(method), Assert.Single(_homeserver.Requests));
+    }
+
+    [Theory]
+    [MemberData(nameof(ClientServerMethods))]
+    public async Task ClientServer_CancelledToken_SendsNoRequest(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { aliases = Array.Empty<string>(), visibility = "public", chunk = Array.Empty<object>() });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ClientServerMethod(method)(_gateway, cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>
+    /// Synapse rejects whitespace in an alias, but only if it arrives as whitespace: form encoding would send a space as
+    /// '+', which a path keeps, and create <c>#two+words</c> instead (#580).
+    /// </summary>
+    [Fact]
+    public async Task PutAndDeleteRoomAlias_EscapeTheAliasAsAPathSegment()
+    {
+        const string target = "/_matrix/client/v3/directory/room/%23two%20words%2Bcaf%C3%A9%2F%3F%3Aexample.com";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.PutRoomAliasAsync("#two words+café/?:example.com", "!room:example.com");
+        await _gateway.DeleteRoomAliasAsync("#two words+café/?:example.com");
+
+        Assert.Equal([target, target], _homeserver.RequestTargets);
+    }
+
+    /// <summary>
+    /// Synapse's <c>next_batch</c> is standard base64 and can contain '+' and '/', which a query string must encode:
+    /// an unencoded '+' reaches Synapse as a space and breaks the next page (#580). The POST carries it in JSON.
+    /// </summary>
+    [Fact]
+    public async Task GetPublicRooms_EncodesTheSinceToken()
+    {
+        _homeserver.Respond = () => Results.Json(new { chunk = Array.Empty<object>() });
+
+        await _gateway.GetPublicRoomsAsync(50, "a+b/c&d=e#f");
+
+        Assert.Equal(["/_matrix/client/v3/publicRooms?limit=50&since=a%2bb%2fc%26d%3de%23f"], _homeserver.RequestTargets);
+    }
+
     [Fact]
     public async Task PutAndDeleteRoomAlias_Succeed()
     {
