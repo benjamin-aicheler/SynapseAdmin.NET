@@ -29,6 +29,33 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public virtual string ServerBrand => GatewayConstants.GenericBrand;
     public virtual string ServerVersion => GatewayConstants.UnknownVersion;
 
+    // --- Request helpers ---
+
+    /// <summary>
+    /// Raw DELETE with an optional body. LibMatrix's DeleteAsync/DeleteAsJsonAsync have no CancellationToken overload,
+    /// so the request is built here and sent through ClientHttpClient.SendAsync.
+    /// </summary>
+    protected async Task SendDeleteAsync(string url, HttpContent? content, CancellationToken cancellationToken)
+    {
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Raw DELETE like <see cref="SendDeleteAsync(string, HttpContent?, CancellationToken)"/> that also reads the JSON
+    /// response body. An empty body returns <c>null</c>; a body that isn't JSON throws <see cref="JsonException"/>.
+    /// </summary>
+    protected async Task<TResponse?> SendDeleteAsync<TResponse>(string url, HttpContent? content, CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var reqMessage = new HttpRequestMessage(HttpMethod.Delete, url) { Content = content };
+        using var resp = await Homeserver.ClientHttpClient.SendAsync(reqMessage, cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        var body = await resp.Content.ReadAsStringAsync(cancellationToken);
+        return string.IsNullOrWhiteSpace(body) ? null : JsonSerializer.Deserialize<TResponse>(body);
+    }
+
     // --- Standard Matrix CS API Implementation ---
 
     /// <summary>
