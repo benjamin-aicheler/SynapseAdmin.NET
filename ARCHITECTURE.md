@@ -321,6 +321,7 @@ sequenceDiagram
 |---|---|
 | Matrix Homeserver | A federated Matrix server hosting user accounts, rooms, events, and media (e.g., Synapse, Tuwunel). |
 | Synapse Admin API | Administrative HTTP endpoints under `/_synapse/admin/*` exposed by Synapse and compatible homeservers (such as Tuwunel >= 1.8.2). |
+| Synapse-compatible homeserver | Any homeserver that claims to implement the Synapse Admin API. The app sees that claim at login, when `/_synapse/admin/v1/server_version` answers. The app requires Tuwunel 1.8.2 or later, and `TuwunelAdminGateway` corrects or refuses its known differences (ADR 0006). A server whose brand the probe can't identify is treated as Synapse, with no corrections. [SPEC.md](./SPEC.md) §13 lists the risk of a deviation nobody knows about yet. |
 | CS API (Client-Server API) | Standard Matrix protocol endpoints under `/_matrix/client/*` used for login, public room directory, aliases, and authenticated media downloads. |
 | MXC URI | Matrix Content URI (`mxc://<server_name>/<media_id>`) identifying immutable media objects on a Matrix homeserver. |
 | `.well-known` Delegation | Matrix mechanism (`/.well-known/matrix/client` and `/server`) mapping a domain name to its actual client-server and federation endpoints. |
