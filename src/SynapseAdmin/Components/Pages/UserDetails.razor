@@ -133,6 +133,7 @@ else
                         <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeactivateUser" Class="mb-2 mr-2" Disabled="@IsOwnAccount">@L["DeactivateUser"]</MudButton>
                     }
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenResetPasswordDialog" Class="mb-2 mr-2" Disabled="@user.Deactivated">@L["ResetPassword"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenProfileDialog" Class="mb-2 mr-2">@L["EditProfile"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleLock" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Locked)">@(user.Locked ? L["UnlockUser"] : L["LockUser"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleSuspension" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Suspended)">@(user.Suspended ? L["UnsuspendUser"] : L["SuspendUser"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ToggleAdmin" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && user.Admin)">@(user.Admin ? L["RemoveAdmin"] : L["MakeAdmin"])</MudButton>

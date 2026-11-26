@@ -1667,4 +1667,16 @@
   <data name="UserProfileUnchanged" xml:space="preserve">
     <value>Nothing to change.</value>
   </data>
+  <data name="EditProfile" xml:space="preserve">
+    <value>Edit profile</value>
+  </data>
+  <data name="EditProfileFor" xml:space="preserve">
+    <value>Change the profile of "{0}".</value>
+  </data>
+  <data name="DisplayNameRemoveHelper" xml:space="preserve">
+    <value>Leave empty to remove the display name.</value>
+  </data>
+  <data name="RemoveAvatar" xml:space="preserve">
+    <value>Remove avatar</value>
+  </data>
 </root>

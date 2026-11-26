@@ -1666,4 +1666,16 @@
   <data name="UserProfileUnchanged" xml:space="preserve">
     <value>Aucune modification.</value>
   </data>
+  <data name="EditProfile" xml:space="preserve">
+    <value>Modifier le profil</value>
+  </data>
+  <data name="EditProfileFor" xml:space="preserve">
+    <value>Modifier le profil de « {0} ».</value>
+  </data>
+  <data name="DisplayNameRemoveHelper" xml:space="preserve">
+    <value>Laisser vide pour supprimer le nom d'affichage.</value>
+  </data>
+  <data name="RemoveAvatar" xml:space="preserve">
+    <value>Supprimer l'avatar</value>
+  </data>
 </root>
