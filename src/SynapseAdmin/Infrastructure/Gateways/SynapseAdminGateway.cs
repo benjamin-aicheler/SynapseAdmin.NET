@@ -227,6 +227,16 @@ public class SynapseAdminGateway(
         return await GetWithCompatibilityOptionsAsync<SynapseAdminUserMediaResult>(url, cancellationToken);
     }
 
+    /// <summary>
+    /// Always the first page: the reference notes that the remaining media are reordered after each deletion, so a
+    /// moving offset would skip some. Tuwunel (1.8.2, 2.0.0) serves the same parameters and result.
+    /// </summary>
+    public override async Task<SynapseAdminDeleteMediaResponse?> DeleteUserMediaAsync(string userId, int limit, CancellationToken cancellationToken = default)
+    {
+        var url = BuildUserMediaUrl(userId, 0, limit, "created_ts", "b");
+        return await SendDeleteAsync<SynapseAdminDeleteMediaResponse>(url, null, cancellationToken);
+    }
+
     public override async Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/experimental_features/{userId.UrlEncode()}";

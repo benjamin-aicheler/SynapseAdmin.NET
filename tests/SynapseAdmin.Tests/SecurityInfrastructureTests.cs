@@ -927,6 +927,7 @@ public class SecurityInfrastructureTests
         public Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task SetUserExperimentalFeaturesAsync(string userId, SynapseAdminExperimentalFeaturesRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminDeleteMediaResponse?> DeleteUserMediaAsync(string userId, int limit, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminUserDeviceListResult?> GetUserDevicesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task RenameUserDeviceAsync(string userId, string deviceId, SynapseAdminDeviceUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();

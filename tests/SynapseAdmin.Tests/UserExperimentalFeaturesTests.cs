@@ -254,6 +254,7 @@ public class UserExperimentalFeaturesTests
             LastAccountValidityRequest = request;
             return Task.FromResult(AccountValidityResponse);
         }
+        public Task<SynapseAdminDeleteMediaResponse?> DeleteUserMediaAsync(string userId, int limit, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminUserDeviceListResult?> GetUserDevicesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task RenameUserDeviceAsync(string userId, string deviceId, SynapseAdminDeviceUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
