@@ -135,6 +135,7 @@ builder.Services.AddScoped<IMatrixSessionService, MatrixSessionService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserDeviceService, UserDeviceService>();
 builder.Services.AddScoped<IFederationService, FederationService>();
 builder.Services.AddScoped<IEventReportService, EventReportService>();
 builder.Services.AddScoped<IEventForensicsService, EventForensicsService>();
