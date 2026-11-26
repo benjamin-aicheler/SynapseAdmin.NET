@@ -7,6 +7,7 @@ using MudBlazor.Services;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.ViewModels;
 using Xunit;
 
 namespace SynapseAdmin.Tests.Components;
@@ -47,6 +48,10 @@ public abstract class DetailPageTestBase : BunitContext, IAsyncLifetime
             .On("GetLocalNow", _ => DateTimeOffset.UtcNow)
             .On("GetDisplayOffset", _ => "UTC")));
         Services.AddSingleton(Stub.Create<IMediaService>());
+        // The Devices and Recent connections tabs (#598) load only when opened; empty lists if a page test opens them.
+        Services.AddSingleton(Stub.Create<IUserDeviceService>(s => s
+            .On(nameof(IUserDeviceService.GetUserDevicesAsync), _ => Task.FromResult(OperationResult<List<UserDeviceViewModel>>.Ok([])))
+            .On(nameof(IUserDeviceService.GetUserConnectionsAsync), _ => Task.FromResult(OperationResult<List<UserConnectionViewModel>>.Ok([])))));
 
         Services.AddSingleton(Stub.Create<IDialogService>(out var dialogStub));
         DialogStub = dialogStub;

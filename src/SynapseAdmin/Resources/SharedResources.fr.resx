@@ -1678,4 +1678,106 @@
   <data name="RemoveAvatar" xml:space="preserve">
     <value>Supprimer l'avatar</value>
   </data>
+  <data name="Devices" xml:space="preserve">
+    <value>Appareils</value>
+  </data>
+  <data name="RecentConnections" xml:space="preserve">
+    <value>Connexions récentes</value>
+  </data>
+  <data name="DeviceId" xml:space="preserve">
+    <value>ID de l'appareil</value>
+  </data>
+  <data name="DeviceName" xml:space="preserve">
+    <value>Nom de l'appareil</value>
+  </data>
+  <data name="LastSeen" xml:space="preserve">
+    <value>Dernière activité</value>
+  </data>
+  <data name="IpAddress" xml:space="preserve">
+    <value>Adresse IP</value>
+  </data>
+  <data name="UserAgent" xml:space="preserve">
+    <value>Agent utilisateur</value>
+  </data>
+  <data name="Dehydrated" xml:space="preserve">
+    <value>Déshydraté</value>
+  </data>
+  <data name="ThisSession" xml:space="preserve">
+    <value>Cette session</value>
+  </data>
+  <data name="UnknownValue" xml:space="preserve">
+    <value>inconnu</value>
+  </data>
+  <data name="Rename" xml:space="preserve">
+    <value>Renommer</value>
+  </data>
+  <data name="NoDevices" xml:space="preserve">
+    <value>Cet utilisateur n'a aucun appareil.</value>
+  </data>
+  <data name="NoRecentConnections" xml:space="preserve">
+    <value>Le serveur d'accueil ne signale aucune connexion récente de cet utilisateur.</value>
+  </data>
+  <data name="RecentConnectionsHint" xml:space="preserve">
+    <value>Les adresses IP et agents utilisateur depuis lesquels cet utilisateur s'est connecté récemment, tels que le serveur d'accueil les enregistre, les plus récents en premier. Le serveur d'accueil n'indique pas à quel appareil appartient chaque connexion.</value>
+  </data>
+  <data name="RenameDevice" xml:space="preserve">
+    <value>Renommer l'appareil</value>
+  </data>
+  <data name="RenameDeviceFor" xml:space="preserve">
+    <value>Renommer l'appareil « {0} » de « {1} ».</value>
+  </data>
+  <data name="DeleteDevice" xml:space="preserve">
+    <value>Supprimer l'appareil</value>
+  </data>
+  <data name="DeleteDevices" xml:space="preserve">
+    <value>Supprimer les appareils</value>
+  </data>
+  <data name="DeleteSelectedDevices" xml:space="preserve">
+    <value>Supprimer la sélection ({0})</value>
+  </data>
+  <data name="DeleteDeviceConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer l'appareil « {1} » de « {0} » ?</value>
+  </data>
+  <data name="DeleteDevicesConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer ces {2} appareils de « {0} » : {1} ?</value>
+  </data>
+  <data name="DeviceDeletionHint" xml:space="preserve">
+    <value>Supprimer un appareil le déconnecte et supprime ses clés de chiffrement. Le mot de passe ne change pas : quiconque le connaît peut se reconnecter.</value>
+  </data>
+  <data name="OwnSessionDeviceNote" xml:space="preserve">
+    <value>L'appareil de cette session ne peut pas être supprimé ici : cela vous déconnecterait.</value>
+  </data>
+  <data name="OwnSessionDeviceUnknownNote" xml:space="preserve">
+    <value>Le serveur d'accueil n'a pas indiqué l'appareil de cette session, vos propres appareils ne peuvent donc pas être supprimés ici : l'un d'eux pourrait vous déconnecter.</value>
+  </data>
+  <data name="CannotDeleteOwnSessionDevice" xml:space="preserve">
+    <value>L'appareil de cette session ne peut pas être supprimé, car cela vous déconnecterait.</value>
+  </data>
+  <data name="NoDevicesSelected" xml:space="preserve">
+    <value>Aucun appareil sélectionné.</value>
+  </data>
+  <data name="DeviceNameRequired" xml:space="preserve">
+    <value>Saisissez un nom d'appareil.</value>
+  </data>
+  <data name="DeviceNameTooLong" xml:space="preserve">
+    <value>Le nom de l'appareil peut comporter au maximum {0} caractères.</value>
+  </data>
+  <data name="DeviceRenamedSuccessfully" xml:space="preserve">
+    <value>Appareil renommé avec succès.</value>
+  </data>
+  <data name="DevicesDeletedSuccessfully" xml:space="preserve">
+    <value>{0} appareil(s) supprimé(s).</value>
+  </data>
+  <data name="ErrorFetchingDevices" xml:space="preserve">
+    <value>Erreur lors de la récupération des appareils de l'utilisateur.</value>
+  </data>
+  <data name="ErrorFetchingConnections" xml:space="preserve">
+    <value>Erreur lors de la récupération des connexions récentes de l'utilisateur.</value>
+  </data>
+  <data name="ErrorRenamingDevice" xml:space="preserve">
+    <value>Erreur lors du renommage de l'appareil.</value>
+  </data>
+  <data name="ErrorDeletingDevices" xml:space="preserve">
+    <value>Erreur lors de la suppression des appareils.</value>
+  </data>
 </root>

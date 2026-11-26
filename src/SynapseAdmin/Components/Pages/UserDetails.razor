@@ -273,6 +273,14 @@ else
                 </MudTable>
         </MudTabPanel>
 
+        <MudTabPanel Text="@L["Devices"]" Icon="@Icons.Material.Filled.Devices">
+            <UserDevicesPanel UserId="@user.UserId" Target="@FormatTarget(user, user.UserId)" />
+        </MudTabPanel>
+
+        <MudTabPanel Text="@L["RecentConnections"]" Icon="@Icons.Material.Filled.History">
+            <UserConnectionsPanel UserId="@user.UserId" />
+        </MudTabPanel>
+
         <MudTabPanel Text="@L["ExperimentalFeatures"]" Icon="@Icons.Material.Filled.Science">
             @if (user.ExperimentalFeatures == null)
             {

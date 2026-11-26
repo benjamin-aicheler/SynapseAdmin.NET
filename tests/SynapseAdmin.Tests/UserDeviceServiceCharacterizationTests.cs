@@ -237,7 +237,7 @@ public sealed class UserDeviceServiceCharacterizationTests : IDisposable
         var values = _logger.Entries.SelectMany(e => e.Arguments.Values).Select(v => v?.ToString() ?? "").ToList();
         Assert.NotEmpty(values);
         Assert.DoesNotContain(values, v => v.Contains(Ip) || v.Contains(UserAgent) || v.Contains(DeviceName));
-        Assert.DoesNotContain(_logger.Entries, e => e.Template.Contains(DeviceName));
+        Assert.DoesNotContain(_logger.Entries, e => e.Template?.Contains(DeviceName) == true);
     }
 
     // ---- Rename validation ----------------------------------------------------------------------------

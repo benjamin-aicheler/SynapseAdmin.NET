@@ -1,0 +1,60 @@
+@if (_devices == null)
+{
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+    }
+}
+else
+{
+    <MudTable T="UserDeviceViewModel" Items="_devices" MultiSelection="true" SelectOnRowClick="false"
+              @bind-SelectedItems="_selected" Loading="_isLoading" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+        <ToolBarContent>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete"
+                       Disabled="@(!CanDeleteSelected)" OnClick="DeleteSelected">
+                @L["DeleteSelectedDevices", _selected.Count]
+            </MudButton>
+            <MudSpacer />
+            <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="Reload" Disabled="_isLoading" Variant="Variant.Text">@L["Refresh"]</MudButton>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<UserDeviceViewModel, object>(x => x.DisplayName ?? string.Empty)">@L["DeviceName"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<UserDeviceViewModel, object>(x => x.DeviceId)">@L["DeviceId"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<UserDeviceViewModel, object>(x => x.LastSeen ?? DateTimeOffset.MinValue)" InitialDirection="SortDirection.Descending">@L["LastSeen"]</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<UserDeviceViewModel, object>(x => x.LastSeenIp ?? string.Empty)">@L["IpAddress"]</MudTableSortLabel></MudTh>
+            <MudTh>@L["UserAgent"]</MudTh>
+            <MudTh>@L["Actions"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@L["DeviceName"]">
+                <span class="device-name">@(context.DisplayName ?? L["UnknownValue"].Value)</span>
+                @if (IsSessionDevice(context))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@L["ThisSession"]</MudChip>
+                }
+                @if (context.Dehydrated)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@L["Dehydrated"]</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="@L["DeviceId"]"><MudText Typo="Typo.caption" Style="word-break: break-all;">@context.DeviceId</MudText></MudTd>
+            <MudTd DataLabel="@L["LastSeen"]">@FormatTime(context.LastSeen)</MudTd>
+            <MudTd DataLabel="@L["IpAddress"]">@(context.LastSeenIp ?? L["UnknownValue"].Value)</MudTd>
+            <MudTd DataLabel="@L["UserAgent"]"><MudText Typo="Typo.caption" Style="word-break: break-word;">@(context.LastSeenUserAgent ?? L["UnknownValue"].Value)</MudText></MudTd>
+            <MudTd DataLabel="@L["Actions"]">
+                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => RenameDevice(context))">@L["Rename"]</MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="@IsProtected(context)" OnClick="@(() => DeleteDevice(context))">@L["Delete"]</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2">@L["NoDevices"]</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+    @if (ProtectionNote is { } note)
+    {
+        <MudText Typo="Typo.caption" Class="d-block mt-2 px-4 pb-2">@note</MudText>
+    }
+}

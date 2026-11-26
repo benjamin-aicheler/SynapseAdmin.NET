@@ -1679,4 +1679,106 @@
   <data name="RemoveAvatar" xml:space="preserve">
     <value>Remove avatar</value>
   </data>
+  <data name="Devices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="RecentConnections" xml:space="preserve">
+    <value>Recent connections</value>
+  </data>
+  <data name="DeviceId" xml:space="preserve">
+    <value>Device ID</value>
+  </data>
+  <data name="DeviceName" xml:space="preserve">
+    <value>Device name</value>
+  </data>
+  <data name="LastSeen" xml:space="preserve">
+    <value>Last seen</value>
+  </data>
+  <data name="IpAddress" xml:space="preserve">
+    <value>IP address</value>
+  </data>
+  <data name="UserAgent" xml:space="preserve">
+    <value>User agent</value>
+  </data>
+  <data name="Dehydrated" xml:space="preserve">
+    <value>Dehydrated</value>
+  </data>
+  <data name="ThisSession" xml:space="preserve">
+    <value>This session</value>
+  </data>
+  <data name="UnknownValue" xml:space="preserve">
+    <value>unknown</value>
+  </data>
+  <data name="Rename" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="NoDevices" xml:space="preserve">
+    <value>This user has no devices.</value>
+  </data>
+  <data name="NoRecentConnections" xml:space="preserve">
+    <value>The homeserver reports no recent connections for this user.</value>
+  </data>
+  <data name="RecentConnectionsHint" xml:space="preserve">
+    <value>The IP addresses and user agents this user recently connected from, as the homeserver records them, newest first. The homeserver doesn't say which device each connection belongs to.</value>
+  </data>
+  <data name="RenameDevice" xml:space="preserve">
+    <value>Rename device</value>
+  </data>
+  <data name="RenameDeviceFor" xml:space="preserve">
+    <value>Rename the device "{0}" of "{1}".</value>
+  </data>
+  <data name="DeleteDevice" xml:space="preserve">
+    <value>Delete device</value>
+  </data>
+  <data name="DeleteDevices" xml:space="preserve">
+    <value>Delete devices</value>
+  </data>
+  <data name="DeleteSelectedDevices" xml:space="preserve">
+    <value>Delete selected ({0})</value>
+  </data>
+  <data name="DeleteDeviceConfirmation" xml:space="preserve">
+    <value>Are you sure you want to delete the device "{1}" of "{0}"?</value>
+  </data>
+  <data name="DeleteDevicesConfirmation" xml:space="preserve">
+    <value>Are you sure you want to delete these {2} devices of "{0}": {1}?</value>
+  </data>
+  <data name="DeviceDeletionHint" xml:space="preserve">
+    <value>Deleting a device signs it out and removes its encryption keys. It doesn't change the password: anyone who knows it can sign in again.</value>
+  </data>
+  <data name="OwnSessionDeviceNote" xml:space="preserve">
+    <value>The device of this session can't be deleted here: that would sign you out.</value>
+  </data>
+  <data name="OwnSessionDeviceUnknownNote" xml:space="preserve">
+    <value>The homeserver didn't report this session's device, so your own devices can't be deleted here: one of them could sign you out.</value>
+  </data>
+  <data name="CannotDeleteOwnSessionDevice" xml:space="preserve">
+    <value>The device of this session can't be deleted, because that would sign you out.</value>
+  </data>
+  <data name="NoDevicesSelected" xml:space="preserve">
+    <value>No devices selected.</value>
+  </data>
+  <data name="DeviceNameRequired" xml:space="preserve">
+    <value>Enter a device name.</value>
+  </data>
+  <data name="DeviceNameTooLong" xml:space="preserve">
+    <value>The device name can have at most {0} characters.</value>
+  </data>
+  <data name="DeviceRenamedSuccessfully" xml:space="preserve">
+    <value>Device renamed successfully.</value>
+  </data>
+  <data name="DevicesDeletedSuccessfully" xml:space="preserve">
+    <value>Deleted {0} device(s).</value>
+  </data>
+  <data name="ErrorFetchingDevices" xml:space="preserve">
+    <value>Error fetching the user's devices.</value>
+  </data>
+  <data name="ErrorFetchingConnections" xml:space="preserve">
+    <value>Error fetching the user's recent connections.</value>
+  </data>
+  <data name="ErrorRenamingDevice" xml:space="preserve">
+    <value>Error renaming the device.</value>
+  </data>
+  <data name="ErrorDeletingDevices" xml:space="preserve">
+    <value>Error deleting the devices.</value>
+  </data>
 </root>

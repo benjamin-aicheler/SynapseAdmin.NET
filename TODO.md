@@ -8,11 +8,6 @@
 
 ## ⏭️ Next Up
 
-- [ ] [3.1] Resources EN/DE/FR
-- [ ] [3.2] `RenameDeviceDialog` and tests
-- [ ] [3.3] `UserDevicesPanel` and tests (AC-23, AC-5)
-- [ ] [3.4] `UserConnectionsPanel` and tests
-- [ ] [3.5] Devices and Recent connections tabs on `UserDetails`
 - [ ] [4.1–4.3] Finish: drop `[Planned]` tags, decision log, README/ARCHITECTURE/AGENTS.md lists, reset PLAN.md and TODO.md
 
 ## ⛔ Blocked
@@ -26,7 +21,8 @@
 - [x] 2026-11-26 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-23, §8, §10, §13
 - [x] 2026-11-26 – [0.2] PLAN.md approved; TODO.md filled
 - [x] 2026-11-26 – [1.1, 1.2] Device and whois DTOs, `IMatrixGateway.DeviceId`, four gateway methods, wire tests – c583050
-- [x] 2026-11-26 – [2.1, 2.2] ViewModels, `UserDeviceMappingExtensions`, `IUserDeviceService` / `UserDeviceService`, tests
+- [x] 2026-11-26 – [2.1, 2.2] ViewModels, `UserDeviceMappingExtensions`, `IUserDeviceService` / `UserDeviceService`, tests – b6e706c
+- [x] 2026-11-26 – [3.1–3.5] Resources EN/DE/FR, `RenameDeviceDialog`, `UserDevicesPanel`, `UserConnectionsPanel`, tabs on `UserDetails`, bUnit tests
 
 ## Definition of Done (applies to every task)
 
