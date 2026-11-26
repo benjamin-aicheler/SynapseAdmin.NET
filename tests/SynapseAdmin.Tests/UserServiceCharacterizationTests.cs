@@ -46,9 +46,35 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         string? SuccessKey = null,
         string? InfoTemplate = null,
         Dictionary<string, object?>? InfoArguments = null,
-        Action<Stub>? SetUpSuccess = null);
+        Action<Stub>? SetUpSuccess = null,
+        Action<Stub>? Arrange = null);
+
+    // The account edits read the user first and send the PUT only for an account the homeserver knows (#584).
+    private static void UserExists(Stub s) => s.On("GetUserDetailsAsync", _ => Task.FromResult<User?>(new User { Name = UserId }));
+    private static void PutReturnsUser(Stub s) => s.On("UpdateUserAsync", _ => Task.FromResult<User?>(new User { Name = UserId }));
+
+    private static Operation Edit(string failureKey, string successKey, string state, string argument, bool value,
+        Func<UserService, CancellationToken, Task<OperationResult>> invoke) =>
+        new("UpdateUserAsync", invoke, (_, _) => { }, failureKey,
+            $"Error setting the {state} of user {{UserId}} ({argument.ToLowerInvariant()}: {{{argument}}})",
+            new() { ["UserId"] = SanitizedUserId, [argument] = value },
+            successKey, $"Successfully set the {state} of user {{UserId}} ({argument.ToLowerInvariant()}: {{{argument}}})",
+            new() { ["UserId"] = SanitizedUserId, [argument] = value },
+            PutReturnsUser, UserExists);
 
     private static Action<object?[], CancellationToken> Args(params object?[] expected) => (args, ct) => Assert.Equal(expected.Append(ct).ToArray(), args);
+
+    // Suspension and shadow-ban have their own endpoints, which create no account, so they send at once (#584).
+    private static Operation State(string gatewayMethod, string failureKey, string successKey, string state, string argument, bool value,
+        Func<UserService, CancellationToken, Task<OperationResult>> invoke)
+    {
+        var logged = argument == "ShadowBanned" ? "shadow-banned" : argument.ToLowerInvariant();
+        return new(gatewayMethod, invoke, Args(UserId, value), failureKey,
+            $"Error setting the {state} of user {{UserId}} ({logged}: {{{argument}}})",
+            new() { ["UserId"] = SanitizedUserId, [argument] = value },
+            successKey, $"Successfully set the {state} of user {{UserId}} ({logged}: {{{argument}}})",
+            new() { ["UserId"] = SanitizedUserId, [argument] = value });
+    }
 
     private static readonly Dictionary<string, Operation> Operations = new()
     {
@@ -121,11 +147,34 @@ public sealed class UserServiceCharacterizationTests : IDisposable
             "AccountValidityRenewedSuccessfully", "Successfully renewed account validity for user {UserId} (new expiration_ts: {ExpirationTs})",
             new() { ["UserId"] = SanitizedUserId, ["ExpirationTs"] = 456L },
             s => s.On("RenewAccountValidityAsync", _ => Task.FromResult<SynapseAdminAccountValidityResponse?>(new() { ExpirationTs = 456 }))),
+        ["Lock"] = Edit("ErrorLockingUser", "UserLockedSuccessfully", "lock state", "Locked", true, (s, ct) => s.SetUserLockedAsync(UserId, true, ct)),
+        ["Unlock"] = Edit("ErrorUnlockingUser", "UserUnlockedSuccessfully", "lock state", "Locked", false, (s, ct) => s.SetUserLockedAsync(UserId, false, ct)),
+        ["MakeAdmin"] = Edit("ErrorGrantingAdmin", "AdminGrantedSuccessfully", "server admin state", "Admin", true, (s, ct) => s.SetUserAdminAsync(UserId, true, ct)),
+        ["RemoveAdmin"] = Edit("ErrorRevokingAdmin", "AdminRevokedSuccessfully", "server admin state", "Admin", false, (s, ct) => s.SetUserAdminAsync(UserId, false, ct)),
+        ["Suspend"] = State("SetUserSuspendedAsync", "ErrorSuspendingUser", "UserSuspendedSuccessfully", "suspension", "Suspended", true,
+            (s, ct) => s.SetUserSuspendedAsync(UserId, true, ct)),
+        ["Unsuspend"] = State("SetUserSuspendedAsync", "ErrorUnsuspendingUser", "UserUnsuspendedSuccessfully", "suspension", "Suspended", false,
+            (s, ct) => s.SetUserSuspendedAsync(UserId, false, ct)),
+        ["ShadowBan"] = State("SetUserShadowBannedAsync", "ErrorShadowBanningUser", "UserShadowBannedSuccessfully", "shadow-ban", "ShadowBanned", true,
+            (s, ct) => s.SetUserShadowBannedAsync(UserId, true, ct)),
+        ["LiftShadowBan"] = State("SetUserShadowBannedAsync", "ErrorLiftingShadowBan", "ShadowBanLiftedSuccessfully", "shadow-ban", "ShadowBanned", false,
+            (s, ct) => s.SetUserShadowBannedAsync(UserId, false, ct)),
     };
 
+    /// <summary>The account edits: each sends exactly one field after reading the user (#584).</summary>
+    private static readonly Dictionary<string, string> EditBodies = new()
+    {
+        ["Lock"] = """{"locked":true}""",
+        ["Unlock"] = """{"locked":false}""",
+        ["MakeAdmin"] = """{"admin":true}""",
+        ["RemoveAdmin"] = """{"admin":false}""",
+    };
+
+    public static TheoryData<string> EditOperations => new(EditBodies.Keys);
+
     public static TheoryData<string> AllOperations => new(Operations.Keys);
-    // Details reads three endpoints and Create checks for an existing account first: each has its own test.
-    public static TheoryData<string> SingleCallOperations => new(Operations.Keys.Where(k => k is not ("Details" or "Create")));
+    // Details reads three endpoints, and Create and the account edits check the account first: each has its own test.
+    public static TheoryData<string> SingleCallOperations => new(Operations.Keys.Where(k => k is not ("Details" or "Create") && !EditBodies.ContainsKey(k)));
     public static TheoryData<string> ActionOperations => new(Operations.Where(o => o.Value.SuccessKey != null).Select(o => o.Key));
 
     private readonly CancellationTokenSource _cts = new();
@@ -158,7 +207,11 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     [Theory, MemberData(nameof(AllOperations))]
     public async Task GatewayCancels_ReturnsSilentCancellation_WithoutLogging(string name)
     {
-        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(Operations[name].GatewayMethod, new TaskCanceledException()));
+        var gateway = Stub.Create<IMatrixGateway>(s =>
+        {
+            Operations[name].Arrange?.Invoke(s);
+            s.Fault(Operations[name].GatewayMethod, new TaskCanceledException());
+        });
 
         var result = await Operations[name].Invoke(CreateService(gateway), _cts.Token);
 
@@ -171,7 +224,11 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     {
         var operation = Operations[name];
         var error = new InvalidOperationException("boom");
-        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, error));
+        var gateway = Stub.Create<IMatrixGateway>(s =>
+        {
+            operation.Arrange?.Invoke(s);
+            s.Fault(operation.GatewayMethod, error);
+        });
 
         var result = await operation.Invoke(CreateService(gateway), _cts.Token);
 
@@ -192,7 +249,11 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     {
         var operation = Operations[name];
         var refusal = new OperationNotSupportedByHomeserverException(operation.GatewayMethod);
-        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal));
+        var gateway = Stub.Create<IMatrixGateway>(s =>
+        {
+            operation.Arrange?.Invoke(s);
+            s.Fault(operation.GatewayMethod, refusal);
+        });
 
         var result = await operation.Invoke(CreateService(gateway), _cts.Token);
 
@@ -216,7 +277,11 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     public async Task Action_Success_ReturnsLocalizedMessage_AndLogsInformation(string name)
     {
         var operation = Operations[name];
-        var gateway = Stub.Create<IMatrixGateway>(s => operation.SetUpSuccess?.Invoke(s));
+        var gateway = Stub.Create<IMatrixGateway>(s =>
+        {
+            operation.Arrange?.Invoke(s);
+            operation.SetUpSuccess?.Invoke(s);
+        });
 
         var result = await operation.Invoke(CreateService(gateway), _cts.Token);
 
@@ -311,6 +376,73 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         ResultAssert.Failure(result, "ErrorCreatingUser");
         Assert.Equal(["GetUserDetailsAsync"], stub.Calls.Select(c => c.Method));
         AssertSingleLog(LogLevel.Error, "Error creating user {UserId}", UserArgument, error);
+    }
+
+    /// <summary>
+    /// <c>PUT /_synapse/admin/v2/users/{userId}</c> creates a user it doesn't know, so an edit reads the account first,
+    /// then sends exactly its own field: no other key, above all no <c>admin</c> unless the admin toggle changed (#584).
+    /// </summary>
+    [Theory, MemberData(nameof(EditOperations))]
+    public async Task Edit_ReadsTheUser_ThenSendsOnlyItsField(string name)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        UserExists(stub);
+        PutReturnsUser(stub);
+
+        await Operations[name].Invoke(CreateService(gateway), _cts.Token);
+
+        Assert.Equal(["GetUserDetailsAsync", "UpdateUserAsync"], stub.Calls.Select(c => c.Method));
+        Assert.Equal(new object?[] { UserId, _cts.Token }, stub.Calls[0].Args);
+        Assert.Equal(UserId, stub.Calls[1].Args[0]);
+        var request = Assert.IsType<SynapseAdminUserUpsertRequest>(stub.Calls[1].Args[1]);
+        // MatrixHttpClient omits null fields, as these options do.
+        Assert.Equal(EditBodies[name], JsonSerializer.Serialize(request, OmitNulls));
+        Assert.Equal(_cts.Token, stub.Calls[1].Args[2]);
+    }
+
+    private static readonly JsonSerializerOptions OmitNulls =
+        new() { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
+
+    /// <summary>An account the homeserver doesn't know isn't edited: the PUT would create it.</summary>
+    [Theory, MemberData(nameof(EditOperations))]
+    public async Task Edit_UnknownUser_FailsNotFound_WithoutThePut(string name)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+
+        var result = await Operations[name].Invoke(CreateService(gateway), _cts.Token);
+
+        ResultAssert.Failure(result, "UserNotFound");
+        Assert.Equal(["GetUserDetailsAsync"], stub.Calls.Select(c => c.Method));
+        Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>When the read fails, nothing says the account exists, so the PUT isn't sent.</summary>
+    [Theory, MemberData(nameof(EditOperations))]
+    public async Task Edit_ReadFails_FailsWithTheEditKey_WithoutThePut(string name)
+    {
+        var operation = Operations[name];
+        var error = new InvalidOperationException("boom");
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        stub.Fault("GetUserDetailsAsync", error);
+
+        var result = await operation.Invoke(CreateService(gateway), _cts.Token);
+
+        ResultAssert.Failure(result, operation.FailureKey);
+        Assert.Equal(["GetUserDetailsAsync"], stub.Calls.Select(c => c.Method));
+        AssertSingleLog(LogLevel.Error, operation.ErrorTemplate, operation.ErrorArguments, error);
+    }
+
+    /// <summary>A PUT that returns no account fails with the operation's key (#395), without logging.</summary>
+    [Theory, MemberData(nameof(EditOperations))]
+    public async Task Edit_NullPutResult_Fails_WithoutLogging(string name)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        UserExists(stub);
+
+        var result = await Operations[name].Invoke(CreateService(gateway), _cts.Token);
+
+        ResultAssert.Failure(result, Operations[name].FailureKey);
+        Assert.Empty(_logger.Entries);
     }
 
     [Fact]

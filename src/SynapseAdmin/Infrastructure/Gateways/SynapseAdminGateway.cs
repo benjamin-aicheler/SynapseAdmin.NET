@@ -167,11 +167,35 @@ public class SynapseAdminGateway(
         return await GetWithCompatibilityOptionsAsync<UserMediaStatisticsResponse>(url, cancellationToken);
     }
 
-    public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, object request, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, SynapseAdminUserUpsertRequest request, CancellationToken cancellationToken = default)
     {
         using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{userId.UrlEncode()}", request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>(cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// The response isn't read: Synapse answers <c>{"user_&lt;id&gt;_suspended": …}</c> and Tuwunel
+    /// <c>{"user_id": …, "suspended": …}</c>, and the page reads the account again anyway.
+    /// </summary>
+    public override async Task SetUserSuspendedAsync(string userId, bool suspend, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/suspend/{userId.UrlEncode()}";
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { suspend }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public override async Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/shadow_ban";
+        if (shadowBanned)
+        {
+            await PostEmptyAsync(url, cancellationToken);
+        }
+        else
+        {
+            await SendDeleteAsync(url, null, cancellationToken);
+        }
     }
 
     public override async Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default)

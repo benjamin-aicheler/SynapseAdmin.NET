@@ -145,6 +145,10 @@ internal sealed class TuwunelAdminGateway(
     // applicable, and Tuwunel answers them with 404 M_UNRECOGNIZED. They are refused before anything is sent, so the
     // admin sees the "not supported" warning instead of an error.
 
+    /// <summary>Refused: Tuwunel has no shadow-ban, so there is none to set or lift (#584).</summary>
+    public override Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
     /// <summary>Refused: Tuwunel has no media quarantine.</summary>
     public override Task QuarantineMediaAsync(string serverName, string mediaId, CancellationToken cancellationToken = default) =>
         throw new OperationNotSupportedByHomeserverException();

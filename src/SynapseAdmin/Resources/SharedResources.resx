@@ -1517,4 +1517,103 @@
   <data name="OperationNotSupportedByHomeserver" xml:space="preserve">
     <value>This operation is not supported by this homeserver.</value>
   </data>
+  <data name="UserLockedSuccessfully" xml:space="preserve">
+    <value>User locked successfully.</value>
+  </data>
+  <data name="UserUnlockedSuccessfully" xml:space="preserve">
+    <value>User unlocked successfully.</value>
+  </data>
+  <data name="ErrorLockingUser" xml:space="preserve">
+    <value>Error locking user.</value>
+  </data>
+  <data name="ErrorUnlockingUser" xml:space="preserve">
+    <value>Error unlocking user.</value>
+  </data>
+  <data name="AdminGrantedSuccessfully" xml:space="preserve">
+    <value>Server admin rights granted successfully.</value>
+  </data>
+  <data name="AdminRevokedSuccessfully" xml:space="preserve">
+    <value>Server admin rights removed successfully.</value>
+  </data>
+  <data name="ErrorGrantingAdmin" xml:space="preserve">
+    <value>Error granting server admin rights.</value>
+  </data>
+  <data name="ErrorRevokingAdmin" xml:space="preserve">
+    <value>Error removing server admin rights.</value>
+  </data>
+  <data name="UserSuspendedSuccessfully" xml:space="preserve">
+    <value>User suspended successfully.</value>
+  </data>
+  <data name="UserUnsuspendedSuccessfully" xml:space="preserve">
+    <value>Suspension lifted successfully.</value>
+  </data>
+  <data name="ErrorSuspendingUser" xml:space="preserve">
+    <value>Error suspending user.</value>
+  </data>
+  <data name="ErrorUnsuspendingUser" xml:space="preserve">
+    <value>Error lifting the suspension.</value>
+  </data>
+  <data name="UserShadowBannedSuccessfully" xml:space="preserve">
+    <value>User shadow-banned successfully.</value>
+  </data>
+  <data name="ShadowBanLiftedSuccessfully" xml:space="preserve">
+    <value>Shadow-ban lifted successfully.</value>
+  </data>
+  <data name="ErrorShadowBanningUser" xml:space="preserve">
+    <value>Error shadow-banning user.</value>
+  </data>
+  <data name="ErrorLiftingShadowBan" xml:space="preserve">
+    <value>Error lifting the shadow-ban.</value>
+  </data>
+  <data name="LockUser" xml:space="preserve">
+    <value>Lock</value>
+  </data>
+  <data name="UnlockUser" xml:space="preserve">
+    <value>Unlock</value>
+  </data>
+  <data name="SuspendUser" xml:space="preserve">
+    <value>Suspend</value>
+  </data>
+  <data name="UnsuspendUser" xml:space="preserve">
+    <value>Lift suspension</value>
+  </data>
+  <data name="MakeAdmin" xml:space="preserve">
+    <value>Make server admin</value>
+  </data>
+  <data name="RemoveAdmin" xml:space="preserve">
+    <value>Remove server admin</value>
+  </data>
+  <data name="ShadowBanUser" xml:space="preserve">
+    <value>Shadow-ban</value>
+  </data>
+  <data name="LiftShadowBan" xml:space="preserve">
+    <value>Lift shadow-ban</value>
+  </data>
+  <data name="LockUserConfirmation" xml:space="preserve">
+    <value>Are you sure you want to lock the user "{0}"?</value>
+  </data>
+  <data name="UnlockUserConfirmation" xml:space="preserve">
+    <value>Are you sure you want to unlock the user "{0}"?</value>
+  </data>
+  <data name="SuspendUserConfirmation" xml:space="preserve">
+    <value>Are you sure you want to suspend the user "{0}"? While suspended, the user can't send invites, join or knock on rooms, send messages, change their profile, or redact messages other than their own.</value>
+  </data>
+  <data name="UnsuspendUserConfirmation" xml:space="preserve">
+    <value>Are you sure you want to lift the suspension of the user "{0}"?</value>
+  </data>
+  <data name="MakeAdminConfirmation" xml:space="preserve">
+    <value>Are you sure you want to make the user "{0}" a server admin? Server admins can use the Admin API.</value>
+  </data>
+  <data name="RemoveAdminConfirmation" xml:space="preserve">
+    <value>Are you sure you want to remove the server admin rights of the user "{0}"?</value>
+  </data>
+  <data name="ShadowBanUserConfirmation" xml:space="preserve">
+    <value>Are you sure you want to shadow-ban the user "{0}"? Their requests still succeed, but their events aren't sent to rooms and they can't contact anyone on the server. The user isn't notified. Use this only as a last resort.</value>
+  </data>
+  <data name="LiftShadowBanConfirmation" xml:space="preserve">
+    <value>Are you sure you want to lift the shadow-ban of the user "{0}"?</value>
+  </data>
+  <data name="NotAvailableForOwnAccount" xml:space="preserve">
+    <value>Actions that would restrict your own account aren't available here.</value>
+  </data>
 </root>

@@ -40,6 +40,8 @@ namespace SynapseAdmin.Tests;
 /// Also the room list's sort direction per brand (#541).
 /// Also the shadow login (#539): the token's expiry travels in the body, not the query string.
 /// Also the federation destinations' <c>from</c>, the previous <c>next_token</c> passed back unchanged (#551).
+/// Also suspending and shadow-banning a user (#584): the exact PUT, POST and DELETE, their cancellation token and the
+/// same error behavior.
 /// </summary>
 public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -1280,6 +1282,124 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Null(user!.ExpirationTs);
     }
 
+    // ---- Suspension and shadow-ban (#584) ---------------------------------------------------------------
+
+    // Suspending: PUT /_synapse/admin/v1/suspend/{userId} with {"suspend": true | false}. Synapse answers
+    // {"user_<id>_suspended": …} and Tuwunel {"user_id": …, "suspended": …}, so the response isn't read.
+    private const string SuspendTarget = "/_synapse/admin/v1/suspend/%40alice%3aexample.com";
+
+    // Shadow-banning: POST (with {}) and DELETE (without a body) on /_synapse/admin/v1/users/{userId}/shadow_ban.
+    private const string ShadowBanTarget = "/_synapse/admin/v1/users/%40alice%3aexample.com/shadow_ban";
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SetUserSuspended_SendsPutWithSuspend(bool suspend)
+    {
+        _homeserver.AllowedMethod = "PUT";
+        _homeserver.Respond = () => Results.Json(new Dictionary<string, bool> { ["user_@alice:example.com_suspended"] = suspend });
+
+        await _gateway.SetUserSuspendedAsync("@alice:example.com", suspend);
+
+        Assert.Equal(
+            new CapturedRequest("PUT", SuspendTarget, "application/json; charset=utf-8", $$"""{"suspend":{{(suspend ? "true" : "false")}}}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task SetUserShadowBanned_True_SendsPostWithAnEmptyObject()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.SetUserShadowBannedAsync("@alice:example.com", true);
+
+        Assert.Equal(EmptyJsonObject("POST", ShadowBanTarget), Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task SetUserShadowBanned_False_SendsDeleteWithoutABody()
+    {
+        _homeserver.AllowedMethod = "DELETE";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.SetUserShadowBannedAsync("@alice:example.com", false);
+
+        Assert.Equal(new CapturedRequest("DELETE", ShadowBanTarget, null, ""), Assert.Single(_homeserver.Requests));
+    }
+
+    private static readonly Dictionary<string, Func<SynapseAdminGateway, CancellationToken, Task>> UserStateMethods = new()
+    {
+        ["Suspend"] = (g, ct) => g.SetUserSuspendedAsync("@alice:example.com", true, ct),
+        ["Unsuspend"] = (g, ct) => g.SetUserSuspendedAsync("@alice:example.com", false, ct),
+        ["ShadowBan"] = (g, ct) => g.SetUserShadowBannedAsync("@alice:example.com", true, ct),
+        ["LiftShadowBan"] = (g, ct) => g.SetUserShadowBannedAsync("@alice:example.com", false, ct),
+    };
+
+    public static TheoryData<string> UserStateMethodNames => new(UserStateMethods.Keys);
+
+    [Theory]
+    [MemberData(nameof(UserStateMethodNames))]
+    public async Task UserState_CancelledToken_SendsNoRequest(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => UserStateMethods[method](_gateway, cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Theory]
+    [MemberData(nameof(UserStateMethodNames))]
+    public async Task UserState_MatrixErrorResponse_ThrowsMatrixException(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "User not found" }, statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => UserStateMethods[method](_gateway, CancellationToken.None));
+
+        Assert.Equal("M_NOT_FOUND", ex.ErrorCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(UserStateMethodNames))]
+    public async Task UserState_NonJsonErrorResponse_ThrowsHttpRequestException(string method)
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => UserStateMethods[method](_gateway, CancellationToken.None));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    /// <summary>Tuwunel has no shadow-ban (its status page marks the endpoint not implemented): lifting one is refused too.</summary>
+    [Fact]
+    public async Task Tuwunel_LiftShadowBan_RefusesWithoutARequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(
+            () => gateway.SetUserShadowBannedAsync("@alice:example.com", false));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.SetUserShadowBannedAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>Tuwunel serves suspension with the same request and result (PLAN.md §10), so the Synapse request is sent.</summary>
+    [Fact]
+    public async Task Tuwunel_SetUserSuspended_SendsTheSynapseRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { user_id = "@alice:example.com", suspended = true });
+
+        await gateway.SetUserSuspendedAsync("@alice:example.com", true);
+
+        Assert.Equal(
+            new CapturedRequest("PUT", SuspendTarget, "application/json; charset=utf-8", """{"suspend":true}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
     // ---- Tuwunel admin API coverage ---------------------------------------------------------------------
 
     // Operations Tuwunel doesn't serve (its status page marks them not implemented or not applicable) and the remote
@@ -1305,6 +1425,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         [nameof(SynapseAdminGateway.StartBackgroundUpdatesJobAsync)] = g => g.StartBackgroundUpdatesJobAsync("populate_stats_process_rooms"),
         [nameof(SynapseAdminGateway.GetLargestRoomsAsync)] = g => g.GetLargestRoomsAsync(),
         [nameof(SynapseAdminGateway.PurgeRemoteMediaCacheAsync)] = g => g.PurgeRemoteMediaCacheAsync(1_700_000_000_000),
+        [nameof(SynapseAdminGateway.SetUserShadowBannedAsync)] = g => g.SetUserShadowBannedAsync("@alice:example.com", true),
     };
 
     public static TheoryData<string> TuwunelRefusedOperationNames => new(TuwunelRefusedOperations.Keys);

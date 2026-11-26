@@ -5,6 +5,7 @@ using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models;
 using SynapseAdmin.Infrastructure.Helpers;
 using System.Net;
 
@@ -120,9 +121,71 @@ namespace SynapseAdmin.Components.Pages
         private static string FormatTarget(UserDetailViewModel? model, string userId) =>
             string.IsNullOrWhiteSpace(model?.DisplayName) ? userId : $"{model.DisplayName} ({userId})";
 
-        private async Task DeactivateUser()
+        /// <summary>
+        /// Whether the shown user is the signed-in admin. Actions that would restrict that account (lock, suspend,
+        /// remove admin, shadow-ban, deactivate) would end or restrict the session the app runs on, so they are disabled
+        /// there (#584). The user IDs are compared ordinally.
+        /// </summary>
+        private bool IsOwnAccount =>
+            GetDisplayedTarget() is { } target && string.Equals(target, MatrixSession.Gateway?.UserId, StringComparison.Ordinal);
+
+        private Task ToggleLock() =>
+            user is { } shown && !(IsOwnAccount && !shown.Locked)
+                ? RunConfirmedUserAction(shown.Locked ? "UnlockUser" : "LockUser",
+                    shown.Locked ? "UnlockUserConfirmation" : "LockUserConfirmation",
+                    (target, token) => UserService.SetUserLockedAsync(target, !shown.Locked, token))
+                : Task.CompletedTask;
+
+        private Task ToggleSuspension() =>
+            user is { } shown && !(IsOwnAccount && !shown.Suspended)
+                ? RunConfirmedUserAction(shown.Suspended ? "UnsuspendUser" : "SuspendUser",
+                    shown.Suspended ? "UnsuspendUserConfirmation" : "SuspendUserConfirmation",
+                    (target, token) => UserService.SetUserSuspendedAsync(target, !shown.Suspended, token))
+                : Task.CompletedTask;
+
+        private Task ToggleAdmin() =>
+            user is { } shown && !(IsOwnAccount && shown.Admin)
+                ? RunConfirmedUserAction(shown.Admin ? "RemoveAdmin" : "MakeAdmin",
+                    shown.Admin ? "RemoveAdminConfirmation" : "MakeAdminConfirmation",
+                    (target, token) => UserService.SetUserAdminAsync(target, !shown.Admin, token))
+                : Task.CompletedTask;
+
+        private Task ToggleShadowBan() =>
+            user is { } shown && !(IsOwnAccount && !shown.ShadowBanned)
+                ? RunConfirmedUserAction(shown.ShadowBanned ? "LiftShadowBan" : "ShadowBanUser",
+                    shown.ShadowBanned ? "LiftShadowBanConfirmation" : "ShadowBanUserConfirmation",
+                    (target, token) => UserService.SetUserShadowBannedAsync(target, !shown.ShadowBanned, token))
+                : Task.CompletedTask;
+
+        /// <summary>
+        /// Asks to confirm <paramref name="actionKey"/> for the user shown, re-checks afterwards that the user is still
+        /// shown, runs <paramref name="action"/> for that user, shows the result and reloads the user after a success.
+        /// The state each toggle sends is the one read when the admin clicked.
+        /// </summary>
+        private async Task RunConfirmedUserAction(string actionKey, string confirmationKey,
+            Func<string, CancellationToken, Task<OperationResult>> action)
         {
             if (GetDisplayedTarget() is not { } target) return;
+
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L[actionKey],
+                L[confirmationKey, FormatTarget(user, target)],
+                yesText: L[actionKey], cancelText: L["Cancel"]);
+
+            if (confirmed == true && IsStillDisplayed(target))
+            {
+                var result = await action(target, _cts.Token);
+                Snackbar.ShowResult(result);
+                if (result.Success && _loadCts != null && GetDisplayedTarget() == target)
+                {
+                    await LoadUserDetails(target, _loadCts.Token);
+                }
+            }
+        }
+
+        private async Task DeactivateUser()
+        {
+            if (GetDisplayedTarget() is not { } target || IsOwnAccount) return;
 
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
                 L["DeactivateUserTitle"],

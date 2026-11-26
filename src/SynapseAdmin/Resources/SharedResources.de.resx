@@ -1516,4 +1516,103 @@
   <data name="OperationNotSupportedByHomeserver" xml:space="preserve">
     <value>Dieser Vorgang wird von diesem Homeserver nicht unterstützt.</value>
   </data>
+  <data name="UserLockedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich gesperrt.</value>
+  </data>
+  <data name="UserUnlockedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich entsperrt.</value>
+  </data>
+  <data name="ErrorLockingUser" xml:space="preserve">
+    <value>Fehler beim Sperren des Benutzers.</value>
+  </data>
+  <data name="ErrorUnlockingUser" xml:space="preserve">
+    <value>Fehler beim Entsperren des Benutzers.</value>
+  </data>
+  <data name="AdminGrantedSuccessfully" xml:space="preserve">
+    <value>Serveradministrator-Rechte erfolgreich erteilt.</value>
+  </data>
+  <data name="AdminRevokedSuccessfully" xml:space="preserve">
+    <value>Serveradministrator-Rechte erfolgreich entzogen.</value>
+  </data>
+  <data name="ErrorGrantingAdmin" xml:space="preserve">
+    <value>Fehler beim Erteilen der Serveradministrator-Rechte.</value>
+  </data>
+  <data name="ErrorRevokingAdmin" xml:space="preserve">
+    <value>Fehler beim Entziehen der Serveradministrator-Rechte.</value>
+  </data>
+  <data name="UserSuspendedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich suspendiert.</value>
+  </data>
+  <data name="UserUnsuspendedSuccessfully" xml:space="preserve">
+    <value>Suspendierung erfolgreich aufgehoben.</value>
+  </data>
+  <data name="ErrorSuspendingUser" xml:space="preserve">
+    <value>Fehler beim Suspendieren des Benutzers.</value>
+  </data>
+  <data name="ErrorUnsuspendingUser" xml:space="preserve">
+    <value>Fehler beim Aufheben der Suspendierung.</value>
+  </data>
+  <data name="UserShadowBannedSuccessfully" xml:space="preserve">
+    <value>Shadow-Ban erfolgreich verhängt.</value>
+  </data>
+  <data name="ShadowBanLiftedSuccessfully" xml:space="preserve">
+    <value>Shadow-Ban erfolgreich aufgehoben.</value>
+  </data>
+  <data name="ErrorShadowBanningUser" xml:space="preserve">
+    <value>Fehler beim Verhängen des Shadow-Bans.</value>
+  </data>
+  <data name="ErrorLiftingShadowBan" xml:space="preserve">
+    <value>Fehler beim Aufheben des Shadow-Bans.</value>
+  </data>
+  <data name="LockUser" xml:space="preserve">
+    <value>Sperren</value>
+  </data>
+  <data name="UnlockUser" xml:space="preserve">
+    <value>Entsperren</value>
+  </data>
+  <data name="SuspendUser" xml:space="preserve">
+    <value>Suspendieren</value>
+  </data>
+  <data name="UnsuspendUser" xml:space="preserve">
+    <value>Suspendierung aufheben</value>
+  </data>
+  <data name="MakeAdmin" xml:space="preserve">
+    <value>Zum Serveradministrator machen</value>
+  </data>
+  <data name="RemoveAdmin" xml:space="preserve">
+    <value>Serveradministrator-Rechte entziehen</value>
+  </data>
+  <data name="ShadowBanUser" xml:space="preserve">
+    <value>Shadow-Ban verhängen</value>
+  </data>
+  <data name="LiftShadowBan" xml:space="preserve">
+    <value>Shadow-Ban aufheben</value>
+  </data>
+  <data name="LockUserConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Benutzer „{0}“ sperren möchten?</value>
+  </data>
+  <data name="UnlockUserConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Benutzer „{0}“ entsperren möchten?</value>
+  </data>
+  <data name="SuspendUserConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Benutzer „{0}“ suspendieren möchten? Während der Suspendierung kann der Benutzer keine Einladungen senden, Räumen nicht beitreten oder anklopfen, keine Nachrichten senden, sein Profil nicht ändern und nur eigene Nachrichten löschen.</value>
+  </data>
+  <data name="UnsuspendUserConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie die Suspendierung des Benutzers „{0}“ aufheben möchten?</value>
+  </data>
+  <data name="MakeAdminConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Benutzer „{0}“ zum Serveradministrator machen möchten? Serveradministratoren können die Admin-API verwenden.</value>
+  </data>
+  <data name="RemoveAdminConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie dem Benutzer „{0}“ die Serveradministrator-Rechte entziehen möchten?</value>
+  </data>
+  <data name="ShadowBanUserConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie gegen den Benutzer „{0}“ einen Shadow-Ban verhängen möchten? Seine Anfragen sind weiterhin erfolgreich, aber seine Ereignisse werden nicht in Räume übertragen, und er kann niemanden auf dem Server erreichen. Der Benutzer wird nicht benachrichtigt. Nutzen Sie dies nur als letztes Mittel.</value>
+  </data>
+  <data name="LiftShadowBanConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie den Shadow-Ban des Benutzers „{0}“ aufheben möchten?</value>
+  </data>
+  <data name="NotAvailableForOwnAccount" xml:space="preserve">
+    <value>Aktionen, die Ihr eigenes Konto einschränken würden, sind hier nicht verfügbar.</value>
+  </data>
 </root>
