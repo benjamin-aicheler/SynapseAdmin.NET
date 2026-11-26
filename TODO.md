@@ -1,46 +1,29 @@
 # TODO
 
-<!--
-HOW TO USE THIS FILE (instructions for the AI agent):
-- This is the SINGLE-TASK execution checklist derived from the approved PLAN.md (ignore if PLAN.md is blank template or Done).
-- Work on ONE task at a time, top to bottom within "Next Up", unless the user says otherwise.
-- Before starting a task: move it to "In Progress".
-- After finishing a task: verify it (`dotnet build` & `dotnet test`), tick the checkbox, move it to "Done"
-  with the date and a short note (e.g. commit hash or files changed).
-- If you discover new work, add it to "Backlog" or "Bugs / Follow-ups" – do not silently expand the current task.
-- If a task is blocked, move it to "Blocked" with the reason and what is needed.
-- Keep entries short. Reference PLAN step IDs (e.g. [1.2]) and spec IDs (e.g. FR-15, AC-10).
-- ON COMPLETION (before merging the PR, or before starting the next task): finalize `[Planned]` items in SPEC.md and clear/reset this file (and PLAN.md) back to the blank template from `main` (optionally preserving any real unresolved follow-ups in Backlog, or moving them to GitHub Issues).
--->
-
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-26
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [1.1] Gateway `DeleteUserMediaAsync` (Synapse, Generic, test fakes), wire tests (AC-24)
+- [ ] [2.1] `UserMediaDeletionViewModel`, `UserService.DeleteAllMediaAsync` with loop, cap, completion read, progress; tests
+- [ ] [3.1] Resources EN/DE/FR
+- [ ] [3.2] "Delete all media" on the user page: confirmation, progress and Stop, disabled actions, reload; bUnit tests
+- [ ] [4.1–4.3] Finish: drop `[Planned]` tags, decision log, README/ARCHITECTURE/AGENTS.md, #599 text, reset PLAN.md and TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
-
 ## 📋 Backlog
-
-- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [ ] 
-
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-26 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-24, §10, §13
+- [x] 2026-11-26 – [0.2] PLAN.md approved; TODO.md filled
 
 ## Definition of Done (applies to every task)
 
