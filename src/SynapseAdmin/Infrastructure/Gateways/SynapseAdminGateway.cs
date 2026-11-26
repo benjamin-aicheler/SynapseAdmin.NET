@@ -167,7 +167,7 @@ public class SynapseAdminGateway(
         return await GetWithCompatibilityOptionsAsync<UserMediaStatisticsResponse>(url, cancellationToken);
     }
 
-    public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, object request, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, SynapseAdminUserUpsertRequest request, CancellationToken cancellationToken = default)
     {
         using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync($"/_synapse/admin/v2/users/{userId.UrlEncode()}", request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();
