@@ -8,10 +8,6 @@
 
 ## ⏭️ Next Up
 
-- [ ] [2.1] Type `UpdateUserAsync`'s request as `SynapseAdminUserUpsertRequest`; update the two hand-written gateway doubles
-- [ ] [2.2] Gateway `SetUserSuspendedAsync`, `SetUserShadowBannedAsync`; Generic refuses; Tuwunel refuses shadow-ban (AC-20)
-- [ ] [2.3] Service `SetUserLockedAsync`, `SetUserAdminAsync`, `SetUserSuspendedAsync`, `SetUserShadowBannedAsync` (AC-20)
-- [ ] [2.4] Actions card toggles; own-account actions disabled with a hint, Deactivate included (AC-20)
 - [ ] [3.1] Gateway `ResetPasswordAsync`; Generic refuses; Tuwunel refuses the signed-in admin's own ID and a deactivated account (AC-21)
 - [ ] [3.2] Service `ResetPasswordAsync`, `ReactivateUserAsync`; no password in logs (AC-21)
 - [ ] [3.3] `ResetPasswordDialog` (logout off by default, own-account hint), `ReactivateUserDialog`, page wiring; Reset password disabled for deactivated accounts (AC-21)
@@ -31,6 +27,10 @@
 
 - [x] 2026-11-25 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-19 to AC-22, §8, §10, §13
 - [x] 2026-11-25 – [0.2] PLAN.md approved; TODO.md filled
+- [x] 2026-11-26 – [2.1] `UpdateUserAsync` takes `SynapseAdminUserUpsertRequest` – 64cb245
+- [x] 2026-11-26 – [2.2] Gateway suspend and shadow-ban; Generic and Tuwunel refusals – 525f8cf
+- [x] 2026-11-26 – [2.3] Service lock, admin, suspend, shadow-ban – 0235328
+- [x] 2026-11-26 – [2.4] Actions card toggles, own-account guard and note – `UserDetailsAccountActionsTests`
 - [x] 2026-11-26 – [1.1] `Suspended` mapped, placeholder comment removed – `MappingExtensionsTests`
 - [x] 2026-11-26 – [1.2] Suspended and Shadow-banned chips; Active ignores shadow-ban – `UserDetailsAccountStatusTests`
 - [x] 2026-11-25 – [0.3] Tuwunel handlers checked; one new refusal planned (reset of a deactivated account), see PLAN.md §10
