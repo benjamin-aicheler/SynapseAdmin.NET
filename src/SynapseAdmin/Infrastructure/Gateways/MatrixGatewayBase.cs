@@ -197,6 +197,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, SynapseAdminUserUpsertRequest request, CancellationToken cancellationToken = default);
     public abstract Task SetUserSuspendedAsync(string userId, bool suspend, CancellationToken cancellationToken = default);
     public abstract Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default);
+    public abstract Task ResetPasswordAsync(string userId, SynapseAdminResetPasswordRequest request, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, int from, int limit, string orderBy = "created_ts", string dir = "b", CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default);

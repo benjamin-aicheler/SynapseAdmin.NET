@@ -131,6 +131,28 @@ internal sealed class TuwunelAdminGateway(
         return user;
     }
 
+    /// <summary>
+    /// Tuwunel (1.8.2, 2.0.0) differs from Synapse twice here (#584). When it logs devices out, it removes every device
+    /// of the user, the requester's included, where Synapse keeps the session that sent the reset: resetting the
+    /// signed-in admin's own password is refused, whatever <c>logout_devices</c> says. And its reset writes a password,
+    /// which is how Tuwunel marks an account as active, so it reactivates a deactivated account that Synapse leaves
+    /// deactivated: the account is read first, and the reset refused if it is deactivated.
+    /// </summary>
+    public override async Task ResetPasswordAsync(string userId, SynapseAdminResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.Equals(userId, UserId, StringComparison.Ordinal))
+        {
+            throw new OperationNotSupportedByHomeserverException();
+        }
+
+        if (await GetUserDetailsAsync(userId, cancellationToken) is { Deactivated: true })
+        {
+            throw new OperationNotSupportedByHomeserverException();
+        }
+
+        await base.ResetPasswordAsync(userId, request, cancellationToken);
+    }
+
     /// <summary>Tuwunel stores no creation time and sends 0 for it, which would show as 1970.</summary>
     private static void ClearUnknownCreationTs(SynapseAdminUserListResult.SynapseAdminUserListResultUser user)
     {

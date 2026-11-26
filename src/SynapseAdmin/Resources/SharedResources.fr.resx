@@ -1615,4 +1615,46 @@
   <data name="NotAvailableForOwnAccount" xml:space="preserve">
     <value>Les actions qui restreindraient votre propre compte ne sont pas disponibles ici.</value>
   </data>
+  <data name="PasswordResetSuccessfully" xml:space="preserve">
+    <value>Mot de passe réinitialisé avec succès.</value>
+  </data>
+  <data name="ErrorResettingPassword" xml:space="preserve">
+    <value>Erreur lors de la réinitialisation du mot de passe.</value>
+  </data>
+  <data name="UserReactivatedSuccessfully" xml:space="preserve">
+    <value>Utilisateur réactivé avec succès.</value>
+  </data>
+  <data name="ErrorReactivatingUser" xml:space="preserve">
+    <value>Erreur lors de la réactivation de l'utilisateur.</value>
+  </data>
+  <data name="UserAlreadyActive" xml:space="preserve">
+    <value>L'utilisateur est déjà actif.</value>
+  </data>
+  <data name="ResetPassword" xml:space="preserve">
+    <value>Réinitialiser le mot de passe</value>
+  </data>
+  <data name="ResetPasswordFor" xml:space="preserve">
+    <value>Définir un nouveau mot de passe pour « {0} ».</value>
+  </data>
+  <data name="NewPassword" xml:space="preserve">
+    <value>Nouveau mot de passe</value>
+  </data>
+  <data name="LogOutAllDevices" xml:space="preserve">
+    <value>Déconnecter tous les appareils</value>
+  </data>
+  <data name="LogOutAllDevicesHelper" xml:space="preserve">
+    <value>Met fin à toutes les sessions de l'utilisateur, qui doit alors se reconnecter sur chaque appareil.</value>
+  </data>
+  <data name="LogOutAllDevicesOwnAccountHelper" xml:space="preserve">
+    <value>Met fin à vos autres sessions. Cette session reste connectée.</value>
+  </data>
+  <data name="ReactivateUser" xml:space="preserve">
+    <value>Réactiver</value>
+  </data>
+  <data name="ReactivateUserFor" xml:space="preserve">
+    <value>Réactiver le compte de « {0} ».</value>
+  </data>
+  <data name="ReactivationPasswordHelper" xml:space="preserve">
+    <value>Facultatif. La désactivation a supprimé le mot de passe du compte : sans nouveau mot de passe, l'utilisateur ne peut se connecter que d'une autre manière, par exemple par authentification unique. Le serveur refuse un mot de passe s'il n'autorise pas les mots de passe locaux.</value>
+  </data>
 </root>

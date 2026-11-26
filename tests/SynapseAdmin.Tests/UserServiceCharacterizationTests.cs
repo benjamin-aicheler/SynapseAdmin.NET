@@ -52,6 +52,8 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     // The account edits read the user first and send the PUT only for an account the homeserver knows (#584).
     private static void UserExists(Stub s) => s.On("GetUserDetailsAsync", _ => Task.FromResult<User?>(new User { Name = UserId }));
     private static void PutReturnsUser(Stub s) => s.On("UpdateUserAsync", _ => Task.FromResult<User?>(new User { Name = UserId }));
+    private static void UserIsDeactivated(Stub s) => s.On("GetUserDetailsAsync", _ => Task.FromResult<User?>(new User { Name = UserId, Deactivated = true }));
+    private const string NewPassword = "new-secret";
 
     private static Operation Edit(string failureKey, string successKey, string state, string argument, bool value,
         Func<UserService, CancellationToken, Task<OperationResult>> invoke) =>
@@ -159,6 +161,25 @@ public sealed class UserServiceCharacterizationTests : IDisposable
             (s, ct) => s.SetUserShadowBannedAsync(UserId, true, ct)),
         ["LiftShadowBan"] = State("SetUserShadowBannedAsync", "ErrorLiftingShadowBan", "ShadowBanLiftedSuccessfully", "shadow-ban", "ShadowBanned", false,
             (s, ct) => s.SetUserShadowBannedAsync(UserId, false, ct)),
+        // The password is never logged: the templates name only whether devices are logged out or a password was set.
+        ["ResetPassword"] = new("ResetPasswordAsync", (s, ct) => s.ResetPasswordAsync(UserId, NewPassword, true, ct),
+            (args, ct) =>
+            {
+                Assert.Equal(UserId, args[0]);
+                var request = Assert.IsType<SynapseAdminResetPasswordRequest>(args[1]);
+                Assert.Equal((NewPassword, true), (request.NewPassword, request.LogoutDevices));
+                Assert.Equal(ct, args[2]);
+            },
+            "ErrorResettingPassword", "Error resetting the password of user {UserId} (logout devices: {LogoutDevices})",
+            new() { ["UserId"] = SanitizedUserId, ["LogoutDevices"] = true },
+            "PasswordResetSuccessfully", "Successfully reset the password of user {UserId} (logout devices: {LogoutDevices})",
+            new() { ["UserId"] = SanitizedUserId, ["LogoutDevices"] = true }),
+        ["Reactivate"] = new("UpdateUserAsync", (s, ct) => s.ReactivateUserAsync(UserId, NewPassword, ct), (_, _) => { },
+            "ErrorReactivatingUser", "Error reactivating user {UserId} (with password: {WithPassword})",
+            new() { ["UserId"] = SanitizedUserId, ["WithPassword"] = true },
+            "UserReactivatedSuccessfully", "Successfully reactivated user {UserId} (with password: {WithPassword})",
+            new() { ["UserId"] = SanitizedUserId, ["WithPassword"] = true },
+            PutReturnsUser, UserIsDeactivated),
     };
 
     /// <summary>The account edits: each sends exactly one field after reading the user (#584).</summary>
@@ -168,6 +189,7 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         ["Unlock"] = """{"locked":false}""",
         ["MakeAdmin"] = """{"admin":true}""",
         ["RemoveAdmin"] = """{"admin":false}""",
+        ["Reactivate"] = """{"password":"new-secret","deactivated":false}""",
     };
 
     public static TheoryData<string> EditOperations => new(EditBodies.Keys);
@@ -386,8 +408,8 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     public async Task Edit_ReadsTheUser_ThenSendsOnlyItsField(string name)
     {
         var gateway = Stub.Create<IMatrixGateway>(out var stub);
-        UserExists(stub);
-        PutReturnsUser(stub);
+        Operations[name].Arrange!(stub);
+        Operations[name].SetUpSuccess!(stub);
 
         await Operations[name].Invoke(CreateService(gateway), _cts.Token);
 
@@ -437,12 +459,48 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     public async Task Edit_NullPutResult_Fails_WithoutLogging(string name)
     {
         var gateway = Stub.Create<IMatrixGateway>(out var stub);
-        UserExists(stub);
+        Operations[name].Arrange!(stub);
 
         var result = await Operations[name].Invoke(CreateService(gateway), _cts.Token);
 
         ResultAssert.Failure(result, Operations[name].FailureKey);
         Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>Without a new password, the reactivation sends only <c>deactivated</c>; an empty one counts as none.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task Reactivate_WithoutAPassword_SendsOnlyDeactivated(string? password)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        UserIsDeactivated(stub);
+        PutReturnsUser(stub);
+
+        var result = await CreateService(gateway).ReactivateUserAsync(UserId, password, _cts.Token);
+
+        ResultAssert.Success(result, "UserReactivatedSuccessfully");
+        var request = Assert.IsType<SynapseAdminUserUpsertRequest>(stub.CallsTo("UpdateUserAsync").Single()[1]);
+        Assert.Equal("""{"deactivated":false}""", JsonSerializer.Serialize(request, OmitNulls));
+        AssertSingleLog(LogLevel.Information, "Successfully reactivated user {UserId} (with password: {WithPassword})",
+            new() { ["UserId"] = SanitizedUserId, ["WithPassword"] = false }, exception: null);
+    }
+
+    /// <summary>
+    /// An account that is active again (reactivated elsewhere since the page loaded) isn't sent the PUT: with a password
+    /// it would replace the password and, as <c>logout_devices</c> defaults to <c>true</c>, log out all its devices.
+    /// </summary>
+    [Fact]
+    public async Task Reactivate_ActiveAccount_FailsWithAWarning_WithoutThePut()
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        UserExists(stub);
+
+        var result = await CreateService(gateway).ReactivateUserAsync(UserId, NewPassword, _cts.Token);
+
+        ResultAssert.Failure(result, "UserAlreadyActive", Severity.Warning);
+        Assert.Equal(["GetUserDetailsAsync"], stub.Calls.Select(c => c.Method));
+        AssertSingleLog(LogLevel.Warning, "Refused to reactivate user {UserId}: the account is active", UserArgument, exception: null);
     }
 
     [Fact]

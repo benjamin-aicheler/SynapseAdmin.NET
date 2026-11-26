@@ -34,6 +34,8 @@ public interface IMatrixGateway
     Task SetUserSuspendedAsync(string userId, bool suspend, CancellationToken cancellationToken = default);
     /// <summary>Shadow-bans a local account or lifts the ban (<c>POST</c> or <c>DELETE /_synapse/admin/v1/users/{userId}/shadow_ban</c>).</summary>
     Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default);
+    /// <summary>Sets a new password for a local account (<c>POST /_synapse/admin/v1/reset_password/{userId}</c>).</summary>
+    Task ResetPasswordAsync(string userId, SynapseAdminResetPasswordRequest request, CancellationToken cancellationToken = default);
     Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default);
     /// <summary>One page of media uploaded by a local user. <paramref name="from"/> is the item offset.</summary>
     Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, int from, int limit, string orderBy = "created_ts", string dir = "b", CancellationToken cancellationToken = default);

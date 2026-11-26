@@ -1615,4 +1615,46 @@
   <data name="NotAvailableForOwnAccount" xml:space="preserve">
     <value>Aktionen, die Ihr eigenes Konto einschränken würden, sind hier nicht verfügbar.</value>
   </data>
+  <data name="PasswordResetSuccessfully" xml:space="preserve">
+    <value>Passwort erfolgreich zurückgesetzt.</value>
+  </data>
+  <data name="ErrorResettingPassword" xml:space="preserve">
+    <value>Fehler beim Zurücksetzen des Passworts.</value>
+  </data>
+  <data name="UserReactivatedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich reaktiviert.</value>
+  </data>
+  <data name="ErrorReactivatingUser" xml:space="preserve">
+    <value>Fehler beim Reaktivieren des Benutzers.</value>
+  </data>
+  <data name="UserAlreadyActive" xml:space="preserve">
+    <value>Der Benutzer ist bereits aktiv.</value>
+  </data>
+  <data name="ResetPassword" xml:space="preserve">
+    <value>Passwort zurücksetzen</value>
+  </data>
+  <data name="ResetPasswordFor" xml:space="preserve">
+    <value>Neues Passwort für „{0}“ festlegen.</value>
+  </data>
+  <data name="NewPassword" xml:space="preserve">
+    <value>Neues Passwort</value>
+  </data>
+  <data name="LogOutAllDevices" xml:space="preserve">
+    <value>Alle Geräte abmelden</value>
+  </data>
+  <data name="LogOutAllDevicesHelper" xml:space="preserve">
+    <value>Beendet jede Sitzung des Benutzers, der sich dann auf jedem Gerät neu anmelden muss.</value>
+  </data>
+  <data name="LogOutAllDevicesOwnAccountHelper" xml:space="preserve">
+    <value>Beendet Ihre anderen Sitzungen. Diese Sitzung bleibt angemeldet.</value>
+  </data>
+  <data name="ReactivateUser" xml:space="preserve">
+    <value>Reaktivieren</value>
+  </data>
+  <data name="ReactivateUserFor" xml:space="preserve">
+    <value>Das Konto von „{0}“ reaktivieren.</value>
+  </data>
+  <data name="ReactivationPasswordHelper" xml:space="preserve">
+    <value>Optional. Die Deaktivierung hat das Passwort des Kontos entfernt: Ohne neues Passwort kann sich der Benutzer nur auf andere Weise anmelden, etwa per Single Sign-on. Der Homeserver lehnt ein Passwort ab, wenn er keine lokalen Passwörter zulässt.</value>
+  </data>
 </root>

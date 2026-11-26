@@ -1616,4 +1616,46 @@
   <data name="NotAvailableForOwnAccount" xml:space="preserve">
     <value>Actions that would restrict your own account aren't available here.</value>
   </data>
+  <data name="PasswordResetSuccessfully" xml:space="preserve">
+    <value>Password reset successfully.</value>
+  </data>
+  <data name="ErrorResettingPassword" xml:space="preserve">
+    <value>Error resetting the password.</value>
+  </data>
+  <data name="UserReactivatedSuccessfully" xml:space="preserve">
+    <value>User reactivated successfully.</value>
+  </data>
+  <data name="ErrorReactivatingUser" xml:space="preserve">
+    <value>Error reactivating user.</value>
+  </data>
+  <data name="UserAlreadyActive" xml:space="preserve">
+    <value>The user is already active.</value>
+  </data>
+  <data name="ResetPassword" xml:space="preserve">
+    <value>Reset password</value>
+  </data>
+  <data name="ResetPasswordFor" xml:space="preserve">
+    <value>Set a new password for "{0}".</value>
+  </data>
+  <data name="NewPassword" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="LogOutAllDevices" xml:space="preserve">
+    <value>Log out all devices</value>
+  </data>
+  <data name="LogOutAllDevicesHelper" xml:space="preserve">
+    <value>Ends every session of the user, who then has to sign in again on each device.</value>
+  </data>
+  <data name="LogOutAllDevicesOwnAccountHelper" xml:space="preserve">
+    <value>Ends your other sessions. This session stays signed in.</value>
+  </data>
+  <data name="ReactivateUser" xml:space="preserve">
+    <value>Reactivate</value>
+  </data>
+  <data name="ReactivateUserFor" xml:space="preserve">
+    <value>Reactivate the account of "{0}".</value>
+  </data>
+  <data name="ReactivationPasswordHelper" xml:space="preserve">
+    <value>Optional. Deactivation removed the account's password: without a new one, the user can only sign in another way, such as single sign-on. The homeserver refuses a password if it doesn't allow local passwords.</value>
+  </data>
 </root>

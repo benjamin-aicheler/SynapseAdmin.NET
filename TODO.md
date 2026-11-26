@@ -8,9 +8,6 @@
 
 ## ⏭️ Next Up
 
-- [ ] [3.1] Gateway `ResetPasswordAsync`; Generic refuses; Tuwunel refuses the signed-in admin's own ID and a deactivated account (AC-21)
-- [ ] [3.2] Service `ResetPasswordAsync`, `ReactivateUserAsync`; no password in logs (AC-21)
-- [ ] [3.3] `ResetPasswordDialog` (logout off by default, own-account hint), `ReactivateUserDialog`, page wiring; Reset password disabled for deactivated accounts (AC-21)
 - [ ] [4.1] Service `UpdateUserProfileAsync`: only changed fields, no change sends nothing (AC-22)
 - [ ] [4.2] `UserProfileDialog` and page wiring (AC-22)
 - [ ] [4.3] Finish: drop `[Planned]` tags, decision log, AGENTS.md "What Tuwunel Refuses", reset PLAN.md and TODO.md
@@ -27,6 +24,9 @@
 
 - [x] 2026-11-25 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-19 to AC-22, §8, §10, §13
 - [x] 2026-11-25 – [0.2] PLAN.md approved; TODO.md filled
+- [x] 2026-11-26 – [3.1] Gateway `ResetPasswordAsync`; Generic and Tuwunel refusals – deee4a6
+- [x] 2026-11-26 – [3.2] Service reset and reactivation; reactivation refuses an active account – 4dc1ead
+- [x] 2026-11-26 – [3.3] Reset password and Reactivate dialogs, page wiring – 0d362ec
 - [x] 2026-11-26 – [2.1] `UpdateUserAsync` takes `SynapseAdminUserUpsertRequest` – 64cb245
 - [x] 2026-11-26 – [2.2] Gateway suspend and shadow-ban; Generic and Tuwunel refusals – 525f8cf
 - [x] 2026-11-26 – [2.3] Service lock, admin, suspend, shadow-ban – 0235328

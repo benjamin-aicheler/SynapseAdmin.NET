@@ -40,8 +40,8 @@ namespace SynapseAdmin.Tests;
 /// Also the room list's sort direction per brand (#541).
 /// Also the shadow login (#539): the token's expiry travels in the body, not the query string.
 /// Also the federation destinations' <c>from</c>, the previous <c>next_token</c> passed back unchanged (#551).
-/// Also suspending and shadow-banning a user (#584): the exact PUT, POST and DELETE, their cancellation token and the
-/// same error behavior.
+/// Also suspending and shadow-banning a user and resetting a password (#584): the exact PUT, POST and DELETE, their
+/// cancellation token and the same error behavior, and the password resets Tuwunel refuses.
 /// </summary>
 public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -1334,6 +1334,8 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         ["Unsuspend"] = (g, ct) => g.SetUserSuspendedAsync("@alice:example.com", false, ct),
         ["ShadowBan"] = (g, ct) => g.SetUserShadowBannedAsync("@alice:example.com", true, ct),
         ["LiftShadowBan"] = (g, ct) => g.SetUserShadowBannedAsync("@alice:example.com", false, ct),
+        ["ResetPassword"] = (g, ct) => g.ResetPasswordAsync("@alice:example.com",
+            new SynapseAdminResetPasswordRequest { NewPassword = "new-secret", LogoutDevices = false }, ct),
     };
 
     public static TheoryData<string> UserStateMethodNames => new(UserStateMethods.Keys);
@@ -1371,6 +1373,89 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => UserStateMethods[method](_gateway, CancellationToken.None));
 
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // Resetting a password: POST /_synapse/admin/v1/reset_password/{userId} with both fields, logout_devices always
+    // sent, since Synapse defaults it to true and the page defaults it to false (#584).
+    private const string ResetPasswordTarget = "/_synapse/admin/v1/reset_password/%40alice%3aexample.com";
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ResetPassword_SendsPostWithBothFields(bool logoutDevices)
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.ResetPasswordAsync("@alice:example.com",
+            new SynapseAdminResetPasswordRequest { NewPassword = "new-secret", LogoutDevices = logoutDevices });
+
+        Assert.Equal(
+            new CapturedRequest("POST", ResetPasswordTarget, "application/json; charset=utf-8",
+                $$"""{"new_password":"new-secret","logout_devices":{{(logoutDevices ? "true" : "false")}}}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    /// <summary>A Tuwunel gateway signed in as <paramref name="userId"/>, with the whoami request it sent removed.</summary>
+    private async Task<TuwunelAdminGateway> CreateTuwunelGatewaySignedInAsAsync(string userId)
+    {
+        var homeserver = CreateHomeserver();
+        _homeserver.Respond = () => Results.Json(new { user_id = userId });
+        await homeserver.Initialise();
+        _homeserver.Requests.Clear();
+        return new TuwunelAdminGateway(homeserver);
+    }
+
+    /// <summary>
+    /// Tuwunel removes every device of the user when it logs devices out, the requester's included, so resetting the
+    /// signed-in admin's own password is refused, whatever the switch says (#584).
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Tuwunel_ResetOwnPassword_RefusesWithoutARequest(bool logoutDevices)
+    {
+        var gateway = await CreateTuwunelGatewaySignedInAsAsync("@alice:example.com");
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.ResetPasswordAsync(
+            "@alice:example.com", new SynapseAdminResetPasswordRequest { NewPassword = "new-secret", LogoutDevices = logoutDevices }));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.ResetPasswordAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>Tuwunel's reset writes a password, which reactivates a deactivated account: refused after the read.</summary>
+    [Fact]
+    public async Task Tuwunel_ResetPasswordOfADeactivatedAccount_RefusesAfterReadingTheAccount()
+    {
+        var gateway = await CreateTuwunelGatewaySignedInAsAsync("@admin:example.com");
+        _homeserver.Respond = () => Results.Json(new { name = "@alice:example.com", deactivated = true });
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.ResetPasswordAsync(
+            "@alice:example.com", new SynapseAdminResetPasswordRequest { NewPassword = "new-secret", LogoutDevices = true }));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.ResetPasswordAsync), error.Operation);
+        Assert.Equal([("GET", "/_synapse/admin/v2/users/%40alice%3aexample.com")], _homeserver.Requests.Select(r => (r.Method, r.Target)));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Tuwunel_ResetPasswordOfAnotherActiveUser_ReadsTheAccountThenSendsTheSynapseRequest(bool logoutDevices)
+    {
+        var gateway = await CreateTuwunelGatewaySignedInAsAsync("@admin:example.com");
+        _homeserver.Respond = () => Results.Json(new { name = "@alice:example.com", deactivated = false });
+
+        await gateway.ResetPasswordAsync("@alice:example.com",
+            new SynapseAdminResetPasswordRequest { NewPassword = "new-secret", LogoutDevices = logoutDevices });
+
+        Assert.Equal(
+            [
+                new CapturedRequest("GET", "/_synapse/admin/v2/users/%40alice%3aexample.com", null, ""),
+                new CapturedRequest("POST", ResetPasswordTarget, "application/json; charset=utf-8",
+                    $$"""{"new_password":"new-secret","logout_devices":{{(logoutDevices ? "true" : "false")}}}"""),
+            ],
+            _homeserver.Requests);
     }
 
     /// <summary>Tuwunel has no shadow-ban (its status page marks the endpoint not implemented): lifting one is refused too.</summary>

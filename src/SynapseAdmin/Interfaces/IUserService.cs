@@ -29,6 +29,15 @@ public interface IUserService
 
     Task<OperationResult> SetUserSuspendedAsync(string userId, bool suspended, CancellationToken token = default);
     Task<OperationResult> SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken token = default);
+
+    /// <summary>Sets a new password, logging out all of the user's devices only if <paramref name="logoutDevices"/> is set.</summary>
+    Task<OperationResult> ResetPasswordAsync(string userId, string newPassword, bool logoutDevices, CancellationToken token = default);
+
+    /// <summary>
+    /// Reactivates a deactivated account, with a new password if <paramref name="newPassword"/> isn't empty. Fails with
+    /// "user not found" for an unknown account and with a warning for an active one.
+    /// </summary>
+    Task<OperationResult> ReactivateUserAsync(string userId, string? newPassword, CancellationToken token = default);
     Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default);
     Task<OperationResult<List<UserExperimentalFeatureViewModel>>> GetUserExperimentalFeaturesAsync(string userId, CancellationToken token = default);
     Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default);

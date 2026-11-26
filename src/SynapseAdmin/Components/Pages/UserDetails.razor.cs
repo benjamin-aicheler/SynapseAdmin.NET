@@ -183,6 +183,51 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        /// <summary>
+        /// Asks for a new password in <see cref="ResetPasswordDialog"/> and sends it for the user shown, if that user is
+        /// still shown once the dialog closes. Not for a deactivated account, which Reactivate sets a password for (#584).
+        /// </summary>
+        private async Task OpenResetPasswordDialog()
+        {
+            if (GetDisplayedTarget() is not { } target || user is not { Deactivated: false }) return;
+
+            var parameters = new DialogParameters
+            {
+                { nameof(ResetPasswordDialog.Target), FormatTarget(user, target) },
+                { nameof(ResetPasswordDialog.IsOwnAccount), IsOwnAccount }
+            };
+            var dialog = await DialogService.ShowAsync<ResetPasswordDialog>(L["ResetPassword"], parameters, DialogPresets.Small());
+            var result = await dialog.Result;
+
+            if (result is { Canceled: false, Data: UserPasswordResetViewModel model } && IsStillDisplayed(target))
+            {
+                Snackbar.ShowResult(await UserService.ResetPasswordAsync(target, model.Password, model.LogoutDevices, _cts.Token));
+            }
+        }
+
+        /// <summary>
+        /// Asks for an optional new password in <see cref="ReactivateUserDialog"/> and reactivates the deactivated user
+        /// shown, if still shown once the dialog closes, then reloads the user (#584).
+        /// </summary>
+        private async Task OpenReactivateDialog()
+        {
+            if (GetDisplayedTarget() is not { } target || user is not { Deactivated: true }) return;
+
+            var parameters = new DialogParameters { { nameof(ReactivateUserDialog.Target), FormatTarget(user, target) } };
+            var dialog = await DialogService.ShowAsync<ReactivateUserDialog>(L["ReactivateUser"], parameters, DialogPresets.Small());
+            var result = await dialog.Result;
+
+            if (result is { Canceled: false, Data: UserReactivateViewModel model } && IsStillDisplayed(target))
+            {
+                var outcome = await UserService.ReactivateUserAsync(target, model.Password, _cts.Token);
+                Snackbar.ShowResult(outcome);
+                if (outcome.Success && _loadCts != null && GetDisplayedTarget() == target)
+                {
+                    await LoadUserDetails(target, _loadCts.Token);
+                }
+            }
+        }
+
         private async Task DeactivateUser()
         {
             if (GetDisplayedTarget() is not { } target || IsOwnAccount) return;
