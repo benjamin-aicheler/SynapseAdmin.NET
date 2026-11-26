@@ -906,6 +906,7 @@ public class SecurityInfrastructureTests
         public string HomeserverUrl => homeserverUrl;
         public string ServerName => "example.com";
         public string AccessToken => "token";
+        public string? DeviceId => null;
         public bool SupportsAdminApi => true;
         public string ServerBrand => "Synapse";
         public string ServerVersion => "1.120.0";
@@ -926,6 +927,10 @@ public class SecurityInfrastructureTests
         public Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task SetUserExperimentalFeaturesAsync(string userId, SynapseAdminExperimentalFeaturesRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminUserDeviceListResult?> GetUserDevicesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task RenameUserDeviceAsync(string userId, string deviceId, SynapseAdminDeviceUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminWhoisResponse?> GetUserWhoisAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom?> GetRoomDetailsAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomMemberListResult?> GetRoomMembersAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();

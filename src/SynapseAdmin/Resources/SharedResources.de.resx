@@ -1678,4 +1678,106 @@
   <data name="RemoveAvatar" xml:space="preserve">
     <value>Avatar entfernen</value>
   </data>
+  <data name="Devices" xml:space="preserve">
+    <value>Geräte</value>
+  </data>
+  <data name="RecentConnections" xml:space="preserve">
+    <value>Letzte Verbindungen</value>
+  </data>
+  <data name="DeviceId" xml:space="preserve">
+    <value>Geräte-ID</value>
+  </data>
+  <data name="DeviceName" xml:space="preserve">
+    <value>Gerätename</value>
+  </data>
+  <data name="LastSeen" xml:space="preserve">
+    <value>Zuletzt gesehen</value>
+  </data>
+  <data name="IpAddress" xml:space="preserve">
+    <value>IP-Adresse</value>
+  </data>
+  <data name="UserAgent" xml:space="preserve">
+    <value>User-Agent</value>
+  </data>
+  <data name="Dehydrated" xml:space="preserve">
+    <value>Dehydriert</value>
+  </data>
+  <data name="ThisSession" xml:space="preserve">
+    <value>Diese Sitzung</value>
+  </data>
+  <data name="UnknownValue" xml:space="preserve">
+    <value>unbekannt</value>
+  </data>
+  <data name="Rename" xml:space="preserve">
+    <value>Umbenennen</value>
+  </data>
+  <data name="NoDevices" xml:space="preserve">
+    <value>Dieser Benutzer hat keine Geräte.</value>
+  </data>
+  <data name="NoRecentConnections" xml:space="preserve">
+    <value>Der Homeserver meldet keine letzten Verbindungen dieses Benutzers.</value>
+  </data>
+  <data name="RecentConnectionsHint" xml:space="preserve">
+    <value>Die IP-Adressen und User-Agents, mit denen sich dieser Benutzer zuletzt verbunden hat, wie der Homeserver sie aufzeichnet, die neuesten zuerst. Der Homeserver gibt nicht an, zu welchem Gerät eine Verbindung gehört.</value>
+  </data>
+  <data name="RenameDevice" xml:space="preserve">
+    <value>Gerät umbenennen</value>
+  </data>
+  <data name="RenameDeviceFor" xml:space="preserve">
+    <value>Das Gerät „{0}“ von „{1}“ umbenennen.</value>
+  </data>
+  <data name="DeleteDevice" xml:space="preserve">
+    <value>Gerät löschen</value>
+  </data>
+  <data name="DeleteDevices" xml:space="preserve">
+    <value>Geräte löschen</value>
+  </data>
+  <data name="DeleteSelectedDevices" xml:space="preserve">
+    <value>Ausgewählte löschen ({0})</value>
+  </data>
+  <data name="DeleteDeviceConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie das Gerät „{1}“ von „{0}“ löschen möchten?</value>
+  </data>
+  <data name="DeleteDevicesConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie diese {2} Geräte von „{0}“ löschen möchten: {1}?</value>
+  </data>
+  <data name="DeviceDeletionHint" xml:space="preserve">
+    <value>Das Löschen eines Geräts meldet es ab und entfernt seine Schlüssel für die Verschlüsselung. Das Passwort bleibt unverändert: Wer es kennt, kann sich erneut anmelden.</value>
+  </data>
+  <data name="OwnSessionDeviceNote" xml:space="preserve">
+    <value>Das Gerät dieser Sitzung kann hier nicht gelöscht werden, weil Sie dadurch abgemeldet würden.</value>
+  </data>
+  <data name="OwnSessionDeviceUnknownNote" xml:space="preserve">
+    <value>Der Homeserver hat das Gerät dieser Sitzung nicht gemeldet, daher können Ihre eigenen Geräte hier nicht gelöscht werden: Eines davon könnte Sie abmelden.</value>
+  </data>
+  <data name="CannotDeleteOwnSessionDevice" xml:space="preserve">
+    <value>Das Gerät dieser Sitzung kann nicht gelöscht werden, weil Sie dadurch abgemeldet würden.</value>
+  </data>
+  <data name="NoDevicesSelected" xml:space="preserve">
+    <value>Keine Geräte ausgewählt.</value>
+  </data>
+  <data name="DeviceNameRequired" xml:space="preserve">
+    <value>Geben Sie einen Gerätenamen ein.</value>
+  </data>
+  <data name="DeviceNameTooLong" xml:space="preserve">
+    <value>Der Gerätename darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="DeviceRenamedSuccessfully" xml:space="preserve">
+    <value>Gerät erfolgreich umbenannt.</value>
+  </data>
+  <data name="DevicesDeletedSuccessfully" xml:space="preserve">
+    <value>{0} Gerät(e) gelöscht.</value>
+  </data>
+  <data name="ErrorFetchingDevices" xml:space="preserve">
+    <value>Fehler beim Abrufen der Geräte des Benutzers.</value>
+  </data>
+  <data name="ErrorFetchingConnections" xml:space="preserve">
+    <value>Fehler beim Abrufen der letzten Verbindungen des Benutzers.</value>
+  </data>
+  <data name="ErrorRenamingDevice" xml:space="preserve">
+    <value>Fehler beim Umbenennen des Geräts.</value>
+  </data>
+  <data name="ErrorDeletingDevices" xml:space="preserve">
+    <value>Fehler beim Löschen der Geräte.</value>
+  </data>
 </root>

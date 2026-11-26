@@ -15,6 +15,11 @@ public interface IMatrixGateway
     string HomeserverUrl { get; }
     string ServerName { get; }
     string AccessToken { get; }
+    /// <summary>
+    /// The device of this session's access token, as <c>/_matrix/client/v3/account/whoami</c> reported it at sign-in, or
+    /// <c>null</c> if the homeserver reported none (#598).
+    /// </summary>
+    string? DeviceId { get; }
 
     bool SupportsAdminApi { get; }
     string ServerBrand { get; }
@@ -42,6 +47,17 @@ public interface IMatrixGateway
     Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default);
     Task SetUserExperimentalFeaturesAsync(string userId, SynapseAdminExperimentalFeaturesRequest request, CancellationToken cancellationToken = default);
     Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default);
+    /// <summary>A local user's devices (<c>GET /_synapse/admin/v2/users/{userId}/devices</c>, #598).</summary>
+    Task<SynapseAdminUserDeviceListResult?> GetUserDevicesAsync(string userId, CancellationToken cancellationToken = default);
+    /// <summary>Renames one of a local user's devices (<c>PUT /_synapse/admin/v2/users/{userId}/devices/{deviceId}</c>, #598).</summary>
+    Task RenameUserDeviceAsync(string userId, string deviceId, SynapseAdminDeviceUpdateRequest request, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Deletes some of a local user's devices and invalidates their access tokens
+    /// (<c>POST /_synapse/admin/v2/users/{userId}/delete_devices</c>, #598).
+    /// </summary>
+    Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default);
+    /// <summary>A local user's recent connections (<c>GET /_synapse/admin/v1/whois/{userId}</c>, #598).</summary>
+    Task<SynapseAdminWhoisResponse?> GetUserWhoisAsync(string userId, CancellationToken cancellationToken = default);
 
     // --- Room Management (Admin/Synapse) ---
     Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);

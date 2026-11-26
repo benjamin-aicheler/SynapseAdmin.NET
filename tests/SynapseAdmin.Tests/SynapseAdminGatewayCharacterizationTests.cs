@@ -42,6 +42,9 @@ namespace SynapseAdmin.Tests;
 /// Also the federation destinations' <c>from</c>, the previous <c>next_token</c> passed back unchanged (#551).
 /// Also suspending and shadow-banning a user and resetting a password (#584): the exact PUT, POST and DELETE, their
 /// cancellation token and the same error behavior, and the password resets Tuwunel refuses.
+/// Also a user's devices and recent connections (#598): the exact GET, PUT and POST, the encoding of user and device IDs,
+/// the answers Synapse and Tuwunel send, their cancellation token and the same error behavior, and the session's device
+/// ID from whoami.
 /// </summary>
 public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -1626,6 +1629,172 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
     }
 
     /// <summary>One request as the server received it. <see cref="Target"/> is the path and query exactly as sent.</summary>
+    // ---- User devices and recent connections (#598) -------------------------------------------------------
+
+    private const string UserDevicesTarget = "/_synapse/admin/v2/users/%40alice%3aexample.com/devices";
+
+    [Fact]
+    public async Task GetUserDevices_ReadsSynapsesAnswer()
+    {
+        _homeserver.Respond = () => Results.Text("""
+            {"devices":[{"device_id":"QBUAZIFURK","display_name":"android","last_seen_ip":"192.0.2.1",
+            "last_seen_user_agent":"Mozilla/5.0","last_seen_ts":1474491775024,"user_id":"@alice:example.com",
+            "dehydrated":false}],"total":1}
+            """, "application/json");
+
+        var result = await _gateway.GetUserDevicesAsync("@alice:example.com");
+
+        var device = Assert.Single(result!.Devices);
+        Assert.Equal(
+            ("QBUAZIFURK", "android", "192.0.2.1", "Mozilla/5.0", 1474491775024L, "@alice:example.com", (bool?)false),
+            (device.DeviceId, device.DisplayName, device.LastSeenIp, device.LastSeenUserAgent, device.LastSeenTs, device.UserId, device.Dehydrated));
+        Assert.Equal(1, result.Total);
+        Assert.Equal(new CapturedRequest("GET", UserDevicesTarget, null, ""), Assert.Single(_homeserver.Requests));
+    }
+
+    /// <summary>
+    /// Synapse leaves out the name of an unnamed device; Tuwunel never sends a user agent and sends <c>dehydrated</c>
+    /// only for a user with a dehydrated device. A device that was never seen has no IP and no time.
+    /// </summary>
+    [Fact]
+    public async Task GetUserDevices_MissingFields_ReadAsNull()
+    {
+        _homeserver.Respond = () => Results.Text("""{"devices":[{"device_id":"NEW","user_id":"@alice:example.com"}],"total":1}""", "application/json");
+
+        var device = Assert.Single((await _gateway.GetUserDevicesAsync("@alice:example.com"))!.Devices);
+
+        Assert.Equal(("NEW", (string?)null, (string?)null, (string?)null, (long?)null, (bool?)null),
+            (device.DeviceId, device.DisplayName, device.LastSeenIp, device.LastSeenUserAgent, device.LastSeenTs, device.Dehydrated));
+    }
+
+    /// <summary>
+    /// The device ID is percent-encoded with <c>%20</c> for a space: clients choose device IDs, and a path keeps the
+    /// <c>+</c> that form encoding would send, which would name another device.
+    /// </summary>
+    [Theory]
+    [InlineData("QBUAZIFURK", "QBUAZIFURK")]
+    [InlineData("my phone/1+2", "my%20phone%2F1%2B2")]
+    public async Task RenameUserDevice_SendsPutWithTheName(string deviceId, string encodedDeviceId)
+    {
+        _homeserver.AllowedMethod = "PUT";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.RenameUserDeviceAsync("@alice:example.com", deviceId, new SynapseAdminDeviceUpdateRequest { DisplayName = "Work phone" });
+
+        Assert.Equal(
+            new CapturedRequest("PUT", $"{UserDevicesTarget}/{encodedDeviceId}", "application/json; charset=utf-8",
+                """{"display_name":"Work phone"}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task DeleteUserDevices_SendsPostWithTheDeviceIds()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.DeleteUserDevicesAsync("@alice:example.com", new SynapseAdminDeleteDevicesRequest { Devices = ["QBUAZIFURK", "my phone"] });
+
+        Assert.Equal(
+            new CapturedRequest("POST", "/_synapse/admin/v2/users/%40alice%3aexample.com/delete_devices", "application/json; charset=utf-8",
+                """{"devices":["QBUAZIFURK","my phone"]}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    /// <summary>Synapse's answer: connections under the empty device key, grouped in sessions.</summary>
+    [Fact]
+    public async Task GetUserWhois_ReadsTheConnections()
+    {
+        _homeserver.Respond = () => Results.Text("""
+            {"user_id":"@alice:example.com","devices":{"":{"sessions":[{"connections":[
+            {"ip":"192.0.2.1","last_seen":1417222374433,"user_agent":"Mozilla/5.0"},
+            {"ip":"192.0.2.10","last_seen":1417222374500}]}]}}}
+            """, "application/json");
+
+        var result = await _gateway.GetUserWhoisAsync("@alice:example.com");
+
+        var connections = Assert.Single(Assert.Single(result!.Devices!).Value.Sessions!).Connections!;
+        Assert.Equal(2, connections.Count);
+        Assert.Equal(("192.0.2.1", (long?)1417222374433, (string?)"Mozilla/5.0"), (connections[0].Ip, connections[0].LastSeen, connections[0].UserAgent));
+        Assert.Equal(("192.0.2.10", (long?)1417222374500, (string?)null), (connections[1].Ip, connections[1].LastSeen, connections[1].UserAgent));
+        Assert.Equal(new CapturedRequest("GET", "/_synapse/admin/v1/whois/%40alice%3aexample.com", null, ""), Assert.Single(_homeserver.Requests));
+    }
+
+    private static readonly Dictionary<string, Func<SynapseAdminGateway, CancellationToken, Task>> DeviceMethods = new()
+    {
+        [nameof(SynapseAdminGateway.GetUserDevicesAsync)] = (g, ct) => g.GetUserDevicesAsync("@alice:example.com", ct),
+        [nameof(SynapseAdminGateway.RenameUserDeviceAsync)] = (g, ct) => g.RenameUserDeviceAsync("@alice:example.com", "QBUAZIFURK",
+            new SynapseAdminDeviceUpdateRequest { DisplayName = "Work phone" }, ct),
+        [nameof(SynapseAdminGateway.DeleteUserDevicesAsync)] = (g, ct) => g.DeleteUserDevicesAsync("@alice:example.com",
+            new SynapseAdminDeleteDevicesRequest { Devices = ["QBUAZIFURK"] }, ct),
+        [nameof(SynapseAdminGateway.GetUserWhoisAsync)] = (g, ct) => g.GetUserWhoisAsync("@alice:example.com", ct),
+    };
+
+    public static TheoryData<string> DeviceMethodNames => new(DeviceMethods.Keys);
+
+    [Theory]
+    [MemberData(nameof(DeviceMethodNames))]
+    public async Task Devices_CancelledToken_SendsNoRequest(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => DeviceMethods[method](_gateway, cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Theory]
+    [MemberData(nameof(DeviceMethodNames))]
+    public async Task Devices_MatrixErrorResponse_ThrowsMatrixException(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "No device found" }, statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => DeviceMethods[method](_gateway, CancellationToken.None));
+
+        Assert.Equal("M_NOT_FOUND", ex.ErrorCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(DeviceMethodNames))]
+    public async Task Devices_NonJsonErrorResponse_ThrowsHttpRequestException(string method)
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => DeviceMethods[method](_gateway, CancellationToken.None));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    /// <summary>Tuwunel (1.8.2, 2.0.0) serves the device calls as Synapse does, so its gateway sends the same requests.</summary>
+    [Theory]
+    [MemberData(nameof(DeviceMethodNames))]
+    public async Task Tuwunel_Devices_SendTheSynapseRequests(string method)
+    {
+        _homeserver.Respond = () => Results.Json(new { });
+        await DeviceMethods[method](_gateway, CancellationToken.None);
+        var synapseRequest = Assert.Single(_homeserver.Requests);
+        _homeserver.Requests.Clear();
+
+        await DeviceMethods[method](new TuwunelAdminGateway(CreateHomeserver()), CancellationToken.None);
+
+        Assert.Equal(synapseRequest, Assert.Single(_homeserver.Requests));
+    }
+
+    /// <summary>The session's device comes from the whoami answer that every sign-in already fetches.</summary>
+    [Theory]
+    [InlineData("""{"user_id":"@admin:example.com","device_id":"APPSESSION"}""", "APPSESSION")]
+    [InlineData("""{"user_id":"@admin:example.com"}""", null)]
+    public async Task DeviceId_ComesFromWhoami(string whoami, string? expected)
+    {
+        var homeserver = CreateHomeserver();
+        _homeserver.Respond = () => Results.Text(whoami, "application/json");
+        await homeserver.Initialise();
+
+        Assert.Equal(expected, new SynapseAdminGateway(homeserver).DeviceId);
+    }
+
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);
 
     /// <summary>

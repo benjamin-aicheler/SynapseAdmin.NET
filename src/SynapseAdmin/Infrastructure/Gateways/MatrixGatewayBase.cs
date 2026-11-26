@@ -26,6 +26,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public string HomeserverUrl => Homeserver.BaseUrl;
     public string ServerName => Homeserver.ServerName;
     public string AccessToken => Homeserver.AccessToken;
+    public string? DeviceId => Homeserver.WhoAmI.DeviceId;
 
     public virtual bool SupportsAdminApi => false;
     public virtual string ServerBrand => GatewayConstants.GenericBrand;
@@ -203,6 +204,10 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default);
     public abstract Task SetUserExperimentalFeaturesAsync(string userId, SynapseAdminExperimentalFeaturesRequest request, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminAccountValidityResponse?> RenewAccountValidityAsync(SynapseAdminAccountValidityRequest request, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminUserDeviceListResult?> GetUserDevicesAsync(string userId, CancellationToken cancellationToken = default);
+    public abstract Task RenameUserDeviceAsync(string userId, string deviceId, SynapseAdminDeviceUpdateRequest request, CancellationToken cancellationToken = default);
+    public abstract Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminWhoisResponse?> GetUserWhoisAsync(string userId, CancellationToken cancellationToken = default);
 
     // Room Management
     public abstract Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);

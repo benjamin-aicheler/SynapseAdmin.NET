@@ -452,4 +452,96 @@ public class MappingExtensionsTests
 
         Assert.Equal((false, string.Empty), (vm.IsBlocked, vm.BlockedBy));
     }
+
+    // ---- User devices and recent connections (#598) ---------------------------------------------------
+
+    [Fact]
+    public void UserDeviceToViewModel_CopiesEveryField()
+    {
+        var dto = new SynapseAdminUserDeviceListResult.SynapseAdminUserDevice
+        {
+            DeviceId = "QBUAZIFURK",
+            DisplayName = "android",
+            LastSeenIp = "192.0.2.1",
+            LastSeenUserAgent = "Mozilla/5.0",
+            LastSeenTs = 1474491775024,
+            UserId = "@alice:example.com",
+            Dehydrated = true
+        };
+
+        var vm = dto.ToViewModel();
+
+        Assert.Equal("QBUAZIFURK", vm.DeviceId);
+        Assert.Equal("android", vm.DisplayName);
+        Assert.Equal("192.0.2.1", vm.LastSeenIp);
+        Assert.Equal("Mozilla/5.0", vm.LastSeenUserAgent);
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1474491775024), vm.LastSeen);
+        Assert.True(vm.Dehydrated);
+    }
+
+    /// <summary>
+    /// A device without a name, never seen (no IP, no time, or a time of <c>0</c>), on Tuwunel without a user agent and
+    /// without <c>dehydrated</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"device_id":"NEW"}""")]
+    [InlineData("""{"device_id":"NEW","display_name":null,"last_seen_ip":null,"last_seen_user_agent":null,"last_seen_ts":0,"dehydrated":null}""")]
+    public void UserDeviceToViewModel_MissingFields_AreNullOrFalse(string json)
+    {
+        var vm = JsonSerializer.Deserialize<SynapseAdminUserDeviceListResult.SynapseAdminUserDevice>(json)!.ToViewModel();
+
+        Assert.Equal(("NEW", (string?)null, (string?)null, (string?)null, (DateTimeOffset?)null, false),
+            (vm.DeviceId, vm.DisplayName, vm.LastSeenIp, vm.LastSeenUserAgent, vm.LastSeen, vm.Dehydrated));
+    }
+
+    [Fact]
+    public void UserDevicesToViewModels_KeepsTheOrder()
+    {
+        var vms = new[] { new SynapseAdminUserDeviceListResult.SynapseAdminUserDevice { DeviceId = "B" }, new() { DeviceId = "A" } }.ToViewModels();
+
+        Assert.Equal(["B", "A"], vms.Select(v => v.DeviceId));
+    }
+
+    [Fact]
+    public void WhoisConnectionToViewModel_CopiesEveryField()
+    {
+        var vm = new SynapseAdminWhoisResponse.WhoisConnection { Ip = "192.0.2.1", LastSeen = 1417222374433, UserAgent = "Mozilla/5.0" }.ToViewModel();
+
+        Assert.Equal(("192.0.2.1", "Mozilla/5.0", (DateTimeOffset?)DateTimeOffset.FromUnixTimeMilliseconds(1417222374433)),
+            (vm.Ip, vm.UserAgent, vm.LastSeen));
+    }
+
+    [Fact]
+    public void WhoisConnectionToViewModel_MissingFields_AreNull()
+    {
+        var vm = JsonSerializer.Deserialize<SynapseAdminWhoisResponse.WhoisConnection>("""{"last_seen":0}""")!.ToViewModel();
+
+        Assert.Equal(((string?)null, (string?)null, (DateTimeOffset?)null), (vm.Ip, vm.UserAgent, vm.LastSeen));
+    }
+
+    /// <summary>Every device key and session in one list, newest first, connections without a time last.</summary>
+    [Fact]
+    public void WhoisToConnectionViewModels_FlattensAndSortsNewestFirst()
+    {
+        var whois = JsonSerializer.Deserialize<SynapseAdminWhoisResponse>("""
+            {"user_id":"@alice:example.com","devices":{
+              "":{"sessions":[{"connections":[{"ip":"192.0.2.1","last_seen":1000},{"ip":"192.0.2.2"}]},
+                              {"connections":[{"ip":"192.0.2.3","last_seen":3000}]}]},
+              "DEVICE":{"sessions":[{"connections":[{"ip":"192.0.2.4","last_seen":2000}]},{}]},
+              "EMPTY":{}}}
+            """)!;
+
+        var vms = whois.ToConnectionViewModels();
+
+        Assert.Equal(["192.0.2.3", "192.0.2.4", "192.0.2.1", "192.0.2.2"], vms.Select(v => v.Ip));
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("""{"devices":{}}""")]
+    [InlineData("""{"devices":null}""")]
+    public void WhoisToConnectionViewModels_NoConnections_IsEmpty(string json)
+    {
+        Assert.Empty(JsonSerializer.Deserialize<SynapseAdminWhoisResponse>(json)!.ToConnectionViewModels());
+    }
 }

@@ -230,6 +230,7 @@ public class UserExperimentalFeaturesTests
         public string HomeserverUrl => "https://example.com";
         public string ServerName => "example.com";
         public string AccessToken => "token";
+        public string? DeviceId => null;
         public bool SupportsAdminApi => true;
         public string ServerBrand => "Synapse";
         public string ServerVersion => "1.120.0";
@@ -253,6 +254,10 @@ public class UserExperimentalFeaturesTests
             LastAccountValidityRequest = request;
             return Task.FromResult(AccountValidityResponse);
         }
+        public Task<SynapseAdminUserDeviceListResult?> GetUserDevicesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task RenameUserDeviceAsync(string userId, string deviceId, SynapseAdminDeviceUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminWhoisResponse?> GetUserWhoisAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
         public Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> GetUserDetailsAsync(string userId, CancellationToken cancellationToken = default) =>
             Task.FromResult<SynapseAdminUserListResult.SynapseAdminUserListResultUser?>(new()

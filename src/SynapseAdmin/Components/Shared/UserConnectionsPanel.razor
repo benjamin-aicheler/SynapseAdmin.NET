@@ -1,0 +1,33 @@
+@if (_connections == null)
+{
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+    }
+}
+else
+{
+    <MudText Typo="Typo.body2" Class="px-4 pt-4">@L["RecentConnectionsHint"]</MudText>
+    <MudTable T="UserConnectionViewModel" Items="_connections" Loading="_isLoading" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+        <ToolBarContent>
+            <MudSpacer />
+            <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="Reload" Disabled="_isLoading" Variant="Variant.Text">@L["Refresh"]</MudButton>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>@L["LastSeen"]</MudTh>
+            <MudTh>@L["IpAddress"]</MudTh>
+            <MudTh>@L["UserAgent"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@L["LastSeen"]">@FormatTime(context.LastSeen)</MudTd>
+            <MudTd DataLabel="@L["IpAddress"]">@(context.Ip ?? L["UnknownValue"].Value)</MudTd>
+            <MudTd DataLabel="@L["UserAgent"]"><MudText Typo="Typo.caption" Style="word-break: break-word;">@(context.UserAgent ?? L["UnknownValue"].Value)</MudText></MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2">@L["NoRecentConnections"]</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
