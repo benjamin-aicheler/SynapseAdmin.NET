@@ -13,6 +13,7 @@ public class UserDetailViewModel
     public string UserType { get; set; } = string.Empty;
     public bool Locked { get; set; }
     public bool ShadowBanned { get; set; }
+    public bool Suspended { get; set; }
     public string ConsentVersion { get; set; } = string.Empty;
     public string ConsentServerNoticeSent { get; set; } = string.Empty;
     public string AppserviceId { get; set; } = string.Empty;
@@ -23,8 +24,6 @@ public class UserDetailViewModel
     /// </summary>
     public long? ExpirationTs { get; set; }
     public DateTimeOffset? ExpirationTsDateTime => ExpirationTs.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ExpirationTs.Value) : null;
-
-    // Threepids, external ids etc could be added here as flattened properties or specific VMs
 
     public List<UserMembershipViewModel> Memberships { get; set; } = [];
     public List<UserExperimentalFeatureViewModel>? ExperimentalFeatures { get; set; }

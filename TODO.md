@@ -1,15 +1,13 @@
 # TODO
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-25
+**Last updated:** 2026-11-26
 
 ## 🔄 In Progress
 
 
 ## ⏭️ Next Up
 
-- [ ] [1.1] Map `Suspended` into `UserDetailViewModel`; remove the threepid placeholder comment (AC-19)
-- [ ] [1.2] Suspended and Shadow-banned chips; Active ignores shadow-ban (AC-19)
 - [ ] [2.1] Type `UpdateUserAsync`'s request as `SynapseAdminUserUpsertRequest`; update the two hand-written gateway doubles
 - [ ] [2.2] Gateway `SetUserSuspendedAsync`, `SetUserShadowBannedAsync`; Generic refuses; Tuwunel refuses shadow-ban (AC-20)
 - [ ] [2.3] Service `SetUserLockedAsync`, `SetUserAdminAsync`, `SetUserSuspendedAsync`, `SetUserShadowBannedAsync` (AC-20)
@@ -33,6 +31,8 @@
 
 - [x] 2026-11-25 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-19 to AC-22, §8, §10, §13
 - [x] 2026-11-25 – [0.2] PLAN.md approved; TODO.md filled
+- [x] 2026-11-26 – [1.1] `Suspended` mapped, placeholder comment removed – `MappingExtensionsTests`
+- [x] 2026-11-26 – [1.2] Suspended and Shadow-banned chips; Active ignores shadow-ban – `UserDetailsAccountStatusTests`
 - [x] 2026-11-25 – [0.3] Tuwunel handlers checked; one new refusal planned (reset of a deactivated account), see PLAN.md §10
 
 ## Definition of Done (applies to every task)

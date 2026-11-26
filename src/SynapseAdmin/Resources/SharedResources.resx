@@ -197,6 +197,12 @@
   <data name="Locked" xml:space="preserve">
     <value>Locked</value>
   </data>
+  <data name="Suspended" xml:space="preserve">
+    <value>Suspended</value>
+  </data>
+  <data name="ShadowBanned" xml:space="preserve">
+    <value>Shadow-banned</value>
+  </data>
   <data name="User" xml:space="preserve">
     <value>User</value>
   </data>

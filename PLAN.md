@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| **Status** | Approved |
+| **Status** | In Progress |
 | **Spec** | [SPEC.md](./SPEC.md) FR-4, AC-19 to AC-22, §10 (account actions on the signed-in admin, refused password changes, partial account edits), §13 |
 | **Issue / Branch** | #584 / `ai/feature/issue-584-edit-user-accounts` (phase 0), then one branch per phase |
 | **Author(s)** | Benjamin Aicheler, Claude |
 | **Created** | 2026-11-25 |
-| **Last updated** | 2026-11-25 |
+| **Last updated** | 2026-11-26 |
 
 ## 1. Summary of Approach
 
