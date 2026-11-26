@@ -75,9 +75,18 @@ else
                             {
                                 <MudChip T="string" Color="Color.Warning" Size="Size.Small">@L["Locked"]</MudChip>
                             }
-                            @if (!user.Deactivated && !user.Locked)
+                            @if (user.Suspended)
+                            {
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small">@L["Suspended"]</MudChip>
+                            }
+                            @* A shadow-banned account is still active: the user doesn't notice the ban. *@
+                            @if (!user.Deactivated && !user.Locked && !user.Suspended)
                             {
                                 <MudChip T="string" Color="Color.Success" Size="Size.Small">@L["Active"]</MudChip>
+                            }
+                            @if (user.ShadowBanned)
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small">@L["ShadowBanned"]</MudChip>
                             }
                         </MudListItem>
                         <MudListItem T="string"><b>@L["Role"]:</b> 

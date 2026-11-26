@@ -98,6 +98,18 @@ public class MappingExtensionsTests
         Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1785542400000L), detailVm.ExpirationTsDateTime);
     }
 
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    [InlineData(null, false)]
+    public void UserToDetailViewModel_MapsSuspended(bool? suspended, bool expected)
+    {
+        // Synapse reports `suspended` on the v2 user details; a homeserver that leaves it out means not suspended.
+        var dto = new SynapseAdminUserListResult.SynapseAdminUserListResultUser { Name = "@bob:example.com", Suspended = suspended };
+
+        Assert.Equal(expected, dto.ToDetailViewModel().Suspended);
+    }
+
     [Fact]
     public void RoomMapping_MapsAvatarJsonKey_AndAppliesDefaults()
     {
