@@ -5,6 +5,7 @@ using SynapseAdmin.Extensions;
 using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
 using Microsoft.Extensions.Localization;
@@ -244,6 +245,69 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
 
                 logger.LogInformation("Successfully created user {UserId}", model.UserId.SanitizeForLogging());
                 return OperationResult.Ok(L["UserCreatedSuccessfully"]);
+            });
+
+    public Task<OperationResult> SetUserLockedAsync(string userId, bool locked, CancellationToken token = default)
+    {
+        var failureKey = locked ? "ErrorLockingUser" : "ErrorUnlockingUser";
+        return sessionService.RunGatewayCallAsync(L, failureKey,
+            ex => logger.LogError(ex, "Error setting the lock state of user {UserId} (locked: {Locked})", userId.SanitizeForLogging(), locked),
+            gateway => EditExistingUserAsync(gateway, userId, new SynapseAdminUserUpsertRequest { Locked = locked }, failureKey, token,
+                () =>
+                {
+                    logger.LogInformation("Successfully set the lock state of user {UserId} (locked: {Locked})", userId.SanitizeForLogging(), locked);
+                    return OperationResult.Ok(L[locked ? "UserLockedSuccessfully" : "UserUnlockedSuccessfully"]);
+                }));
+    }
+
+    public Task<OperationResult> SetUserAdminAsync(string userId, bool admin, CancellationToken token = default)
+    {
+        var failureKey = admin ? "ErrorGrantingAdmin" : "ErrorRevokingAdmin";
+        return sessionService.RunGatewayCallAsync(L, failureKey,
+            ex => logger.LogError(ex, "Error setting the server admin state of user {UserId} (admin: {Admin})", userId.SanitizeForLogging(), admin),
+            gateway => EditExistingUserAsync(gateway, userId, new SynapseAdminUserUpsertRequest { Admin = admin }, failureKey, token,
+                () =>
+                {
+                    logger.LogInformation("Successfully set the server admin state of user {UserId} (admin: {Admin})", userId.SanitizeForLogging(), admin);
+                    return OperationResult.Ok(L[admin ? "AdminGrantedSuccessfully" : "AdminRevokedSuccessfully"]);
+                }));
+    }
+
+    /// <summary>
+    /// Sends <paramref name="request"/> as the v2 user PUT, which creates an account it doesn't know, so only for an
+    /// account the homeserver knows: the mirror of <see cref="CreateUserAsync"/>'s check (#584). The request carries
+    /// only the fields the edit changes; the PUT leaves every omitted field, <c>admin</c> included, unchanged.
+    /// </summary>
+    private async Task<OperationResult> EditExistingUserAsync(IMatrixGateway gateway, string userId, SynapseAdminUserUpsertRequest request,
+        string failureKey, CancellationToken token, Func<OperationResult> onSuccess)
+    {
+        if (await gateway.GetUserDetailsAsync(userId, token) == null)
+        {
+            return OperationResult.Failure(L["UserNotFound"]);
+        }
+
+        var result = await gateway.UpdateUserAsync(userId, request, token);
+        return result == null ? OperationResult.Failure(L[failureKey]) : onSuccess();
+    }
+
+    public Task<OperationResult> SetUserSuspendedAsync(string userId, bool suspended, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, suspended ? "ErrorSuspendingUser" : "ErrorUnsuspendingUser",
+            ex => logger.LogError(ex, "Error setting the suspension of user {UserId} (suspended: {Suspended})", userId.SanitizeForLogging(), suspended),
+            async gateway =>
+            {
+                await gateway.SetUserSuspendedAsync(userId, suspended, token);
+                logger.LogInformation("Successfully set the suspension of user {UserId} (suspended: {Suspended})", userId.SanitizeForLogging(), suspended);
+                return OperationResult.Ok(L[suspended ? "UserSuspendedSuccessfully" : "UserUnsuspendedSuccessfully"]);
+            });
+
+    public Task<OperationResult> SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, shadowBanned ? "ErrorShadowBanningUser" : "ErrorLiftingShadowBan",
+            ex => logger.LogError(ex, "Error setting the shadow-ban of user {UserId} (shadow-banned: {ShadowBanned})", userId.SanitizeForLogging(), shadowBanned),
+            async gateway =>
+            {
+                await gateway.SetUserShadowBannedAsync(userId, shadowBanned, token);
+                logger.LogInformation("Successfully set the shadow-ban of user {UserId} (shadow-banned: {ShadowBanned})", userId.SanitizeForLogging(), shadowBanned);
+                return OperationResult.Ok(L[shadowBanned ? "UserShadowBannedSuccessfully" : "ShadowBanLiftedSuccessfully"]);
             });
 
     public Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default) =>

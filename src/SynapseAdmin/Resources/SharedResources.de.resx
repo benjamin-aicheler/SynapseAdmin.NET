@@ -1516,4 +1516,52 @@
   <data name="OperationNotSupportedByHomeserver" xml:space="preserve">
     <value>Dieser Vorgang wird von diesem Homeserver nicht unterstützt.</value>
   </data>
+  <data name="UserLockedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich gesperrt.</value>
+  </data>
+  <data name="UserUnlockedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich entsperrt.</value>
+  </data>
+  <data name="ErrorLockingUser" xml:space="preserve">
+    <value>Fehler beim Sperren des Benutzers.</value>
+  </data>
+  <data name="ErrorUnlockingUser" xml:space="preserve">
+    <value>Fehler beim Entsperren des Benutzers.</value>
+  </data>
+  <data name="AdminGrantedSuccessfully" xml:space="preserve">
+    <value>Serveradministrator-Rechte erfolgreich erteilt.</value>
+  </data>
+  <data name="AdminRevokedSuccessfully" xml:space="preserve">
+    <value>Serveradministrator-Rechte erfolgreich entzogen.</value>
+  </data>
+  <data name="ErrorGrantingAdmin" xml:space="preserve">
+    <value>Fehler beim Erteilen der Serveradministrator-Rechte.</value>
+  </data>
+  <data name="ErrorRevokingAdmin" xml:space="preserve">
+    <value>Fehler beim Entziehen der Serveradministrator-Rechte.</value>
+  </data>
+  <data name="UserSuspendedSuccessfully" xml:space="preserve">
+    <value>Benutzer erfolgreich suspendiert.</value>
+  </data>
+  <data name="UserUnsuspendedSuccessfully" xml:space="preserve">
+    <value>Suspendierung erfolgreich aufgehoben.</value>
+  </data>
+  <data name="ErrorSuspendingUser" xml:space="preserve">
+    <value>Fehler beim Suspendieren des Benutzers.</value>
+  </data>
+  <data name="ErrorUnsuspendingUser" xml:space="preserve">
+    <value>Fehler beim Aufheben der Suspendierung.</value>
+  </data>
+  <data name="UserShadowBannedSuccessfully" xml:space="preserve">
+    <value>Shadow-Ban erfolgreich verhängt.</value>
+  </data>
+  <data name="ShadowBanLiftedSuccessfully" xml:space="preserve">
+    <value>Shadow-Ban erfolgreich aufgehoben.</value>
+  </data>
+  <data name="ErrorShadowBanningUser" xml:space="preserve">
+    <value>Fehler beim Verhängen des Shadow-Bans.</value>
+  </data>
+  <data name="ErrorLiftingShadowBan" xml:space="preserve">
+    <value>Fehler beim Aufheben des Shadow-Bans.</value>
+  </data>
 </root>

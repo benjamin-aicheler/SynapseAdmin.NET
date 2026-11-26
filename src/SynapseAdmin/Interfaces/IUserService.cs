@@ -20,6 +20,15 @@ public interface IUserService
     Task<OperationResult> SendServerNoticeAsync(string userId, string message, CancellationToken token = default);
     Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10, CancellationToken token = default);
     Task<OperationResult> CreateUserAsync(UserCreateViewModel model, CancellationToken token = default);
+
+    /// <summary>Locks or unlocks an existing account. Fails with "user not found" for an account the homeserver doesn't know.</summary>
+    Task<OperationResult> SetUserLockedAsync(string userId, bool locked, CancellationToken token = default);
+
+    /// <summary>Grants or revokes server admin rights of an existing account. Fails with "user not found" for an unknown account.</summary>
+    Task<OperationResult> SetUserAdminAsync(string userId, bool admin, CancellationToken token = default);
+
+    Task<OperationResult> SetUserSuspendedAsync(string userId, bool suspended, CancellationToken token = default);
+    Task<OperationResult> SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken token = default);
     Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default);
     Task<OperationResult<List<UserExperimentalFeatureViewModel>>> GetUserExperimentalFeaturesAsync(string userId, CancellationToken token = default);
     Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default);

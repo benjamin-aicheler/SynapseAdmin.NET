@@ -1517,4 +1517,52 @@
   <data name="OperationNotSupportedByHomeserver" xml:space="preserve">
     <value>This operation is not supported by this homeserver.</value>
   </data>
+  <data name="UserLockedSuccessfully" xml:space="preserve">
+    <value>User locked successfully.</value>
+  </data>
+  <data name="UserUnlockedSuccessfully" xml:space="preserve">
+    <value>User unlocked successfully.</value>
+  </data>
+  <data name="ErrorLockingUser" xml:space="preserve">
+    <value>Error locking user.</value>
+  </data>
+  <data name="ErrorUnlockingUser" xml:space="preserve">
+    <value>Error unlocking user.</value>
+  </data>
+  <data name="AdminGrantedSuccessfully" xml:space="preserve">
+    <value>Server admin rights granted successfully.</value>
+  </data>
+  <data name="AdminRevokedSuccessfully" xml:space="preserve">
+    <value>Server admin rights removed successfully.</value>
+  </data>
+  <data name="ErrorGrantingAdmin" xml:space="preserve">
+    <value>Error granting server admin rights.</value>
+  </data>
+  <data name="ErrorRevokingAdmin" xml:space="preserve">
+    <value>Error removing server admin rights.</value>
+  </data>
+  <data name="UserSuspendedSuccessfully" xml:space="preserve">
+    <value>User suspended successfully.</value>
+  </data>
+  <data name="UserUnsuspendedSuccessfully" xml:space="preserve">
+    <value>Suspension lifted successfully.</value>
+  </data>
+  <data name="ErrorSuspendingUser" xml:space="preserve">
+    <value>Error suspending user.</value>
+  </data>
+  <data name="ErrorUnsuspendingUser" xml:space="preserve">
+    <value>Error lifting the suspension.</value>
+  </data>
+  <data name="UserShadowBannedSuccessfully" xml:space="preserve">
+    <value>User shadow-banned successfully.</value>
+  </data>
+  <data name="ShadowBanLiftedSuccessfully" xml:space="preserve">
+    <value>Shadow-ban lifted successfully.</value>
+  </data>
+  <data name="ErrorShadowBanningUser" xml:space="preserve">
+    <value>Error shadow-banning user.</value>
+  </data>
+  <data name="ErrorLiftingShadowBan" xml:space="preserve">
+    <value>Error lifting the shadow-ban.</value>
+  </data>
 </root>
