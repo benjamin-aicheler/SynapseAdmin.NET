@@ -1616,4 +1616,19 @@
   <data name="NotAvailableForOwnAccount" xml:space="preserve">
     <value>Actions that would restrict your own account aren't available here.</value>
   </data>
+  <data name="PasswordResetSuccessfully" xml:space="preserve">
+    <value>Password reset successfully.</value>
+  </data>
+  <data name="ErrorResettingPassword" xml:space="preserve">
+    <value>Error resetting the password.</value>
+  </data>
+  <data name="UserReactivatedSuccessfully" xml:space="preserve">
+    <value>User reactivated successfully.</value>
+  </data>
+  <data name="ErrorReactivatingUser" xml:space="preserve">
+    <value>Error reactivating user.</value>
+  </data>
+  <data name="UserAlreadyActive" xml:space="preserve">
+    <value>The user is already active.</value>
+  </data>
 </root>

@@ -279,15 +279,55 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
     /// only the fields the edit changes; the PUT leaves every omitted field, <c>admin</c> included, unchanged.
     /// </summary>
     private async Task<OperationResult> EditExistingUserAsync(IMatrixGateway gateway, string userId, SynapseAdminUserUpsertRequest request,
-        string failureKey, CancellationToken token, Func<OperationResult> onSuccess)
+        string failureKey, CancellationToken token, Func<OperationResult> onSuccess,
+        Func<SynapseAdminUserListResult.SynapseAdminUserListResultUser, OperationResult?>? refuse = null)
     {
-        if (await gateway.GetUserDetailsAsync(userId, token) == null)
+        var current = await gateway.GetUserDetailsAsync(userId, token);
+        if (current == null)
         {
             return OperationResult.Failure(L["UserNotFound"]);
         }
 
+        if (refuse?.Invoke(current) is { } refusal)
+        {
+            return refusal;
+        }
+
         var result = await gateway.UpdateUserAsync(userId, request, token);
         return result == null ? OperationResult.Failure(L[failureKey]) : onSuccess();
+    }
+
+    public Task<OperationResult> ResetPasswordAsync(string userId, string newPassword, bool logoutDevices, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorResettingPassword",
+            ex => logger.LogError(ex, "Error resetting the password of user {UserId} (logout devices: {LogoutDevices})", userId.SanitizeForLogging(), logoutDevices),
+            async gateway =>
+            {
+                await gateway.ResetPasswordAsync(userId, new SynapseAdminResetPasswordRequest { NewPassword = newPassword, LogoutDevices = logoutDevices }, token);
+                logger.LogInformation("Successfully reset the password of user {UserId} (logout devices: {LogoutDevices})", userId.SanitizeForLogging(), logoutDevices);
+                return OperationResult.Ok(L["PasswordResetSuccessfully"]);
+            });
+
+    public Task<OperationResult> ReactivateUserAsync(string userId, string? newPassword, CancellationToken token = default)
+    {
+        var password = string.IsNullOrEmpty(newPassword) ? null : newPassword;
+        var withPassword = password != null;
+        return sessionService.RunGatewayCallAsync(L, "ErrorReactivatingUser",
+            ex => logger.LogError(ex, "Error reactivating user {UserId} (with password: {WithPassword})", userId.SanitizeForLogging(), withPassword),
+            gateway => EditExistingUserAsync(gateway, userId, new SynapseAdminUserUpsertRequest { Deactivated = false, Password = password },
+                "ErrorReactivatingUser", token,
+                () =>
+                {
+                    logger.LogInformation("Successfully reactivated user {UserId} (with password: {WithPassword})", userId.SanitizeForLogging(), withPassword);
+                    return OperationResult.Ok(L["UserReactivatedSuccessfully"]);
+                },
+                // An account active again (reactivated elsewhere) would get a new password and, as logout_devices
+                // defaults to true, lose all its sessions.
+                current =>
+                {
+                    if (current.Deactivated) return null;
+                    logger.LogWarning("Refused to reactivate user {UserId}: the account is active", userId.SanitizeForLogging());
+                    return OperationResult.Failure(L["UserAlreadyActive"], Severity.Warning);
+                }));
     }
 
     public Task<OperationResult> SetUserSuspendedAsync(string userId, bool suspended, CancellationToken token = default) =>

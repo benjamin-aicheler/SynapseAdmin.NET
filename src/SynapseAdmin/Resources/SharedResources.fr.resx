@@ -1615,4 +1615,19 @@
   <data name="NotAvailableForOwnAccount" xml:space="preserve">
     <value>Les actions qui restreindraient votre propre compte ne sont pas disponibles ici.</value>
   </data>
+  <data name="PasswordResetSuccessfully" xml:space="preserve">
+    <value>Mot de passe réinitialisé avec succès.</value>
+  </data>
+  <data name="ErrorResettingPassword" xml:space="preserve">
+    <value>Erreur lors de la réinitialisation du mot de passe.</value>
+  </data>
+  <data name="UserReactivatedSuccessfully" xml:space="preserve">
+    <value>Utilisateur réactivé avec succès.</value>
+  </data>
+  <data name="ErrorReactivatingUser" xml:space="preserve">
+    <value>Erreur lors de la réactivation de l'utilisateur.</value>
+  </data>
+  <data name="UserAlreadyActive" xml:space="preserve">
+    <value>L'utilisateur est déjà actif.</value>
+  </data>
 </root>
