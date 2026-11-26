@@ -8,8 +8,6 @@
 
 ## ⏭️ Next Up
 
-- [ ] [1.1] Device and whois request/response DTOs (AC-23)
-- [ ] [1.2] `IMatrixGateway.DeviceId` and the four gateway methods; Synapse implementation, Generic refusals, test fakes, wire tests (AC-23)
 - [ ] [2.1] `UserDeviceViewModel`, `UserConnectionViewModel`, `UserDeviceMappingExtensions` with property tests
 - [ ] [2.2] `IUserDeviceService` / `UserDeviceService`, DI, characterization tests (rename validation, own-device refusal, no IPs in logs)
 - [ ] [3.1] Resources EN/DE/FR
@@ -29,6 +27,7 @@
 
 - [x] 2026-11-26 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-23, §8, §10, §13
 - [x] 2026-11-26 – [0.2] PLAN.md approved; TODO.md filled
+- [x] 2026-11-26 – [1.1, 1.2] Device and whois DTOs, `IMatrixGateway.DeviceId`, four gateway methods, wire tests
 
 ## Definition of Done (applies to every task)
 

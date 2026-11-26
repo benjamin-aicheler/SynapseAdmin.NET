@@ -248,6 +248,47 @@ public class SynapseAdminGateway(
         return await resp.Content.ReadFromJsonAsync<SynapseAdminAccountValidityResponse>(cancellationToken: cancellationToken);
     }
 
+    // --- User Devices (#598) ---
+
+    internal static string BuildUserDevicesUrl(string userId) =>
+        $"/_synapse/admin/v2/users/{userId.UrlEncode()}/devices";
+
+    /// <summary>
+    /// The device ID takes <see cref="Uri.EscapeDataString"/>, not form encoding: clients choose device IDs, which may
+    /// contain a space, and a path keeps the <c>+</c> that form encoding sends for it (as for room aliases, #580).
+    /// </summary>
+    internal static string BuildUserDeviceUrl(string userId, string deviceId) =>
+        $"/_synapse/admin/v2/users/{userId.UrlEncode()}/devices/{Uri.EscapeDataString(deviceId)}";
+
+    public override async Task<SynapseAdminUserDeviceListResult?> GetUserDevicesAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserDeviceListResult>(BuildUserDevicesUrl(userId), cancellationToken: cancellationToken);
+    }
+
+    /// <summary>Synapse and Tuwunel answer <c>{}</c>, which isn't read, and <c>404</c> for a device the user doesn't have.</summary>
+    public override async Task RenameUserDeviceAsync(string userId, string deviceId, SynapseAdminDeviceUpdateRequest request, CancellationToken cancellationToken = default)
+    {
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(BuildUserDeviceUrl(userId, deviceId), request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Used for one device as well: Synapse's single-device <c>DELETE</c> calls the same handler. Synapse and Tuwunel
+    /// answer <c>{}</c>, which isn't read, also for device IDs the user doesn't have.
+    /// </summary>
+    public override async Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v2/users/{userId.UrlEncode()}/delete_devices";
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public override async Task<SynapseAdminWhoisResponse?> GetUserWhoisAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/whois/{userId.UrlEncode()}";
+        return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminWhoisResponse>(url, cancellationToken: cancellationToken);
+    }
+
     // --- Room Management ---
 
     public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)

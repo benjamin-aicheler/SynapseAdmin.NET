@@ -71,7 +71,7 @@ None (no local database). New request/response DTOs only.
 | Call | Request |
 |---|---|
 | List | `GET /_synapse/admin/v2/users/{userId.UrlEncode()}/devices` |
-| Rename | `PUT /_synapse/admin/v2/users/{userId.UrlEncode()}/devices/{deviceId.UrlEncode()}`, body exactly `{"display_name":"…"}` |
+| Rename | `PUT /_synapse/admin/v2/users/{userId.UrlEncode()}/devices/{Uri.EscapeDataString(deviceId)}`, body exactly `{"display_name":"…"}` |
 | Delete | `POST /_synapse/admin/v2/users/{userId.UrlEncode()}/delete_devices`, body exactly `{"devices":["…"]}` |
 | Whois | `GET /_synapse/admin/v1/whois/{userId.UrlEncode()}` |
 
@@ -151,3 +151,4 @@ New public service interface `IUserDeviceService`. No breaking change.
 |---|---|
 | 2026-11-26 | Checked Synapse v1.165.0 (`rest/admin/devices.py`, `handlers/device.py`) and Tuwunel 1.8.2 / 2.0.0 (`admin/devices/*`, `users/whois.rs`): both limit names to 100 code points, both treat deleting an unknown device as success, rename of an unknown device is `404` on both; Tuwunel returns no user agent and builds `whois` from each device's last IP and time. |
 | 2026-11-26 | Plan approved with `IUserDeviceService` and a required device name. |
+| 2026-11-26 | [1.2] The device ID in the rename path takes `Uri.EscapeDataString`, not `.UrlEncode()`: clients choose device IDs, which may contain a space, and a path keeps the `+` form encoding sends (as for room aliases, #580). |
