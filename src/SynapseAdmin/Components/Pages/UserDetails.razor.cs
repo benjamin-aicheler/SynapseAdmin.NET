@@ -50,6 +50,10 @@ namespace SynapseAdmin.Components.Pages
         private UserMediaTotalsViewModel? _mediaTotals;
         private string? _mediaTotalsUserId;
 
+        // A running "Delete all media" (#599). It belongs to the user it was confirmed for and keeps running when the
+        // page moves to another user; Stop and closing the page cancel it.
+        private MediaDeletionRun? _mediaDeletion;
+
         protected override async Task OnParametersSetAsync()
         {
             if (_loadedUserId == UserId && _loadCts != null) return;
@@ -316,6 +320,70 @@ namespace SynapseAdmin.Components.Pages
                     await ReloadMedia();
                 }
             }
+        }
+
+        private bool IsDeletingMedia => _mediaDeletion != null;
+
+        /// <summary>
+        /// Deletes every upload of the user shown after a confirmation that names the user, the number of uploads if
+        /// known, and that protected, quarantined and avatar media go too (#599). Shows the count while it runs, with Stop.
+        /// </summary>
+        private async Task DeleteAllMedia()
+        {
+            if (GetDisplayedTarget() is not { } target || _mediaDeletion != null) return;
+
+            var label = FormatTarget(user, target);
+            long? count = _mediaTotals?.Count ?? _mediaPage?.TotalCount;
+            var question = count is { } uploads
+                ? L["DeleteAllUserMediaConfirmation", label, uploads]
+                : L["DeleteAllUserMediaConfirmationNoCount", label];
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["DeleteAllMedia"],
+                $"{question} {L["DeleteAllUserMediaHint"]}",
+                yesText: L["Delete"], cancelText: L["Cancel"]);
+
+            if (confirmed != true || !IsStillDisplayed(target) || _mediaDeletion != null) return;
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+            var run = new MediaDeletionRun(target, label, cts);
+            _mediaDeletion = run;
+            // The handler doesn't render again until it ends: show the progress line and Stop at once.
+            StateHasChanged();
+            try
+            {
+                var progress = new InlineProgress(deleted =>
+                {
+                    run.Deleted = deleted;
+                    _ = InvokeAsync(StateHasChanged);
+                });
+                var result = await UserService.DeleteAllMediaAsync(target, progress, cts.Token);
+                Snackbar.ShowResult(result);
+            }
+            finally
+            {
+                _mediaDeletion = null;
+            }
+
+            if (GetDisplayedTarget() == target)
+            {
+                await ReloadMedia();
+            }
+        }
+
+        private void StopMediaDeletion() => _mediaDeletion?.Cts.Cancel();
+
+        private sealed class MediaDeletionRun(string target, string label, CancellationTokenSource cts)
+        {
+            public string Target { get; } = target;
+            public string Label { get; } = label;
+            public CancellationTokenSource Cts { get; } = cts;
+            public int Deleted { get; set; }
+        }
+
+        /// <summary>Reports at once on the caller's thread; the page re-renders through InvokeAsync.</summary>
+        private sealed class InlineProgress(Action<int> report) : IProgress<int>
+        {
+            public void Report(int value) => report(value);
         }
 
         private async Task LoginAsUser()

@@ -1781,4 +1781,43 @@
   <data name="ErrorDeletingDevices" xml:space="preserve">
     <value>Error deleting the devices.</value>
   </data>
+  <data name="DeleteAllMedia" xml:space="preserve">
+    <value>Delete all media</value>
+  </data>
+  <data name="DeleteAllUserMediaConfirmation" xml:space="preserve">
+    <value>Are you sure you want to delete all {1} uploads of the user "{0}"?</value>
+  </data>
+  <data name="DeleteAllUserMediaConfirmationNoCount" xml:space="preserve">
+    <value>Are you sure you want to delete all uploads of the user "{0}"?</value>
+  </data>
+  <data name="DeleteAllUserMediaHint" xml:space="preserve">
+    <value>Every upload is deleted, including protected and quarantined media and media used as a profile picture or room avatar. This can't be undone.</value>
+  </data>
+  <data name="DeletingUserMedia" xml:space="preserve">
+    <value>Deleting the media of "{0}": {1} deleted so far.</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="UserMediaAllDeleted" xml:space="preserve">
+    <value>Deleted {1} uploads of {0}. The user has no media left.</value>
+  </data>
+  <data name="UserMediaSomeRemain" xml:space="preserve">
+    <value>Deleted {1} uploads of {0}. {2} could not be deleted.</value>
+  </data>
+  <data name="UserMediaCapReached" xml:space="preserve">
+    <value>Deleted {1} uploads of {0}; {2} remain. Run "Delete all media" again to continue.</value>
+  </data>
+  <data name="UserMediaDeletionStopped" xml:space="preserve">
+    <value>Stopped after deleting {1} uploads of {0}.</value>
+  </data>
+  <data name="UserMediaDeletionFailed" xml:space="preserve">
+    <value>Deleting the media of {0} failed after {1} uploads were deleted.</value>
+  </data>
+  <data name="UserMediaRemainingUnknown" xml:space="preserve">
+    <value>Deleted {1} uploads of {0}. Could not check whether any remain.</value>
+  </data>
+  <data name="ErrorDeletingUserMedia" xml:space="preserve">
+    <value>Error deleting the user's media.</value>
+  </data>
 </root>

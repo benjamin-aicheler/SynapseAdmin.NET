@@ -139,7 +139,18 @@ else
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ToggleAdmin" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && user.Admin)">@(user.Admin ? L["RemoveAdmin"] : L["MakeAdmin"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ToggleShadowBan" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.ShadowBanned)">@(user.ShadowBanned ? L["LiftShadowBan"] : L["ShadowBanUser"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="LoginAsUser" Class="mb-2 mr-2">@L["LoginAsUserShadow"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineAllMedia" Class="mb-2">@L["QuarantineMedia"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineAllMedia" Class="mb-2 mr-2" Disabled="@IsDeletingMedia">@L["QuarantineMedia"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAllMedia" Class="mb-2" Disabled="@IsDeletingMedia">@L["DeleteAllMedia"]</MudButton>
+                    @if (_mediaDeletion is { } deletion)
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2 mb-2" ContentAlignment="HorizontalAlignment.Left">
+                            <div class="d-flex align-center flex-wrap gap-2">
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                <span class="media-deletion-progress">@L["DeletingUserMedia", deletion.Label, deletion.Deleted]</span>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" OnClick="StopMediaDeletion">@L["Stop"]</MudButton>
+                            </div>
+                        </MudAlert>
+                    }
                     @if (IsOwnAccount)
                     {
                         <MudText Typo="Typo.caption" Class="d-block mt-1">@L["NotAvailableForOwnAccount"]</MudText>
@@ -244,6 +255,7 @@ else
                         <MudIconButton Icon="@Icons.Material.Filled.Block" 
                                        Color="Color.Warning" 
                                        OnClick="@(() => QuarantineSingleMedia(context.MediaId))"
+                                       Disabled="@IsDeletingMedia"
                                        title="@L["Quarantine"]" />
                     }
                     else
@@ -251,17 +263,20 @@ else
                         <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
                                        Color="Color.Success" 
                                        OnClick="@(() => UnquarantineSingleMedia(context.MediaId))"
+                                       Disabled="@IsDeletingMedia"
                                        title="@L["Unquarantine"]" />
                     }
                     
                     <MudIconButton Icon="@(context.SafeFromQuarantine ? Icons.Material.Filled.Shield : Icons.Material.Outlined.Shield)" 
                                    Color="@(context.SafeFromQuarantine ? Color.Success : Color.Default)" 
                                    OnClick="@(() => ToggleMediaProtection(context))"
+                                       Disabled="@IsDeletingMedia"
                                    title="@(context.SafeFromQuarantine ? L["Unprotect"] : L["Protect"])" />
 
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                    Color="Color.Error" 
                                    OnClick="@(() => DeleteSingleMedia(context.MediaId))"
+                                       Disabled="@IsDeletingMedia"
                                    title="@L["Delete"]" />
                     </div>
                     </MudTd>

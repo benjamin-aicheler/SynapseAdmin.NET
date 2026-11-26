@@ -266,12 +266,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
         var data = new UserMediaDeletionViewModel { Deleted = deleted, Remaining = remaining, Outcome = outcome };
         var (message, severity) = outcome switch
         {
-            UserMediaDeletionOutcome.AllDeleted => (L["UserMediaAllDeleted", deleted].Value, Severity.Success),
-            UserMediaDeletionOutcome.SomeRemain => (L["UserMediaSomeRemain", deleted, remaining ?? 0].Value, Severity.Warning),
-            UserMediaDeletionOutcome.CapReached => (L["UserMediaCapReached", deleted, remaining ?? 0].Value, Severity.Warning),
-            UserMediaDeletionOutcome.Stopped => (L["UserMediaDeletionStopped", deleted].Value, Severity.Warning),
-            UserMediaDeletionOutcome.Failed => (L["UserMediaDeletionFailed", deleted].Value, Severity.Error),
-            _ => (L["UserMediaRemainingUnknown", deleted].Value, Severity.Warning)
+            UserMediaDeletionOutcome.AllDeleted => (L["UserMediaAllDeleted", userId, deleted].Value, Severity.Success),
+            UserMediaDeletionOutcome.SomeRemain => (L["UserMediaSomeRemain", userId, deleted, remaining ?? 0].Value, Severity.Warning),
+            UserMediaDeletionOutcome.CapReached => (L["UserMediaCapReached", userId, deleted, remaining ?? 0].Value, Severity.Warning),
+            UserMediaDeletionOutcome.Stopped => (L["UserMediaDeletionStopped", userId, deleted].Value, Severity.Warning),
+            UserMediaDeletionOutcome.Failed => (L["UserMediaDeletionFailed", userId, deleted].Value, Severity.Error),
+            _ => (L["UserMediaRemainingUnknown", userId, deleted].Value, Severity.Warning)
         };
         return new OperationResult<UserMediaDeletionViewModel>
         {
