@@ -1564,4 +1564,55 @@
   <data name="ErrorLiftingShadowBan" xml:space="preserve">
     <value>Erreur lors de la levée du shadow-ban.</value>
   </data>
+  <data name="LockUser" xml:space="preserve">
+    <value>Verrouiller</value>
+  </data>
+  <data name="UnlockUser" xml:space="preserve">
+    <value>Déverrouiller</value>
+  </data>
+  <data name="SuspendUser" xml:space="preserve">
+    <value>Suspendre</value>
+  </data>
+  <data name="UnsuspendUser" xml:space="preserve">
+    <value>Lever la suspension</value>
+  </data>
+  <data name="MakeAdmin" xml:space="preserve">
+    <value>Nommer administrateur du serveur</value>
+  </data>
+  <data name="RemoveAdmin" xml:space="preserve">
+    <value>Retirer les droits d'administrateur</value>
+  </data>
+  <data name="ShadowBanUser" xml:space="preserve">
+    <value>Shadow-bannir</value>
+  </data>
+  <data name="LiftShadowBan" xml:space="preserve">
+    <value>Lever le shadow-ban</value>
+  </data>
+  <data name="LockUserConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir verrouiller l'utilisateur « {0} » ?</value>
+  </data>
+  <data name="UnlockUserConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir déverrouiller l'utilisateur « {0} » ?</value>
+  </data>
+  <data name="SuspendUserConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir suspendre l'utilisateur « {0} » ? Pendant la suspension, l'utilisateur ne peut ni envoyer d'invitations, ni rejoindre de salons ou y frapper, ni envoyer de messages, ni modifier son profil, ni supprimer d'autres messages que les siens.</value>
+  </data>
+  <data name="UnsuspendUserConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir lever la suspension de l'utilisateur « {0} » ?</value>
+  </data>
+  <data name="MakeAdminConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir nommer l'utilisateur « {0} » administrateur du serveur ? Les administrateurs du serveur peuvent utiliser l'API d'administration.</value>
+  </data>
+  <data name="RemoveAdminConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir retirer les droits d'administrateur du serveur à l'utilisateur « {0} » ?</value>
+  </data>
+  <data name="ShadowBanUserConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir shadow-bannir l'utilisateur « {0} » ? Ses requêtes réussissent toujours, mais ses événements ne sont pas transmis aux salons et il ne peut contacter personne sur le serveur. L'utilisateur n'est pas averti. N'utilisez ceci qu'en dernier recours.</value>
+  </data>
+  <data name="LiftShadowBanConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir lever le shadow-ban de l'utilisateur « {0} » ?</value>
+  </data>
+  <data name="NotAvailableForOwnAccount" xml:space="preserve">
+    <value>Les actions qui restreindraient votre propre compte ne sont pas disponibles ici.</value>
+  </data>
 </root>

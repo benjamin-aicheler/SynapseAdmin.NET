@@ -124,9 +124,17 @@ else
                 </MudCardHeader>
                 <MudCardContent>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenRenewAccountDialog" Class="mb-2 mr-2">@L["RenewAccount"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeactivateUser" Class="mb-2 mr-2" Disabled="@user.Deactivated">@L["DeactivateUser"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeactivateUser" Class="mb-2 mr-2" Disabled="@(user.Deactivated || IsOwnAccount)">@L["DeactivateUser"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleLock" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Locked)">@(user.Locked ? L["UnlockUser"] : L["LockUser"])</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleSuspension" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Suspended)">@(user.Suspended ? L["UnsuspendUser"] : L["SuspendUser"])</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ToggleAdmin" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && user.Admin)">@(user.Admin ? L["RemoveAdmin"] : L["MakeAdmin"])</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ToggleShadowBan" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.ShadowBanned)">@(user.ShadowBanned ? L["LiftShadowBan"] : L["ShadowBanUser"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="LoginAsUser" Class="mb-2 mr-2">@L["LoginAsUserShadow"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineAllMedia" Class="mb-2">@L["QuarantineMedia"]</MudButton>
+                    @if (IsOwnAccount)
+                    {
+                        <MudText Typo="Typo.caption" Class="d-block mt-1">@L["NotAvailableForOwnAccount"]</MudText>
+                    }
                 </MudCardContent>
             </MudCard>
         </MudItem>
