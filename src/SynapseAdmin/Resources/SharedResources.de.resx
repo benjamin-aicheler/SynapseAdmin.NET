@@ -1657,4 +1657,13 @@
   <data name="ReactivationPasswordHelper" xml:space="preserve">
     <value>Optional. Die Deaktivierung hat das Passwort des Kontos entfernt: Ohne neues Passwort kann sich der Benutzer nur auf andere Weise anmelden, etwa per Single Sign-on. Der Homeserver lehnt ein Passwort ab, wenn er keine lokalen Passwörter zulässt.</value>
   </data>
+  <data name="UserProfileUpdatedSuccessfully" xml:space="preserve">
+    <value>Profil erfolgreich aktualisiert.</value>
+  </data>
+  <data name="ErrorUpdatingUserProfile" xml:space="preserve">
+    <value>Fehler beim Aktualisieren des Profils.</value>
+  </data>
+  <data name="UserProfileUnchanged" xml:space="preserve">
+    <value>Keine Änderungen.</value>
+  </data>
 </root>

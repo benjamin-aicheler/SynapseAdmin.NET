@@ -17,3 +17,16 @@ public class UserReactivateViewModel
 {
     public string? Password { get; set; }
 }
+
+/// <summary>
+/// What the Edit profile dialog returns to the user page: only what the admin changed (#584). <see cref="DisplayName"/>
+/// is <c>null</c> when unchanged, and <c>""</c> when emptied, which removes the display name.
+/// </summary>
+public class UserProfileEditViewModel
+{
+    public string? DisplayName { get; set; }
+
+    public bool RemoveAvatar { get; set; }
+
+    public bool HasChanges => DisplayName != null || RemoveAvatar;
+}

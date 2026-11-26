@@ -1263,6 +1263,20 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// An empty display name or avatar URL removes it (#584). <c>MatrixHttpClient</c> drops only <c>null</c>, so the
+    /// empty strings reach the homeserver, and nothing else is sent.
+    /// </summary>
+    [Fact]
+    public async Task UpdateUser_EmptyProfileFields_AreSent()
+    {
+        _homeserver.Respond = () => Results.Json(new { name = "@alice:example.com" });
+
+        await _gateway.UpdateUserAsync("@alice:example.com", new SynapseAdminUserUpsertRequest { DisplayName = "", AvatarUrl = "" });
+
+        Assert.Equal("""{"displayname":"","avatar_url":""}""", Assert.Single(_homeserver.Requests).Body);
+    }
+
+    /// <summary>
     /// Synapse's user details have no <c>expiration_ts</c> (only renewing account validity returns one), so the
     /// expiration is unknown, not "never", after a standard load.
     /// </summary>
