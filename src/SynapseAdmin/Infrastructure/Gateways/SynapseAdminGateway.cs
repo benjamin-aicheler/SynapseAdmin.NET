@@ -174,6 +174,30 @@ public class SynapseAdminGateway(
         return await resp.Content.ReadFromJsonAsync<SynapseAdminUserListResult.SynapseAdminUserListResultUser>(cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// The response isn't read: Synapse answers <c>{"user_&lt;id&gt;_suspended": …}</c> and Tuwunel
+    /// <c>{"user_id": …, "suspended": …}</c>, and the page reads the account again anyway.
+    /// </summary>
+    public override async Task SetUserSuspendedAsync(string userId, bool suspend, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/suspend/{userId.UrlEncode()}";
+        using var resp = await Homeserver.ClientHttpClient.PutAsJsonAsync(url, new { suspend }, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public override async Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/users/{userId.UrlEncode()}/shadow_ban";
+        if (shadowBanned)
+        {
+            await PostEmptyAsync(url, cancellationToken);
+        }
+        else
+        {
+            await SendDeleteAsync(url, null, cancellationToken);
+        }
+    }
+
     public override async Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default)
     {
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMembershipsResponse>($"/_synapse/admin/v1/users/{userId.UrlEncode()}/memberships", cancellationToken: cancellationToken);

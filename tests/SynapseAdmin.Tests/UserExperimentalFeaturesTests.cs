@@ -275,6 +275,8 @@ public class UserExperimentalFeaturesTests
         public Task<SendServerNoticeResponse?> SendServerNoticeAsync(string userId, object content, string? type = null, string? stateKey = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(int limit = 10, string orderBy = "media_length", string dir = "b", string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, SynapseAdminUserUpsertRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task SetUserSuspendedAsync(string userId, bool suspend, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom?> GetRoomDetailsAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomMemberListResult?> GetRoomMembersAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();

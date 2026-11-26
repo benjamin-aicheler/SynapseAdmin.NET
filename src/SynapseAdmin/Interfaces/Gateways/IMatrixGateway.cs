@@ -30,6 +30,10 @@ public interface IMatrixGateway
     /// <param name="searchTerm">Optional substring filter on user ID or display name (Synapse <c>search_term</c>).</param>
     Task<UserMediaStatisticsResponse?> GetUserMediaStatisticsAsync(int limit = 10, string orderBy = "media_length", string dir = "b", string? searchTerm = null, CancellationToken cancellationToken = default);
     Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, SynapseAdminUserUpsertRequest request, CancellationToken cancellationToken = default);
+    /// <summary>Suspends or unsuspends a local account (<c>PUT /_synapse/admin/v1/suspend/{userId}</c>).</summary>
+    Task SetUserSuspendedAsync(string userId, bool suspend, CancellationToken cancellationToken = default);
+    /// <summary>Shadow-bans a local account or lifts the ban (<c>POST</c> or <c>DELETE /_synapse/admin/v1/users/{userId}/shadow_ban</c>).</summary>
+    Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default);
     Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default);
     /// <summary>One page of media uploaded by a local user. <paramref name="from"/> is the item offset.</summary>
     Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, int from, int limit, string orderBy = "created_ts", string dir = "b", CancellationToken cancellationToken = default);
