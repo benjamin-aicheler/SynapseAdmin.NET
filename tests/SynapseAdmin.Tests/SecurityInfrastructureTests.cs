@@ -920,6 +920,7 @@ public class SecurityInfrastructureTests
         public Task<SynapseAdminUserListResult.SynapseAdminUserListResultUser?> UpdateUserAsync(string userId, SynapseAdminUserUpsertRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task SetUserSuspendedAsync(string userId, bool suspend, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task SetUserShadowBannedAsync(string userId, bool shadowBanned, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task ResetPasswordAsync(string userId, SynapseAdminResetPasswordRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminUserMediaResult?> GetUserMediaAsync(string userId, int from, int limit, string orderBy = "created_ts", string dir = "b", CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminExperimentalFeaturesResponse?> GetUserExperimentalFeaturesAsync(string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();

@@ -198,6 +198,17 @@ public class SynapseAdminGateway(
         }
     }
 
+    /// <summary>
+    /// Not <c>LibMatrix</c>'s <c>ResetPasswordAsync</c>: it defaults <c>logout_devices</c> to <c>false</c>, doesn't encode
+    /// the user ID and takes no <c>CancellationToken</c>. Synapse answers <c>{}</c>, which isn't read.
+    /// </summary>
+    public override async Task ResetPasswordAsync(string userId, SynapseAdminResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/reset_password/{userId.UrlEncode()}";
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
     public override async Task<SynapseAdminUserMembershipsResponse?> GetUserMembershipsAsync(string userId, CancellationToken cancellationToken = default)
     {
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminUserMembershipsResponse>($"/_synapse/admin/v1/users/{userId.UrlEncode()}/memberships", cancellationToken: cancellationToken);
