@@ -1,0 +1,20 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAddAlt1" Class="mr-3 mb-n1" />
+            @L["ReactivateUser"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4">@L["ReactivateUserFor", Target]</MudText>
+        <MudForm @ref="form" @bind-IsValid="@success">
+            <MudTextField T="string" Label="@L["NewPassword"]" @bind-Value="model.Password" InputType="InputType.Password"
+                          Immediate="true" Validation="@(new Func<string?, string?>(ValidatePassword))"
+                          HelperText="@L["ReactivationPasswordHelper"]" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!success)">@L["ReactivateUser"]</MudButton>
+    </DialogActions>
+</MudDialog>
