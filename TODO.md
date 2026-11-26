@@ -8,7 +8,6 @@
 
 ## ⏭️ Next Up
 
-- [ ] [2.1] `UserMediaDeletionViewModel`, `UserService.DeleteAllMediaAsync` with loop, cap, completion read, progress; tests
 - [ ] [3.1] Resources EN/DE/FR
 - [ ] [3.2] "Delete all media" on the user page: confirmation, progress and Stop, disabled actions, reload; bUnit tests
 - [ ] [4.1–4.3] Finish: drop `[Planned]` tags, decision log, README/ARCHITECTURE/AGENTS.md, #599 text, reset PLAN.md and TODO.md
@@ -23,7 +22,8 @@
 
 - [x] 2026-11-26 – [0.1] SPEC.md `[Planned]` entries for FR-4, AC-24, §10, §13
 - [x] 2026-11-26 – [0.2] PLAN.md approved; TODO.md filled
-- [x] 2026-11-26 – [1.1] Gateway `DeleteUserMediaAsync`, wire tests
+- [x] 2026-11-26 – [1.1] Gateway `DeleteUserMediaAsync`, wire tests – 5bea3f5
+- [x] 2026-11-26 – [2.1] `UserService.DeleteAllMediaAsync`, `UserMediaDeletionTests`
 
 ## Definition of Done (applies to every task)
 

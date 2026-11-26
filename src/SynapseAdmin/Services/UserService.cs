@@ -18,6 +18,12 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
     private const int MaxMediaPageSize = 100;
     private const int MediaTotalsSearchLimit = 100;
 
+    /// <summary>Uploads deleted per request: Synapse's default <c>limit</c>.</summary>
+    internal const int MediaDeletionPageSize = 100;
+
+    /// <summary>Requests per run (10,000 uploads); running it again continues (#599).</summary>
+    internal const int MaxMediaDeletionRequests = 100;
+
     public Task<OperationResult<(int Total, List<UserListViewModel> Users)>> GetUserListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingUserList",
             ex => logger.LogError(ex, "Error fetching user list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging()),
@@ -182,6 +188,99 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 logger.LogInformation("Successfully quarantined media for user {UserId}", userId.SanitizeForLogging());
                 return OperationResult.Ok(L["UserMediaQuarantinedSuccessfully"]);
             });
+
+    public Task<OperationResult<UserMediaDeletionViewModel>> DeleteAllMediaAsync(string userId, IProgress<int>? progress = null, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorDeletingUserMedia",
+            ex => logger.LogError(ex, "Error deleting the media of user {UserId}", userId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var deleted = 0;
+                var requests = 0;
+                var capReached = false;
+                while (true)
+                {
+                    SynapseAdminDeleteMediaResponse? response;
+                    try
+                    {
+                        token.ThrowIfCancellationRequested();
+                        response = await gateway.DeleteUserMediaAsync(userId, MediaDeletionPageSize, token);
+                    }
+                    // Before anything is deleted, a cancellation or failure gets the usual handling.
+                    catch (OperationCanceledException) when (deleted > 0)
+                    {
+                        return MediaDeletionResult(userId, deleted, requests, null, UserMediaDeletionOutcome.Stopped);
+                    }
+                    catch (Exception ex) when (deleted > 0 && ex is not OperationCanceledException)
+                    {
+                        logger.LogError(ex, "Error deleting the media of user {UserId} after {Deleted} uploads in {Requests} requests",
+                            userId.SanitizeForLogging(), deleted, requests);
+                        return MediaDeletionResult(userId, deleted, requests, null, UserMediaDeletionOutcome.Failed, logged: true);
+                    }
+
+                    requests++;
+                    var count = response?.Total ?? 0;
+                    if (count <= 0) break;
+
+                    deleted += count;
+                    progress?.Report(deleted);
+                    if (requests >= MaxMediaDeletionRequests)
+                    {
+                        capReached = true;
+                        break;
+                    }
+                }
+
+                // A request that deletes nothing doesn't prove the list is empty: files the homeserver can't remove stay.
+                long remaining;
+                try
+                {
+                    var list = await gateway.GetUserMediaAsync(userId, 0, 1, "created_ts", "b", token);
+                    remaining = list?.Total ?? 0;
+                }
+                catch (OperationCanceledException) when (deleted > 0)
+                {
+                    return MediaDeletionResult(userId, deleted, requests, null, UserMediaDeletionOutcome.Stopped);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    logger.LogWarning(ex, "Could not check the remaining media of user {UserId} after deleting {Deleted} uploads",
+                        userId.SanitizeForLogging(), deleted);
+                    return MediaDeletionResult(userId, deleted, requests, null, UserMediaDeletionOutcome.RemainingUnknown);
+                }
+
+                var outcome = remaining == 0 ? UserMediaDeletionOutcome.AllDeleted
+                    : capReached ? UserMediaDeletionOutcome.CapReached
+                    : UserMediaDeletionOutcome.SomeRemain;
+                return MediaDeletionResult(userId, deleted, requests, remaining, outcome);
+            });
+
+    private OperationResult<UserMediaDeletionViewModel> MediaDeletionResult(string userId, int deleted, int requests, long? remaining,
+        UserMediaDeletionOutcome outcome, bool logged = false)
+    {
+        if (!logged)
+        {
+            logger.LogInformation("Deleted {Deleted} uploads of user {UserId} in {Requests} requests (outcome: {Outcome}, remaining: {Remaining})",
+                deleted, userId.SanitizeForLogging(), requests, outcome, remaining);
+        }
+
+        var data = new UserMediaDeletionViewModel { Deleted = deleted, Remaining = remaining, Outcome = outcome };
+        var (message, severity) = outcome switch
+        {
+            UserMediaDeletionOutcome.AllDeleted => (L["UserMediaAllDeleted", deleted].Value, Severity.Success),
+            UserMediaDeletionOutcome.SomeRemain => (L["UserMediaSomeRemain", deleted, remaining ?? 0].Value, Severity.Warning),
+            UserMediaDeletionOutcome.CapReached => (L["UserMediaCapReached", deleted, remaining ?? 0].Value, Severity.Warning),
+            UserMediaDeletionOutcome.Stopped => (L["UserMediaDeletionStopped", deleted].Value, Severity.Warning),
+            UserMediaDeletionOutcome.Failed => (L["UserMediaDeletionFailed", deleted].Value, Severity.Error),
+            _ => (L["UserMediaRemainingUnknown", deleted].Value, Severity.Warning)
+        };
+        return new OperationResult<UserMediaDeletionViewModel>
+        {
+            Success = outcome == UserMediaDeletionOutcome.AllDeleted,
+            Message = message,
+            Severity = severity,
+            Data = data
+        };
+    }
 
     public Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorLoggingInAsUser",

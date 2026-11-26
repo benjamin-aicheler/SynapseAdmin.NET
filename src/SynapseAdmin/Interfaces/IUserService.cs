@@ -16,6 +16,13 @@ public interface IUserService
     Task<OperationResult<UserMediaTotalsViewModel>> GetUserMediaTotalsAsync(string userId, CancellationToken token = default);
     Task<OperationResult> DeactivateUserAsync(string userId, bool erase = false, CancellationToken token = default);
     Task<OperationResult> QuarantineMediaAsync(string userId, CancellationToken token = default);
+    /// <summary>
+    /// Deletes every upload of the user, protected and quarantined media and avatars included, one page per request,
+    /// then reads the media list to learn how many remain (#599). <paramref name="progress"/> gets the number deleted so
+    /// far after each request. Until something is deleted, a cancellation or failure is reported as usual; afterwards
+    /// the result is a warning or error that names the number deleted.
+    /// </summary>
+    Task<OperationResult<UserMediaDeletionViewModel>> DeleteAllMediaAsync(string userId, IProgress<int>? progress = null, CancellationToken token = default);
     Task<OperationResult<string>> LoginAsUserAsync(string userId, TimeSpan expireIn, CancellationToken token = default);
     Task<OperationResult> SendServerNoticeAsync(string userId, string message, CancellationToken token = default);
     Task<OperationResult<List<UserMediaStatisticsViewModel>>> GetTopMediaUsersAsync(int count = 10, CancellationToken token = default);
