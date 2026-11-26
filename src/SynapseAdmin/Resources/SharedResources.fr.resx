@@ -1780,4 +1780,43 @@
   <data name="ErrorDeletingDevices" xml:space="preserve">
     <value>Erreur lors de la suppression des appareils.</value>
   </data>
+  <data name="DeleteAllMedia" xml:space="preserve">
+    <value>Supprimer tous les médias</value>
+  </data>
+  <data name="DeleteAllUserMediaConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer les {1} fichiers envoyés par l'utilisateur « {0} » ?</value>
+  </data>
+  <data name="DeleteAllUserMediaConfirmationNoCount" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer tous les fichiers envoyés par l'utilisateur « {0} » ?</value>
+  </data>
+  <data name="DeleteAllUserMediaHint" xml:space="preserve">
+    <value>Chaque fichier est supprimé, y compris les médias protégés ou en quarantaine et les médias utilisés comme photo de profil ou avatar de salon. Cette action est irréversible.</value>
+  </data>
+  <data name="DeletingUserMedia" xml:space="preserve">
+    <value>Suppression des médias de « {0} » : {1} supprimés jusqu'à présent.</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>Arrêter</value>
+  </data>
+  <data name="UserMediaAllDeleted" xml:space="preserve">
+    <value>{1} fichiers de {0} supprimés. L'utilisateur n'a plus aucun média.</value>
+  </data>
+  <data name="UserMediaSomeRemain" xml:space="preserve">
+    <value>{1} fichiers de {0} supprimés. {2} n'ont pas pu être supprimés.</value>
+  </data>
+  <data name="UserMediaCapReached" xml:space="preserve">
+    <value>{1} fichiers de {0} supprimés ; il en reste {2}. Relancez « Supprimer tous les médias » pour continuer.</value>
+  </data>
+  <data name="UserMediaDeletionStopped" xml:space="preserve">
+    <value>Arrêté après la suppression de {1} fichiers de {0}.</value>
+  </data>
+  <data name="UserMediaDeletionFailed" xml:space="preserve">
+    <value>La suppression des médias de {0} a échoué après la suppression de {1} fichiers.</value>
+  </data>
+  <data name="UserMediaRemainingUnknown" xml:space="preserve">
+    <value>{1} fichiers de {0} supprimés. Impossible de vérifier s'il en reste.</value>
+  </data>
+  <data name="ErrorDeletingUserMedia" xml:space="preserve">
+    <value>Erreur lors de la suppression des médias de l'utilisateur.</value>
+  </data>
 </root>

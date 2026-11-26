@@ -45,6 +45,8 @@ namespace SynapseAdmin.Tests;
 /// Also a user's devices and recent connections (#598): the exact GET, PUT and POST, the encoding of user and device IDs,
 /// the answers Synapse and Tuwunel send, their cancellation token and the same error behavior, and the session's device
 /// ID from whoami.
+/// Also deleting a user's media page by page (#599): the exact DELETE, always from the first page, its answer, its
+/// cancellation token and the same error behavior.
 /// </summary>
 public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -1793,6 +1795,75 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         await homeserver.Initialise();
 
         Assert.Equal(expected, new SynapseAdminGateway(homeserver).DeviceId);
+    }
+
+    // ---- Deleting a user's media (#599) ---------------------------------------------------------------
+
+    private const string UserMediaDeleteTarget = "/_synapse/admin/v1/users/%40alice%3aexample.com/media?from=0&limit=100&order_by=created_ts&dir=b";
+
+    /// <summary>Always from the first page: the remaining media are reordered after each deletion.</summary>
+    [Fact]
+    public async Task DeleteUserMedia_SendsDeleteForTheFirstPage_AndReadsTheCount()
+    {
+        _homeserver.AllowedMethod = "DELETE";
+        _homeserver.Respond = () => Results.Json(new { deleted_media = new[] { "abc", "def" }, total = 2 });
+
+        var result = await _gateway.DeleteUserMediaAsync("@alice:example.com", 100);
+
+        Assert.Equal(["abc", "def"], result!.DeletedMedia);
+        Assert.Equal(2, result.Total);
+        Assert.Equal(new CapturedRequest("DELETE", UserMediaDeleteTarget, null, ""), Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task DeleteUserMedia_EmptyBody_IsNull()
+    {
+        _homeserver.Respond = () => Results.Text("", "application/json");
+
+        Assert.Null(await _gateway.DeleteUserMediaAsync("@alice:example.com", 100));
+    }
+
+    [Fact]
+    public async Task DeleteUserMedia_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { deleted_media = Array.Empty<string>(), total = 0 });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _gateway.DeleteUserMediaAsync("@alice:example.com", 100, cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task DeleteUserMedia_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "Unknown user" }, statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.DeleteUserMediaAsync("@alice:example.com", 100));
+
+        Assert.Equal("M_NOT_FOUND", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task DeleteUserMedia_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => _gateway.DeleteUserMediaAsync("@alice:example.com", 100));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    /// <summary>Tuwunel (1.8.2, 2.0.0) serves the endpoint as Synapse does, so its gateway sends the same request.</summary>
+    [Fact]
+    public async Task Tuwunel_DeleteUserMedia_SendsTheSynapseRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { deleted_media = Array.Empty<string>(), total = 0 });
+
+        await new TuwunelAdminGateway(CreateHomeserver()).DeleteUserMediaAsync("@alice:example.com", 100);
+
+        Assert.Equal(new CapturedRequest("DELETE", UserMediaDeleteTarget, null, ""), Assert.Single(_homeserver.Requests));
     }
 
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);

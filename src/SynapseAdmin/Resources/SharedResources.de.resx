@@ -1780,4 +1780,43 @@
   <data name="ErrorDeletingDevices" xml:space="preserve">
     <value>Fehler beim Löschen der Geräte.</value>
   </data>
+  <data name="DeleteAllMedia" xml:space="preserve">
+    <value>Alle Medien löschen</value>
+  </data>
+  <data name="DeleteAllUserMediaConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie alle {1} Uploads des Benutzers „{0}“ löschen möchten?</value>
+  </data>
+  <data name="DeleteAllUserMediaConfirmationNoCount" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie alle Uploads des Benutzers „{0}“ löschen möchten?</value>
+  </data>
+  <data name="DeleteAllUserMediaHint" xml:space="preserve">
+    <value>Jeder Upload wird gelöscht, auch geschützte und unter Quarantäne gestellte Medien sowie Medien, die als Profilbild oder Raum-Avatar verwendet werden. Das lässt sich nicht rückgängig machen.</value>
+  </data>
+  <data name="DeletingUserMedia" xml:space="preserve">
+    <value>Medien von „{0}“ werden gelöscht: bisher {1} gelöscht.</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>Anhalten</value>
+  </data>
+  <data name="UserMediaAllDeleted" xml:space="preserve">
+    <value>{1} Uploads von {0} gelöscht. Der Benutzer hat keine Medien mehr.</value>
+  </data>
+  <data name="UserMediaSomeRemain" xml:space="preserve">
+    <value>{1} Uploads von {0} gelöscht. {2} konnten nicht gelöscht werden.</value>
+  </data>
+  <data name="UserMediaCapReached" xml:space="preserve">
+    <value>{1} Uploads von {0} gelöscht; {2} sind noch übrig. Führen Sie „Alle Medien löschen“ erneut aus, um fortzufahren.</value>
+  </data>
+  <data name="UserMediaDeletionStopped" xml:space="preserve">
+    <value>Angehalten nach dem Löschen von {1} Uploads von {0}.</value>
+  </data>
+  <data name="UserMediaDeletionFailed" xml:space="preserve">
+    <value>Das Löschen der Medien von {0} ist fehlgeschlagen, nachdem {1} Uploads gelöscht wurden.</value>
+  </data>
+  <data name="UserMediaRemainingUnknown" xml:space="preserve">
+    <value>{1} Uploads von {0} gelöscht. Es ließ sich nicht prüfen, ob noch welche übrig sind.</value>
+  </data>
+  <data name="ErrorDeletingUserMedia" xml:space="preserve">
+    <value>Fehler beim Löschen der Medien des Benutzers.</value>
+  </data>
 </root>

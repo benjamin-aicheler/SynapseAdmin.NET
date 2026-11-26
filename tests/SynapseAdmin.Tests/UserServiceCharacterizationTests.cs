@@ -99,6 +99,11 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         ["QuarantineMedia"] = new("QuarantineMediaByUserIdAsync", (s, ct) => s.QuarantineMediaAsync(UserId, ct),
             Args(UserId), "ErrorQuarantiningMedia", "Error quarantining media for user {UserId}", UserArgument,
             "UserMediaQuarantinedSuccessfully", "Successfully quarantined media for user {UserId}", UserArgument),
+        // Deleting all media also reads the media list at the end: UserMediaDeletionTests covers the loop (#599).
+        ["DeleteAllMedia"] = new("DeleteUserMediaAsync", async (s, ct) => await s.DeleteAllMediaAsync(UserId, null, ct),
+            Args(UserId, 100), "ErrorDeletingUserMedia", "Error deleting the media of user {UserId}", UserArgument,
+            "UserMediaAllDeleted", "Deleted {Deleted} uploads of user {UserId} in {Requests} requests (outcome: {Outcome}, remaining: {Remaining})",
+            new() { ["Deleted"] = 0, ["UserId"] = SanitizedUserId, ["Requests"] = 1, ["Outcome"] = UserMediaDeletionOutcome.AllDeleted, ["Remaining"] = 0L }),
         ["LoginAs"] = new("LoginAsUserAsync", async (s, ct) => await s.LoginAsUserAsync(UserId, ExpireIn, ct),
             Args(UserId, ExpireIn), "ErrorLoggingInAsUser", "Error performing shadow login for user {UserId}", UserArgument,
             "ShadowLoginSuccessful", "Admin successfully performed shadow login as user {UserId}", UserArgument,
@@ -204,8 +209,9 @@ public sealed class UserServiceCharacterizationTests : IDisposable
     public static TheoryData<string> EditOperations => new(EditBodies.Keys);
 
     public static TheoryData<string> AllOperations => new(Operations.Keys);
-    // Details reads three endpoints, and Create and the account edits check the account first: each has its own test.
-    public static TheoryData<string> SingleCallOperations => new(Operations.Keys.Where(k => k is not ("Details" or "Create") && !EditBodies.ContainsKey(k)));
+    // Details reads three endpoints, Create and the account edits check the account first, and DeleteAllMedia reads the
+    // list at the end: each has its own test.
+    public static TheoryData<string> SingleCallOperations => new(Operations.Keys.Where(k => k is not ("Details" or "Create" or "DeleteAllMedia") && !EditBodies.ContainsKey(k)));
     public static TheoryData<string> ActionOperations => new(Operations.Where(o => o.Value.SuccessKey != null).Select(o => o.Key));
 
     private readonly CancellationTokenSource _cts = new();
