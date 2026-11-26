@@ -1657,4 +1657,25 @@
   <data name="ReactivationPasswordHelper" xml:space="preserve">
     <value>Facultatif. La désactivation a supprimé le mot de passe du compte : sans nouveau mot de passe, l'utilisateur ne peut se connecter que d'une autre manière, par exemple par authentification unique. Le serveur refuse un mot de passe s'il n'autorise pas les mots de passe locaux.</value>
   </data>
+  <data name="UserProfileUpdatedSuccessfully" xml:space="preserve">
+    <value>Profil mis à jour avec succès.</value>
+  </data>
+  <data name="ErrorUpdatingUserProfile" xml:space="preserve">
+    <value>Erreur lors de la mise à jour du profil.</value>
+  </data>
+  <data name="UserProfileUnchanged" xml:space="preserve">
+    <value>Aucune modification.</value>
+  </data>
+  <data name="EditProfile" xml:space="preserve">
+    <value>Modifier le profil</value>
+  </data>
+  <data name="EditProfileFor" xml:space="preserve">
+    <value>Modifier le profil de « {0} ».</value>
+  </data>
+  <data name="DisplayNameRemoveHelper" xml:space="preserve">
+    <value>Laisser vide pour supprimer le nom d'affichage.</value>
+  </data>
+  <data name="RemoveAvatar" xml:space="preserve">
+    <value>Supprimer l'avatar</value>
+  </data>
 </root>

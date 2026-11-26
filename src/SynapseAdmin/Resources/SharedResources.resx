@@ -1658,4 +1658,25 @@
   <data name="ReactivationPasswordHelper" xml:space="preserve">
     <value>Optional. Deactivation removed the account's password: without a new one, the user can only sign in another way, such as single sign-on. The homeserver refuses a password if it doesn't allow local passwords.</value>
   </data>
+  <data name="UserProfileUpdatedSuccessfully" xml:space="preserve">
+    <value>Profile updated successfully.</value>
+  </data>
+  <data name="ErrorUpdatingUserProfile" xml:space="preserve">
+    <value>Error updating the profile.</value>
+  </data>
+  <data name="UserProfileUnchanged" xml:space="preserve">
+    <value>Nothing to change.</value>
+  </data>
+  <data name="EditProfile" xml:space="preserve">
+    <value>Edit profile</value>
+  </data>
+  <data name="EditProfileFor" xml:space="preserve">
+    <value>Change the profile of "{0}".</value>
+  </data>
+  <data name="DisplayNameRemoveHelper" xml:space="preserve">
+    <value>Leave empty to remove the display name.</value>
+  </data>
+  <data name="RemoveAvatar" xml:space="preserve">
+    <value>Remove avatar</value>
+  </data>
 </root>

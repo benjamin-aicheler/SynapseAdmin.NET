@@ -38,6 +38,12 @@ public interface IUserService
     /// "user not found" for an unknown account and with a warning for an active one.
     /// </summary>
     Task<OperationResult> ReactivateUserAsync(string userId, string? newPassword, CancellationToken token = default);
+
+    /// <summary>
+    /// Changes the display name and removes the avatar of an existing account, as far as <paramref name="changes"/> asks.
+    /// Without a change nothing is read or sent.
+    /// </summary>
+    Task<OperationResult> UpdateUserProfileAsync(string userId, UserProfileEditViewModel changes, CancellationToken token = default);
     Task<OperationResult<List<UserMembershipViewModel>>> GetUserMembershipsAsync(string userId, CancellationToken token = default);
     Task<OperationResult<List<UserExperimentalFeatureViewModel>>> GetUserExperimentalFeaturesAsync(string userId, CancellationToken token = default);
     Task<OperationResult> SetUserExperimentalFeaturesAsync(string userId, Dictionary<string, bool> features, CancellationToken token = default);

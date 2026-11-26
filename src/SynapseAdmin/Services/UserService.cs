@@ -330,6 +330,32 @@ public class UserService(IMatrixSessionService sessionService, ILogger<UserServi
                 }));
     }
 
+    public Task<OperationResult> UpdateUserProfileAsync(string userId, UserProfileEditViewModel changes, CancellationToken token = default)
+    {
+        if (!changes.HasChanges)
+        {
+            return Task.FromResult(OperationResult.Ok(L["UserProfileUnchanged"]));
+        }
+
+        // The display name itself isn't logged, only which fields the edit changes.
+        var displayNameChanged = changes.DisplayName != null;
+        var request = new SynapseAdminUserUpsertRequest
+        {
+            DisplayName = changes.DisplayName,
+            AvatarUrl = changes.RemoveAvatar ? "" : null
+        };
+        return sessionService.RunGatewayCallAsync(L, "ErrorUpdatingUserProfile",
+            ex => logger.LogError(ex, "Error updating the profile of user {UserId} (display name: {DisplayNameChanged}, remove avatar: {RemoveAvatar})",
+                userId.SanitizeForLogging(), displayNameChanged, changes.RemoveAvatar),
+            gateway => EditExistingUserAsync(gateway, userId, request, "ErrorUpdatingUserProfile", token,
+                () =>
+                {
+                    logger.LogInformation("Successfully updated the profile of user {UserId} (display name: {DisplayNameChanged}, remove avatar: {RemoveAvatar})",
+                        userId.SanitizeForLogging(), displayNameChanged, changes.RemoveAvatar);
+                    return OperationResult.Ok(L["UserProfileUpdatedSuccessfully"]);
+                }));
+    }
+
     public Task<OperationResult> SetUserSuspendedAsync(string userId, bool suspended, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, suspended ? "ErrorSuspendingUser" : "ErrorUnsuspendingUser",
             ex => logger.LogError(ex, "Error setting the suspension of user {UserId} (suspended: {Suspended})", userId.SanitizeForLogging(), suspended),

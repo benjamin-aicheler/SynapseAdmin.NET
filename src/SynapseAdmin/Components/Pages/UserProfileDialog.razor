@@ -1,0 +1,21 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Class="mr-3 mb-n1" />
+            @L["EditProfile"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4">@L["EditProfileFor", Target]</MudText>
+        <MudTextField T="string" Label="@L["DisplayName"]" @bind-Value="displayName" Immediate="true"
+                      HelperText="@L["DisplayNameRemoveHelper"]" />
+        @if (HasAvatar)
+        {
+            <MudCheckBox T="bool" @bind-Value="removeAvatar" Label="@L["RemoveAvatar"]" Color="Color.Error" Class="mt-4" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!HasChanges)">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -228,6 +228,34 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        /// <summary>
+        /// Edits the shown user's display name or removes the avatar in <see cref="UserProfileDialog"/>, and sends what
+        /// changed if the user is still shown once the dialog closes, then reloads the user (#584).
+        /// </summary>
+        private async Task OpenProfileDialog()
+        {
+            if (GetDisplayedTarget() is not { } target || user == null) return;
+
+            var parameters = new DialogParameters
+            {
+                { nameof(UserProfileDialog.Target), FormatTarget(user, target) },
+                { nameof(UserProfileDialog.CurrentDisplayName), user.DisplayName },
+                { nameof(UserProfileDialog.HasAvatar), !string.IsNullOrEmpty(user.AvatarUrl) }
+            };
+            var dialog = await DialogService.ShowAsync<UserProfileDialog>(L["EditProfile"], parameters, DialogPresets.Small());
+            var result = await dialog.Result;
+
+            if (result is { Canceled: false, Data: UserProfileEditViewModel { HasChanges: true } changes } && IsStillDisplayed(target))
+            {
+                var outcome = await UserService.UpdateUserProfileAsync(target, changes, _cts.Token);
+                Snackbar.ShowResult(outcome);
+                if (outcome.Success && _loadCts != null && GetDisplayedTarget() == target)
+                {
+                    await LoadUserDetails(target, _loadCts.Token);
+                }
+            }
+        }
+
         private async Task DeactivateUser()
         {
             if (GetDisplayedTarget() is not { } target || IsOwnAccount) return;

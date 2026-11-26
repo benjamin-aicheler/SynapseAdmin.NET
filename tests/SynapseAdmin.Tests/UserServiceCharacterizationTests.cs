@@ -180,6 +180,14 @@ public sealed class UserServiceCharacterizationTests : IDisposable
             "UserReactivatedSuccessfully", "Successfully reactivated user {UserId} (with password: {WithPassword})",
             new() { ["UserId"] = SanitizedUserId, ["WithPassword"] = true },
             PutReturnsUser, UserIsDeactivated),
+        // The display name isn't logged: only which fields the edit changes.
+        ["EditProfile"] = new("UpdateUserAsync",
+            (s, ct) => s.UpdateUserProfileAsync(UserId, new UserProfileEditViewModel { DisplayName = "Al", RemoveAvatar = true }, ct), (_, _) => { },
+            "ErrorUpdatingUserProfile", "Error updating the profile of user {UserId} (display name: {DisplayNameChanged}, remove avatar: {RemoveAvatar})",
+            new() { ["UserId"] = SanitizedUserId, ["DisplayNameChanged"] = true, ["RemoveAvatar"] = true },
+            "UserProfileUpdatedSuccessfully", "Successfully updated the profile of user {UserId} (display name: {DisplayNameChanged}, remove avatar: {RemoveAvatar})",
+            new() { ["UserId"] = SanitizedUserId, ["DisplayNameChanged"] = true, ["RemoveAvatar"] = true },
+            PutReturnsUser, UserExists),
     };
 
     /// <summary>The account edits: each sends exactly one field after reading the user (#584).</summary>
@@ -190,6 +198,7 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         ["MakeAdmin"] = """{"admin":true}""",
         ["RemoveAdmin"] = """{"admin":false}""",
         ["Reactivate"] = """{"password":"new-secret","deactivated":false}""",
+        ["EditProfile"] = """{"displayname":"Al","avatar_url":""}""",
     };
 
     public static TheoryData<string> EditOperations => new(EditBodies.Keys);
@@ -501,6 +510,38 @@ public sealed class UserServiceCharacterizationTests : IDisposable
         ResultAssert.Failure(result, "UserAlreadyActive", Severity.Warning);
         Assert.Equal(["GetUserDetailsAsync"], stub.Calls.Select(c => c.Method));
         AssertSingleLog(LogLevel.Warning, "Refused to reactivate user {UserId}: the account is active", UserArgument, exception: null);
+    }
+
+    /// <summary>A profile edit sends only what changed: an emptied name as <c>""</c>, which removes it (#584).</summary>
+    [Theory]
+    [InlineData("Al", false, """{"displayname":"Al"}""")]
+    [InlineData("", false, """{"displayname":""}""")]
+    [InlineData(null, true, """{"avatar_url":""}""")]
+    public async Task EditProfile_SendsOnlyTheChangedFields(string? displayName, bool removeAvatar, string body)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        UserExists(stub);
+        PutReturnsUser(stub);
+
+        var result = await CreateService(gateway).UpdateUserProfileAsync(UserId,
+            new UserProfileEditViewModel { DisplayName = displayName, RemoveAvatar = removeAvatar }, _cts.Token);
+
+        ResultAssert.Success(result, "UserProfileUpdatedSuccessfully");
+        var request = Assert.IsType<SynapseAdminUserUpsertRequest>(stub.CallsTo("UpdateUserAsync").Single()[1]);
+        Assert.Equal(body, JsonSerializer.Serialize(request, OmitNulls));
+    }
+
+    /// <summary>Without a change there is nothing to send, so nothing is read or sent either.</summary>
+    [Fact]
+    public async Task EditProfile_NoChange_SendsNothing()
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+
+        var result = await CreateService(gateway).UpdateUserProfileAsync(UserId, new UserProfileEditViewModel(), _cts.Token);
+
+        ResultAssert.Success(result, "UserProfileUnchanged");
+        Assert.Empty(stub.Calls);
+        Assert.Empty(_logger.Entries);
     }
 
     [Fact]
