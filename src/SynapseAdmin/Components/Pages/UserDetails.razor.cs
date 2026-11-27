@@ -31,6 +31,8 @@ namespace SynapseAdmin.Components.Pages
         public ILogger<UserDetails> Logger { get; set; } = null!;
         [Inject]
         public IUserRedactionService RedactionService { get; set; } = null!;
+        [Inject]
+        public IRoomService RoomService { get; set; } = null!;
 
         private const int RedactionStatusPollIntervalMs = 5000;
         private const int MaxConsecutiveRedactionStatusFailures = 5;
@@ -275,6 +277,39 @@ namespace SynapseAdmin.Components.Pages
                 {
                     await LoadUserDetails(target, _loadCts.Token);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Synapse refuses to join a suspended account (<c>USER_ACCOUNT_SUSPENDED</c>), and nobody can use a deactivated one
+        /// (#605, SPEC.md §10).
+        /// </summary>
+        private bool CanJoinToRoom => user is { Deactivated: false, Suspended: false };
+
+        /// <summary>
+        /// Asks for a room and joins the shown user to it with the rules of Join user on the room page (#605). The dialog
+        /// names the user and is the confirmation; afterwards the page re-checks that the user is still shown, sends the
+        /// join and, after a success, loads the user again so that the memberships show it.
+        /// </summary>
+        private async Task OpenJoinRoomDialog()
+        {
+            if (GetDisplayedTarget() is not { } target || !CanJoinToRoom) return;
+
+            var label = FormatTarget(user, target);
+            var parameters = new DialogParameters
+            {
+                { nameof(UserJoinRoomDialog.UserLabel), label },
+                { nameof(UserJoinRoomDialog.Memberships), (IReadOnlyList<UserMembershipViewModel>)user!.Memberships }
+            };
+            var dialog = await DialogService.ShowAsync<UserJoinRoomDialog>(L["JoinToRoomTitle", label], parameters, DialogPresets.Small());
+            var result = await dialog.Result;
+            if (result is not { Canceled: false, Data: string roomId } || !IsStillDisplayed(target)) return;
+
+            var outcome = await RoomService.JoinUserToRoomAsync(roomId, target, _cts.Token);
+            Snackbar.ShowResult(outcome);
+            if (outcome.Success && _loadCts != null && GetDisplayedTarget() == target)
+            {
+                await LoadUserDetails(target, _loadCts.Token);
             }
         }
 

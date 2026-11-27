@@ -1,0 +1,27 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.MeetingRoom" Class="mr-3 mb-n1" />
+            @L["JoinToRoomTitle", UserLabel]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@L["JoinToRoomDescription", UserLabel]</MudText>
+        <MudTextField T="string" Label="@L["RoomId"]" @bind-Value="roomId" Immediate="true"
+                      HelperText="@L["JoinToRoomRoomIdHint"]" Validation="@(new Func<string?, string?>(Validate))" />
+        @if (Picks.Count > 0)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1">@L["JoinToRoomPicks"]</MudText>
+            <div class="join-room-picks">
+                @foreach (var pick in Picks)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="join-room-pick" OnClick="@(() => Pick(pick.RoomId))">@pick.RoomId · @pick.Membership</MudChip>
+                }
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!CanSubmit)">@L["JoinToRoom"]</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -30,8 +30,9 @@ public interface IRoomService
     Task<OperationResult> MakeRoomAdminAsync(string roomId, string? userId, CancellationToken token = default);
     /// <summary>
     /// Joins a local user to a room; the homeserver first invites the user as the signed-in admin unless the room is
-    /// public (#587). <paramref name="userId"/> must be a full user ID on the signed-in admin's server, compared exactly,
-    /// or the call is refused with a warning and nothing is sent.
+    /// public (#587). <paramref name="roomId"/> must have the form of a room ID, as the user page lets the admin type it
+    /// (#605), and <paramref name="userId"/> must be a full user ID on the signed-in admin's server, compared exactly;
+    /// otherwise the call is refused with a warning and nothing is sent.
     /// </summary>
     Task<OperationResult> JoinUserToRoomAsync(string roomId, string userId, CancellationToken token = default);
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);

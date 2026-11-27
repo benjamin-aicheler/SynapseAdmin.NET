@@ -72,6 +72,24 @@ public class LocalMatrixIdTests
     public void IsUserId_AcceptsOnlyTheFullUserIdForm(string? id, bool expected) =>
         Assert.Equal(expected, MatrixIdHelper.IsUserId(id));
 
+    /// <summary>Both room ID forms: with a domain, and room version 12's unpadded base64 without one (#605).</summary>
+    [Theory]
+    [InlineData("!abc:example.org", true)]
+    [InlineData("!abc:example.org:8448", true)]
+    [InlineData("!QxR7a-Kq_9abc", true)]
+    [InlineData("!a", true)]
+    [InlineData("!", false)]
+    [InlineData("#room:example.org", false)]
+    [InlineData("@a:example.org", false)]
+    [InlineData("abc:example.org", false)]
+    [InlineData("!ab c:example.org", false)]
+    [InlineData(" !abc:example.org", false)]
+    [InlineData("!abc:example.org\t", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsRoomId_AcceptsBothRoomIdForms(string? id, bool expected) =>
+        Assert.Equal(expected, MatrixIdHelper.IsRoomId(id));
+
     /// <summary>Exact, as Synapse's <c>is_mine</c> and Tuwunel's <c>user_is_local</c> compare it (#587).</summary>
     [Theory]
     [InlineData("@a:example.org", "example.org", true)]

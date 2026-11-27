@@ -36,6 +36,8 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     private const string Search = "ali\nce";
     private const string ServerName = "example.com";
     private const string AdminUserId = "@admin:example.com";
+    // Joining checks the room ID's form, which a line break fails (#605): the join uses a well-formed room ID.
+    private const string JoinRoomId = "!room1:example.com";
     private static readonly Dictionary<string, object?> RoomArgument = new() { ["RoomId"] = SanitizedRoomId };
 
     private sealed record Operation(
@@ -96,10 +98,10 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
             Args(RoomId, null), "ErrorMakingRoomAdmin", "Error making {UserId} room admin in room {RoomId}",
             new() { ["UserId"] = "the signed-in admin", ["RoomId"] = SanitizedRoomId },
             "RoomAdminGranted", "Made {UserId} room admin in room {RoomId}", new() { ["UserId"] = AdminUserId, ["RoomId"] = SanitizedRoomId }),
-        // Success needs the room ID the gateway returns: see the Join_* tests (#587).
-        ["Join"] = new("JoinUserToRoomAsync", async (s, ct) => await s.JoinUserToRoomAsync(RoomId, " @bob:example.com ", ct),
-            Args(RoomId, "@bob:example.com"), "ErrorJoiningUserToRoom", "Error joining {UserId} to room {RoomId}",
-            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = SanitizedRoomId }),
+        // Success needs the room ID the gateway returns: see the Join_* tests (#587). Both IDs are sent trimmed (#605).
+        ["Join"] = new("JoinUserToRoomAsync", async (s, ct) => await s.JoinUserToRoomAsync($" {JoinRoomId} ", " @bob:example.com ", ct),
+            Args(JoinRoomId, "@bob:example.com"), "ErrorJoiningUserToRoom", "Error joining {UserId} to room {RoomId}",
+            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = JoinRoomId }),
         ["LargestRooms"] = new("GetLargestRoomsAsync", async (s, ct) => await s.GetLargestRoomsAsync(ct),
             Args(), "ErrorFetchingLargestRooms", "Error fetching largest rooms", []),
         ["Messages"] = new("GetRoomMessagesAsync", async (s, ct) => await s.GetRoomMessagesAsync(RoomId, "from", 5, "b", "filter", "to", ct),
@@ -694,7 +696,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var gateway = TableGateway(out var stub);
 
-        var result = await CreateService(gateway).JoinUserToRoomAsync(RoomId, userId, _cts.Token);
+        var result = await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, userId, _cts.Token);
 
         ResultAssert.Failure(result, key, Severity.Warning);
         Assert.Empty(GatewayCalls(stub));
@@ -704,7 +706,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     [Fact]
     public async Task Join_NotLocal_NamesTheServer()
     {
-        var result = await CreateService(TableGateway(), ArgumentLocalizer()).JoinUserToRoomAsync(RoomId, "@bob:other.org", _cts.Token);
+        var result = await CreateService(TableGateway(), ArgumentLocalizer()).JoinUserToRoomAsync(JoinRoomId, "@bob:other.org", _cts.Token);
 
         ResultAssert.Failure(result, $"JoinUserNotLocal({ServerName})", Severity.Warning);
     }
@@ -716,7 +718,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var gateway = TableGateway(out var stub, s => s.On("get_ServerName", _ => serverName));
 
-        var result = await CreateService(gateway).JoinUserToRoomAsync(RoomId, "@bob:example.com", _cts.Token);
+        var result = await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, "@bob:example.com", _cts.Token);
 
         ResultAssert.Failure(result, "JoinUserNotLocal", Severity.Warning);
         Assert.Empty(GatewayCalls(stub));
@@ -728,11 +730,47 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         var gateway = TableGateway(s => s.On("JoinUserToRoomAsync",
             _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = "!room:example.com" })));
 
-        var result = await CreateService(gateway, ArgumentLocalizer()).JoinUserToRoomAsync(RoomId, "@bob:example.com", _cts.Token);
+        var result = await CreateService(gateway, ArgumentLocalizer()).JoinUserToRoomAsync(JoinRoomId, "@bob:example.com", _cts.Token);
 
-        ResultAssert.Success(result, $"UserJoinedRoom(@bob:example.com, {RoomId})");
+        ResultAssert.Success(result, $"UserJoinedRoom(@bob:example.com, {JoinRoomId})");
         AssertSingleLog(LogLevel.Information, "Joined {UserId} to room {RoomId}",
-            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = SanitizedRoomId }, exception: null);
+            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = JoinRoomId }, exception: null);
+    }
+
+    /// <summary>
+    /// The user page lets the admin type the room (#605): only the room ID form is sent. An alias would be form-encoded
+    /// into the path (#580), so it is refused too. The room is checked before the user.
+    /// </summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("!")]
+    [InlineData("#room:example.com")]
+    [InlineData("@bob:example.com")]
+    [InlineData("room:example.com")]
+    [InlineData("!ro om:example.com")]
+    [InlineData("!room\n1:example.com")]
+    public async Task Join_InvalidRoomId_FailsWithAWarning_WithoutARequest(string roomId)
+    {
+        var gateway = TableGateway(out var stub);
+
+        var result = await CreateService(gateway).JoinUserToRoomAsync(roomId, "not a user", _cts.Token);
+
+        ResultAssert.Failure(result, "InvalidRoomId", Severity.Warning);
+        Assert.Empty(GatewayCalls(stub));
+        Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>Room version 12 room IDs have no domain (MSC4291); Synapse accepts both forms.</summary>
+    [Fact]
+    public async Task Join_RoomIdWithoutADomain_IsSent()
+    {
+        var gateway = TableGateway(out var stub, s => s.On("JoinUserToRoomAsync",
+            _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = "!QxR7a-Kq_9abc" })));
+
+        var result = await CreateService(gateway).JoinUserToRoomAsync("!QxR7a-Kq_9abc", "@bob:example.com", _cts.Token);
+
+        ResultAssert.Success(result, "UserJoinedRoom");
+        Assert.Equal("!QxR7a-Kq_9abc", Assert.Single(stub.CallsTo("JoinUserToRoomAsync"))[0]);
     }
 
     private RoomService CreateService(IMatrixGateway? gateway, IStringLocalizer<SharedResources>? localizer = null)

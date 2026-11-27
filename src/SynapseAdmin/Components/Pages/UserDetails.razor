@@ -153,6 +153,8 @@ else
                     }
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenResetPasswordDialog" Class="mb-2 mr-2" Disabled="@user.Deactivated">@L["ResetPassword"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenProfileDialog" Class="mb-2 mr-2">@L["EditProfile"]</MudButton>
+                    @* Synapse refuses to join a suspended account; nobody can use a deactivated one (#605). *@
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenJoinRoomDialog" Class="mb-2 mr-2" Disabled="@(!CanJoinToRoom)">@L["JoinToRoom"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleLock" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Locked)">@(user.Locked ? L["UnlockUser"] : L["LockUser"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleSuspension" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Suspended)">@(user.Suspended ? L["UnsuspendUser"] : L["SuspendUser"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ToggleAdmin" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && user.Admin)">@(user.Admin ? L["RemoveAdmin"] : L["MakeAdmin"])</MudButton>
