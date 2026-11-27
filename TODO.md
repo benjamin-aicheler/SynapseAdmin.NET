@@ -22,7 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [3.2] `RedactUserEventsDialog`; dialog tests
 - [ ] [4.1] `UserDetails`: button, confirmation, banner, polling, resume; page tests
 - [ ] [5.1] SPEC.md: remove `[Planned]`, decision log
 - [ ] [5.2] README, ARCHITECTURE, AGENTS.md
@@ -42,6 +41,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [3.2] `RedactUserEventsDialog`; 13 dialog tests
 - [x] 2026-11-27 – [3.1] 30 redaction keys in EN/DE/FR (DE "entfernen", FR "effacer")
 - [x] 2026-11-27 – [2.2] `IUserRedactionService` / `UserRedactionService`, tracking cache, DI; characterization and service tests
 - [x] 2026-11-27 – [2.1] Redaction ViewModels, state enum and status mapper; mapper tests

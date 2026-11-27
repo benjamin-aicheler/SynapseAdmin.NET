@@ -1,0 +1,54 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.DeleteSweep" Class="mr-3 mb-n1" />
+            @L["RedactUserEventsTitle", Target]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4 redact-event-types">
+            @L["RedactEventTypesHint"]
+        </MudAlert>
+
+        <MudText Typo="Typo.subtitle2">@L["RedactRooms"]</MudText>
+        <MudRadioGroup T="bool" Value="@model.AllRooms" ValueChanged="@SetAllRooms" Class="d-flex flex-column">
+            <MudRadio Value="@true" Color="Color.Primary" Class="redact-user-rooms">@L["RedactUserRooms", UserRoomCount]</MudRadio>
+            <MudRadio Value="@false" Color="Color.Primary" Class="redact-selected-rooms">@L["RedactSelectedRooms"]</MudRadio>
+        </MudRadioGroup>
+        @if (UserRoomCount == 0)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block redact-no-user-rooms">@L["RedactUserRoomsNone"]</MudText>
+        }
+
+        @if (!model.AllRooms)
+        {
+            <div class="redact-room-list ml-6 mt-2" style="max-height: 240px; overflow-y: auto;">
+                @foreach (var room in Rooms)
+                {
+                    <div class="d-flex align-center redact-room">
+                        <MudCheckBox T="bool" Value="@selectedRoomIds.Contains(room.RoomId)" ValueChanged="@(selected => SetSelected(room.RoomId, selected))"
+                                     Label="@room.RoomId" Dense="true" Color="Color.Primary" />
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                                 Color="@(room.Membership == "join" ? Color.Success : room.Membership == "ban" ? Color.Error : Color.Default)">
+                            @room.Membership
+                        </MudChip>
+                    </div>
+                }
+            </div>
+        }
+
+        <MudTextField T="string" Label="@L["RedactReason"]" @bind-Value="model.Reason" Immediate="true"
+                      HelperText="@L["RedactReasonHint"]" Class="mt-4 redact-reason" />
+        <MudNumericField T="int" Label="@L["RedactSearchLimit"]" @bind-Value="model.Limit" Min="1" Immediate="true"
+                         HelperText="@L["RedactSearchLimitHint"]" Class="mt-4 redact-limit" />
+
+        <div class="mt-4">
+            <MudSwitch T="bool" Label="@L["RedactAsAdmin"]" @bind-Value="model.UseAdmin" Color="Color.Primary" Class="redact-as-admin" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">@L["RedactAsAdminHint"]</MudText>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!CanSubmit)">@L["Continue"]</MudButton>
+    </DialogActions>
+</MudDialog>
