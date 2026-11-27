@@ -18,11 +18,10 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## 🔄 In Progress
 
-- [ ] [1.1] Gateway: DTOs, `MakeRoomAdminAsync` / `JoinUserToRoomAsync` on interface, base, Synapse, Generic; Tuwunel refuses make admin; fakes; wire tests (AC-26)
+- [ ] 
 
 ## ⏭️ Next Up
 
-- [ ] [1.2] Tuwunel join correction (join rule read, Client-Server invite, then join); wire tests
 - [ ] [2.1] `MatrixIdHelper.IsUserId` / `IsLocalUserId`; `LocalMatrixIdTests`
 - [ ] [2.2] `RoomService.MakeRoomAdminAsync` / `JoinUserToRoomAsync`; characterization and service tests
 - [ ] [3.1] Resources EN/DE/FR
@@ -44,6 +43,8 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [1.2] Tuwunel join correction (join rule read, Client-Server invite, then join); 11 wire tests, mutation-checked
+- [x] 2026-11-27 – [1.1] Room recovery DTOs and gateway calls; Generic and Tuwunel refuse make room admin; 10 wire tests
 - [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-5, AC-26, §4, §8, §10, §13, §15) and PLAN.md (Approved)
 
 ## Definition of Done (applies to every task)

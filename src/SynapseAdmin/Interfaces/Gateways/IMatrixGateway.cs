@@ -89,6 +89,19 @@ public interface IMatrixGateway
     Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default);
     Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default);
     Task<SynapseAdminRoomBlockStatusResponse?> GetRoomBlockStatusAsync(string roomId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Grants a user the highest power level of a local user who is joined to the room, and invites the user if they
+    /// aren't in the room and it isn't public (<c>POST /_synapse/admin/v1/rooms/{roomId}/make_room_admin</c>, #587).
+    /// <paramref name="userId"/> <c>null</c> means the signed-in admin. The path takes a room ID; an alias would need
+    /// <c>Uri.EscapeDataString</c> (#580).
+    /// </summary>
+    Task MakeRoomAdminAsync(string roomId, string? userId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Joins a local user to a room, inviting the user first as the signed-in admin unless the room is public
+    /// (<c>POST /_synapse/admin/v1/join/{roomId}</c>, #587). The path takes a room ID; an alias would need
+    /// <c>Uri.EscapeDataString</c> (#580).
+    /// </summary>
+    Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default);
     Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default);
     Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default);
     Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default);

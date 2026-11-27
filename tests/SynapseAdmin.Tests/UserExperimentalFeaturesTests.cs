@@ -297,6 +297,8 @@ public class UserExperimentalFeaturesTests
         public Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomBlockStatusResponse?> GetRoomBlockStatusAsync(string roomId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task MakeRoomAdminAsync(string roomId, string? userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();

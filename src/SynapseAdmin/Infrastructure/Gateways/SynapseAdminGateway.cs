@@ -385,6 +385,27 @@ public class SynapseAdminGateway(
         GetWithCompatibilityOptionsAsync<SynapseAdminRoomBlockStatusResponse>(
             $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/block", cancellationToken);
 
+    /// <summary>
+    /// Sends <c>{}</c> for the signed-in admin, Synapse's default, or <c>{"user_id": …}</c>. Synapse answers <c>{}</c>,
+    /// which isn't read: it doesn't say whether the user was invited (#587).
+    /// </summary>
+    public override async Task MakeRoomAdminAsync(string roomId, string? userId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/make_room_admin";
+        var request = new SynapseAdminMakeRoomAdminRequest { UserId = userId };
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public override async Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/join/{roomId.UrlEncode()}";
+        var request = new SynapseAdminJoinRoomRequest { UserId = userId };
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminJoinRoomResponse>(cancellationToken: cancellationToken);
+    }
+
     public override async Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default)
     {
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<RoomStatisticsResponse>("/_synapse/admin/v1/statistics/database/rooms", cancellationToken: cancellationToken);
