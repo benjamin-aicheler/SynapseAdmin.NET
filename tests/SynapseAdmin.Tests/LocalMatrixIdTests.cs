@@ -52,4 +52,40 @@ public class LocalMatrixIdTests
     [InlineData("@a:", null, false)]
     public void IsOnServer_MatchesTheServerSuffixIgnoringCase(string? id, string? serverName, bool expected) =>
         Assert.Equal(expected, MatrixIdHelper.IsOnServer(id, serverName));
+
+    [Theory]
+    [InlineData("@a:example.org", true)]
+    [InlineData("@alice.smith_1=x/y:example.org", true)]
+    [InlineData("@a:example.org:8448", true)] // a port belongs to the server name
+    [InlineData("@a:[::1]:8448", true)]
+    [InlineData("a:example.org", false)]
+    [InlineData("#a:example.org", false)]
+    [InlineData("!a:example.org", false)]
+    [InlineData("@a", false)]
+    [InlineData("@:example.org", false)]
+    [InlineData("@a:", false)]
+    [InlineData("@a b:example.org", false)]
+    [InlineData(" @a:example.org", false)]
+    [InlineData("@a:example.org\n", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsUserId_AcceptsOnlyTheFullUserIdForm(string? id, bool expected) =>
+        Assert.Equal(expected, MatrixIdHelper.IsUserId(id));
+
+    /// <summary>Exact, as Synapse's <c>is_mine</c> and Tuwunel's <c>user_is_local</c> compare it (#587).</summary>
+    [Theory]
+    [InlineData("@a:example.org", "example.org", true)]
+    [InlineData("@a:example.org:8448", "example.org:8448", true)]
+    [InlineData("@a:EXAMPLE.org", "example.org", false)]
+    [InlineData("@a:example.org", "Example.org", false)]
+    [InlineData("@a:example.org:8448", "example.org", false)]
+    [InlineData("@a:example.org.evil", "example.org", false)]
+    [InlineData("@a:evil.example.org", "example.org", false)]
+    [InlineData("@a:other.org", "example.org", false)]
+    [InlineData("a:example.org", "example.org", false)]
+    [InlineData("@a:example.org", "", false)]
+    [InlineData("@a:example.org", null, false)]
+    [InlineData(null, "example.org", false)]
+    public void IsLocalUserId_ComparesTheServerNameExactly(string? id, string? serverName, bool expected) =>
+        Assert.Equal(expected, MatrixIdHelper.IsLocalUserId(id, serverName));
 }

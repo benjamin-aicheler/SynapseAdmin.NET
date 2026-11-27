@@ -33,6 +33,9 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
     };
 
+    /// <summary>Names the target in a log line when Make room admin is sent without a user (#587).</summary>
+    private const string SignedInAdminLogLabel = "the signed-in admin";
+
     private IMatrixGateway? Gateway => sessionService.Gateway;
 
     private string? HomeserverCacheScope => Gateway?.HomeserverUrl?.TrimEnd('/').ToLowerInvariant();
@@ -333,6 +336,54 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             },
             // A page loads this by itself: a homeserver that refuses it works as intended, so the refusal isn't an error.
             logRefusal: _ => logger.LogDebug("The homeserver doesn't support reading the block status of room {RoomId}", roomId.SanitizeForLogging()));
+
+    public Task<OperationResult> MakeRoomAdminAsync(string roomId, string? userId, CancellationToken token = default)
+    {
+        // Blank means the signed-in admin, Synapse's default when no user_id is sent.
+        var target = string.IsNullOrWhiteSpace(userId) ? null : userId.Trim();
+        return sessionService.RunGatewayCallAsync(L, "ErrorMakingRoomAdmin",
+            ex => logger.LogError(ex, "Error making {UserId} room admin in room {RoomId}",
+                (target ?? SignedInAdminLogLabel).SanitizeForLogging(), roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                if (target != null && !MatrixIdHelper.IsUserId(target))
+                {
+                    return OperationResult.Failure(L["InvalidUserId"], Severity.Warning);
+                }
+
+                await gateway.MakeRoomAdminAsync(roomId, target, token);
+                var grantee = target ?? gateway.UserId;
+                logger.LogInformation("Made {UserId} room admin in room {RoomId}", grantee.SanitizeForLogging(), roomId.SanitizeForLogging());
+                return OperationResult.Ok(L["RoomAdminGranted", grantee, roomId]);
+            });
+    }
+
+    public Task<OperationResult> JoinUserToRoomAsync(string roomId, string userId, CancellationToken token = default)
+    {
+        var target = userId.Trim();
+        return sessionService.RunGatewayCallAsync(L, "ErrorJoiningUserToRoom",
+            ex => logger.LogError(ex, "Error joining {UserId} to room {RoomId}", target.SanitizeForLogging(), roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                if (!MatrixIdHelper.IsUserId(target))
+                {
+                    return OperationResult.Failure(L["InvalidUserId"], Severity.Warning);
+                }
+
+                // Exact, as the homeserver compares it; MatrixIdHelper.IsOnServer ignores case.
+                if (!MatrixIdHelper.IsLocalUserId(target, gateway.ServerName))
+                {
+                    return OperationResult.Failure(L["JoinUserNotLocal", gateway.ServerName], Severity.Warning);
+                }
+
+                var response = await gateway.JoinUserToRoomAsync(roomId, target, token);
+                // An operation: Synapse always answers with the room ID, so null is a failure (#395).
+                if (response == null) return OperationResult.Failure(L["ErrorJoiningUserToRoom"]);
+
+                logger.LogInformation("Joined {UserId} to room {RoomId}", target.SanitizeForLogging(), roomId.SanitizeForLogging());
+                return OperationResult.Ok(L["UserJoinedRoom", target, roomId]);
+            });
+    }
 
     public Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingLargestRooms",

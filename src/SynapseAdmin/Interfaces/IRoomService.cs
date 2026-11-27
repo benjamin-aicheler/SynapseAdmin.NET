@@ -21,6 +21,19 @@ public interface IRoomService
     Task<OperationResult> QuarantineMediaAsync(string roomId, CancellationToken token = default);
     Task<OperationResult> BlockRoomAsync(string roomId, bool block, CancellationToken token = default);
     Task<OperationResult<RoomBlockStatusViewModel>> GetRoomBlockStatusAsync(string roomId, CancellationToken token = default);
+    /// <summary>
+    /// Grants a user the highest power level of a local user who is joined to the room, and has the homeserver invite
+    /// the user if they aren't in the room and it isn't public (#587). A blank <paramref name="userId"/> means the
+    /// signed-in admin; any other value must be a full user ID, on any server, or the call is refused with a warning and
+    /// nothing is sent.
+    /// </summary>
+    Task<OperationResult> MakeRoomAdminAsync(string roomId, string? userId, CancellationToken token = default);
+    /// <summary>
+    /// Joins a local user to a room; the homeserver first invites the user as the signed-in admin unless the room is
+    /// public (#587). <paramref name="userId"/> must be a full user ID on the signed-in admin's server, compared exactly,
+    /// or the call is refused with a warning and nothing is sent.
+    /// </summary>
+    Task<OperationResult> JoinUserToRoomAsync(string roomId, string userId, CancellationToken token = default);
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);
     Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default);
     Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default);

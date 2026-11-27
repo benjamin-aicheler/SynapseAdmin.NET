@@ -22,8 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [2.1] `MatrixIdHelper.IsUserId` / `IsLocalUserId`; `LocalMatrixIdTests`
-- [ ] [2.2] `RoomService.MakeRoomAdminAsync` / `JoinUserToRoomAsync`; characterization and service tests
 - [ ] [3.1] Resources EN/DE/FR
 - [ ] [3.2] `RoomUserAction` enum, `RoomUserActionDialog`; dialog tests
 - [ ] [4.1] `RoomDetails`: buttons, flow, reload; `RoomDetailsRecoveryTests`
@@ -43,6 +41,8 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [2.2] `RoomService.MakeRoomAdminAsync` / `JoinUserToRoomAsync`; 3 table rows, 18 specific tests, mutation-checked
+- [x] 2026-11-27 – [2.1] `MatrixIdHelper.IsUserId` / `IsLocalUserId` (exact server name); 27 helper tests
 - [x] 2026-11-27 – [1.2] Tuwunel join correction (join rule read, Client-Server invite, then join); 11 wire tests, mutation-checked
 - [x] 2026-11-27 – [1.1] Room recovery DTOs and gateway calls; Generic and Tuwunel refuse make room admin; 10 wire tests
 - [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-5, AC-26, §4, §8, §10, §13, §15) and PLAN.md (Approved)
