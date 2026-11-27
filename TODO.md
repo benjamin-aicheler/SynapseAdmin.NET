@@ -14,19 +14,21 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-27
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] 
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-- [ ] [4.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
-- [ ] 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
 
 ## 📋 Backlog
 
@@ -38,14 +40,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] 2026-11-27 – [3.3] `RoomDetails` (a switch on action and result type) and `UserDetails` pass the servers; page tests check them and that a result of another type sends nothing
-- [x] 2026-11-27 – [3.2] `RoomJoinRequestViewModel`, `Components/Shared/JoinServerInput` (split on commas and whitespace, first invalid server named); `UserJoinRoomDialog` takes an alias, servers field disabled with the note for an alias (no servers returned, no error shown); `RoomUserActionDialog` Join servers field; the servers error is a computed `Error`/`ErrorText`, so it follows the room field
-- [x] 2026-11-27 – [3.1] Resources EN/DE/FR: `RoomIdOrAlias`, `JoinServers`, `JoinServersHint`, `JoinServersAliasNote`, `InvalidServerName`, `JoinServersNeedRoomId`; `InvalidRoomId` and `JoinToRoomRoomIdHint` name aliases; `JoinToRoomDescription` unchanged (the reference's conditions)
-- [x] 2026-11-27 – [2.1] `RoomService.JoinUserToRoomAsync(roomIdOrAlias, userId, serverNames, token)`: room (ID or alias), alias with servers → `JoinServersNeedRoomId`, first invalid server named (`InvalidServerName`), then the user; servers trimmed, blanks and ordinal duplicates dropped; the result and log name the answer's `room_id`; logs count the servers; pages pass `token:` by name (servers in Phase 3)
-- [x] 2026-11-27 – [1.3] Tuwunel: alias resolved via the Client-Server directory (`RoomAliasUrl` made protected), room details' `joined_local_members` / `404` before the join rule read; 8 new wire tests, #587 sequences updated, mutation-checked
-- [x] 2026-11-27 – [1.2] Join signature (`roomIdOrAlias`, `serverNames`), alias `Uri.EscapeDataString`, `server_name` query; 3 wire tests; service passes no servers yet (Phase 2)
-- [x] 2026-11-27 – [1.1] `MatrixIdHelper.IsRoomAlias` / `IsServerName` (`\z`, not `$`); 40 helper tests
-- [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, FR-5, AC-28, §10, §15) and PLAN.md (Approved; `server_name` and the room page servers field confirmed)
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
