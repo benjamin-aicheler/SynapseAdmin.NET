@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
 using Microsoft.Extensions.Caching.Memory;
@@ -19,6 +20,18 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 {
     private static readonly ConditionalWeakTable<IMemoryCache, ConcurrentDictionary<string, Lazy<Task<IMatrixGateway>>>> InFlightByCache = new();
     private static readonly TimeSpan DiscoveryCacheDuration = TimeSpan.FromMinutes(10);
+
+    /// <summary>
+    /// The oldest Synapse release that serves every admin endpoint and parameter the app sends: 1.145.0 added the
+    /// user memberships list (SPEC.md §10, "Synapse versions", #612).
+    /// </summary>
+    private static readonly Version MinimumSynapseVersion = new(1, 145, 0);
+
+    /// <summary>
+    /// The release number at the start of a Synapse version string, which may go on with a pre-release or build part
+    /// (<c>1.145.0rc1</c>, <c>1.165.0 (b=develop, …)</c>). Only the start of the string counts.
+    /// </summary>
+    private static readonly Regex SynapseReleasePattern = new(@"^(\d+)\.(\d+)(?:\.(\d+))?", RegexOptions.CultureInvariant);
 
     private static void ValidateHomeserverUrl(string homeserverUrl)
     {
@@ -140,6 +153,10 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         if (authenticatedHomeserver is AuthenticatedHomeserverSynapse synapse)
         {
             var synapseVersion = await ProbeSynapseVersionAsync(synapse, cancellationToken);
+            if (!IsSynapseAdminCapable(synapseVersion))
+            {
+                return new GenericMatrixGateway(synapse);
+            }
 
             // Switch Synapse to using SynapseAdminGateway so it is thoroughly exercised and validated
             return new SynapseAdminGateway(synapse, GatewayConstants.SynapseBrand, synapseVersion);
@@ -151,7 +168,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         // 2. Double-check with an active probe to /_synapse/admin/v1/server_version
         // Only run the active probe if:
         // - We didn't resolve a brand (e.g. federation disabled), so we fallback to testing the endpoint
-        // - Or we identified a compatible brand (Synapse or Tuwunel >= 1.8.2) and want to make sure it's active
+        // - Or we identified a compatible brand (Synapse >= 1.145.0 or Tuwunel >= 1.8.2) and want to make sure it's active
         if (!brandResolved || supportsAdmin)
         {
             (supportsAdmin, version) = await ProbeAdminApiAsync(authenticatedHomeserver, version, cancellationToken);
@@ -160,7 +177,8 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         if (supportsAdmin)
         {
             // A server with known deviations from the Synapse Admin API gets its own gateway class (ADR 0006);
-            // every other server, including one whose brand couldn't be resolved, gets the Synapse contract.
+            // every other server, including one whose brand couldn't be resolved, gets the Synapse contract. Without a
+            // brand, the Synapse minimum isn't applied: the version could be another server's numbering (#612).
             return string.Equals(brand, GatewayConstants.TuwunelBrand, StringComparison.OrdinalIgnoreCase)
                 ? new TuwunelAdminGateway(authenticatedHomeserver, brand, version)
                 : new SynapseAdminGateway(authenticatedHomeserver, brand, version);
@@ -193,7 +211,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 
     /// <summary>
     /// Reads brand and version from <c>/_matrix/federation/v1/version</c>. <c>SupportsAdmin</c> is set for brands known
-    /// to support the Synapse Admin API (Synapse, Tuwunel >= 1.8.2); the active probe then confirms it.
+    /// to support the Synapse Admin API (Synapse >= 1.145.0, Tuwunel >= 1.8.2); the active probe then confirms it.
     /// </summary>
     private static async Task<(string Brand, string Version, bool BrandResolved, bool SupportsAdmin)> ProbeFederationVersionAsync(
         AuthenticatedHomeserverGeneric homeserver, CancellationToken cancellationToken)
@@ -221,7 +239,7 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
                 }
                 else if (brand.Equals(GatewayConstants.SynapseBrand, StringComparison.OrdinalIgnoreCase))
                 {
-                    supportsAdmin = true;
+                    supportsAdmin = IsSynapseAdminCapable(version);
                 }
             }
         }
@@ -301,5 +319,30 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
         }
 
         return supportsAdmin;
+    }
+
+    /// <summary>
+    /// Whether a Synapse version is new enough for the app's admin pages (>= 1.145.0). Only the release number at the
+    /// start counts, so a pre-release or build suffix of 1.145.0 is enough; a missing patch number counts as <c>0</c>.
+    /// A version without a release number at the start (<see cref="GatewayConstants.UnknownVersion"/> when the probe
+    /// failed, or an empty one) counts as capable, as for Tuwunel, so the admin API is not lost to a missing version.
+    /// </summary>
+    internal static bool IsSynapseAdminCapable(string version)
+    {
+        var match = SynapseReleasePattern.Match(version);
+        if (!match.Success)
+        {
+            return true;
+        }
+
+        if (!int.TryParse(match.Groups[1].Value, out var major) ||
+            !int.TryParse(match.Groups[2].Value, out var minor) ||
+            !int.TryParse(match.Groups[3].Success ? match.Groups[3].Value : "0", out var patch))
+        {
+            // Digits too long for an int aren't a real release number either.
+            return true;
+        }
+
+        return new Version(major, minor, patch) >= MinimumSynapseVersion;
     }
 }
