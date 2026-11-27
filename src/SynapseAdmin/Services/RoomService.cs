@@ -361,10 +361,17 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
     public Task<OperationResult> JoinUserToRoomAsync(string roomId, string userId, CancellationToken token = default)
     {
         var target = userId.Trim();
+        var room = roomId.Trim();
         return sessionService.RunGatewayCallAsync(L, "ErrorJoiningUserToRoom",
-            ex => logger.LogError(ex, "Error joining {UserId} to room {RoomId}", target.SanitizeForLogging(), roomId.SanitizeForLogging()),
+            ex => logger.LogError(ex, "Error joining {UserId} to room {RoomId}", target.SanitizeForLogging(), room.SanitizeForLogging()),
             async gateway =>
             {
+                // The user page lets the admin type the room (#605); an alias would be form-encoded into the path (#580).
+                if (!MatrixIdHelper.IsRoomId(room))
+                {
+                    return OperationResult.Failure(L["InvalidRoomId"], Severity.Warning);
+                }
+
                 if (!MatrixIdHelper.IsUserId(target))
                 {
                     return OperationResult.Failure(L["InvalidUserId"], Severity.Warning);
@@ -376,12 +383,12 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     return OperationResult.Failure(L["JoinUserNotLocal", gateway.ServerName], Severity.Warning);
                 }
 
-                var response = await gateway.JoinUserToRoomAsync(roomId, target, token);
+                var response = await gateway.JoinUserToRoomAsync(room, target, token);
                 // An operation: Synapse always answers with the room ID, so null is a failure (#395).
                 if (response == null) return OperationResult.Failure(L["ErrorJoiningUserToRoom"]);
 
-                logger.LogInformation("Joined {UserId} to room {RoomId}", target.SanitizeForLogging(), roomId.SanitizeForLogging());
-                return OperationResult.Ok(L["UserJoinedRoom", target, roomId]);
+                logger.LogInformation("Joined {UserId} to room {RoomId}", target.SanitizeForLogging(), room.SanitizeForLogging());
+                return OperationResult.Ok(L["UserJoinedRoom", target, room]);
             });
     }
 

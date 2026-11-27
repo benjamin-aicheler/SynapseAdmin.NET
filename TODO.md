@@ -18,7 +18,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## 🔄 In Progress
 
-- [ ] [1.1] `MatrixIdHelper.IsRoomId`; room ID check in `RoomService.JoinUserToRoomAsync`; helper and service tests (AC-27)
+- [ ] 
 
 ## ⏭️ Next Up
 
@@ -41,6 +41,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [1.1] `MatrixIdHelper.IsRoomId`; room ID check (first) and trim in `RoomService.JoinUserToRoomAsync`; 13 helper + 8 service tests, mutation-checked
 - [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, AC-27, §8, §10, §15) and PLAN.md (Approved)
 
 ## Definition of Done (applies to every task)

@@ -26,6 +26,15 @@ public static class MatrixIdHelper
     }
 
     /// <summary>
+    /// Whether <paramref name="id"/> has the form of a room ID: a <c>!</c>, at least one more character, and no
+    /// whitespace. Both forms count: <c>!localpart:domain</c>, and <c>!</c> followed by unpadded URL-safe base64 without
+    /// a domain, as room version 12 uses (Synapse's <c>RoomID.from_string</c>). An alias (<c>#…</c>) isn't a room ID
+    /// (#605, #606). The homeserver checks the rest.
+    /// </summary>
+    public static bool IsRoomId(string? id) =>
+        !string.IsNullOrEmpty(id) && id.Length > 1 && id[0] == '!' && !id.Any(char.IsWhiteSpace);
+
+    /// <summary>
     /// Whether <paramref name="id"/> is a full user ID (<see cref="IsUserId"/>) whose server name equals
     /// <paramref name="serverName"/> exactly. Unlike <see cref="IsOnServer"/>, the comparison is ordinal and
     /// case-sensitive, as Synapse's <c>is_mine</c> and Tuwunel's <c>user_is_local</c> compare it, so that a check that
