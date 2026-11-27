@@ -287,7 +287,8 @@ namespace SynapseAdmin.Components.Pages
         private bool CanJoinToRoom => user is { Deactivated: false, Suspended: false };
 
         /// <summary>
-        /// Asks for a room and joins the shown user to it with the rules of Join user on the room page (#605). The dialog
+        /// Asks for a room, by room ID or alias, and the servers to join through, and joins the shown user to it with the
+        /// rules of Join user on the room page (#605, #606). The dialog
         /// names the user and is the confirmation; afterwards the page re-checks that the user is still shown, sends the
         /// join and, after a success, loads the user again so that the memberships show it.
         /// </summary>
@@ -303,9 +304,9 @@ namespace SynapseAdmin.Components.Pages
             };
             var dialog = await DialogService.ShowAsync<UserJoinRoomDialog>(L["JoinToRoomTitle", label], parameters, DialogPresets.Small());
             var result = await dialog.Result;
-            if (result is not { Canceled: false, Data: string roomId } || !IsStillDisplayed(target)) return;
+            if (result is not { Canceled: false, Data: RoomJoinRequestViewModel request } || !IsStillDisplayed(target)) return;
 
-            var outcome = await RoomService.JoinUserToRoomAsync(roomId, target, token: _cts.Token);
+            var outcome = await RoomService.JoinUserToRoomAsync(request.Target, target, request.Servers, _cts.Token);
             Snackbar.ShowResult(outcome);
             if (outcome.Success && _loadCts != null && GetDisplayedTarget() == target)
             {

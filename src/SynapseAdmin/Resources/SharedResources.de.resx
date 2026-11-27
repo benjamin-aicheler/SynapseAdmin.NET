@@ -1967,15 +1967,33 @@
     <value>{0} tritt dem eingegebenen Raum bei. Es können nur lokale Benutzer hinzugefügt werden. Der Serveradministrator muss im Raum sein und Benutzer einladen dürfen.</value>
   </data>
   <data name="JoinToRoomRoomIdHint" xml:space="preserve">
-    <value>Eine Raum-ID, etwa !abc123:example.org. Raum-Aliasse werden nicht angenommen.</value>
+    <value>Eine Raum-ID, etwa !abc123:example.org, oder ein Raum-Alias, etwa #raum:example.org.</value>
   </data>
   <data name="JoinToRoomPicks" xml:space="preserve">
     <value>Räume, die der Benutzer verlassen hat, in die er eingeladen wurde oder für die er angeklopft hat</value>
   </data>
   <data name="InvalidRoomId" xml:space="preserve">
-    <value>Geben Sie eine Raum-ID ein, etwa !abc123:example.org.</value>
+    <value>Geben Sie eine Raum-ID ein, etwa !abc123:example.org, oder einen Raum-Alias, etwa #raum:example.org.</value>
   </data>
   <data name="UserBannedFromRoom" xml:space="preserve">
     <value>Dieser Benutzer ist aus diesem Raum verbannt.</value>
+  </data>
+  <data name="RoomIdOrAlias" xml:space="preserve">
+    <value>Raum-ID oder Alias</value>
+  </data>
+  <data name="JoinServers" xml:space="preserve">
+    <value>Server für den Beitritt</value>
+  </data>
+  <data name="JoinServersHint" xml:space="preserve">
+    <value>Optional, durch Kommas oder Leerzeichen getrennt, etwa matrix.org. Nur nötig, wenn dieser Server nicht im Raum ist: Der Homeserver tritt über diese Server bei.</value>
+  </data>
+  <data name="JoinServersAliasNote" xml:space="preserve">
+    <value>Wird für einen Alias nicht verwendet: Der Homeserver ermittelt die Server des Raums aus dem Alias selbst.</value>
+  </data>
+  <data name="InvalidServerName" xml:space="preserve">
+    <value>„{0}“ ist kein Servername. Geben Sie einen Hostnamen, eine IPv4-Adresse oder eine IPv6-Adresse in eckigen Klammern ein, optional mit Port, etwa matrix.org oder matrix.org:8448.</value>
+  </data>
+  <data name="JoinServersNeedRoomId" xml:space="preserve">
+    <value>Server für den Beitritt können nur mit einer Raum-ID angegeben werden: Der Homeserver ermittelt die Server eines Alias aus dem Alias selbst.</value>
   </data>
 </root>

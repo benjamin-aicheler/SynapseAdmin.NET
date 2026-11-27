@@ -1968,15 +1968,33 @@
     <value>{0} joins the room you enter. You can only join local users. The server administrator must be in the room and have permission to invite users.</value>
   </data>
   <data name="JoinToRoomRoomIdHint" xml:space="preserve">
-    <value>A room ID, such as !abc123:example.org. Room aliases aren't accepted.</value>
+    <value>A room ID, such as !abc123:example.org, or a room alias, such as #room:example.org.</value>
   </data>
   <data name="JoinToRoomPicks" xml:space="preserve">
     <value>Rooms the user left, was invited to or knocked on</value>
   </data>
   <data name="InvalidRoomId" xml:space="preserve">
-    <value>Enter a room ID, such as !abc123:example.org.</value>
+    <value>Enter a room ID, such as !abc123:example.org, or a room alias, such as #room:example.org.</value>
   </data>
   <data name="UserBannedFromRoom" xml:space="preserve">
     <value>This user is banned from this room.</value>
+  </data>
+  <data name="RoomIdOrAlias" xml:space="preserve">
+    <value>Room ID or alias</value>
+  </data>
+  <data name="JoinServers" xml:space="preserve">
+    <value>Servers to join through</value>
+  </data>
+  <data name="JoinServersHint" xml:space="preserve">
+    <value>Optional, separated by commas or spaces, such as matrix.org. Needed only when this server isn't in the room: the homeserver joins through these servers.</value>
+  </data>
+  <data name="JoinServersAliasNote" xml:space="preserve">
+    <value>Not used for an alias: the homeserver finds the room's servers from the alias itself.</value>
+  </data>
+  <data name="InvalidServerName" xml:space="preserve">
+    <value>"{0}" isn't a server name. Enter a host name, an IPv4 address or an IPv6 address in brackets, with an optional port, such as matrix.org or matrix.org:8448.</value>
+  </data>
+  <data name="JoinServersNeedRoomId" xml:space="preserve">
+    <value>Servers to join through can only be given with a room ID: the homeserver finds an alias's servers from the alias itself.</value>
   </data>
 </root>

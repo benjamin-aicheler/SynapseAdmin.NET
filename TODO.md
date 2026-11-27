@@ -22,9 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [3.1] Resources EN/DE/FR
-- [ ] [3.2] `RoomJoinRequestViewModel`; `UserJoinRoomDialog` alias + servers; `RoomUserActionDialog` Join servers; dialog tests
-- [ ] [3.3] `RoomDetails` / `UserDetails` pass the servers; page tests
 - [ ] [4.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
 
 ## ⛔ Blocked
@@ -41,6 +38,9 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [3.3] `RoomDetails` (a switch on action and result type) and `UserDetails` pass the servers; page tests check them and that a result of another type sends nothing
+- [x] 2026-11-27 – [3.2] `RoomJoinRequestViewModel`, `Components/Shared/JoinServerInput` (split on commas and whitespace, first invalid server named); `UserJoinRoomDialog` takes an alias, servers field disabled with the note for an alias (no servers returned, no error shown); `RoomUserActionDialog` Join servers field; the servers error is a computed `Error`/`ErrorText`, so it follows the room field
+- [x] 2026-11-27 – [3.1] Resources EN/DE/FR: `RoomIdOrAlias`, `JoinServers`, `JoinServersHint`, `JoinServersAliasNote`, `InvalidServerName`, `JoinServersNeedRoomId`; `InvalidRoomId` and `JoinToRoomRoomIdHint` name aliases; `JoinToRoomDescription` unchanged (the reference's conditions)
 - [x] 2026-11-27 – [2.1] `RoomService.JoinUserToRoomAsync(roomIdOrAlias, userId, serverNames, token)`: room (ID or alias), alias with servers → `JoinServersNeedRoomId`, first invalid server named (`InvalidServerName`), then the user; servers trimmed, blanks and ordinal duplicates dropped; the result and log name the answer's `room_id`; logs count the servers; pages pass `token:` by name (servers in Phase 3)
 - [x] 2026-11-27 – [1.3] Tuwunel: alias resolved via the Client-Server directory (`RoomAliasUrl` made protected), room details' `joined_local_members` / `404` before the join rule read; 8 new wire tests, #587 sequences updated, mutation-checked
 - [x] 2026-11-27 – [1.2] Join signature (`roomIdOrAlias`, `serverNames`), alias `Uri.EscapeDataString`, `server_name` query; 3 wire tests; service passes no servers yet (Phase 2)

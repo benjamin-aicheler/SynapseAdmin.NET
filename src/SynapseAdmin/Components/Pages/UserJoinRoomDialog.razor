@@ -7,8 +7,11 @@
     </TitleContent>
     <DialogContent>
         <MudText Typo="Typo.body2" Class="mb-3">@L["JoinToRoomDescription", UserLabel]</MudText>
-        <MudTextField T="string" Label="@L["RoomId"]" @bind-Value="roomId" Immediate="true"
+        <MudTextField T="string" Label="@L["RoomIdOrAlias"]" @bind-Value="roomId" Immediate="true"
                       HelperText="@L["JoinToRoomRoomIdHint"]" Validation="@(new Func<string?, string?>(Validate))" />
+        @* The error comes from a property, not Validation: it must follow the room field too, which disables this one for an alias. *@
+        <MudTextField T="string" Label="@L["JoinServers"]" @bind-Value="servers" Immediate="true" Class="mt-3 join-servers"
+                      Disabled="@IsAlias" HelperText="@ServersHelperText" Error="@(ServersError != null)" ErrorText="@ServersError" />
         @if (Picks.Count > 0)
         {
             <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1">@L["JoinToRoomPicks"]</MudText>

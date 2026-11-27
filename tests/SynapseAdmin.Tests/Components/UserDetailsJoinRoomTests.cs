@@ -32,6 +32,8 @@ public class UserDetailsJoinRoomTests : DetailPageTestBase
         DisplayName = "Alice Example",
         Memberships = [new() { RoomId = "!joined:hs", Membership = "join" }, new() { RoomId = Room, Membership = "leave" }]
     };
+    private static readonly string[] Servers = ["matrix.org"];
+    private static readonly RoomJoinRequestViewModel Request = new() { Target = Room, Servers = Servers };
     private TaskCompletionSource<DialogResult?> _dialogResult = Pending<DialogResult?>();
     private Func<Task<OperationResult>> _joinResult = () => Task.FromResult(OperationResult.Ok("Joined"));
 
@@ -123,11 +125,12 @@ public class UserDetailsJoinRoomTests : DetailPageTestBase
         var cut = RenderUser();
         var running = InvokeHandler(cut, "OpenJoinRoomDialog");
 
-        _dialogResult.SetResult(DialogResult.Ok(Room));
+        _dialogResult.SetResult(DialogResult.Ok(Request));
         await running.WaitAsync(TimeSpan.FromSeconds(10));
 
         var call = Assert.Single(JoinCalls);
         Assert.Equal((Room, UserA), ((string)call[0]!, (string)call[1]!));
+        Assert.Same(Servers, call[2]);
         Assert.False(((CancellationToken)call[^1]!).IsCancellationRequested);
         AssertSnackbars(("Joined", Severity.Success));
         Assert.Equal(2, DetailReads(UserA));
@@ -147,12 +150,26 @@ public class UserDetailsJoinRoomTests : DetailPageTestBase
         var cut = RenderUser();
         var running = InvokeHandler(cut, "OpenJoinRoomDialog");
 
-        _dialogResult.SetResult(DialogResult.Ok(Room));
+        _dialogResult.SetResult(DialogResult.Ok(Request));
         await running.WaitAsync(TimeSpan.FromSeconds(10));
 
         if (kind == "cancelled") AssertSnackbars();
         else AssertSnackbars((result.Message!, result.Severity));
         Assert.Equal(1, DetailReads(UserA));
+    }
+
+    /// <summary>The dialog returns a <see cref="RoomJoinRequestViewModel"/> (#606); anything else sends nothing.</summary>
+    [Fact]
+    public async Task ResultOfAnotherType_SendsNothing()
+    {
+        var cut = RenderUser();
+        var running = InvokeHandler(cut, "OpenJoinRoomDialog");
+
+        _dialogResult.SetResult(DialogResult.Ok(Room));
+        await running.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Empty(JoinCalls);
+        AssertSnackbars();
     }
 
     [Fact]
@@ -176,7 +193,7 @@ public class UserDetailsJoinRoomTests : DetailPageTestBase
 
         cut.Render(p => p.Add(x => x.UserId, UserB));
         cut.WaitForAssertion(() => Assert.Contains("Bob Example", cut.Markup));
-        _dialogResult.SetResult(DialogResult.Ok(Room));
+        _dialogResult.SetResult(DialogResult.Ok(Request));
         await running.WaitAsync(TimeSpan.FromSeconds(10));
 
         Assert.Empty(JoinCalls);
@@ -191,7 +208,7 @@ public class UserDetailsJoinRoomTests : DetailPageTestBase
         _joinResult = () => answer.Task;
         var cut = RenderUser();
         var running = InvokeHandler(cut, "OpenJoinRoomDialog");
-        _dialogResult.SetResult(DialogResult.Ok(Room));
+        _dialogResult.SetResult(DialogResult.Ok(Request));
         cut.WaitForAssertion(() => Assert.Single(JoinCalls));
 
         cut.Render(p => p.Add(x => x.UserId, UserB));
