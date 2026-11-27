@@ -14,21 +14,22 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-27
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] [1.1] `MatrixIdHelper.IsRoomId`; room ID check in `RoomService.JoinUserToRoomAsync`; helper and service tests (AC-27)
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [2.1] Resources EN/DE/FR
+- [ ] [2.2] `UserJoinRoomDialog`; dialog tests
+- [ ] [3.1] `UserDetails`: inject `IRoomService`, "Join to room" button, flow, reload; default stub in `DetailPageTestBase`; `UserDetailsJoinRoomTests`
+- [ ] [4.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
@@ -40,7 +41,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, AC-27, §8, §10, §15) and PLAN.md (Approved)
 
 ## Definition of Done (applies to every task)
 
