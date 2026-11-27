@@ -225,7 +225,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomBlockStatusResponse?> GetRoomBlockStatusAsync(string roomId, CancellationToken cancellationToken = default);
     public abstract Task MakeRoomAdminAsync(string roomId, string? userId, CancellationToken cancellationToken = default);
-    public abstract Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomIdOrAlias, string userId, IReadOnlyList<string>? serverNames = null, CancellationToken cancellationToken = default);
     public abstract Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default);
@@ -389,9 +389,10 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
 
     /// <summary>
     /// An alias may contain whitespace, which Synapse rejects. Form encoding (<c>.UrlEncode()</c>) would send a space
-    /// as '+', which a path keeps, so the request would create or delete another alias instead (#580).
+    /// as '+', which a path keeps, so the request would create or delete another alias instead (#580). Protected for the
+    /// Tuwunel gateway, which resolves an alias before a join (#606).
     /// </summary>
-    private static string RoomAliasUrl(string roomAlias) =>
+    protected static string RoomAliasUrl(string roomAlias) =>
         $"/_matrix/client/v3/directory/room/{Uri.EscapeDataString(roomAlias)}";
 
     // --- Background Updates ---

@@ -2071,6 +2071,9 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
     private const string MakeRoomAdminTarget = "/_synapse/admin/v1/rooms/!room%3aexample.com/make_room_admin";
     private const string JoinTarget = "/_synapse/admin/v1/join/!room%3aexample.com";
     private const string JoinRulesStateTarget = "/_synapse/admin/v1/rooms/!room%3aexample.com/state?type=m.room.join_rules";
+    private const string RoomDetailsTarget = "/_synapse/admin/v1/rooms/!room%3aexample.com";
+    private const string AliasJoinTarget = "/_synapse/admin/v1/join/%23my%20room%3Aexample.com";
+    private const string AliasDirectoryTarget = "/_matrix/client/v3/directory/room/%23my%20room%3Aexample.com";
     private const string InviteTarget = "/_matrix/client/v3/rooms/!room%3aexample.com/invite";
     private const string JsonContentType = "application/json; charset=utf-8";
 
@@ -2153,7 +2156,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", cancellationToken: cts.Token));
 
         Assert.Empty(_homeserver.Requests);
     }
@@ -2199,20 +2202,25 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         new { type = "m.room.join_rules", state_key = stateKey, content, sender = "@admin:example.com" };
 
     /// <summary>
-    /// Answers the state read with <paramref name="state"/>, the invite with <paramref name="invite"/> and the join with
-    /// the room ID.
+    /// Answers the room details with <paramref name="localMembers"/> joined local users (#606), the state read with
+    /// <paramref name="state"/>, the invite with <paramref name="invite"/>, the alias lookup with the room, and any join
+    /// with the room ID.
     /// </summary>
-    private void RespondToTuwunelJoin(object state, IResult? invite = null)
+    private void RespondToTuwunelJoin(object state, IResult? invite = null, int localMembers = 1)
     {
-        _homeserver.RespondTo = request => request.Target switch
+        _homeserver.RespondTo = request => request.Target.Split('?')[0] switch
         {
-            JoinRulesStateTarget => Results.Json(state),
+            RoomDetailsTarget => Results.Json(new { room_id = "!room:example.com", joined_local_members = localMembers }),
+            AliasDirectoryTarget => Results.Json(new { room_id = "!room:example.com", servers = new[] { "example.com" } }),
+            AliasJoinTarget => Results.Json(new { room_id = "!room:example.com" }),
+            "/_synapse/admin/v1/rooms/!room%3aexample.com/state" => Results.Json(state),
             InviteTarget => invite ?? Results.Json(new { }),
             JoinTarget => Results.Json(new { room_id = "!room:example.com" }),
             _ => Results.NotFound()
         };
     }
 
+    private static readonly CapturedRequest DetailsRead = new("GET", RoomDetailsTarget, null, "");
     private static readonly CapturedRequest JoinRulesRead = new("GET", JoinRulesStateTarget, null, "");
     private static readonly CapturedRequest InviteBob = new("POST", InviteTarget, JsonContentType, """{"user_id":"@bob:example.com"}""");
     private static readonly CapturedRequest JoinBob = new("POST", JoinTarget, JsonContentType, """{"user_id":"@bob:example.com"}""");
@@ -2235,7 +2243,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         var result = await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
 
         Assert.Equal("!room:example.com", result!.RoomId);
-        Assert.Equal(new[] { JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
     }
 
     /// <summary>A join rules event without a <c>join_rule</c> isn't <c>public</c> for Synapse either.</summary>
@@ -2247,7 +2255,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
 
-        Assert.Equal(new[] { JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
     }
 
     [Fact]
@@ -2258,7 +2266,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
 
-        Assert.Equal(new[] { JoinRulesRead, JoinBob }, _homeserver.Requests);
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead, JoinBob }, _homeserver.Requests);
     }
 
     /// <summary>
@@ -2275,7 +2283,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
 
-        Assert.Equal(new[] { JoinRulesRead, JoinBob }, _homeserver.Requests);
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead, JoinBob }, _homeserver.Requests);
     }
 
     /// <summary>The first matching event decides, as other events in the answer don't change the join rule.</summary>
@@ -2289,18 +2297,32 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 
         await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
 
-        Assert.Equal(new[] { JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
     }
 
     [Fact]
     public async Task Tuwunel_JoinUserToRoom_FailedStateRead_SendsNothingMore()
     {
         var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.RespondTo = request => request.Target == RoomDetailsTarget
+            ? Results.Json(new { room_id = "!room:example.com", joined_local_members = 1 })
+            : Results.Json(new { errcode = "M_FORBIDDEN", error = "Not allowed" }, statusCode: 403);
+
+        await Assert.ThrowsAsync<MatrixException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com"));
+
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead }, _homeserver.Requests);
+    }
+
+    /// <summary>A room details error other than "not found" propagates, so nothing is written (#606).</summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_FailedDetailsRead_SendsNothingMore()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
         _homeserver.RespondTo = _ => Results.Json(new { errcode = "M_FORBIDDEN", error = "Not allowed" }, statusCode: 403);
 
         await Assert.ThrowsAsync<MatrixException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com"));
 
-        Assert.Equal(new[] { JoinRulesRead }, _homeserver.Requests);
+        Assert.Equal(new[] { DetailsRead }, _homeserver.Requests);
     }
 
     /// <summary>An admin who isn't in the room may not invite; the join is then not sent, as on Synapse.</summary>
@@ -2314,7 +2336,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         var ex = await Assert.ThrowsAsync<MatrixException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com"));
 
         Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
-        Assert.Equal(new[] { JoinRulesRead, InviteBob }, _homeserver.Requests);
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead, InviteBob }, _homeserver.Requests);
     }
 
     [Fact]
@@ -2325,9 +2347,138 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", cancellationToken: cts.Token));
 
         Assert.Empty(_homeserver.Requests);
+    }
+
+    // ---- Join by alias or through servers (#606) ---------------------------------------------------------
+
+    /// <summary>
+    /// An alias may contain spaces; form encoding would send '+', which a path keeps, so it takes
+    /// <c>Uri.EscapeDataString</c> (#580). The body is the same.
+    /// </summary>
+    [Fact]
+    public async Task JoinUserToRoom_Alias_IsEscapedInThePath()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { room_id = "!room:example.com" });
+
+        var result = await _gateway.JoinUserToRoomAsync("#my room:example.com", "@bob:example.com");
+
+        Assert.Equal("!room:example.com", result!.RoomId);
+        Assert.Equal(
+            new CapturedRequest("POST", AliasJoinTarget, JsonContentType, """{"user_id":"@bob:example.com"}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    /// <summary>Synapse reads every <c>server_name</c> query parameter as a server to join through.</summary>
+    [Fact]
+    public async Task JoinUserToRoom_Servers_AreSentAsServerNameParameters()
+    {
+        _homeserver.Respond = () => Results.Json(new { room_id = "!room:example.com" });
+
+        await _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", ["a.org", "b.org:8448", "[::1]"]);
+
+        Assert.Equal(
+            new CapturedRequest("POST", JoinTarget + "?server_name=a.org&server_name=b.org%3a8448&server_name=%5b%3a%3a1%5d",
+                JsonContentType, """{"user_id":"@bob:example.com"}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task JoinUserToRoom_NoServers_SendsNoQuery()
+    {
+        _homeserver.Respond = () => Results.Json(new { room_id = "!room:example.com" });
+
+        await _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", []);
+
+        Assert.Equal(JoinTarget, Assert.Single(_homeserver.RequestTargets));
+    }
+
+    /// <summary>
+    /// Synapse deletes a room's current state when this server leaves it, so it finds no join rule and doesn't invite.
+    /// Tuwunel keeps the state, so without a joined local user the gateway skips the state read and the invite (#606).
+    /// </summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_NoJoinedLocalUser_JoinsWithoutReadingTheRuleOrInviting()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { join_rule = "invite" })), localMembers: 0);
+
+        await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
+
+        Assert.Equal(new[] { DetailsRead, JoinBob }, _homeserver.Requests);
+    }
+
+    /// <summary>A room Tuwunel doesn't know (404 <c>M_NOT_FOUND</c>) has no state on Synapse either: no invite.</summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_UnknownRoom_JoinsWithoutInviting()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.RespondTo = request => request.Target == RoomDetailsTarget
+            ? Results.Json(new { errcode = "M_NOT_FOUND", error = "Room not found" }, statusCode: 404)
+            : Results.Json(new { room_id = "!room:example.com" });
+
+        await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", ["remote.org"]);
+
+        Assert.Equal(new[] { DetailsRead, JoinBob with { Target = JoinTarget + "?server_name=remote.org" } }, _homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_Servers_ArePassedToTheJoin()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { join_rule = "public" })));
+
+        await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", ["a.org", "b.org"]);
+
+        Assert.Equal(new[] { DetailsRead, JoinRulesRead, JoinBob with { Target = JoinTarget + "?server_name=a.org&server_name=b.org" } },
+            _homeserver.Requests);
+    }
+
+    /// <summary>
+    /// An alias is resolved first, as Synapse resolves it, and the checks run on the room it names. The join carries the
+    /// alias, so Tuwunel joins through the alias's servers, as Synapse does.
+    /// </summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_Alias_ResolvesItFirst_AndJoinsWithTheAlias()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { join_rule = "invite" })));
+
+        var result = await gateway.JoinUserToRoomAsync("#my room:example.com", "@bob:example.com");
+
+        Assert.Equal("!room:example.com", result!.RoomId);
+        Assert.Equal(new[]
+        {
+            new CapturedRequest("GET", AliasDirectoryTarget, null, ""),
+            DetailsRead, JoinRulesRead, InviteBob,
+            JoinBob with { Target = AliasJoinTarget }
+        }, _homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_UnknownAlias_SendsNothingMore()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.RespondTo = _ => Results.Json(new { errcode = "M_NOT_FOUND", error = "Room alias not found" }, statusCode: 404);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => gateway.JoinUserToRoomAsync("#my room:example.com", "@bob:example.com"));
+
+        Assert.Equal("M_NOT_FOUND", ex.ErrorCode);
+        Assert.Equal(new[] { new CapturedRequest("GET", AliasDirectoryTarget, null, "") }, _homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_AliasAnswerWithoutARoom_SendsNothingMore()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.RespondTo = _ => Results.Json(new { servers = new[] { "example.com" } });
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => gateway.JoinUserToRoomAsync("#my room:example.com", "@bob:example.com"));
+
+        Assert.Single(_homeserver.Requests);
     }
 
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);

@@ -18,12 +18,10 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## 🔄 In Progress
 
-- [ ] [1.1] `MatrixIdHelper.IsRoomAlias` / `IsServerName`; helper tests (AC-28)
+- [ ] 
 
 ## ⏭️ Next Up
 
-- [ ] [1.2] Gateway signature (`roomIdOrAlias`, `serverNames`), alias encoding, `server_name` query; fakes; wire tests
-- [ ] [1.3] Tuwunel: alias resolution, local member check before the join rule read; wire tests (incl. #587 cases updated)
 - [ ] [2.1] `RoomService.JoinUserToRoomAsync`: alias/servers checks, de-duplication, answer's `room_id` in the message, `{ServerCount}` in logs; tests
 - [ ] [3.1] Resources EN/DE/FR
 - [ ] [3.2] `RoomJoinRequestViewModel`; `UserJoinRoomDialog` alias + servers; `RoomUserActionDialog` Join servers; dialog tests
@@ -44,6 +42,9 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [1.3] Tuwunel: alias resolved via the Client-Server directory (`RoomAliasUrl` made protected), room details' `joined_local_members` / `404` before the join rule read; 8 new wire tests, #587 sequences updated, mutation-checked
+- [x] 2026-11-27 – [1.2] Join signature (`roomIdOrAlias`, `serverNames`), alias `Uri.EscapeDataString`, `server_name` query; 3 wire tests; service passes no servers yet (Phase 2)
+- [x] 2026-11-27 – [1.1] `MatrixIdHelper.IsRoomAlias` / `IsServerName` (`\z`, not `$`); 40 helper tests
 - [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, FR-5, AC-28, §10, §15) and PLAN.md (Approved; `server_name` and the room page servers field confirmed)
 
 ## Definition of Done (applies to every task)

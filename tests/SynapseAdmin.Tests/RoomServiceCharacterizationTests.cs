@@ -100,7 +100,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
             "RoomAdminGranted", "Made {UserId} room admin in room {RoomId}", new() { ["UserId"] = AdminUserId, ["RoomId"] = SanitizedRoomId }),
         // Success needs the room ID the gateway returns: see the Join_* tests (#587). Both IDs are sent trimmed (#605).
         ["Join"] = new("JoinUserToRoomAsync", async (s, ct) => await s.JoinUserToRoomAsync($" {JoinRoomId} ", " @bob:example.com ", ct),
-            Args(JoinRoomId, "@bob:example.com"), "ErrorJoiningUserToRoom", "Error joining {UserId} to room {RoomId}",
+            Args(JoinRoomId, "@bob:example.com", null), "ErrorJoiningUserToRoom", "Error joining {UserId} to room {RoomId}",
             new() { ["UserId"] = "@bob:example.com", ["RoomId"] = JoinRoomId }),
         ["LargestRooms"] = new("GetLargestRoomsAsync", async (s, ct) => await s.GetLargestRoomsAsync(ct),
             Args(), "ErrorFetchingLargestRooms", "Error fetching largest rooms", []),

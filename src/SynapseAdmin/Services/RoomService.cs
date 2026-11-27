@@ -383,7 +383,7 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     return OperationResult.Failure(L["JoinUserNotLocal", gateway.ServerName], Severity.Warning);
                 }
 
-                var response = await gateway.JoinUserToRoomAsync(room, target, token);
+                var response = await gateway.JoinUserToRoomAsync(room, target, cancellationToken: token);
                 // An operation: Synapse always answers with the room ID, so null is a failure (#395).
                 if (response == null) return OperationResult.Failure(L["ErrorJoiningUserToRoom"]);
 
