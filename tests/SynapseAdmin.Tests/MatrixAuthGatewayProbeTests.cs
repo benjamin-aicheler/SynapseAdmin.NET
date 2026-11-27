@@ -89,13 +89,13 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
     [Fact]
     public async Task GetAuthenticated_SynapseReportedViaFederation_ConfirmsAdminApiAndTakesItsVersion()
     {
-        _homeserver.FederationVersion = () => Results.Json(new { server = new { name = "Synapse", version = "1.120.0" } });
-        _homeserver.AdminServerVersion = () => Results.Json(new { server_version = "1.120.2" });
+        _homeserver.FederationVersion = () => Results.Json(new { server = new { name = "Synapse", version = "1.165.0" } });
+        _homeserver.AdminServerVersion = () => Results.Json(new { server_version = "1.165.1" });
 
         var gateway = await CreateAuthGateway().GetAuthenticatedAsync(_homeserver.Url, AccessToken);
 
         Assert.IsType<SynapseAdminGateway>(gateway);
-        Assert.Equal(("Synapse", "1.120.2"), (gateway.ServerBrand, gateway.ServerVersion));
+        Assert.Equal(("Synapse", "1.165.1"), (gateway.ServerBrand, gateway.ServerVersion));
         Assert.Equal(new[] { WhoAmIPath, FederationVersionPath, AdminVersionPath }, _homeserver.RequestPaths);
     }
 
@@ -105,7 +105,7 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
     public async Task GetAuthenticated_AdminProbeNotFound_ReturnsGenericGateway(bool federationReportsSynapse)
     {
         _homeserver.FederationVersion = federationReportsSynapse
-            ? () => Results.Json(new { server = new { name = "Synapse", version = "1.120.0" } })
+            ? () => Results.Json(new { server = new { name = "Synapse", version = "1.165.0" } })
             : () => Results.NotFound();
         _homeserver.AdminServerVersion = () => Results.Json(new { errcode = "M_UNRECOGNIZED", error = "Unrecognized request" }, statusCode: 404);
 
@@ -171,11 +171,80 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
         Assert.Equal(expected, MatrixAuthGateway.IsTuwunelAdminCapable(version));
 
     /// <summary>
+    /// Synapse versions and whether each counts as admin-capable (>= 1.145.0, which added the user memberships list;
+    /// SPEC.md §10, "Synapse versions", #612). Only the release number at the start counts.
+    /// </summary>
+    public static TheoryData<string, bool> SynapseVersions => new()
+    {
+        { "1.145.0", true },
+        { "1.144.0", false },
+        { "1.140.0", false },
+        { "1.103.0", false },
+        { "1.165.0", true },
+        { "2.0.0", true },
+        { "1.145.0rc1", true },
+        { "1.144.0rc3", false },
+        { "1.165.0 (b=develop, 0adca7d)", true },
+        { "1.120.0 (b=develop, 0adca7d)", false },
+        { "1.145", true }, // missing patch: 0
+        { "1.144", false },
+        { "Unknown", true }, // probe failed: no version to check
+        { "abc", true },
+        { "v1.120.0", true }, // no release number at the start
+        { "99999999999.0.0", true }, // too long for a version part: unparseable
+    };
+
+    [Theory]
+    [MemberData(nameof(SynapseVersions))]
+    [InlineData("", true)]
+    public void IsSynapseAdminCapable_MatchesTheVersionTable(string version, bool expected) =>
+        Assert.Equal(expected, MatrixAuthGateway.IsSynapseAdminCapable(version));
+
+    /// <summary>
+    /// A Synapse version from the federation probe that isn't admin-capable skips the admin probe, and so the admin
+    /// API: the session gets the generic gateway, as on a Matrix server without the admin API (#612).
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SynapseVersions))]
+    public async Task GetAuthenticated_SynapseFederationVersion_DecidesWhetherTheAdminApiIsProbed(string version, bool probed)
+    {
+        _homeserver.FederationVersion = () => Results.Json(new { server = new { name = "Synapse", version } });
+
+        var gateway = await CreateAuthGateway().GetAuthenticatedAsync(_homeserver.Url, AccessToken);
+
+        Assert.Equal(probed, gateway.SupportsAdminApi);
+        Assert.Equal(probed, _homeserver.RequestPaths.Contains(AdminVersionPath));
+        Assert.Equal(probed ? typeof(SynapseAdminGateway) : typeof(GenericMatrixGateway), gateway.GetType());
+    }
+
+    /// <summary>
+    /// Discovery already identified Synapse: the admin probe's version decides. A version below 1.145.0 gets no admin
+    /// API, as on a generic Matrix server; a missing or unreadable version keeps it (#612).
+    /// </summary>
+    [Theory]
+    [InlineData(200, """{"server_version":"1.144.0"}""", false)]
+    [InlineData(200, """{"server_version":"1.103.0"}""", false)]
+    [InlineData(200, """{"server_version":"1.145.0"}""", true)]
+    [InlineData(200, """{"server_version":"1.145.0rc1"}""", true)]
+    [InlineData(200, """{"server_version":""}""", true)]
+    [InlineData(404, """{"errcode":"M_UNRECOGNIZED","error":"Unrecognized request"}""", true)]
+    public async Task GetAuthenticated_DiscoveredSynapse_RequiresTheMinimumVersion(int adminStatus, string adminBody, bool supportsAdmin)
+    {
+        _homeserver.AdminServerVersion = () => Results.Text(adminBody, "application/json", statusCode: adminStatus);
+
+        var gateway = await CreateAuthGateway("Synapse").GetAuthenticatedAsync(_homeserver.Url, AccessToken);
+
+        Assert.Equal(supportsAdmin, gateway.SupportsAdminApi);
+        Assert.Equal(supportsAdmin ? typeof(SynapseAdminGateway) : typeof(GenericMatrixGateway), gateway.GetType());
+        Assert.Equal(new[] { WhoAmIPath, AdminVersionPath }, _homeserver.RequestPaths);
+    }
+
+    /// <summary>
     /// Discovery already identified Synapse: no federation probe, always the admin gateway, and the version falls back
     /// to "Unknown" when the admin probe fails or reports an empty version.
     /// </summary>
     [Theory]
-    [InlineData(200, """{"server_version":"1.120.0"}""", "1.120.0")]
+    [InlineData(200, """{"server_version":"1.165.0"}""", "1.165.0")]
     [InlineData(200, """{"server_version":""}""", "Unknown")]
     [InlineData(404, """{"errcode":"M_UNRECOGNIZED","error":"Unrecognized request"}""", "Unknown")]
     public async Task GetAuthenticated_DiscoveredSynapse_SkipsTheFederationProbe(int adminStatus, string adminBody, string expectedVersion)
@@ -203,9 +272,11 @@ public sealed class MatrixAuthGatewayProbeTests : IAsyncLifetime
     [InlineData("Synapse", null, "joined_members", "f")] // discovery identified Synapse
     public async Task GetAuthenticated_RoomListDir_FollowsTheProbedServer(string? discoveredSoftware, string? federationBrand, string orderBy, string sentDir)
     {
+        // A version both brands accept (Synapse >= 1.145.0, Tuwunel >= 1.8.2), so every case gets the admin API.
         _homeserver.FederationVersion = federationBrand == null
             ? () => Results.NotFound()
-            : () => Results.Json(new { server = new { name = federationBrand, version = "1.9.0" } });
+            : () => Results.Json(new { server = new { name = federationBrand, version = "1.165.0" } });
+        _homeserver.AdminServerVersion = () => Results.Json(new { server_version = "1.165.0" });
 
         var gateway = await CreateAuthGateway(discoveredSoftware).GetAuthenticatedAsync(_homeserver.Url, AccessToken);
         await gateway.GetRoomListAsync(0, 10, orderBy, "f");

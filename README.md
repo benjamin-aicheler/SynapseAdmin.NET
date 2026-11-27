@@ -48,7 +48,7 @@ SynapseAdmin.NET follows the [Synapse Admin API](https://element-hq.github.io/sy
 - redacting a user's events, because Tuwunel picks the events to search in timeline order instead of by when the server received them, and redacts through a different permission check, so the same request can redact other events than on Synapse;
 - sorting the user list by anything but user ID, because Tuwunel always sorts by user ID. Tuwunel doesn't store when an account was created, so the creation date shows as "Unknown".
 
-Tuwunel 1.8.1 lacks several endpoints the app needs, so it is treated as a homeserver without the Synapse Admin API. On a homeserver without the Synapse Admin API, the admin features are not available.
+SynapseAdmin.NET needs **Synapse 1.145.0 or later** or **Tuwunel 1.8.2 or later**. Older releases lack endpoints the app uses (Synapse before 1.145.0, for example, has no list of a user's room memberships, and Synapse before 1.135.0 would ignore "redact as admin"), so the app treats them as homeservers without the Synapse Admin API. If the homeserver doesn't report a version the app can read, the admin features stay available. On a homeserver without the Synapse Admin API, the admin features are not available.
 
 ## Security
 
