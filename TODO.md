@@ -14,21 +14,25 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-27
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] [1.1] `MatrixIdHelper.IsRoomAlias` / `IsServerName`; helper tests (AC-28)
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [1.2] Gateway signature (`roomIdOrAlias`, `serverNames`), alias encoding, `server_name` query; fakes; wire tests
+- [ ] [1.3] Tuwunel: alias resolution, local member check before the join rule read; wire tests (incl. #587 cases updated)
+- [ ] [2.1] `RoomService.JoinUserToRoomAsync`: alias/servers checks, de-duplication, answer's `room_id` in the message, `{ServerCount}` in logs; tests
+- [ ] [3.1] Resources EN/DE/FR
+- [ ] [3.2] `RoomJoinRequestViewModel`; `UserJoinRoomDialog` alias + servers; `RoomUserActionDialog` Join servers; dialog tests
+- [ ] [3.3] `RoomDetails` / `UserDetails` pass the servers; page tests
+- [ ] [4.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
@@ -40,7 +44,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, FR-5, AC-28, §10, §15) and PLAN.md (Approved; `server_name` and the room page servers field confirmed)
 
 ## Definition of Done (applies to every task)
 
