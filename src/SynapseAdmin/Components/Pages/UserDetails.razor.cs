@@ -305,7 +305,7 @@ namespace SynapseAdmin.Components.Pages
             var result = await dialog.Result;
             if (result is not { Canceled: false, Data: string roomId } || !IsStillDisplayed(target)) return;
 
-            var outcome = await RoomService.JoinUserToRoomAsync(roomId, target, _cts.Token);
+            var outcome = await RoomService.JoinUserToRoomAsync(roomId, target, token: _cts.Token);
             Snackbar.ShowResult(outcome);
             if (outcome.Success && _loadCts != null && GetDisplayedTarget() == target)
             {

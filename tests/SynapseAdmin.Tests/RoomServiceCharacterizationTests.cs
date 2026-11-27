@@ -98,10 +98,13 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
             Args(RoomId, null), "ErrorMakingRoomAdmin", "Error making {UserId} room admin in room {RoomId}",
             new() { ["UserId"] = "the signed-in admin", ["RoomId"] = SanitizedRoomId },
             "RoomAdminGranted", "Made {UserId} room admin in room {RoomId}", new() { ["UserId"] = AdminUserId, ["RoomId"] = SanitizedRoomId }),
-        // Success needs the room ID the gateway returns: see the Join_* tests (#587). Both IDs are sent trimmed (#605).
-        ["Join"] = new("JoinUserToRoomAsync", async (s, ct) => await s.JoinUserToRoomAsync($" {JoinRoomId} ", " @bob:example.com ", ct),
-            Args(JoinRoomId, "@bob:example.com", null), "ErrorJoiningUserToRoom", "Error joining {UserId} to room {RoomId}",
-            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = JoinRoomId }),
+        // Success needs the room ID the gateway returns: see the Join_* tests (#587). Both IDs are sent trimmed (#605), the
+        // servers trimmed, without blanks and duplicates, in their order; the logs count them but don't name them (#606).
+        ["Join"] = new("JoinUserToRoomAsync", async (s, ct) => await s.JoinUserToRoomAsync($" {JoinRoomId} ", " @bob:example.com ",
+                [" b.org ", "", "a.org:8448", "b.org", "  "], ct),
+            Args(JoinRoomId, "@bob:example.com", new[] { "b.org", "a.org:8448" }), "ErrorJoiningUserToRoom",
+            "Error joining {UserId} to room {RoomId} through {ServerCount} given servers",
+            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = JoinRoomId, ["ServerCount"] = 2 }),
         ["LargestRooms"] = new("GetLargestRoomsAsync", async (s, ct) => await s.GetLargestRoomsAsync(ct),
             Args(), "ErrorFetchingLargestRooms", "Error fetching largest rooms", []),
         ["Messages"] = new("GetRoomMessagesAsync", async (s, ct) => await s.GetRoomMessagesAsync(RoomId, "from", 5, "b", "filter", "to", ct),
@@ -696,7 +699,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var gateway = TableGateway(out var stub);
 
-        var result = await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, userId, _cts.Token);
+        var result = await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, userId, token: _cts.Token);
 
         ResultAssert.Failure(result, key, Severity.Warning);
         Assert.Empty(GatewayCalls(stub));
@@ -706,7 +709,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     [Fact]
     public async Task Join_NotLocal_NamesTheServer()
     {
-        var result = await CreateService(TableGateway(), ArgumentLocalizer()).JoinUserToRoomAsync(JoinRoomId, "@bob:other.org", _cts.Token);
+        var result = await CreateService(TableGateway(), ArgumentLocalizer()).JoinUserToRoomAsync(JoinRoomId, "@bob:other.org", token: _cts.Token);
 
         ResultAssert.Failure(result, $"JoinUserNotLocal({ServerName})", Severity.Warning);
     }
@@ -718,33 +721,41 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var gateway = TableGateway(out var stub, s => s.On("get_ServerName", _ => serverName));
 
-        var result = await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, "@bob:example.com", _cts.Token);
+        var result = await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, "@bob:example.com", token: _cts.Token);
 
         ResultAssert.Failure(result, "JoinUserNotLocal", Severity.Warning);
         Assert.Empty(GatewayCalls(stub));
     }
 
-    [Fact]
-    public async Task Join_Success_NamesTheUserAndTheRoom_AndLogsInformation()
+    /// <summary>The result and the log name the room the homeserver answers with, which an alias resolves to (#606).</summary>
+    [Theory]
+    [InlineData(JoinRoomId, "!answered:example.com", "!answered:example.com")]
+    [InlineData("#my room:example.com", "!answered:example.com", "!answered:example.com")]
+    [InlineData("#my room:example.com", null, "#my room:example.com")]
+    [InlineData(JoinRoomId, "", JoinRoomId)]
+    public async Task Join_Success_NamesTheUserAndTheJoinedRoom_AndLogsInformation(string room, string? answered, string named)
     {
         var gateway = TableGateway(s => s.On("JoinUserToRoomAsync",
-            _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = "!room:example.com" })));
+            _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = answered })));
 
-        var result = await CreateService(gateway, ArgumentLocalizer()).JoinUserToRoomAsync(JoinRoomId, "@bob:example.com", _cts.Token);
+        var result = await CreateService(gateway, ArgumentLocalizer()).JoinUserToRoomAsync(room, "@bob:example.com", token: _cts.Token);
 
-        ResultAssert.Success(result, $"UserJoinedRoom(@bob:example.com, {JoinRoomId})");
-        AssertSingleLog(LogLevel.Information, "Joined {UserId} to room {RoomId}",
-            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = JoinRoomId }, exception: null);
+        ResultAssert.Success(result, $"UserJoinedRoom(@bob:example.com, {named})");
+        AssertSingleLog(LogLevel.Information, "Joined {UserId} to room {RoomId} through {ServerCount} given servers",
+            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = named, ["ServerCount"] = 0 }, exception: null);
     }
 
     /// <summary>
-    /// The user page lets the admin type the room (#605): only the room ID form is sent. An alias would be form-encoded
-    /// into the path (#580), so it is refused too. The room is checked before the user.
+    /// The user page lets the admin type the room (#605, #606): only the room ID and alias forms are sent. The room is
+    /// checked first: before the servers and the user.
     /// </summary>
     [Theory]
     [InlineData("")]
     [InlineData("!")]
-    [InlineData("#room:example.com")]
+    [InlineData("#")]
+    [InlineData("#room")]
+    [InlineData("#:example.com")]
+    [InlineData("#room:exa mple.com")]
     [InlineData("@bob:example.com")]
     [InlineData("room:example.com")]
     [InlineData("!ro om:example.com")]
@@ -753,7 +764,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var gateway = TableGateway(out var stub);
 
-        var result = await CreateService(gateway).JoinUserToRoomAsync(roomId, "not a user", _cts.Token);
+        var result = await CreateService(gateway).JoinUserToRoomAsync(roomId, "not a user", ["not a server"], _cts.Token);
 
         ResultAssert.Failure(result, "InvalidRoomId", Severity.Warning);
         Assert.Empty(GatewayCalls(stub));
@@ -767,10 +778,79 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         var gateway = TableGateway(out var stub, s => s.On("JoinUserToRoomAsync",
             _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = "!QxR7a-Kq_9abc" })));
 
-        var result = await CreateService(gateway).JoinUserToRoomAsync("!QxR7a-Kq_9abc", "@bob:example.com", _cts.Token);
+        var result = await CreateService(gateway).JoinUserToRoomAsync("!QxR7a-Kq_9abc", "@bob:example.com", token: _cts.Token);
 
         ResultAssert.Success(result, "UserJoinedRoom");
         Assert.Equal("!QxR7a-Kq_9abc", Assert.Single(stub.CallsTo("JoinUserToRoomAsync"))[0]);
+    }
+
+    /// <summary>A trimmed alias is sent as it is; the gateway encodes it (#606).</summary>
+    [Fact]
+    public async Task Join_Alias_IsSentTrimmed_WithoutServers()
+    {
+        var gateway = TableGateway(out var stub, s => s.On("JoinUserToRoomAsync",
+            _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = JoinRoomId })));
+
+        var result = await CreateService(gateway).JoinUserToRoomAsync("  #my room:example.com ", "@bob:example.com", ["", " "], _cts.Token);
+
+        ResultAssert.Success(result, "UserJoinedRoom");
+        var call = Assert.Single(stub.CallsTo("JoinUserToRoomAsync"));
+        Assert.Equal("#my room:example.com", call[0]);
+        Assert.Empty(Assert.IsAssignableFrom<IReadOnlyList<string>>(call[2]));
+    }
+
+    /// <summary>Synapse and Tuwunel join an alias through the servers its resolution returns, so given ones are refused.</summary>
+    [Fact]
+    public async Task Join_AliasWithServers_FailsWithAWarning_WithoutARequest()
+    {
+        var gateway = TableGateway(out var stub);
+
+        var result = await CreateService(gateway).JoinUserToRoomAsync("#room:example.com", "not a user", ["not a server"], _cts.Token);
+
+        ResultAssert.Failure(result, "JoinServersNeedRoomId", Severity.Warning);
+        Assert.Empty(GatewayCalls(stub));
+        Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>The first invalid server is named, after trimming; the servers are checked before the user.</summary>
+    [Theory]
+    [InlineData(new[] { "a.org", " exa mple.org " }, "exa mple.org")]
+    [InlineData(new[] { "https://a.org", "b_c.org" }, "https://a.org")]
+    [InlineData(new[] { "a.org", "a.org:", "b.org" }, "a.org:")]
+    [InlineData(new[] { "@bob:a.org" }, "@bob:a.org")]
+    public async Task Join_InvalidServer_IsNamed_WithoutARequest(string[] servers, string named)
+    {
+        var gateway = TableGateway(out var stub);
+
+        var result = await CreateService(gateway, ArgumentLocalizer()).JoinUserToRoomAsync(JoinRoomId, "not a user", servers, _cts.Token);
+
+        ResultAssert.Failure(result, $"InvalidServerName({named})", Severity.Warning);
+        Assert.Empty(GatewayCalls(stub));
+        Assert.Empty(_logger.Entries);
+    }
+
+    /// <summary>The servers don't stand in for the user checks.</summary>
+    [Fact]
+    public async Task Join_ValidServers_StillCheckTheUser()
+    {
+        var gateway = TableGateway(out var stub);
+
+        var result = await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, "@bob:other.org", ["other.org"], _cts.Token);
+
+        ResultAssert.Failure(result, "JoinUserNotLocal", Severity.Warning);
+        Assert.Empty(GatewayCalls(stub));
+    }
+
+    /// <summary>Server names are compared ordinally: different casing isn't a duplicate, as DNS names may differ only so.</summary>
+    [Fact]
+    public async Task Join_ServerDuplicates_AreComparedOrdinally()
+    {
+        var gateway = TableGateway(out var stub, s => s.On("JoinUserToRoomAsync",
+            _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = JoinRoomId })));
+
+        await CreateService(gateway).JoinUserToRoomAsync(JoinRoomId, "@bob:example.com", ["A.org", "a.org", "A.org"], _cts.Token);
+
+        Assert.Equal(["A.org", "a.org"], Assert.IsAssignableFrom<IReadOnlyList<string>>(Assert.Single(stub.CallsTo("JoinUserToRoomAsync"))[2]));
     }
 
     private RoomService CreateService(IMatrixGateway? gateway, IStringLocalizer<SharedResources>? localizer = null)

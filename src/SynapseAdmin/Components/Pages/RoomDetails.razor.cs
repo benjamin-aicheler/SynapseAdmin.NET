@@ -722,7 +722,7 @@ namespace SynapseAdmin.Components.Pages
             if (result is not { Canceled: false, Data: string userId } || !IsStillDisplayed(target)) return;
 
             var outcome = action == RoomUserAction.Join
-                ? await RoomService.JoinUserToRoomAsync(target, userId, _cts.Token)
+                ? await RoomService.JoinUserToRoomAsync(target, userId, token: _cts.Token)
                 : await RoomService.MakeRoomAdminAsync(target, userId, _cts.Token);
             Snackbar.ShowResult(outcome);
 

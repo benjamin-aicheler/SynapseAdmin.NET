@@ -117,7 +117,7 @@ public class RoomDetailsRecoveryTests : DetailPageTestBase
 
         var call = Assert.Single(ActionCalls(method));
         Assert.Equal((RoomA, "@bob:hs"), ((string)call[0]!, (string?)call[1]));
-        Assert.False(((CancellationToken)call[2]!).IsCancellationRequested);
+        Assert.False(((CancellationToken)call[^1]!).IsCancellationRequested);
         AssertSnackbars(("Done", Severity.Success));
         Assert.Equal(2, DetailLoads(RoomA).Count);
     }

@@ -128,7 +128,7 @@ public class UserDetailsJoinRoomTests : DetailPageTestBase
 
         var call = Assert.Single(JoinCalls);
         Assert.Equal((Room, UserA), ((string)call[0]!, (string)call[1]!));
-        Assert.False(((CancellationToken)call[2]!).IsCancellationRequested);
+        Assert.False(((CancellationToken)call[^1]!).IsCancellationRequested);
         AssertSnackbars(("Joined", Severity.Success));
         Assert.Equal(2, DetailReads(UserA));
     }
