@@ -14,21 +14,27 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-27
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] 
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [1.1] Redaction DTOs and gateway calls; Tuwunel and Generic refuse both; wire tests (FR-4, AC-25)
+- [ ] [2.1] Redaction ViewModels, state enum and status mapper; mapper tests
+- [ ] [2.2] `IUserRedactionService` with tracking cache, DI; characterization and service tests
+- [ ] [3.1] Resources EN/DE/FR
+- [ ] [3.2] `RedactUserEventsDialog`; dialog tests
+- [ ] [4.1] `UserDetails`: button, confirmation, banner, polling, resume; page tests
+- [ ] [5.1] SPEC.md: remove `[Planned]`, decision log
+- [ ] [5.2] README, ARCHITECTURE, AGENTS.md
+- [ ] [5.3] Update #600 and #585, reset PLAN.md / TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
@@ -40,7 +46,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, AC-25, §8, §10, §13) and PLAN.md (Draft)
 
 ## Definition of Done (applies to every task)
 
