@@ -67,7 +67,7 @@ Two gateway calls, our own rather than `LibMatrix`'s: `POST /_synapse/admin/v1/u
   - The status is lower case; any other value is `Unknown`, as in `RoomMappingExtensions`.
   - `FailedRedactionCount` is `failed_redactions?.Count ?? 0`.
   - The error texts are not copied.
-- **Service:** `IUserRedactionService` / `UserRedactionService(IMatrixSessionService, ILogger<UserRedactionService>, IStringLocalizer<SharedResources>, IMemoryCache)`, registered scoped in `Program.cs`. Its constants are `DefaultSearchLimit = 1000`, `MaxLoggedFailedRedactions = 20` and the 24 h cache lifetime.
+- **Service:** `IUserRedactionService` / `UserRedactionService(IMatrixSessionService, ILogger<UserRedactionService>, IStringLocalizer<SharedResources>, IMemoryCache)`, registered scoped in `Program.cs`. Its constants are `MaxLoggedFailedRedactions = 20` and the 24 h cache lifetime; the default limit is `UserRedactionRequestViewModel.DefaultLimit = 1000`, so the dialog and the service share it without the ViewModel naming a service.
   - `StartRedactionAsync(string userId, UserRedactionRequestViewModel request, CancellationToken)` → `OperationResult<string>` (the `redact_id`):
     - **Selection check:** `!AllRooms` with no room IDs fails with `UserRedactionNoRoomsSelected` (`Severity.Warning`) and sends nothing, because `[]` would mean the user's rooms. The check runs at the start of `call`, after the session check.
     - **Limit check:** a `Limit` below 1 fails with `UserRedactionInvalidLimit` (warning) and sends nothing; Synapse would treat `0` as 1000.
@@ -203,3 +203,4 @@ None (in-memory cache entry only).
 |---|---|
 | 2026-11-27 | Checked Synapse v1.165.0. In `rest/admin/users.py` `RedactUser`: `rooms` is required, and an empty list becomes the rooms the user is joined to plus those they're banned from. `limit` `0` → 1000, negative → `400`. Synapse refuses while a redaction of the user is `active`, and an unknown `redact_id` → `404`. In `handlers/admin.py`: the redaction is sent as the user unless `use_admin` is set or the user isn't local, per-event failures go to `failed_redactions`, and the task ends `complete`. In `events_worker.py` `get_events_sent_by_user_in_room`: `sender = user`, types `m.room.member`/`message`/`encrypted`, `ORDER BY received_ts DESC`, the time range on `origin_server_ts`. The Tuwunel findings come from the triage comment on #585. |
 | 2026-11-27 | Plan approved. |
+| 2026-11-27 | [2.1] The default limit lives on the request ViewModel (`DefaultLimit`) instead of in the service. |

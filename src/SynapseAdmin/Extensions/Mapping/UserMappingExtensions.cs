@@ -80,4 +80,24 @@ public static class UserMappingExtensions
             Membership = kvp.Value
         }).ToList();
     }
+
+    /// <summary>
+    /// Synapse sends the status in lower case; any other value is <see cref="UserRedactionState.Unknown"/> (#600). The
+    /// status has no ID of its own, so the caller passes the <paramref name="redactId"/> it asked for. Only the number
+    /// of failed redactions is copied: their event IDs and error texts, and the error of a failed redaction, go only
+    /// to the log.
+    /// </summary>
+    public static UserRedactionStatusViewModel ToViewModel(this SynapseAdminUserRedactStatusResponse status, string redactId) => new()
+    {
+        RedactId = redactId,
+        State = status.Status switch
+        {
+            "scheduled" => UserRedactionState.Scheduled,
+            "active" => UserRedactionState.Active,
+            "complete" => UserRedactionState.Complete,
+            "failed" => UserRedactionState.Failed,
+            _ => UserRedactionState.Unknown
+        },
+        FailedRedactionCount = status.FailedRedactions?.Count ?? 0
+    };
 }
