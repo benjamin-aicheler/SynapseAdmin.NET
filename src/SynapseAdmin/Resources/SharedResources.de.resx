@@ -1957,4 +1957,25 @@
   <data name="ErrorJoiningUserToRoom" xml:space="preserve">
     <value>Fehler beim Hinzufügen des Benutzers zum Raum.</value>
   </data>
+  <data name="JoinToRoom" xml:space="preserve">
+    <value>Raum beitreten lassen</value>
+  </data>
+  <data name="JoinToRoomTitle" xml:space="preserve">
+    <value>{0} einem Raum beitreten lassen</value>
+  </data>
+  <data name="JoinToRoomDescription" xml:space="preserve">
+    <value>{0} tritt dem eingegebenen Raum bei. Es können nur lokale Benutzer hinzugefügt werden. Der Serveradministrator muss im Raum sein und Benutzer einladen dürfen.</value>
+  </data>
+  <data name="JoinToRoomRoomIdHint" xml:space="preserve">
+    <value>Eine Raum-ID, etwa !abc123:example.org. Raum-Aliasse werden nicht angenommen.</value>
+  </data>
+  <data name="JoinToRoomPicks" xml:space="preserve">
+    <value>Räume, die der Benutzer verlassen hat, in die er eingeladen wurde oder für die er angeklopft hat</value>
+  </data>
+  <data name="InvalidRoomId" xml:space="preserve">
+    <value>Geben Sie eine Raum-ID ein, etwa !abc123:example.org.</value>
+  </data>
+  <data name="UserBannedFromRoom" xml:space="preserve">
+    <value>Dieser Benutzer ist aus diesem Raum verbannt.</value>
+  </data>
 </root>

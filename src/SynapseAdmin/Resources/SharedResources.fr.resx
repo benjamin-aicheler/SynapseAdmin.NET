@@ -1957,4 +1957,25 @@
   <data name="ErrorJoiningUserToRoom" xml:space="preserve">
     <value>Erreur lors de l'ajout de l'utilisateur au salon.</value>
   </data>
+  <data name="JoinToRoom" xml:space="preserve">
+    <value>Faire rejoindre un salon</value>
+  </data>
+  <data name="JoinToRoomTitle" xml:space="preserve">
+    <value>Faire rejoindre un salon à {0}</value>
+  </data>
+  <data name="JoinToRoomDescription" xml:space="preserve">
+    <value>{0} rejoint le salon saisi. Seuls les utilisateurs locaux peuvent être ajoutés. L'administrateur du serveur doit être dans le salon et avoir le droit d'inviter des utilisateurs.</value>
+  </data>
+  <data name="JoinToRoomRoomIdHint" xml:space="preserve">
+    <value>Un ID de salon, par exemple !abc123:example.org. Les alias de salon ne sont pas acceptés.</value>
+  </data>
+  <data name="JoinToRoomPicks" xml:space="preserve">
+    <value>Salons que l'utilisateur a quittés, auxquels il a été invité ou pour lesquels il a frappé</value>
+  </data>
+  <data name="InvalidRoomId" xml:space="preserve">
+    <value>Saisissez un ID de salon, par exemple !abc123:example.org.</value>
+  </data>
+  <data name="UserBannedFromRoom" xml:space="preserve">
+    <value>Cet utilisateur est banni de ce salon.</value>
+  </data>
 </root>

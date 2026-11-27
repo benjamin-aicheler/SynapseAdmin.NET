@@ -22,8 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [2.1] Resources EN/DE/FR
-- [ ] [2.2] `UserJoinRoomDialog`; dialog tests
 - [ ] [3.1] `UserDetails`: inject `IRoomService`, "Join to room" button, flow, reload; default stub in `DetailPageTestBase`; `UserDetailsJoinRoomTests`
 - [ ] [4.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
 
@@ -41,6 +39,8 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [2.2] `UserJoinRoomDialog` (typed ID or leave/invite/knock picks; refuses join/ban); 14 dialog tests, mutation-checked, also under de_DE
+- [x] 2026-11-27 – [2.1] 7 keys in EN/DE/FR (`JoinToRoom*`, `InvalidRoomId`, `UserBannedFromRoom`)
 - [x] 2026-11-27 – [1.1] `MatrixIdHelper.IsRoomId`; room ID check (first) and trim in `RoomService.JoinUserToRoomAsync`; 13 helper + 8 service tests, mutation-checked
 - [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, AC-27, §8, §10, §15) and PLAN.md (Approved)
 
