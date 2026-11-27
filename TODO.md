@@ -14,19 +14,21 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-27
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] 
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-- [ ] [4.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
-- [ ] 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
 
 ## 📋 Backlog
 
@@ -38,11 +40,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] 2026-11-27 – [3.1] `UserDetails`: "Join to room" (disabled for deactivated/suspended), dialog flow, reload; default `IRoomService` stub in the test base; 11 page tests, mutation-checked. Deviation: the dialog gets `FormatTarget(user, target)` (name + ID), as Edit profile does
-- [x] 2026-11-27 – [2.2] `UserJoinRoomDialog` (typed ID or leave/invite/knock picks; refuses join/ban); 14 dialog tests, mutation-checked, also under de_DE
-- [x] 2026-11-27 – [2.1] 7 keys in EN/DE/FR (`JoinToRoom*`, `InvalidRoomId`, `UserBannedFromRoom`)
-- [x] 2026-11-27 – [1.1] `MatrixIdHelper.IsRoomId`; room ID check (first) and trim in `RoomService.JoinUserToRoomAsync`; 13 helper + 8 service tests, mutation-checked
-- [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, AC-27, §8, §10, §15) and PLAN.md (Approved)
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
