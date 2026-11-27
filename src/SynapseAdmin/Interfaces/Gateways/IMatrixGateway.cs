@@ -64,6 +64,16 @@ public interface IMatrixGateway
     Task DeleteUserDevicesAsync(string userId, SynapseAdminDeleteDevicesRequest request, CancellationToken cancellationToken = default);
     /// <summary>A local user's recent connections (<c>GET /_synapse/admin/v1/whois/{userId}</c>, #598).</summary>
     Task<SynapseAdminWhoisResponse?> GetUserWhoisAsync(string userId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Starts redacting a user's events as a background task (<c>POST /_synapse/admin/v1/user/{userId}/redact</c>, #600)
+    /// and returns its <c>redact_id</c>.
+    /// </summary>
+    Task<SynapseAdminUserRedactResponse?> RedactUserEventsAsync(string userId, SynapseAdminUserRedactRequest request, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The status of a redaction (<c>GET /_synapse/admin/v1/user/redact_status/{redactId}</c>, #600); <c>null</c> for a
+    /// redaction the homeserver doesn't know (any more).
+    /// </summary>
+    Task<SynapseAdminUserRedactStatusResponse?> GetUserRedactionStatusAsync(string redactId, CancellationToken cancellationToken = default);
 
     // --- Room Management (Admin/Synapse) ---
     Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);

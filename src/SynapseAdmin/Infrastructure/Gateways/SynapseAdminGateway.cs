@@ -299,6 +299,26 @@ public class SynapseAdminGateway(
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminWhoisResponse>(url, cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// Our own call instead of <c>LibMatrix</c>'s <c>DeleteAllMessages</c>, which leaves out an empty <c>rooms</c>
+    /// although Synapse requires it (#600).
+    /// </summary>
+    public override async Task<SynapseAdminUserRedactResponse?> RedactUserEventsAsync(string userId, SynapseAdminUserRedactRequest request, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/user/{userId.UrlEncode()}/redact";
+        using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<SynapseAdminUserRedactResponse>(cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Synapse answers <c>404</c> for a redaction it doesn't know: its docs keep the status 24 hours after the task
+    /// ends, or until Synapse restarts (#600).
+    /// </summary>
+    public override Task<SynapseAdminUserRedactStatusResponse?> GetUserRedactionStatusAsync(string redactId, CancellationToken cancellationToken = default) =>
+        GetOptionalStatusAsync<SynapseAdminUserRedactStatusResponse>(
+            $"/_synapse/admin/v1/user/redact_status/{redactId.UrlEncode()}", cancellationToken);
+
     // --- Room Management ---
 
     public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)

@@ -434,6 +434,46 @@ public class MappingExtensionsTests
         Assert.Equal((string.Empty, string.Empty, RoomDeletionState.Unknown), (vm.DeleteId, vm.RoomId, vm.State));
     }
 
+    // User redaction status (#600): Synapse's status in lower case, anything else is Unknown; only the failure count.
+    [Theory]
+    [InlineData("scheduled", UserRedactionState.Scheduled, true)]
+    [InlineData("active", UserRedactionState.Active, true)]
+    [InlineData("complete", UserRedactionState.Complete, false)]
+    [InlineData("failed", UserRedactionState.Failed, false)]
+    [InlineData("Active", UserRedactionState.Unknown, false)]
+    [InlineData("pending", UserRedactionState.Unknown, false)]
+    [InlineData("", UserRedactionState.Unknown, false)]
+    [InlineData(null, UserRedactionState.Unknown, false)]
+    public void UserRedactionStatusMapping_MapsAllProperties(string? status, UserRedactionState state, bool running)
+    {
+        var dto = new SynapseAdminUserRedactStatusResponse
+        {
+            Status = status!,
+            FailedRedactions = new Dictionary<string, string> { ["$event1"] = "Not allowed", ["$event2"] = "Timeout" },
+            Error = "boom"
+        };
+
+        var vm = dto.ToViewModel("redact-1");
+
+        Assert.Equal(("redact-1", state, 2, running), (vm.RedactId, vm.State, vm.FailedRedactionCount, vm.IsRunning));
+    }
+
+    [Fact]
+    public void UserRedactionStatusMapping_MissingFields_BecomeDefaults()
+    {
+        var vm = JsonSerializer.Deserialize<SynapseAdminUserRedactStatusResponse>("{}")!.ToViewModel("redact-1");
+
+        Assert.Equal(("redact-1", UserRedactionState.Unknown, 0), (vm.RedactId, vm.State, vm.FailedRedactionCount));
+    }
+
+    [Fact]
+    public void UserRedactionStatusMapping_EmptyFailures_CountZero()
+    {
+        var vm = new SynapseAdminUserRedactStatusResponse { Status = "complete", FailedRedactions = [] }.ToViewModel("redact-1");
+
+        Assert.Equal((UserRedactionState.Complete, 0), (vm.State, vm.FailedRedactionCount));
+    }
+
     // Room block state (#586): user_id is only sent for a blocked room, and Tuwunel may leave it out even then.
     [Theory]
     [InlineData(true, "@admin:example.com")]

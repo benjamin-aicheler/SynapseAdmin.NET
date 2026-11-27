@@ -53,6 +53,9 @@ public abstract class DetailPageTestBase : BunitContext, IAsyncLifetime
             .On(nameof(IUserDeviceService.GetUserDevicesAsync), _ => Task.FromResult(OperationResult<List<UserDeviceViewModel>>.Ok([])))
             .On(nameof(IUserDeviceService.GetUserConnectionsAsync), _ => Task.FromResult(OperationResult<List<UserConnectionViewModel>>.Ok([])))));
 
+        // No redaction is tracked unless a page test says so (#600).
+        Services.AddSingleton(Stub.Create<IUserRedactionService>());
+
         Services.AddSingleton(Stub.Create<IDialogService>(out var dialogStub));
         DialogStub = dialogStub;
         DialogStub.On(nameof(IDialogService.ShowMessageBoxAsync), args =>

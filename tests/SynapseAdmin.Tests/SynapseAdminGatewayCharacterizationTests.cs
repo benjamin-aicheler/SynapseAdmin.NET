@@ -47,6 +47,9 @@ namespace SynapseAdmin.Tests;
 /// ID from whoami.
 /// Also deleting a user's media page by page (#599): the exact DELETE, always from the first page, its answer, its
 /// cancellation token and the same error behavior.
+/// Also redacting a user's events (#600): the exact POST with <c>rooms</c> always sent, the status read by
+/// <c>redact_id</c> with "no status" for an unknown one, the cancellation token, the same error behavior, and Tuwunel's
+/// refusal of both.
 /// </summary>
 public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -1864,6 +1867,201 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         await new TuwunelAdminGateway(CreateHomeserver()).DeleteUserMediaAsync("@alice:example.com", 100);
 
         Assert.Equal(new CapturedRequest("DELETE", UserMediaDeleteTarget, null, ""), Assert.Single(_homeserver.Requests));
+    }
+
+    // ---- Redacting a user's events (#600) --------------------------------------------------------------
+
+    private const string RedactTarget = "/_synapse/admin/v1/user/%40alice%3aexample.com/redact";
+
+    private static SynapseAdminUserRedactRequest RedactInUserRooms() =>
+        new() { Rooms = [], Limit = 1000, UseAdmin = false };
+
+    /// <summary>
+    /// <c>rooms</c> is required and sent also when empty (the user's rooms), which <c>LibMatrix</c>'s call leaves out.
+    /// Without a reason, the body has no <c>reason</c>, and it never has a time range.
+    /// </summary>
+    [Fact]
+    public async Task RedactUserEvents_UserRooms_SendsPostWithAnEmptyRoomList_AndReadsTheRedactId()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { redact_id = "redact-1" });
+
+        var result = await _gateway.RedactUserEventsAsync("@alice:example.com", RedactInUserRooms());
+
+        Assert.Equal("redact-1", result!.RedactId);
+        Assert.Equal(
+            new CapturedRequest("POST", RedactTarget, "application/json; charset=utf-8", """{"rooms":[],"limit":1000,"use_admin":false}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task RedactUserEvents_SelectedRoomsWithReason_SendsThemInTheBody()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { redact_id = "redact-2" });
+
+        await _gateway.RedactUserEventsAsync("@alice:example.com", new SynapseAdminUserRedactRequest
+        {
+            Rooms = ["!a:example.com", "!b:example.com"],
+            Reason = "spam",
+            Limit = 50,
+            UseAdmin = true
+        });
+
+        Assert.Equal(
+            new CapturedRequest("POST", RedactTarget, "application/json; charset=utf-8",
+                """{"rooms":["!a:example.com","!b:example.com"],"reason":"spam","limit":50,"use_admin":true}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task RedactUserEvents_AnswerWithoutRedactId_ReadsNull()
+    {
+        _homeserver.Respond = () => Results.Json(new { });
+
+        var result = await _gateway.RedactUserEventsAsync("@alice:example.com", RedactInUserRooms());
+
+        Assert.NotNull(result);
+        Assert.Null(result.RedactId);
+    }
+
+    [Fact]
+    public async Task RedactUserEvents_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { redact_id = "redact-1" });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _gateway.RedactUserEventsAsync("@alice:example.com", RedactInUserRooms(), cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>Synapse refuses a second redaction while one of the same user is active, with a 400 and no errcode.</summary>
+    [Fact]
+    public async Task RedactUserEvents_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_UNKNOWN", error = "Redact already in progress for user @alice:example.com" }, statusCode: 400);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.RedactUserEventsAsync("@alice:example.com", RedactInUserRooms()));
+
+        Assert.Equal("M_UNKNOWN", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task RedactUserEvents_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => _gateway.RedactUserEventsAsync("@alice:example.com", RedactInUserRooms()));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUserRedactionStatus_SendsAGetForTheRedactId_AndReadsTheFailures()
+    {
+        _homeserver.AllowedMethod = "GET";
+        _homeserver.Respond = () => Results.Json(new
+        {
+            status = "complete",
+            failed_redactions = new Dictionary<string, string> { ["$event1"] = "Not allowed", ["$event2"] = "Timeout" }
+        });
+
+        var status = await _gateway.GetUserRedactionStatusAsync("redact+1");
+
+        Assert.Equal(new CapturedRequest("GET", "/_synapse/admin/v1/user/redact_status/redact%2b1", null, ""), Assert.Single(_homeserver.Requests));
+        Assert.NotNull(status);
+        Assert.Equal("complete", status.Status);
+        Assert.Equal(new Dictionary<string, string> { ["$event1"] = "Not allowed", ["$event2"] = "Timeout" }, status.FailedRedactions);
+        Assert.Null(status.Error);
+    }
+
+    [Fact]
+    public async Task GetUserRedactionStatus_Failed_ReadsTheError()
+    {
+        _homeserver.Respond = () => Results.Json(new { status = "failed", error = "Unknown error, please check the logs for more information." });
+
+        var status = await _gateway.GetUserRedactionStatusAsync("redact-1");
+
+        Assert.Equal(("failed", "Unknown error, please check the logs for more information."), (status!.Status, status.Error));
+        Assert.Null(status.FailedRedactions);
+    }
+
+    /// <summary>
+    /// A redaction Synapse no longer knows (404 <c>M_NOT_FOUND</c>), a homeserver without the endpoint
+    /// (<c>M_UNRECOGNIZED</c>, as 404 or 405) and a bare 404 from a proxy all mean "no status".
+    /// </summary>
+    [Theory]
+    [InlineData(404, "M_NOT_FOUND")]
+    [InlineData(404, "M_UNRECOGNIZED")]
+    [InlineData(405, "M_UNRECOGNIZED")]
+    [InlineData(404, null)]
+    public async Task GetUserRedactionStatus_UnknownRedactionOrMissingEndpoint_ReturnsNull(int statusCode, string? errcode)
+    {
+        _homeserver.Respond = () => errcode == null
+            ? Results.Text("Not Found", statusCode: statusCode)
+            : Results.Json(new { errcode, error = "Not found" }, statusCode: statusCode);
+
+        Assert.Null(await _gateway.GetUserRedactionStatusAsync("redact-1"));
+    }
+
+    [Fact]
+    public async Task GetUserRedactionStatus_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { status = "active" });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _gateway.GetUserRedactionStatusAsync("redact-1", cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task GetUserRedactionStatus_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_FORBIDDEN", error = "You are not a server admin" }, statusCode: 403);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.GetUserRedactionStatusAsync("redact-1"));
+
+        Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task GetUserRedactionStatus_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => _gateway.GetUserRedactionStatusAsync("redact-1"));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // Tuwunel 1.8.2 and 2.0.0 take the limit window in reverse timeline order instead of newest received first, and
+    // redact through a different permission path, so the same request can redact other events. The gateway refuses the
+    // redaction and its status read before sending anything (ADR 0006).
+    [Fact]
+    public async Task Tuwunel_RedactUserEvents_RefusesWithoutARequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() =>
+            gateway.RedactUserEventsAsync("@alice:example.com", RedactInUserRooms()));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.RedactUserEventsAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_GetUserRedactionStatus_RefusesWithoutARequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.GetUserRedactionStatusAsync("redact-1"));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.GetUserRedactionStatusAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
     }
 
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);

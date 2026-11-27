@@ -27,6 +27,25 @@ else if (user == null)
 }
 else
 {
+    @if (_activeRedactId != null)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="mb-4 redaction-banner" ContentAlignment="HorizontalAlignment.Left">
+            <div class="d-flex align-center flex-wrap gap-2">
+                <MudProgressCircular Color="Color.Inherit" Indeterminate="true" Size="Size.Small" />
+                <b>@L["UserRedactionInProgress"]</b>
+                @* No chip before the first answer of a resumed redaction, and none for an ended one: ApplyRedactionStatus removes the banner then. *@
+                @if (_activeRedactionState == UserRedactionState.Scheduled)
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small" Class="redaction-state">@L["UserRedactionStatusScheduled"]</MudChip>
+                }
+                else if (_activeRedactionState == UserRedactionState.Active)
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small" Class="redaction-state">@L["UserRedactionStatusActive"]</MudChip>
+                }
+            </div>
+        </MudAlert>
+    }
+
     <MudGrid>
         <MudItem xs="12" md="6">
             <MudCard Elevation="3">
@@ -140,7 +159,8 @@ else
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ToggleShadowBan" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.ShadowBanned)">@(user.ShadowBanned ? L["LiftShadowBan"] : L["ShadowBanUser"])</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="LoginAsUser" Class="mb-2 mr-2">@L["LoginAsUserShadow"]</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineAllMedia" Class="mb-2 mr-2" Disabled="@IsDeletingMedia">@L["QuarantineMedia"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAllMedia" Class="mb-2" Disabled="@IsDeletingMedia">@L["DeleteAllMedia"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAllMedia" Class="mb-2 mr-2" Disabled="@IsDeletingMedia">@L["DeleteAllMedia"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="OpenRedactEventsDialog" Class="mb-2" Disabled="@IsRedactionRunning">@L["RedactUserEvents"]</MudButton>
                     @if (_mediaDeletion is { } deletion)
                     {
                         <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2 mb-2" ContentAlignment="HorizontalAlignment.Left">
