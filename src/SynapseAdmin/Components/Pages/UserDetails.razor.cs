@@ -29,6 +29,11 @@ namespace SynapseAdmin.Components.Pages
         public ITimeZoneService TimeZoneService { get; set; } = null!;
         [Inject]
         public ILogger<UserDetails> Logger { get; set; } = null!;
+        [Inject]
+        public IUserRedactionService RedactionService { get; set; } = null!;
+
+        private const int RedactionStatusPollIntervalMs = 5000;
+        private const int MaxConsecutiveRedactionStatusFailures = 5;
 
         [Parameter]
         public string UserId { get; set; } = string.Empty;
@@ -54,6 +59,13 @@ namespace SynapseAdmin.Components.Pages
         // page moves to another user; Stop and closing the page cancel it.
         private MediaDeletionRun? _mediaDeletion;
 
+        // The redaction of the shown user's events (#600), shown in the banner while the page follows it. It runs on the
+        // homeserver and is tracked by RedactionService, so moving to another user only stops following it here.
+        private string? _activeRedactId;
+        private UserRedactionState _activeRedactionState;
+        private CancellationTokenSource? _redactionPollCts;
+        private bool _startingRedaction;
+
         protected override async Task OnParametersSetAsync()
         {
             if (_loadedUserId == UserId && _loadCts != null) return;
@@ -66,6 +78,9 @@ namespace SynapseAdmin.Components.Pages
             _loadCts?.Dispose();
             _loadCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
             var token = _loadCts.Token;
+            StopRedactionPolling();
+            _activeRedactId = null;
+            _activeRedactionState = UserRedactionState.Unknown;
             user = null;
             _displayedUserId = null;
             errorMessage = null;
@@ -78,6 +93,9 @@ namespace SynapseAdmin.Components.Pages
             if (token.IsCancellationRequested) return;
 
             await LoadUserDetails(userId, token);
+            if (token.IsCancellationRequested) return;
+
+            ResumeRedaction(userId);
         }
 
         private async Task LoadUserDetails(string userId, CancellationToken token)
@@ -372,6 +390,135 @@ namespace SynapseAdmin.Components.Pages
 
         private void StopMediaDeletion() => _mediaDeletion?.Cts.Cancel();
 
+        /// <summary>A redaction is followed or being started: "Redact events" is disabled until it ends (#600).</summary>
+        private bool IsRedactionRunning => _activeRedactId != null || _startingRedaction;
+
+        /// <summary>
+        /// Asks for the redaction options in <see cref="RedactUserEventsDialog"/>, confirms them for the user shown and,
+        /// if that user is still shown, starts the redaction and follows it (#600, AC-25).
+        /// </summary>
+        private async Task OpenRedactEventsDialog()
+        {
+            if (GetDisplayedTarget() is not { } target || user == null || IsRedactionRunning) return;
+
+            var label = FormatTarget(user, target);
+            var parameters = new DialogParameters
+            {
+                { nameof(RedactUserEventsDialog.Target), label },
+                { nameof(RedactUserEventsDialog.Memberships), user.Memberships }
+            };
+            var dialog = await DialogService.ShowAsync<RedactUserEventsDialog>(L["RedactUserEvents"], parameters, DialogPresets.Medium());
+            var result = await dialog.Result;
+            if (result is not { Canceled: false, Data: UserRedactionRequestViewModel request } || !IsStillDisplayed(target)) return;
+
+            var scope = request.AllRooms ? L["RedactScopeUserRooms"] : L["RedactScopeSelectedRooms", request.RoomIds.Count];
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                L["RedactUserEvents"],
+                $"{L["RedactUserEventsConfirmation", label, scope]} {L["RedactUserEventsHint"]}",
+                yesText: L["RedactUserEvents"], cancelText: L["Cancel"]);
+            if (confirmed != true || !IsStillDisplayed(target) || IsRedactionRunning) return;
+
+            _startingRedaction = true;
+            OperationResult<string> outcome;
+            try
+            {
+                outcome = await RedactionService.StartRedactionAsync(target, request, _cts.Token);
+            }
+            finally
+            {
+                _startingRedaction = false;
+            }
+            Snackbar.ShowResult(outcome);
+
+            // Without an ID the status can't be read: the redaction runs, but there is nothing to follow.
+            if (outcome.Success && !string.IsNullOrEmpty(outcome.Data) && GetDisplayedTarget() == target)
+            {
+                FollowRedaction(target, outcome.Data, UserRedactionState.Scheduled);
+                StateHasChanged();
+            }
+        }
+
+        /// <summary>Shows the redaction tracked for the user, started in this or another session, and follows it.</summary>
+        private void ResumeRedaction(string userId)
+        {
+            if (GetDisplayedTarget() != userId || RedactionService.GetActiveRedactionId(userId) is not { Length: > 0 } redactId) return;
+            FollowRedaction(userId, redactId, UserRedactionState.Unknown);
+        }
+
+        private void FollowRedaction(string userId, string redactId, UserRedactionState state)
+        {
+            StopRedactionPolling();
+            _activeRedactId = redactId;
+            _activeRedactionState = state;
+
+            _redactionPollCts = new CancellationTokenSource();
+            var token = _redactionPollCts.Token;
+            var poller = new StatusPoller<UserRedactionStatusViewModel>
+            {
+                FetchAsync = t => RedactionService.GetRedactionStatusAsync(redactId, t),
+                InvokeAsync = InvokeAsync,
+                IsCurrent = () => !token.IsCancellationRequested && _activeRedactId == redactId,
+                Apply = status => ApplyRedactionStatus(userId, redactId, status),
+                GiveUp = () => EndRedaction(userId, redactId, L["ErrorFetchingUserRedactionStatus"], Severity.Error),
+                IntervalMs = RedactionStatusPollIntervalMs,
+                MaxConsecutiveFailures = MaxConsecutiveRedactionStatusFailures,
+                LogFailedAttempt = (attempt, error) => Logger.LogWarning(
+                    "Failed to get the status of redaction {RedactId} of user {UserId}. Attempt {Attempt} of {MaxAttempts}. Error: {Error}",
+                    redactId.SanitizeForLogging(), userId.SanitizeForLogging(), attempt, MaxConsecutiveRedactionStatusFailures, error.SanitizeForLogging()),
+                LogUnexpectedError = ex => Logger.LogError(ex, "Unexpected error while following redaction {RedactId} of user {UserId}",
+                    redactId.SanitizeForLogging(), userId.SanitizeForLogging()),
+                LogCleanupFailure = ex => Logger.LogDebug(ex, "Cleanup after following redaction {RedactId} failed (circuit likely gone)",
+                    redactId.SanitizeForLogging())
+            };
+
+            _ = Task.Run(() => poller.RunAsync(token), token);
+        }
+
+        /// <summary>
+        /// Shows a polled redaction status and returns whether the redaction ended. The homeserver's error texts are only
+        /// logged, by <c>UserRedactionService</c>; the page reports a localized result.
+        /// </summary>
+        private bool ApplyRedactionStatus(string userId, string redactId, UserRedactionStatusViewModel status)
+        {
+            switch (status.State)
+            {
+                case UserRedactionState.Scheduled or UserRedactionState.Active:
+                    _activeRedactionState = status.State;
+                    StateHasChanged();
+                    return false;
+                case UserRedactionState.Complete when status.FailedRedactionCount > 0:
+                    EndRedaction(userId, redactId, L["UserRedactionCompletedWithFailures", status.FailedRedactionCount], Severity.Warning);
+                    return true;
+                case UserRedactionState.Complete:
+                    EndRedaction(userId, redactId, L["UserRedactionCompleted"], Severity.Success);
+                    return true;
+                case UserRedactionState.Failed:
+                    EndRedaction(userId, redactId, L["UserRedactionFailed"], Severity.Error);
+                    return true;
+                default:
+                    // The homeserver no longer knows the redaction, or reports a status this app doesn't know.
+                    EndRedaction(userId, redactId, L["UserRedactionStatusUnknown"], Severity.Warning);
+                    return true;
+            }
+        }
+
+        private void EndRedaction(string userId, string redactId, string message, Severity severity)
+        {
+            // Only this redaction: another session may already track a newer one for the user (#522).
+            RedactionService.ClearActiveRedactionId(userId, redactId);
+            _activeRedactId = null;
+            _activeRedactionState = UserRedactionState.Unknown;
+            Snackbar.Add(message, severity);
+            StateHasChanged();
+        }
+
+        private void StopRedactionPolling()
+        {
+            _redactionPollCts?.Cancel();
+            _redactionPollCts?.Dispose();
+            _redactionPollCts = null;
+        }
+
         private sealed class MediaDeletionRun(string target, string label, CancellationTokenSource cts)
         {
             public string Target { get; } = target;
@@ -609,6 +756,7 @@ namespace SynapseAdmin.Components.Pages
 
         public void Dispose()
         {
+            StopRedactionPolling();
             _loadCts?.Cancel();
             _loadCts?.Dispose();
             _cts.Cancel();
