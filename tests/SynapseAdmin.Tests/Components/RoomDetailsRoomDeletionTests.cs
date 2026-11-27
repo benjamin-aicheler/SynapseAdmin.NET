@@ -439,9 +439,10 @@ public class RoomDetailsRoomDeletionTests : DetailPageTestBase
     // ---- Room actions during a deletion or a purge ------------------------------------------------
 
     // The block state is unknown here (the stub answers no block status), so both Block and Unblock are shown (#586).
-    private static readonly string[] ActionKeys = ["DeleteRoom", "DeleteAndBlockRoom", "BlockRoom", "UnblockRoom", "QuarantineMedia", "PurgeHistory"];
+    private static readonly string[] ActionKeys =
+        ["DeleteRoom", "DeleteAndBlockRoom", "BlockRoom", "UnblockRoom", "QuarantineMedia", "PurgeHistory", "MakeRoomAdmin", "JoinUser"];
 
-    /// <summary>Whether each of the six Actions buttons is disabled, keyed by its resource key.</summary>
+    /// <summary>Whether each of the eight Actions buttons is disabled, keyed by its resource key.</summary>
     private Dictionary<string, bool> ActionsDisabled(IRenderedComponent<RoomDetails> cut)
     {
         var buttons = cut.FindAll("button").ToList();

@@ -22,7 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [4.1] `RoomDetails`: buttons, flow, reload; `RoomDetailsRecoveryTests`
 - [ ] [5.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
 
 ## ⛔ Blocked
@@ -39,6 +38,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [4.1] `RoomDetails`: Make room admin / Join user buttons, dialog flow, reload; 14 page tests + both buttons in the disabled-actions tests, mutation-checked
 - [x] 2026-11-27 – [3.2] `RoomUserAction` enum, `RoomUserActionDialog`; 15 dialog tests, mutation-checked, also under de_DE
 - [x] 2026-11-27 – [3.1] 16 room recovery keys in EN/DE/FR (DE "Berechtigungsstufe", FR "niveau de pouvoir")
 - [x] 2026-11-27 – [2.2] `RoomService.MakeRoomAdminAsync` / `JoinUserToRoomAsync`; 3 table rows, 18 specific tests, mutation-checked
