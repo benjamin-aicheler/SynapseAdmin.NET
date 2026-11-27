@@ -22,7 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [1.1] Redaction DTOs and gateway calls; Tuwunel and Generic refuse both; wire tests (FR-4, AC-25)
 - [ ] [2.1] Redaction ViewModels, state enum and status mapper; mapper tests
 - [ ] [2.2] `IUserRedactionService` with tracking cache, DI; characterization and service tests
 - [ ] [3.1] Resources EN/DE/FR
@@ -46,6 +45,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [1.1] Redaction DTOs and gateway calls; Tuwunel and Generic refuse both; wire tests
 - [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-4, AC-25, §8, §10, §13) and PLAN.md (Draft)
 
 ## Definition of Done (applies to every task)

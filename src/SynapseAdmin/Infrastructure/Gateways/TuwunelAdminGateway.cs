@@ -162,6 +162,19 @@ internal sealed class TuwunelAdminGateway(
         }
     }
 
+    // Tuwunel 1.8.2 and 2.0.0 serve the redaction of a user's events with Synapse's inputs and status names, but take
+    // the limit window in reverse timeline order (Synapse: newest received first) and redact through a different
+    // permission path, so the same request can redact other events. Both the redaction and its status read are refused
+    // (ADR 0006, #600).
+
+    /// <summary>Refused (#600): Tuwunel can select other events than Synapse for the same request.</summary>
+    public override Task<SynapseAdminUserRedactResponse?> RedactUserEventsAsync(string userId, SynapseAdminUserRedactRequest request, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused (#600), with the redaction: its <c>complete</c> doesn't describe Synapse's selection.</summary>
+    public override Task<SynapseAdminUserRedactStatusResponse?> GetUserRedactionStatusAsync(string redactId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
     // ---- Operations Tuwunel doesn't serve --------------------------------------------------------------
     // Tuwunel's status page (tuwunel-admin-api-2026-11-24.md) marks these endpoints as not implemented or not
     // applicable, and Tuwunel answers them with 404 M_UNRECOGNIZED. They are refused before anything is sent, so the
