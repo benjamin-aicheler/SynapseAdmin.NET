@@ -13,6 +13,11 @@
         }
         <MudTextField T="string" Label="@L["UserId"]" @bind-Value="userId" Immediate="true"
                       HelperText="@HelperText" Validation="@(new Func<string?, string?>(Validate))" />
+        @if (IsJoin)
+        {
+            <MudTextField T="string" Label="@L["JoinServers"]" @bind-Value="servers" Immediate="true" Class="mt-3 join-servers"
+                          HelperText="@L["JoinServersHint"]" Error="@(ServersError != null)" ErrorText="@ServersError" />
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>

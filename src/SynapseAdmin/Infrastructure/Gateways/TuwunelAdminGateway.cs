@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using ArcaneLibs.Extensions;
 using LibMatrix.Homeservers;
+using LibMatrix.RoomTypes;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.Requests;
@@ -181,7 +182,9 @@ internal sealed class TuwunelAdminGateway(
     // directory, even an invite-only one; Synapse invites, as the local user it grants the power through, unless the join
     // rule is public. The gateway can't send that invite, so the operation is refused. The admin join is corrected:
     // Tuwunel 1.8.2 never invites first and 2.0.0 only when the user couldn't join otherwise, so the gateway sends
-    // Synapse's invite itself before the join.
+    // Synapse's invite itself before the join. Synapse deletes a room's current state when this server leaves it, so it
+    // finds no join rule and doesn't invite there (#606); Tuwunel keeps the state, so the gateway first checks for a joined
+    // local user.
 
     private const string JoinRulesEventType = "m.room.join_rules";
     private const string PublicJoinRule = "public";
@@ -194,20 +197,54 @@ internal sealed class TuwunelAdminGateway(
         throw new OperationNotSupportedByHomeserverException();
 
     /// <summary>
-    /// Does what Synapse does before the join (#587): unless the room's join rule is <c>public</c> or the room has none,
-    /// it invites the user as the signed-in admin through the Client-Server API, then sends the admin join. Tuwunel 2.0.0
-    /// then sees the invite and doesn't invite again. A failed read or invite propagates, so nothing more is sent.
+    /// Does what Synapse does before the join (#587, #606):
+    /// <list type="number">
+    /// <item>An alias is resolved through the Client-Server directory, as Synapse resolves it.</item>
+    /// <item>Only in a room where this server has a joined local user does Synapse still have a join rule: for any other
+    /// room, or one this server doesn't know (<c>404</c>), no invite is sent.</item>
+    /// <item>Unless the room's join rule is <c>public</c> or the room has none, the user is invited as the signed-in admin
+    /// through the Client-Server API.</item>
+    /// <item>The admin join is sent with the alias or room ID and the servers as given; Tuwunel 2.0.0 sees the invite and
+    /// doesn't invite again.</item>
+    /// </list>
+    /// A failed read or invite propagates, so nothing more is sent.
     /// </summary>
-    public override async Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomIdOrAlias, string userId, IReadOnlyList<string>? serverNames = null, CancellationToken cancellationToken = default)
     {
-        if (await NeedsInviteBeforeJoinAsync(roomId, cancellationToken))
+        var roomId = roomIdOrAlias.StartsWith('#') ? await ResolveAliasAsync(roomIdOrAlias, cancellationToken) : roomIdOrAlias;
+        if (await HasJoinedLocalMemberAsync(roomId, cancellationToken) && await NeedsInviteBeforeJoinAsync(roomId, cancellationToken))
         {
             var url = $"/_matrix/client/v3/rooms/{roomId.UrlEncode()}/invite";
             using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new MatrixRoomInviteRequest { UserId = userId }, cancellationToken: cancellationToken);
             resp.EnsureSuccessStatusCode();
         }
 
-        return await base.JoinUserToRoomAsync(roomId, userId, cancellationToken);
+        return await base.JoinUserToRoomAsync(roomIdOrAlias, userId, serverNames, cancellationToken);
+    }
+
+    /// <summary>The room an alias names, from <c>GET /_matrix/client/v3/directory/room/{alias}</c> (#606).</summary>
+    private async Task<string> ResolveAliasAsync(string alias, CancellationToken cancellationToken)
+    {
+        var resolved = await Homeserver.ClientHttpClient.GetFromJsonAsync<RoomIdResponse>(RoomAliasUrl(alias), cancellationToken: cancellationToken);
+        return string.IsNullOrEmpty(resolved?.RoomId)
+            ? throw new InvalidDataException("The room directory answered without a room ID.")
+            : resolved.RoomId;
+    }
+
+    /// <summary>
+    /// Whether this server has a joined local user in the room, as Synapse keeps a room's current state only then (#606).
+    /// A room Tuwunel doesn't know answers <c>404 M_NOT_FOUND</c>, which means no.
+    /// </summary>
+    private async Task<bool> HasJoinedLocalMemberAsync(string roomId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await GetRoomDetailsAsync(roomId, cancellationToken) is { JoinedLocalMembers: > 0 };
+        }
+        catch (LibMatrix.MatrixException ex) when (ex.ErrorCode == "M_NOT_FOUND")
+        {
+            return false;
+        }
     }
 
     /// <summary>

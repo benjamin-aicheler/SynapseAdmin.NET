@@ -11,9 +11,10 @@ using Xunit;
 namespace SynapseAdmin.Tests.Components;
 
 /// <summary>
-/// The room recovery dialog (#587, AC-26): it names the room and describes the action as the reference does, and returns
-/// the trimmed user ID. Make room admin takes an empty ID (the signed-in admin) or a full user ID on any server; Join takes
-/// a full user ID on the admin's server, compared exactly, that isn't a joined member.
+/// The room recovery dialog (#587, AC-26): it names the room and describes the action as the reference does. Make room
+/// admin takes an empty ID (the signed-in admin) or a full user ID on any server and returns the trimmed ID; Join takes a
+/// full user ID on the admin's server, compared exactly, that isn't a joined member, and servers to join through (#606,
+/// AC-28), and returns both as a <see cref="RoomJoinRequestViewModel"/>.
 /// </summary>
 public class RoomUserActionDialogTests : DetailPageTestBase
 {
@@ -58,14 +59,21 @@ public class RoomUserActionDialogTests : DetailPageTestBase
 
     private static string Text(IRenderedComponent<MudDialogProvider> provider) => WebUtility.HtmlDecode(provider.Markup);
 
-    private static async Task<string?> SubmitAsync(Shown shown)
+    private static AngleSharp.Dom.IElement ServersInput(Shown shown) => shown.Dialog.Find(".join-servers input");
+
+    private static async Task<object?> SubmitAsync(Shown shown)
     {
         shown.Dialog.WaitForAssertion(() => Assert.False(SubmitButton(shown).HasAttribute("disabled")));
         SubmitButton(shown).Click();
         var result = await shown.Reference.Result.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.False(result!.Canceled);
-        return Assert.IsType<string>(result.Data);
+        return result.Data;
     }
+
+    private static async Task<string> SubmitUserIdAsync(Shown shown) => Assert.IsType<string>(await SubmitAsync(shown));
+
+    private static async Task<RoomJoinRequestViewModel> SubmitJoinAsync(Shown shown) =>
+        Assert.IsType<RoomJoinRequestViewModel>(await SubmitAsync(shown));
 
     [Fact]
     public async Task MakeAdmin_NamesTheRoom_TheEffectAndThePrecondition()
@@ -77,6 +85,8 @@ public class RoomUserActionDialogTests : DetailPageTestBase
         Assert.Contains(L["MakeRoomAdminDescription", Room].Value, text);
         Assert.Contains(L["MakeRoomAdminPrecondition"].Value, text);
         Assert.Contains(L["MakeRoomAdminUserHint", Admin].Value, text);
+        Assert.Empty(shown.Dialog.FindAll(".join-servers"));
+        Assert.DoesNotContain(L["JoinServers"].Value, text);
         Assert.Equal(L["MakeRoomAdmin"].Value, SubmitButton(shown).TextContent.Trim());
     }
 
@@ -90,6 +100,9 @@ public class RoomUserActionDialogTests : DetailPageTestBase
         Assert.Contains(L["JoinUserDescription", Room].Value, text);
         Assert.Contains(L["JoinUserHint", ServerName].Value, text);
         Assert.DoesNotContain(L["MakeRoomAdminPrecondition"].Value, text);
+        Assert.Contains(L["JoinServers"].Value, text);
+        Assert.Contains(L["JoinServersHint"].Value, text);
+        Assert.False(ServersInput(shown).HasAttribute("disabled"));
         Assert.Equal(L["JoinUser"].Value, SubmitButton(shown).TextContent.Trim());
     }
 
@@ -99,7 +112,7 @@ public class RoomUserActionDialogTests : DetailPageTestBase
     {
         var shown = await ShowAsync(RoomUserAction.MakeAdmin);
 
-        Assert.Equal("", await SubmitAsync(shown));
+        Assert.Equal("", await SubmitUserIdAsync(shown));
     }
 
     /// <summary>Synapse doesn't check the server of the user it makes room admin.</summary>
@@ -110,7 +123,7 @@ public class RoomUserActionDialogTests : DetailPageTestBase
 
         shown.Dialog.Find("input").Input("  @bob:other.org ");
 
-        Assert.Equal("@bob:other.org", await SubmitAsync(shown));
+        Assert.Equal("@bob:other.org", await SubmitUserIdAsync(shown));
     }
 
     [Theory]
@@ -167,13 +180,58 @@ public class RoomUserActionDialogTests : DetailPageTestBase
     }
 
     [Fact]
-    public async Task Join_LocalUser_ReturnsTheTrimmedId()
+    public async Task Join_LocalUser_ReturnsTheTrimmedId_WithoutServers()
     {
         var shown = await ShowAsync(RoomUserAction.Join, "@carol:example.com");
 
         shown.Dialog.Find("input").Input(" @bob:example.com ");
 
-        Assert.Equal("@bob:example.com", await SubmitAsync(shown));
+        var request = await SubmitJoinAsync(shown);
+        Assert.Equal("@bob:example.com", request.Target);
+        Assert.Empty(request.Servers);
+    }
+
+    /// <summary>Servers are separated by commas or whitespace, in their order; the service drops duplicates (#606).</summary>
+    [Fact]
+    public async Task Join_Servers_AreSplit_AndReturned()
+    {
+        var shown = await ShowAsync(RoomUserAction.Join);
+
+        shown.Dialog.Find("input").Input("@bob:example.com");
+        ServersInput(shown).Input(" matrix.org,other.org:8448  [::1]:8448 ,, matrix.org ");
+
+        var request = await SubmitJoinAsync(shown);
+        Assert.Equal(["matrix.org", "other.org:8448", "[::1]:8448", "matrix.org"], request.Servers);
+    }
+
+    [Theory]
+    [InlineData("matrix.org, https://other.org", "https://other.org")]
+    [InlineData("exa_mple.org", "exa_mple.org")]
+    [InlineData("matrix.org:", "matrix.org:")]
+    public async Task Join_InvalidServer_IsNamed_AndRefused(string servers, string named)
+    {
+        var shown = await ShowAsync(RoomUserAction.Join);
+
+        shown.Dialog.Find("input").Input("@bob:example.com");
+        ServersInput(shown).Input(servers);
+
+        shown.Dialog.WaitForAssertion(() => Assert.Contains(L["InvalidServerName", named].Value, Text(shown.Provider)));
+        Assert.True(SubmitButton(shown).HasAttribute("disabled"));
+    }
+
+    /// <summary>Correcting the servers enables the button again.</summary>
+    [Fact]
+    public async Task Join_CorrectedServer_CanBeSubmitted()
+    {
+        var shown = await ShowAsync(RoomUserAction.Join);
+        shown.Dialog.Find("input").Input("@bob:example.com");
+        ServersInput(shown).Input("exa_mple.org");
+        shown.Dialog.WaitForAssertion(() => Assert.True(SubmitButton(shown).HasAttribute("disabled")));
+
+        ServersInput(shown).Input("example.org");
+
+        Assert.Equal(["example.org"], (await SubmitJoinAsync(shown)).Servers);
+        Assert.DoesNotContain(L["InvalidServerName", "exa_mple.org"].Value, Text(shown.Provider));
     }
 
     [Fact]

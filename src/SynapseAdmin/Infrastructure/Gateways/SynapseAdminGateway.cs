@@ -397,9 +397,18 @@ public class SynapseAdminGateway(
         resp.EnsureSuccessStatusCode();
     }
 
-    public override async Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// A room ID stays form-encoded, as before #606; an alias takes <c>Uri.EscapeDataString</c>, because form encoding
+    /// sends a space as '+', which a path keeps (#580). Each server becomes a <c>server_name</c> query parameter.
+    /// </summary>
+    public override async Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomIdOrAlias, string userId, IReadOnlyList<string>? serverNames = null, CancellationToken cancellationToken = default)
     {
-        var url = $"/_synapse/admin/v1/join/{roomId.UrlEncode()}";
+        var path = roomIdOrAlias.StartsWith('#') ? Uri.EscapeDataString(roomIdOrAlias) : roomIdOrAlias.UrlEncode();
+        var url = $"/_synapse/admin/v1/join/{path}";
+        if (serverNames is { Count: > 0 })
+        {
+            url += "?" + string.Join("&", serverNames.Select(server => $"server_name={server.UrlEncode()}"));
+        }
         var request = new SynapseAdminJoinRoomRequest { UserId = userId };
         using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, request, cancellationToken: cancellationToken);
         resp.EnsureSuccessStatusCode();

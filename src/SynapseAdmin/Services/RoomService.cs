@@ -358,18 +358,34 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             });
     }
 
-    public Task<OperationResult> JoinUserToRoomAsync(string roomId, string userId, CancellationToken token = default)
+    public Task<OperationResult> JoinUserToRoomAsync(string roomIdOrAlias, string userId,
+        IReadOnlyList<string>? serverNames = null, CancellationToken token = default)
     {
         var target = userId.Trim();
-        var room = roomId.Trim();
+        var room = roomIdOrAlias.Trim();
+        var servers = DistinctServerNames(serverNames);
         return sessionService.RunGatewayCallAsync(L, "ErrorJoiningUserToRoom",
-            ex => logger.LogError(ex, "Error joining {UserId} to room {RoomId}", target.SanitizeForLogging(), room.SanitizeForLogging()),
+            ex => logger.LogError(ex, "Error joining {UserId} to room {RoomId} through {ServerCount} given servers",
+                target.SanitizeForLogging(), room.SanitizeForLogging(), servers.Count),
             async gateway =>
             {
-                // The user page lets the admin type the room (#605); an alias would be form-encoded into the path (#580).
-                if (!MatrixIdHelper.IsRoomId(room))
+                // The user page lets the admin type the room (#605, #606): a room ID or an alias.
+                var isAlias = MatrixIdHelper.IsRoomAlias(room);
+                if (!isAlias && !MatrixIdHelper.IsRoomId(room))
                 {
                     return OperationResult.Failure(L["InvalidRoomId"], Severity.Warning);
+                }
+
+                // Synapse and Tuwunel join an alias through the servers its resolution returns, never through given ones.
+                if (isAlias && servers.Count > 0)
+                {
+                    return OperationResult.Failure(L["JoinServersNeedRoomId"], Severity.Warning);
+                }
+
+                var invalidServer = servers.FirstOrDefault(server => !MatrixIdHelper.IsServerName(server));
+                if (invalidServer != null)
+                {
+                    return OperationResult.Failure(L["InvalidServerName", invalidServer], Severity.Warning);
                 }
 
                 if (!MatrixIdHelper.IsUserId(target))
@@ -383,14 +399,26 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                     return OperationResult.Failure(L["JoinUserNotLocal", gateway.ServerName], Severity.Warning);
                 }
 
-                var response = await gateway.JoinUserToRoomAsync(room, target, token);
+                var response = await gateway.JoinUserToRoomAsync(room, target, servers, token);
                 // An operation: Synapse always answers with the room ID, so null is a failure (#395).
                 if (response == null) return OperationResult.Failure(L["ErrorJoiningUserToRoom"]);
 
-                logger.LogInformation("Joined {UserId} to room {RoomId}", target.SanitizeForLogging(), room.SanitizeForLogging());
-                return OperationResult.Ok(L["UserJoinedRoom", target, room]);
+                // A join by alias names the room it reached (#606).
+                var joined = string.IsNullOrEmpty(response.RoomId) ? room : response.RoomId;
+                logger.LogInformation("Joined {UserId} to room {RoomId} through {ServerCount} given servers",
+                    target.SanitizeForLogging(), joined.SanitizeForLogging(), servers.Count);
+                return OperationResult.Ok(L["UserJoinedRoom", target, joined]);
             });
     }
+
+    /// <summary>
+    /// The servers to join through, trimmed, without blanks and duplicates, in the given order (#606). The names aren't
+    /// checked here.
+    /// </summary>
+    private static List<string> DistinctServerNames(IReadOnlyList<string>? serverNames) =>
+        serverNames == null
+            ? []
+            : serverNames.Select(server => server.Trim()).Where(server => server.Length > 0).Distinct(StringComparer.Ordinal).ToList();
 
     public Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingLargestRooms",

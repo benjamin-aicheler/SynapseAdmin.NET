@@ -98,10 +98,13 @@ public interface IMatrixGateway
     Task MakeRoomAdminAsync(string roomId, string? userId, CancellationToken cancellationToken = default);
     /// <summary>
     /// Joins a local user to a room, inviting the user first as the signed-in admin unless the room is public
-    /// (<c>POST /_synapse/admin/v1/join/{roomId}</c>, #587). The path takes a room ID; an alias would need
-    /// <c>Uri.EscapeDataString</c> (#580).
+    /// (<c>POST /_synapse/admin/v1/join/{roomIdOrAlias}</c>, #587). An alias goes into the path with
+    /// <c>Uri.EscapeDataString</c> (#580), a room ID form-encoded. <paramref name="serverNames"/> are the servers to join
+    /// through when this server isn't in the room, sent as <c>server_name</c> query parameters (#606): the reference
+    /// doesn't document them, but Synapse and Tuwunel read them for a room ID and replace them with the alias's servers for
+    /// an alias.
     /// </summary>
-    Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default);
+    Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomIdOrAlias, string userId, IReadOnlyList<string>? serverNames = null, CancellationToken cancellationToken = default);
     Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default);
     Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default);
     Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default);

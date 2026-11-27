@@ -30,11 +30,15 @@ public interface IRoomService
     Task<OperationResult> MakeRoomAdminAsync(string roomId, string? userId, CancellationToken token = default);
     /// <summary>
     /// Joins a local user to a room; the homeserver first invites the user as the signed-in admin unless the room is
-    /// public (#587). <paramref name="roomId"/> must have the form of a room ID, as the user page lets the admin type it
-    /// (#605), and <paramref name="userId"/> must be a full user ID on the signed-in admin's server, compared exactly;
-    /// otherwise the call is refused with a warning and nothing is sent.
+    /// public (#587). <paramref name="roomIdOrAlias"/> must have the form of a room ID or a room alias, as the user page
+    /// lets the admin type it (#605, #606). <paramref name="serverNames"/> are the servers to join through, for a room
+    /// this server isn't in: they are trimmed, blanks and duplicates dropped, and each must be a server name; they are
+    /// refused with an alias, whose resolution returns its own. <paramref name="userId"/> must be a full user ID on the
+    /// signed-in admin's server, compared exactly. The checks run in that order (room, servers, user); any refusal is a
+    /// warning and nothing is sent. The result names the room ID the homeserver joined.
     /// </summary>
-    Task<OperationResult> JoinUserToRoomAsync(string roomId, string userId, CancellationToken token = default);
+    Task<OperationResult> JoinUserToRoomAsync(string roomIdOrAlias, string userId, IReadOnlyList<string>? serverNames = null,
+        CancellationToken token = default);
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);
     Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default);
     Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default);

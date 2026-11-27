@@ -90,6 +90,64 @@ public class LocalMatrixIdTests
     public void IsRoomId_AcceptsBothRoomIdForms(string? id, bool expected) =>
         Assert.Equal(expected, MatrixIdHelper.IsRoomId(id));
 
+    /// <summary>
+    /// Synapse splits an alias at the first <c>:</c>; the localpart may contain spaces (#580), the server part is a server
+    /// name (#606).
+    /// </summary>
+    [Theory]
+    [InlineData("#room:example.org", true)]
+    [InlineData("#my room:example.org", true)]
+    [InlineData("#room:example.org:8448", true)]
+    [InlineData("#room:[::1]:8448", true)]
+    [InlineData("#room:127.0.0.1", true)]
+    [InlineData("#r:x", true)]
+    [InlineData("#:example.org", false)]
+    [InlineData("#   :example.org", false)]
+    [InlineData("#room", false)]
+    [InlineData("#room:", false)]
+    [InlineData("#room:exa mple.org", false)]
+    [InlineData("#room:example.org/x", false)]
+    [InlineData("#ro\nom:example.org", false)]
+    [InlineData(" #room:example.org", false)]
+    [InlineData("#room:example.org ", false)]
+    [InlineData("!room:example.org", false)]
+    [InlineData("room:example.org", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsRoomAlias_AcceptsTheAliasForm(string? id, bool expected) =>
+        Assert.Equal(expected, MatrixIdHelper.IsRoomAlias(id));
+
+    /// <summary>The Matrix spec's server name: a DNS name, IPv4 or bracketed IPv6, with an optional port (#606).</summary>
+    [Theory]
+    [InlineData("example.org", true)]
+    [InlineData("matrix.example-1.org", true)]
+    [InlineData("example.org:8448", true)]
+    [InlineData("localhost", true)]
+    [InlineData("127.0.0.1:8008", true)]
+    [InlineData("[::1]", true)]
+    [InlineData("[2001:db8::1]:8448", true)]
+    [InlineData("example.org:", false)]
+    [InlineData("example.org:123456", false)]
+    [InlineData("example.org:port", false)]
+    [InlineData("exa mple.org", false)]
+    [InlineData("example.org/path", false)]
+    [InlineData("a,b", false)]
+    [InlineData("user@example.org", false)]
+    [InlineData("https://example.org", false)]
+    [InlineData("::1", false)]
+    [InlineData("example.org\n", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsServerName_FollowsTheSpecGrammar(string? name, bool expected) =>
+        Assert.Equal(expected, MatrixIdHelper.IsServerName(name));
+
+    [Fact]
+    public void IsServerName_AllowsAtMost255Characters()
+    {
+        Assert.True(MatrixIdHelper.IsServerName(new string('a', 255)));
+        Assert.False(MatrixIdHelper.IsServerName(new string('a', 256)));
+    }
+
     /// <summary>Exact, as Synapse's <c>is_mine</c> and Tuwunel's <c>user_is_local</c> compare it (#587).</summary>
     [Theory]
     [InlineData("@a:example.org", "example.org", true)]

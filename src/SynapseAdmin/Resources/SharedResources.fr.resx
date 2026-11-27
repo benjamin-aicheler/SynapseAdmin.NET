@@ -1967,15 +1967,33 @@
     <value>{0} rejoint le salon saisi. Seuls les utilisateurs locaux peuvent être ajoutés. L'administrateur du serveur doit être dans le salon et avoir le droit d'inviter des utilisateurs.</value>
   </data>
   <data name="JoinToRoomRoomIdHint" xml:space="preserve">
-    <value>Un ID de salon, par exemple !abc123:example.org. Les alias de salon ne sont pas acceptés.</value>
+    <value>Un ID de salon, par exemple !abc123:example.org, ou un alias de salon, par exemple #salon:example.org.</value>
   </data>
   <data name="JoinToRoomPicks" xml:space="preserve">
     <value>Salons que l'utilisateur a quittés, auxquels il a été invité ou pour lesquels il a frappé</value>
   </data>
   <data name="InvalidRoomId" xml:space="preserve">
-    <value>Saisissez un ID de salon, par exemple !abc123:example.org.</value>
+    <value>Saisissez un ID de salon, par exemple !abc123:example.org, ou un alias de salon, par exemple #salon:example.org.</value>
   </data>
   <data name="UserBannedFromRoom" xml:space="preserve">
     <value>Cet utilisateur est banni de ce salon.</value>
+  </data>
+  <data name="RoomIdOrAlias" xml:space="preserve">
+    <value>ID ou alias du salon</value>
+  </data>
+  <data name="JoinServers" xml:space="preserve">
+    <value>Serveurs par lesquels rejoindre</value>
+  </data>
+  <data name="JoinServersHint" xml:space="preserve">
+    <value>Facultatif, séparés par des virgules ou des espaces, par exemple matrix.org. Nécessaire uniquement si ce serveur n'est pas dans le salon : le serveur d'accueil rejoint le salon par ces serveurs.</value>
+  </data>
+  <data name="JoinServersAliasNote" xml:space="preserve">
+    <value>Non utilisé pour un alias : le serveur d'accueil trouve les serveurs du salon à partir de l'alias lui-même.</value>
+  </data>
+  <data name="InvalidServerName" xml:space="preserve">
+    <value>« {0} » n'est pas un nom de serveur. Saisissez un nom d'hôte, une adresse IPv4 ou une adresse IPv6 entre crochets, avec un port facultatif, par exemple matrix.org ou matrix.org:8448.</value>
+  </data>
+  <data name="JoinServersNeedRoomId" xml:space="preserve">
+    <value>Les serveurs par lesquels rejoindre ne peuvent être indiqués qu'avec un ID de salon : le serveur d'accueil trouve les serveurs d'un alias à partir de l'alias lui-même.</value>
   </data>
 </root>

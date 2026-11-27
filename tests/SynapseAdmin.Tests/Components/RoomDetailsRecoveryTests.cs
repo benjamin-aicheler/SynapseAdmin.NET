@@ -77,6 +77,13 @@ public class RoomDetailsRecoveryTests : DetailPageTestBase
         return cut;
     }
 
+    private static readonly string[] JoinServers = ["matrix.org", "other.org:8448"];
+
+    /// <summary>What the dialog returns for bob: Join the user and the servers to join through (#606), Make admin the ID.</summary>
+    private static object BobFor(string handler) => handler == "JoinUser"
+        ? new RoomJoinRequestViewModel { Target = "@bob:hs", Servers = JoinServers }
+        : "@bob:hs";
+
     public static TheoryData<string, RoomUserAction, string, string> Actions => new()
     {
         { "MakeRoomAdmin", RoomUserAction.MakeAdmin, "MakeRoomAdminTitle", nameof(IRoomService.MakeRoomAdminAsync) },
@@ -112,12 +119,13 @@ public class RoomDetailsRecoveryTests : DetailPageTestBase
         var cut = RenderRoom();
         var running = InvokeHandler(cut, handler);
 
-        _dialogResult.SetResult(DialogResult.Ok("@bob:hs"));
+        _dialogResult.SetResult(DialogResult.Ok(BobFor(handler)));
         await running.WaitAsync(TimeSpan.FromSeconds(10));
 
         var call = Assert.Single(ActionCalls(method));
         Assert.Equal((RoomA, "@bob:hs"), ((string)call[0]!, (string?)call[1]));
-        Assert.False(((CancellationToken)call[2]!).IsCancellationRequested);
+        if (handler == "JoinUser") Assert.Same(JoinServers, call[2]);
+        Assert.False(((CancellationToken)call[^1]!).IsCancellationRequested);
         AssertSnackbars(("Done", Severity.Success));
         Assert.Equal(2, DetailLoads(RoomA).Count);
     }
@@ -135,6 +143,24 @@ public class RoomDetailsRecoveryTests : DetailPageTestBase
         Assert.Equal("", Assert.Single(ActionCalls(nameof(IRoomService.MakeRoomAdminAsync)))[1]);
     }
 
+    /// <summary>A result that isn't the action's (the other action's type, or none) sends nothing.</summary>
+    [Theory]
+    [InlineData("MakeRoomAdmin", "JoinUser")]
+    [InlineData("JoinUser", "MakeRoomAdmin")]
+    [InlineData("JoinUser", null)]
+    public async Task ResultOfAnotherType_SendsNothing(string handler, string? resultFor)
+    {
+        var cut = RenderRoom();
+        var running = InvokeHandler(cut, handler);
+
+        _dialogResult.SetResult(DialogResult.Ok(resultFor == null ? null : BobFor(resultFor)));
+        await running.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Empty(ActionCalls(nameof(IRoomService.MakeRoomAdminAsync)));
+        Assert.Empty(ActionCalls(nameof(IRoomService.JoinUserToRoomAsync)));
+        AssertSnackbars();
+    }
+
     /// <summary>A failure, a refusal ("not supported", a warning) and a cancellation don't load the room again.</summary>
     [Theory]
     [InlineData("MakeRoomAdmin", "failure")]
@@ -150,7 +176,7 @@ public class RoomDetailsRecoveryTests : DetailPageTestBase
         var cut = RenderRoom();
         var running = InvokeHandler(cut, handler);
 
-        _dialogResult.SetResult(DialogResult.Ok("@bob:hs"));
+        _dialogResult.SetResult(DialogResult.Ok(BobFor(handler)));
         await running.WaitAsync(TimeSpan.FromSeconds(10));
 
         if (kind == "cancelled") AssertSnackbars();
@@ -179,7 +205,7 @@ public class RoomDetailsRecoveryTests : DetailPageTestBase
 
         cut.Render(p => p.Add(x => x.RoomId, RoomB));
         cut.WaitForAssertion(() => Assert.Contains(NameOf(RoomB), cut.Markup));
-        _dialogResult.SetResult(DialogResult.Ok("@bob:hs"));
+        _dialogResult.SetResult(DialogResult.Ok(BobFor(handler)));
         await running.WaitAsync(TimeSpan.FromSeconds(10));
 
         Assert.Empty(ActionCalls(method));
@@ -194,7 +220,7 @@ public class RoomDetailsRecoveryTests : DetailPageTestBase
         _actionResult = () => answer.Task;
         var cut = RenderRoom();
         var running = InvokeHandler(cut, "JoinUser");
-        _dialogResult.SetResult(DialogResult.Ok("@bob:hs"));
+        _dialogResult.SetResult(DialogResult.Ok(BobFor("JoinUser")));
         cut.WaitForAssertion(() => Assert.Single(ActionCalls(nameof(IRoomService.JoinUserToRoomAsync))));
 
         cut.Render(p => p.Add(x => x.RoomId, RoomB));

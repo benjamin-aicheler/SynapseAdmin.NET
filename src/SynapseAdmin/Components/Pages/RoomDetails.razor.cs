@@ -4,6 +4,7 @@ using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Interfaces;
+using SynapseAdmin.Models;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Infrastructure.Helpers;
 
@@ -697,7 +698,7 @@ namespace SynapseAdmin.Components.Pages
         private Task JoinUser() => OpenRoomUserActionAsync(RoomUserAction.Join);
 
         /// <summary>
-        /// Asks for the user of a room recovery action (#587). The dialog names the shown room and is the confirmation;
+        /// Asks for the user of a room recovery action (#587), and for Join the servers to join through (#606). The dialog names the shown room and is the confirmation;
         /// afterwards the page re-checks that the room is still shown, sends the action and, after a success, loads the
         /// room again so that its members and state events (the power levels) are current.
         /// </summary>
@@ -719,11 +720,18 @@ namespace SynapseAdmin.Components.Pages
 
             var dialog = await DialogService.ShowAsync<RoomUserActionDialog>(title, parameters, DialogPresets.Small());
             var result = await dialog.Result;
-            if (result is not { Canceled: false, Data: string userId } || !IsStillDisplayed(target)) return;
+            // Join returns the user and the servers to join through (#606), Make room admin the user ID.
+            Func<Task<OperationResult>>? send = (action, result) switch
+            {
+                (RoomUserAction.Join, { Canceled: false, Data: RoomJoinRequestViewModel join }) =>
+                    () => RoomService.JoinUserToRoomAsync(target, join.Target, join.Servers, _cts.Token),
+                (RoomUserAction.MakeAdmin, { Canceled: false, Data: string userId }) =>
+                    () => RoomService.MakeRoomAdminAsync(target, userId, _cts.Token),
+                _ => null
+            };
+            if (send == null || !IsStillDisplayed(target)) return;
 
-            var outcome = action == RoomUserAction.Join
-                ? await RoomService.JoinUserToRoomAsync(target, userId, _cts.Token)
-                : await RoomService.MakeRoomAdminAsync(target, userId, _cts.Token);
+            var outcome = await send();
             Snackbar.ShowResult(outcome);
 
             if (outcome.Success && GetDisplayedTarget() == target)

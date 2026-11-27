@@ -1,16 +1,19 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SynapseAdmin.Components.Shared;
 using SynapseAdmin.Infrastructure.Helpers;
 using SynapseAdmin.Models.ViewModels;
 
 namespace SynapseAdmin.Components.Pages;
 
 /// <summary>
-/// Asks for the user of a room recovery action and returns the trimmed user ID as a <see cref="string"/> (#587). It
+/// Asks for the user of a room recovery action (#587). Make room admin returns the trimmed user ID as a
+/// <see cref="string"/>; Join returns a <see cref="RoomJoinRequestViewModel"/> with the trimmed user ID and the servers to
+/// join through, for a room this server has left (#606). It
 /// names the room and the effect, so its submit button is the confirmation; the room page re-checks the shown room and
 /// sends the request. Make room admin takes an empty ID (returned as <c>""</c>: the signed-in admin) or a full user ID on
 /// any server. Join takes a full user ID on <see cref="ServerName"/>, compared exactly, that isn't one of
-/// <see cref="JoinedMemberIds"/>. The service checks the ID again.
+/// <see cref="JoinedMemberIds"/>, and servers that are server names. The service checks both again.
 /// </summary>
 public partial class RoomUserActionDialog
 {
@@ -31,6 +34,7 @@ public partial class RoomUserActionDialog
     [Parameter] public IReadOnlyCollection<string> JoinedMemberIds { get; set; } = [];
 
     private string? userId;
+    private string? servers;
 
     private bool IsJoin => Action == RoomUserAction.Join;
 
@@ -42,8 +46,10 @@ public partial class RoomUserActionDialog
 
     private string Trimmed => userId?.Trim() ?? string.Empty;
 
+    private string? ServersError => IsJoin ? JoinServerInput.Validate(servers, L) : null;
+
     // An empty Join field shows no error yet; it only keeps the button disabled.
-    private bool CanSubmit => Validate(userId) == null && (!IsJoin || Trimmed.Length > 0);
+    private bool CanSubmit => Validate(userId) == null && (!IsJoin || (Trimmed.Length > 0 && ServersError == null));
 
     private string? Validate(string? value)
     {
@@ -59,7 +65,9 @@ public partial class RoomUserActionDialog
     private void Submit()
     {
         if (!CanSubmit) return;
-        MudDialog.Close(DialogResult.Ok(Trimmed));
+        MudDialog.Close(IsJoin
+            ? DialogResult.Ok(new RoomJoinRequestViewModel { Target = Trimmed, Servers = JoinServerInput.Split(servers) })
+            : DialogResult.Ok(Trimmed));
     }
 
     private void Cancel() => MudDialog.Cancel();
