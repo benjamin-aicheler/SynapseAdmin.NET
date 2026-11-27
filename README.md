@@ -45,6 +45,7 @@ SynapseAdmin.NET follows the [Synapse Admin API](https://element-hq.github.io/sy
 - bulk local media deletion, because Tuwunel selects media by when the file was last modified (about the upload) instead of last access, and the remote media cache purge, because it selects by download time instead of last access;
 - creating or editing a registration token so that it is invalid at once (0 uses allowed, no more uses than it already had, or an expiry in the past), because Tuwunel deletes an invalid token where Synapse keeps it. For the same reason, a token whose uses run out or whose expiry passes later disappears from the list on Tuwunel;
 - resetting your own password, because Tuwunel also signs out the session that sends the reset, and resetting the password of a deactivated account, because Tuwunel's reset reactivates it. Resetting another active user's password works as on Synapse;
+- redacting a user's events, because Tuwunel picks the events to search in timeline order instead of by when the server received them, and redacts through a different permission check, so the same request can redact other events than on Synapse;
 - sorting the user list by anything but user ID, because Tuwunel always sorts by user ID. Tuwunel doesn't store when an account was created, so the creation date shows as "Unknown".
 
 Tuwunel 1.8.1 lacks several endpoints the app needs, so it is treated as a homeserver without the Synapse Admin API. On a homeserver without the Synapse Admin API, the admin features are not available.
