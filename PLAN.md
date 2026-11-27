@@ -205,3 +205,4 @@ None (in-memory cache entry only).
 | 2026-11-27 | Plan approved. |
 | 2026-11-27 | [2.1] The default limit lives on the request ViewModel (`DefaultLimit`) instead of in the service. |
 | 2026-11-27 | [2.2] The service also drops blank selected room IDs (only blanks counts as no selection), and treats an empty answer to the start like one without `redact_id`: the `POST` succeeded, so the redaction runs untracked. |
+| 2026-11-27 | [3.1] "Redact" is "entfernen" in German and "effacer" in French, as Matrix clients translate it, so that it isn't confused with deleting a room or purging history. The confirmation takes the scope in the dative in German ("in den Räumen des Benutzers"). |

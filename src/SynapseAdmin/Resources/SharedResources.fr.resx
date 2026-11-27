@@ -1819,4 +1819,94 @@
   <data name="ErrorDeletingUserMedia" xml:space="preserve">
     <value>Erreur lors de la suppression des médias de l'utilisateur.</value>
   </data>
+  <data name="RedactUserEvents" xml:space="preserve">
+    <value>Effacer les événements</value>
+  </data>
+  <data name="RedactUserEventsTitle" xml:space="preserve">
+    <value>Effacer les événements de {0}</value>
+  </data>
+  <data name="RedactRooms" xml:space="preserve">
+    <value>Salons</value>
+  </data>
+  <data name="RedactUserRooms" xml:space="preserve">
+    <value>Les salons de l'utilisateur ({0})</value>
+  </data>
+  <data name="RedactSelectedRooms" xml:space="preserve">
+    <value>Salons sélectionnés</value>
+  </data>
+  <data name="RedactUserRoomsNone" xml:space="preserve">
+    <value>L'utilisateur n'est membre d'aucun salon et n'est banni d'aucun salon : « Les salons de l'utilisateur » n'efface donc rien. Les salons que l'utilisateur a quittés peuvent être sélectionnés.</value>
+  </data>
+  <data name="RedactReason" xml:space="preserve">
+    <value>Motif (facultatif)</value>
+  </data>
+  <data name="RedactReasonHint" xml:space="preserve">
+    <value>Inclus dans chaque effacement, donc visible par les membres du salon.</value>
+  </data>
+  <data name="RedactSearchLimit" xml:space="preserve">
+    <value>Événements à parcourir par salon</value>
+  </data>
+  <data name="RedactSearchLimitHint" xml:space="preserve">
+    <value>Les événements de l'utilisateur sont parcourus dans chaque salon jusqu'à ce nombre, des plus récents aux plus anciens, et ceux qui peuvent être effacés le sont.</value>
+  </data>
+  <data name="RedactAsAdmin" xml:space="preserve">
+    <value>Effacer en tant qu'administrateur</value>
+  </data>
+  <data name="RedactAsAdminHint" xml:space="preserve">
+    <value>Votre compte envoie les effacements à la place de celui de l'utilisateur. Ils échouent dans les salons où votre compte n'a pas le niveau de pouvoir nécessaire.</value>
+  </data>
+  <data name="RedactEventTypesHint" xml:space="preserve">
+    <value>Seuls les messages, les messages chiffrés et les arrivées dans un salon sont effacés. Dans un salon que l'utilisateur a quitté, les effacements ne réussissent qu'en tant qu'administrateur.</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>Continuer</value>
+  </data>
+  <data name="RedactUserEventsConfirmation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir effacer les événements de l'utilisateur « {0} » dans {1} ?</value>
+  </data>
+  <data name="RedactScopeUserRooms" xml:space="preserve">
+    <value>les salons de l'utilisateur</value>
+  </data>
+  <data name="RedactScopeSelectedRooms" xml:space="preserve">
+    <value>{0} salons sélectionnés</value>
+  </data>
+  <data name="RedactUserEventsHint" xml:space="preserve">
+    <value>Les effacements sont irréversibles.</value>
+  </data>
+  <data name="UserRedactionStarted" xml:space="preserve">
+    <value>Effacement démarré. Le serveur d'accueil efface les événements en arrière-plan.</value>
+  </data>
+  <data name="UserRedactionInProgress" xml:space="preserve">
+    <value>Effacement des événements de l'utilisateur</value>
+  </data>
+  <data name="UserRedactionCompleted" xml:space="preserve">
+    <value>Les événements de l'utilisateur ont été effacés.</value>
+  </data>
+  <data name="UserRedactionCompletedWithFailures" xml:space="preserve">
+    <value>L'effacement est terminé, mais {0} événements n'ont pas pu être effacés. Les détails figurent dans le journal de l'application.</value>
+  </data>
+  <data name="UserRedactionFailed" xml:space="preserve">
+    <value>L'effacement des événements de l'utilisateur a échoué. Le message d'erreur du serveur d'accueil figure dans le journal de l'application.</value>
+  </data>
+  <data name="UserRedactionStatusUnknown" xml:space="preserve">
+    <value>Le serveur d'accueil ne communique plus l'état de l'effacement.</value>
+  </data>
+  <data name="UserRedactionNoRoomsSelected" xml:space="preserve">
+    <value>Sélectionnez au moins un salon.</value>
+  </data>
+  <data name="UserRedactionInvalidLimit" xml:space="preserve">
+    <value>Le nombre d'événements à parcourir par salon doit être d'au moins 1.</value>
+  </data>
+  <data name="ErrorRedactingUserEvents" xml:space="preserve">
+    <value>Erreur lors du démarrage de l'effacement des événements de l'utilisateur.</value>
+  </data>
+  <data name="ErrorFetchingUserRedactionStatus" xml:space="preserve">
+    <value>Erreur lors de la vérification de l'état de l'effacement.</value>
+  </data>
+  <data name="UserRedactionStatusScheduled" xml:space="preserve">
+    <value>Planifié</value>
+  </data>
+  <data name="UserRedactionStatusActive" xml:space="preserve">
+    <value>En cours</value>
+  </data>
 </root>

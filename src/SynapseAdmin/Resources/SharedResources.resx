@@ -1820,4 +1820,94 @@
   <data name="ErrorDeletingUserMedia" xml:space="preserve">
     <value>Error deleting the user's media.</value>
   </data>
+  <data name="RedactUserEvents" xml:space="preserve">
+    <value>Redact events</value>
+  </data>
+  <data name="RedactUserEventsTitle" xml:space="preserve">
+    <value>Redact the events of {0}</value>
+  </data>
+  <data name="RedactRooms" xml:space="preserve">
+    <value>Rooms</value>
+  </data>
+  <data name="RedactUserRooms" xml:space="preserve">
+    <value>The user's rooms ({0})</value>
+  </data>
+  <data name="RedactSelectedRooms" xml:space="preserve">
+    <value>Selected rooms</value>
+  </data>
+  <data name="RedactUserRoomsNone" xml:space="preserve">
+    <value>The user is joined to or banned from no room, so "The user's rooms" redacts nothing. Rooms the user has left can be selected.</value>
+  </data>
+  <data name="RedactReason" xml:space="preserve">
+    <value>Reason (optional)</value>
+  </data>
+  <data name="RedactReasonHint" xml:space="preserve">
+    <value>Included in each redaction, so room members see it.</value>
+  </data>
+  <data name="RedactSearchLimit" xml:space="preserve">
+    <value>Events to search per room</value>
+  </data>
+  <data name="RedactSearchLimitHint" xml:space="preserve">
+    <value>The user's events in each room are searched newest first, up to this number, and those that can be redacted are redacted.</value>
+  </data>
+  <data name="RedactAsAdmin" xml:space="preserve">
+    <value>Redact as admin</value>
+  </data>
+  <data name="RedactAsAdminHint" xml:space="preserve">
+    <value>Your account sends the redactions instead of the user's. They fail in rooms where your account lacks the power level to redact.</value>
+  </data>
+  <data name="RedactEventTypesHint" xml:space="preserve">
+    <value>Only messages, encrypted messages and room joins are redacted. In a room the user has left, the redactions succeed only as admin.</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="RedactUserEventsConfirmation" xml:space="preserve">
+    <value>Are you sure you want to redact the events of the user "{0}" in {1}?</value>
+  </data>
+  <data name="RedactScopeUserRooms" xml:space="preserve">
+    <value>the user's rooms</value>
+  </data>
+  <data name="RedactScopeSelectedRooms" xml:space="preserve">
+    <value>{0} selected rooms</value>
+  </data>
+  <data name="RedactUserEventsHint" xml:space="preserve">
+    <value>Redactions can't be undone.</value>
+  </data>
+  <data name="UserRedactionStarted" xml:space="preserve">
+    <value>Redaction started. The homeserver redacts the events in the background.</value>
+  </data>
+  <data name="UserRedactionInProgress" xml:space="preserve">
+    <value>Redacting the user's events</value>
+  </data>
+  <data name="UserRedactionCompleted" xml:space="preserve">
+    <value>The user's events were redacted.</value>
+  </data>
+  <data name="UserRedactionCompletedWithFailures" xml:space="preserve">
+    <value>The redaction finished, but {0} events couldn't be redacted. The details are in the application log.</value>
+  </data>
+  <data name="UserRedactionFailed" xml:space="preserve">
+    <value>Redacting the user's events failed. The homeserver's error message is in the application log.</value>
+  </data>
+  <data name="UserRedactionStatusUnknown" xml:space="preserve">
+    <value>The homeserver no longer reports the status of the redaction.</value>
+  </data>
+  <data name="UserRedactionNoRoomsSelected" xml:space="preserve">
+    <value>Select at least one room.</value>
+  </data>
+  <data name="UserRedactionInvalidLimit" xml:space="preserve">
+    <value>The number of events to search per room must be at least 1.</value>
+  </data>
+  <data name="ErrorRedactingUserEvents" xml:space="preserve">
+    <value>Error starting the redaction of the user's events.</value>
+  </data>
+  <data name="ErrorFetchingUserRedactionStatus" xml:space="preserve">
+    <value>Error checking the redaction status.</value>
+  </data>
+  <data name="UserRedactionStatusScheduled" xml:space="preserve">
+    <value>Scheduled</value>
+  </data>
+  <data name="UserRedactionStatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
 </root>

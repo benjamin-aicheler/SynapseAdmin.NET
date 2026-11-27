@@ -1819,4 +1819,94 @@
   <data name="ErrorDeletingUserMedia" xml:space="preserve">
     <value>Fehler beim Löschen der Medien des Benutzers.</value>
   </data>
+  <data name="RedactUserEvents" xml:space="preserve">
+    <value>Ereignisse entfernen</value>
+  </data>
+  <data name="RedactUserEventsTitle" xml:space="preserve">
+    <value>Ereignisse von {0} entfernen</value>
+  </data>
+  <data name="RedactRooms" xml:space="preserve">
+    <value>Räume</value>
+  </data>
+  <data name="RedactUserRooms" xml:space="preserve">
+    <value>Die Räume des Benutzers ({0})</value>
+  </data>
+  <data name="RedactSelectedRooms" xml:space="preserve">
+    <value>Ausgewählte Räume</value>
+  </data>
+  <data name="RedactUserRoomsNone" xml:space="preserve">
+    <value>Der Benutzer ist in keinem Raum Mitglied oder gesperrt, daher entfernt „Die Räume des Benutzers“ nichts. Räume, die der Benutzer verlassen hat, lassen sich auswählen.</value>
+  </data>
+  <data name="RedactReason" xml:space="preserve">
+    <value>Grund (optional)</value>
+  </data>
+  <data name="RedactReasonHint" xml:space="preserve">
+    <value>Wird in jede Entfernung übernommen und ist für die Mitglieder des Raums sichtbar.</value>
+  </data>
+  <data name="RedactSearchLimit" xml:space="preserve">
+    <value>Zu durchsuchende Ereignisse pro Raum</value>
+  </data>
+  <data name="RedactSearchLimitHint" xml:space="preserve">
+    <value>Die Ereignisse des Benutzers werden in jedem Raum bis zu dieser Anzahl durchsucht, die neuesten zuerst, und die entfernbaren werden entfernt.</value>
+  </data>
+  <data name="RedactAsAdmin" xml:space="preserve">
+    <value>Als Administrator entfernen</value>
+  </data>
+  <data name="RedactAsAdminHint" xml:space="preserve">
+    <value>Ihr Konto sendet die Entfernungen statt des Kontos des Benutzers. Sie schlagen in Räumen fehl, in denen Ihr Konto nicht die nötige Berechtigungsstufe hat.</value>
+  </data>
+  <data name="RedactEventTypesHint" xml:space="preserve">
+    <value>Entfernt werden nur Nachrichten, verschlüsselte Nachrichten und Raumbeitritte. In einem Raum, den der Benutzer verlassen hat, gelingen die Entfernungen nur als Administrator.</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>Weiter</value>
+  </data>
+  <data name="RedactUserEventsConfirmation" xml:space="preserve">
+    <value>Sind Sie sicher, dass Sie die Ereignisse des Benutzers „{0}“ in {1} entfernen möchten?</value>
+  </data>
+  <data name="RedactScopeUserRooms" xml:space="preserve">
+    <value>den Räumen des Benutzers</value>
+  </data>
+  <data name="RedactScopeSelectedRooms" xml:space="preserve">
+    <value>{0} ausgewählten Räumen</value>
+  </data>
+  <data name="RedactUserEventsHint" xml:space="preserve">
+    <value>Entfernungen lassen sich nicht rückgängig machen.</value>
+  </data>
+  <data name="UserRedactionStarted" xml:space="preserve">
+    <value>Entfernung gestartet. Der Homeserver entfernt die Ereignisse im Hintergrund.</value>
+  </data>
+  <data name="UserRedactionInProgress" xml:space="preserve">
+    <value>Ereignisse des Benutzers werden entfernt</value>
+  </data>
+  <data name="UserRedactionCompleted" xml:space="preserve">
+    <value>Die Ereignisse des Benutzers wurden entfernt.</value>
+  </data>
+  <data name="UserRedactionCompletedWithFailures" xml:space="preserve">
+    <value>Die Entfernung ist abgeschlossen, aber {0} Ereignisse konnten nicht entfernt werden. Die Einzelheiten stehen im Anwendungsprotokoll.</value>
+  </data>
+  <data name="UserRedactionFailed" xml:space="preserve">
+    <value>Entfernen der Ereignisse des Benutzers fehlgeschlagen. Die Fehlermeldung des Homeservers steht im Anwendungsprotokoll.</value>
+  </data>
+  <data name="UserRedactionStatusUnknown" xml:space="preserve">
+    <value>Der Homeserver meldet den Status der Entfernung nicht mehr.</value>
+  </data>
+  <data name="UserRedactionNoRoomsSelected" xml:space="preserve">
+    <value>Wählen Sie mindestens einen Raum aus.</value>
+  </data>
+  <data name="UserRedactionInvalidLimit" xml:space="preserve">
+    <value>Die Anzahl der zu durchsuchenden Ereignisse pro Raum muss mindestens 1 sein.</value>
+  </data>
+  <data name="ErrorRedactingUserEvents" xml:space="preserve">
+    <value>Fehler beim Starten der Entfernung der Ereignisse des Benutzers.</value>
+  </data>
+  <data name="ErrorFetchingUserRedactionStatus" xml:space="preserve">
+    <value>Fehler beim Prüfen des Status der Entfernung.</value>
+  </data>
+  <data name="UserRedactionStatusScheduled" xml:space="preserve">
+    <value>Geplant</value>
+  </data>
+  <data name="UserRedactionStatusActive" xml:space="preserve">
+    <value>Läuft</value>
+  </data>
 </root>
