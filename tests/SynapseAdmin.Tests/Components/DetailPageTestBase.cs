@@ -55,6 +55,9 @@ public abstract class DetailPageTestBase : BunitContext, IAsyncLifetime
 
         // No redaction is tracked unless a page test says so (#600).
         Services.AddSingleton(Stub.Create<IUserRedactionService>());
+        // The user page joins a user to a room through the room service (#605); room page tests register their own,
+        // which wins.
+        Services.AddSingleton(Stub.Create<IRoomService>());
 
         Services.AddSingleton(Stub.Create<IDialogService>(out var dialogStub));
         DialogStub = dialogStub;
