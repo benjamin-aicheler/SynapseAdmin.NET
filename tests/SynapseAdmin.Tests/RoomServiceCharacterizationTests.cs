@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
@@ -8,6 +9,7 @@ using SynapseAdmin.Models;
 using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Models.ViewModels;
+using SynapseAdmin.Resources;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
 using SynapseAdmin.Tests.TestSupport;
@@ -32,6 +34,8 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     private const string PurgeId = "purge\n1";
     private const string DeleteId = "delete\n1";
     private const string Search = "ali\nce";
+    private const string ServerName = "example.com";
+    private const string AdminUserId = "@admin:example.com";
     private static readonly Dictionary<string, object?> RoomArgument = new() { ["RoomId"] = SanitizedRoomId };
 
     private sealed record Operation(
@@ -82,6 +86,20 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
             "RoomUnblockedSuccessfully", "Successfully {Action} room {RoomId}", new() { ["Action"] = "unblocked", ["RoomId"] = SanitizedRoomId }),
         ["BlockStatus"] = new("GetRoomBlockStatusAsync", async (s, ct) => await s.GetRoomBlockStatusAsync(RoomId, ct),
             Args(RoomId), "ErrorFetchingRoomBlockStatus", "Error fetching block status for room {RoomId}", RoomArgument),
+        // Synapse doesn't check the server of the user it makes room admin (#587).
+        ["MakeAdmin"] = new("MakeRoomAdminAsync", (s, ct) => s.MakeRoomAdminAsync(RoomId, " @bob:other.org ", ct),
+            Args(RoomId, "@bob:other.org"), "ErrorMakingRoomAdmin", "Error making {UserId} room admin in room {RoomId}",
+            new() { ["UserId"] = "@bob:other.org", ["RoomId"] = SanitizedRoomId },
+            "RoomAdminGranted", "Made {UserId} room admin in room {RoomId}", new() { ["UserId"] = "@bob:other.org", ["RoomId"] = SanitizedRoomId }),
+        // A blank user is the signed-in admin: no user_id is sent, and the success log names the session's user.
+        ["MakeAdminSelf"] = new("MakeRoomAdminAsync", (s, ct) => s.MakeRoomAdminAsync(RoomId, "  ", ct),
+            Args(RoomId, null), "ErrorMakingRoomAdmin", "Error making {UserId} room admin in room {RoomId}",
+            new() { ["UserId"] = "the signed-in admin", ["RoomId"] = SanitizedRoomId },
+            "RoomAdminGranted", "Made {UserId} room admin in room {RoomId}", new() { ["UserId"] = AdminUserId, ["RoomId"] = SanitizedRoomId }),
+        // Success needs the room ID the gateway returns: see the Join_* tests (#587).
+        ["Join"] = new("JoinUserToRoomAsync", async (s, ct) => await s.JoinUserToRoomAsync(RoomId, " @bob:example.com ", ct),
+            Args(RoomId, "@bob:example.com"), "ErrorJoiningUserToRoom", "Error joining {UserId} to room {RoomId}",
+            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = SanitizedRoomId }),
         ["LargestRooms"] = new("GetLargestRoomsAsync", async (s, ct) => await s.GetLargestRoomsAsync(ct),
             Args(), "ErrorFetchingLargestRooms", "Error fetching largest rooms", []),
         ["Messages"] = new("GetRoomMessagesAsync", async (s, ct) => await s.GetRoomMessagesAsync(RoomId, "from", 5, "b", "filter", "to", ct),
@@ -148,11 +166,12 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     public async Task ForwardsArgumentsToGateway(string name)
     {
         var operation = Operations[name];
-        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+        var gateway = TableGateway(out var stub);
 
         await operation.Invoke(CreateService(gateway), _cts.Token);
 
-        var call = Assert.Single(stub.Calls, c => c.Method != "get_HomeserverUrl");
+        // Property reads (the homeserver URL for cache keys, the server name and user ID for room recovery) aren't calls.
+        var call = Assert.Single(stub.Calls, c => !c.Method.StartsWith("get_", StringComparison.Ordinal));
         Assert.Equal(operation.GatewayMethod, call.Method);
         operation.AssertGatewayArgs(call.Args, _cts.Token);
     }
@@ -172,7 +191,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     [Theory, MemberData(nameof(AllOperations))]
     public async Task GatewayCancels_ReturnsSilentCancellation_WithoutLogging(string name)
     {
-        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(Operations[name].GatewayMethod, new TaskCanceledException()));
+        var gateway = TableGateway(s => s.Fault(Operations[name].GatewayMethod, new TaskCanceledException()));
 
         var result = await Operations[name].Invoke(CreateService(gateway), _cts.Token);
 
@@ -185,7 +204,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var operation = Operations[name];
         var error = new InvalidOperationException("boom");
-        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, error));
+        var gateway = TableGateway(s => s.Fault(operation.GatewayMethod, error));
 
         var result = await operation.Invoke(CreateService(gateway), _cts.Token);
 
@@ -207,7 +226,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var operation = Operations[name];
         var refusal = new OperationNotSupportedByHomeserverException(operation.GatewayMethod);
-        var gateway = Stub.Create<IMatrixGateway>(s => s.Fault(operation.GatewayMethod, refusal));
+        var gateway = TableGateway(s => s.Fault(operation.GatewayMethod, refusal));
 
         var result = await operation.Invoke(CreateService(gateway), _cts.Token);
 
@@ -232,7 +251,7 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     {
         var operation = Operations[name];
 
-        var result = await operation.Invoke(CreateService(Stub.Create<IMatrixGateway>()), _cts.Token);
+        var result = await operation.Invoke(CreateService(TableGateway()), _cts.Token);
 
         ResultAssert.Success(result, operation.SuccessKey!);
         if (operation.InfoTemplate == null) Assert.Empty(_logger.Entries);
@@ -245,9 +264,10 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
     [InlineData("PurgeStatus", "ErrorFetchingPurgeStatus")]
     [InlineData("GetVisibility", "ErrorFetchingRoomDirectoryVisibility")]
     [InlineData("BlockStatus", "ErrorFetchingRoomBlockStatus")]
+    [InlineData("Join", "ErrorJoiningUserToRoom")]
     public async Task SingleResource_NullGatewayResult_Fails_WithoutLogging(string name, string key)
     {
-        var result = await Operations[name].Invoke(CreateService(Stub.Create<IMatrixGateway>()), _cts.Token);
+        var result = await Operations[name].Invoke(CreateService(TableGateway()), _cts.Token);
 
         ResultAssert.Failure(result, key);
         Assert.Empty(_logger.Entries);
@@ -610,10 +630,126 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         Assert.Empty(_logger.Entries);
     }
 
-    private RoomService CreateService(IMatrixGateway? gateway)
+    // ---- Room recovery (#587) ------------------------------------------------------------------------
+
+    private static IReadOnlyList<string> GatewayCalls(Stub stub) =>
+        stub.Calls.Where(c => !c.Method.StartsWith("get_", StringComparison.Ordinal)).Select(c => c.Method).ToList();
+
+    /// <summary>A localizer that appends the format arguments to the key, to check what a message names.</summary>
+    private static IStringLocalizer<SharedResources> ArgumentLocalizer() =>
+        Stub.Create<IStringLocalizer<SharedResources>>(s => s.On("get_Item", args =>
+        {
+            var key = (string)args[0]!;
+            var values = args.Length > 1 ? (object[])args[1]! : [];
+            return new LocalizedString(key, values.Length == 0 ? key : $"{key}({string.Join(", ", values)})");
+        }));
+
+    [Theory]
+    [InlineData("bob")]
+    [InlineData("@bob")]
+    [InlineData("@:example.com")]
+    [InlineData("@bob:")]
+    [InlineData("@bo b:example.com")]
+    [InlineData("#room:example.com")]
+    public async Task MakeAdmin_MalformedUserId_FailsWithAWarning_WithoutARequest(string userId)
+    {
+        var gateway = TableGateway(out var stub);
+
+        var result = await CreateService(gateway).MakeRoomAdminAsync(RoomId, userId, _cts.Token);
+
+        ResultAssert.Failure(result, "InvalidUserId", Severity.Warning);
+        Assert.Empty(GatewayCalls(stub));
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Fact]
+    public async Task MakeAdmin_Success_NamesTheUserAndTheRoom()
+    {
+        var result = await CreateService(TableGateway(), ArgumentLocalizer()).MakeRoomAdminAsync(RoomId, "@bob:other.org", _cts.Token);
+
+        ResultAssert.Success(result, $"RoomAdminGranted(@bob:other.org, {RoomId})");
+    }
+
+    [Fact]
+    public async Task MakeAdmin_SignedInAdmin_NamesTheSessionsUser()
+    {
+        var result = await CreateService(TableGateway(), ArgumentLocalizer()).MakeRoomAdminAsync(RoomId, null, _cts.Token);
+
+        ResultAssert.Success(result, $"RoomAdminGranted({AdminUserId}, {RoomId})");
+    }
+
+    /// <summary>
+    /// Synapse and Tuwunel compare the server name exactly, so a mixed-case server is refused here too, unlike
+    /// <c>MatrixIdHelper.IsOnServer</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("", "InvalidUserId")]
+    [InlineData("bob", "InvalidUserId")]
+    [InlineData("@bob:", "InvalidUserId")]
+    [InlineData("@bob:other.org", "JoinUserNotLocal")]
+    [InlineData("@bob:Example.com", "JoinUserNotLocal")]
+    [InlineData("@bob:example.com.evil", "JoinUserNotLocal")]
+    [InlineData("@bob:example.com:8448", "JoinUserNotLocal")]
+    public async Task Join_InvalidOrRemoteUser_FailsWithAWarning_WithoutARequest(string userId, string key)
+    {
+        var gateway = TableGateway(out var stub);
+
+        var result = await CreateService(gateway).JoinUserToRoomAsync(RoomId, userId, _cts.Token);
+
+        ResultAssert.Failure(result, key, Severity.Warning);
+        Assert.Empty(GatewayCalls(stub));
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Fact]
+    public async Task Join_NotLocal_NamesTheServer()
+    {
+        var result = await CreateService(TableGateway(), ArgumentLocalizer()).JoinUserToRoomAsync(RoomId, "@bob:other.org", _cts.Token);
+
+        ResultAssert.Failure(result, $"JoinUserNotLocal({ServerName})", Severity.Warning);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task Join_UnknownServerName_RefusesEveryUser(string? serverName)
+    {
+        var gateway = TableGateway(out var stub, s => s.On("get_ServerName", _ => serverName));
+
+        var result = await CreateService(gateway).JoinUserToRoomAsync(RoomId, "@bob:example.com", _cts.Token);
+
+        ResultAssert.Failure(result, "JoinUserNotLocal", Severity.Warning);
+        Assert.Empty(GatewayCalls(stub));
+    }
+
+    [Fact]
+    public async Task Join_Success_NamesTheUserAndTheRoom_AndLogsInformation()
+    {
+        var gateway = TableGateway(s => s.On("JoinUserToRoomAsync",
+            _ => Task.FromResult<SynapseAdminJoinRoomResponse?>(new() { RoomId = "!room:example.com" })));
+
+        var result = await CreateService(gateway, ArgumentLocalizer()).JoinUserToRoomAsync(RoomId, "@bob:example.com", _cts.Token);
+
+        ResultAssert.Success(result, $"UserJoinedRoom(@bob:example.com, {RoomId})");
+        AssertSingleLog(LogLevel.Information, "Joined {UserId} to room {RoomId}",
+            new() { ["UserId"] = "@bob:example.com", ["RoomId"] = SanitizedRoomId }, exception: null);
+    }
+
+    private RoomService CreateService(IMatrixGateway? gateway, IStringLocalizer<SharedResources>? localizer = null)
     {
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
-        return new RoomService(session, _logger, new KeyLocalizer(), _cache);
+        return new RoomService(session, _logger, localizer ?? new KeyLocalizer(), _cache);
+    }
+
+    /// <summary>A gateway on <see cref="ServerName"/>, signed in as <see cref="AdminUserId"/>, which room recovery reads.</summary>
+    private static IMatrixGateway TableGateway(Action<Stub>? configure = null) => TableGateway(out _, configure);
+
+    private static IMatrixGateway TableGateway(out Stub stub, Action<Stub>? configure = null)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out stub);
+        stub.On("get_ServerName", _ => ServerName).On("get_UserId", _ => AdminUserId);
+        configure?.Invoke(stub);
+        return gateway;
     }
 
     private void AssertSingleLog(LogLevel level, string template, Dictionary<string, object?> arguments, Exception? exception)

@@ -224,6 +224,8 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task QuarantineMediaByRoomIdAsync(string roomId, CancellationToken cancellationToken = default);
     public abstract Task BlockRoomAsync(string roomId, bool block, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomBlockStatusResponse?> GetRoomBlockStatusAsync(string roomId, CancellationToken cancellationToken = default);
+    public abstract Task MakeRoomAdminAsync(string roomId, string? userId, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default);
     public abstract Task<RoomStatisticsResponse?> GetLargestRoomsAsync(CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomMessagesResponse?> GetRoomMessagesAsync(string roomId, int? limit = null, string? from = null, string? dir = null, string? filter = null, string? to = null, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminPurgeHistoryResponse?> PurgeRoomHistoryAsync(string roomId, SynapseAdminPurgeHistoryRequest request, CancellationToken cancellationToken = default);

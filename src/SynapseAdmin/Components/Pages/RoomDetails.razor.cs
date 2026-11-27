@@ -692,6 +692,46 @@ namespace SynapseAdmin.Components.Pages
             }
         }
 
+        private Task MakeRoomAdmin() => OpenRoomUserActionAsync(RoomUserAction.MakeAdmin);
+
+        private Task JoinUser() => OpenRoomUserActionAsync(RoomUserAction.Join);
+
+        /// <summary>
+        /// Asks for the user of a room recovery action (#587). The dialog names the shown room and is the confirmation;
+        /// afterwards the page re-checks that the room is still shown, sends the action and, after a success, loads the
+        /// room again so that its members and state events (the power levels) are current.
+        /// </summary>
+        private async Task OpenRoomUserActionAsync(RoomUserAction action)
+        {
+            if (GetDisplayedTarget() is not { } target) return;
+
+            var gateway = MatrixSession.Gateway;
+            var parameters = new DialogParameters
+            {
+                [nameof(RoomUserActionDialog.Action)] = action,
+                [nameof(RoomUserActionDialog.RoomLabel)] = FormatTarget(room, target),
+                [nameof(RoomUserActionDialog.SignedInUserId)] = gateway?.UserId,
+                [nameof(RoomUserActionDialog.ServerName)] = gateway?.ServerName,
+                [nameof(RoomUserActionDialog.JoinedMemberIds)] =
+                    (IReadOnlyCollection<string>)(room?.Members.Select(m => m.UserId).ToList() ?? []),
+            };
+            var title = L[action == RoomUserAction.Join ? "JoinUserTitle" : "MakeRoomAdminTitle"];
+
+            var dialog = await DialogService.ShowAsync<RoomUserActionDialog>(title, parameters, DialogPresets.Small());
+            var result = await dialog.Result;
+            if (result is not { Canceled: false, Data: string userId } || !IsStillDisplayed(target)) return;
+
+            var outcome = action == RoomUserAction.Join
+                ? await RoomService.JoinUserToRoomAsync(target, userId, _cts.Token)
+                : await RoomService.MakeRoomAdminAsync(target, userId, _cts.Token);
+            Snackbar.ShowResult(outcome);
+
+            if (outcome.Success && GetDisplayedTarget() == target)
+            {
+                await ReloadRoomDetails();
+            }
+        }
+
         private void OnSearchChanged(string text)
         {
             _searchTerm = text;

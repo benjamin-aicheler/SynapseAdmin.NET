@@ -166,7 +166,10 @@ else
                         <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="UnblockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["UnblockRoom"]</MudButton>
                     }
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["QuarantineMedia"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OpenPurgeHistoryDialog" Disabled="IsRoomOperationRunning" Class="mb-2">@L["PurgeHistory"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OpenPurgeHistoryDialog" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["PurgeHistory"]</MudButton>
+                    @* Room recovery (#587): each dialog names the room and is the confirmation. *@
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeRoomAdmin" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["MakeRoomAdmin"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="JoinUser" Disabled="IsRoomOperationRunning" Class="mb-2">@L["JoinUser"]</MudButton>
                 </MudCardContent>
             </MudCard>
         </MudItem>

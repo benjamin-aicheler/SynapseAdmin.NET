@@ -50,6 +50,8 @@ namespace SynapseAdmin.Tests;
 /// Also redacting a user's events (#600): the exact POST with <c>rooms</c> always sent, the status read by
 /// <c>redact_id</c> with "no status" for an unknown one, the cancellation token, the same error behavior, and Tuwunel's
 /// refusal of both.
+/// Also room recovery (#587): the exact make room admin and join POSTs, their cancellation token and the same error
+/// behavior, Tuwunel's refusal of make room admin, and its join with Synapse's invite first.
 /// </summary>
 public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
 {
@@ -2064,6 +2066,270 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Empty(_homeserver.Requests);
     }
 
+    // ---- Room recovery (#587) ------------------------------------------------------------------------
+
+    private const string MakeRoomAdminTarget = "/_synapse/admin/v1/rooms/!room%3aexample.com/make_room_admin";
+    private const string JoinTarget = "/_synapse/admin/v1/join/!room%3aexample.com";
+    private const string JoinRulesStateTarget = "/_synapse/admin/v1/rooms/!room%3aexample.com/state?type=m.room.join_rules";
+    private const string InviteTarget = "/_matrix/client/v3/rooms/!room%3aexample.com/invite";
+    private const string JsonContentType = "application/json; charset=utf-8";
+
+    /// <summary>Without a user, the body is <c>{}</c>, so Synapse grants the power to the calling admin.</summary>
+    [Fact]
+    public async Task MakeRoomAdmin_SignedInAdmin_SendsPostWithAnEmptyObject()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.MakeRoomAdminAsync("!room:example.com", null);
+
+        Assert.Equal(new CapturedRequest("POST", MakeRoomAdminTarget, JsonContentType, "{}"), Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task MakeRoomAdmin_OtherUser_SendsTheUserId()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { });
+
+        await _gateway.MakeRoomAdminAsync("!room:example.com", "@bob:other.org");
+
+        Assert.Equal(
+            new CapturedRequest("POST", MakeRoomAdminTarget, JsonContentType, """{"user_id":"@bob:other.org"}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task MakeRoomAdmin_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _gateway.MakeRoomAdminAsync("!room:example.com", null, cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>Synapse refuses with a 400 when no joined local user holds the power to change power levels.</summary>
+    [Fact]
+    public async Task MakeRoomAdmin_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_UNKNOWN", error = "No local admin user in room" }, statusCode: 400);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.MakeRoomAdminAsync("!room:example.com", null));
+
+        Assert.Equal("M_UNKNOWN", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task MakeRoomAdmin_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => _gateway.MakeRoomAdminAsync("!room:example.com", null));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task JoinUserToRoom_SendsPostWithTheUserId_AndReadsTheRoomId()
+    {
+        _homeserver.AllowedMethod = "POST";
+        _homeserver.Respond = () => Results.Json(new { room_id = "!room:example.com" });
+
+        var result = await _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
+
+        Assert.Equal("!room:example.com", result!.RoomId);
+        Assert.Equal(
+            new CapturedRequest("POST", JoinTarget, JsonContentType, """{"user_id":"@bob:example.com"}"""),
+            Assert.Single(_homeserver.Requests));
+    }
+
+    [Fact]
+    public async Task JoinUserToRoom_CancelledToken_SendsNoRequest()
+    {
+        _homeserver.Respond = () => Results.Json(new { room_id = "!room:example.com" });
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    /// <summary>Synapse refuses a user on another server with a 400, and an invite the admin may not send with a 403.</summary>
+    [Fact]
+    public async Task JoinUserToRoom_MatrixErrorResponse_ThrowsMatrixException()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_FORBIDDEN", error = "You don't have permission to invite users" }, statusCode: 403);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com"));
+
+        Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task JoinUserToRoom_NonJsonErrorResponse_ThrowsHttpRequestException()
+    {
+        _homeserver.Respond = () => Results.Text("Internal Server Error", statusCode: 500);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => _gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com"));
+
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    // Tuwunel 1.8.2 and 2.0.0 invite before they change the power levels and skip the invite for a room listed in the
+    // public room directory, even an invite-only one. The gateway can't send Synapse's invite as the local user the power
+    // comes from, so it refuses make room admin before sending anything (ADR 0006).
+    [Fact]
+    public async Task Tuwunel_MakeRoomAdmin_RefusesWithoutARequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+
+        var error = await Assert.ThrowsAsync<OperationNotSupportedByHomeserverException>(() => gateway.MakeRoomAdminAsync("!room:example.com", null));
+
+        Assert.Equal(nameof(TuwunelAdminGateway.MakeRoomAdminAsync), error.Operation);
+        Assert.Empty(_homeserver.Requests);
+    }
+
+    private static object StateWith(params object[] events) => new { state = events };
+
+    private static object JoinRulesEvent(object content, string stateKey = "") =>
+        new { type = "m.room.join_rules", state_key = stateKey, content, sender = "@admin:example.com" };
+
+    /// <summary>
+    /// Answers the state read with <paramref name="state"/>, the invite with <paramref name="invite"/> and the join with
+    /// the room ID.
+    /// </summary>
+    private void RespondToTuwunelJoin(object state, IResult? invite = null)
+    {
+        _homeserver.RespondTo = request => request.Target switch
+        {
+            JoinRulesStateTarget => Results.Json(state),
+            InviteTarget => invite ?? Results.Json(new { }),
+            JoinTarget => Results.Json(new { room_id = "!room:example.com" }),
+            _ => Results.NotFound()
+        };
+    }
+
+    private static readonly CapturedRequest JoinRulesRead = new("GET", JoinRulesStateTarget, null, "");
+    private static readonly CapturedRequest InviteBob = new("POST", InviteTarget, JsonContentType, """{"user_id":"@bob:example.com"}""");
+    private static readonly CapturedRequest JoinBob = new("POST", JoinTarget, JsonContentType, """{"user_id":"@bob:example.com"}""");
+
+    /// <summary>
+    /// Synapse invites as the requesting admin before the join unless the join rule is <c>public</c>, restricted rooms
+    /// included. Tuwunel 1.8.2 never invites and 2.0.0 only sometimes, so the gateway sends that invite itself.
+    /// </summary>
+    [Theory]
+    [InlineData("invite")]
+    [InlineData("knock")]
+    [InlineData("restricted")]
+    [InlineData("knock_restricted")]
+    [InlineData("private")]
+    public async Task Tuwunel_JoinUserToRoom_RoomNotPublic_InvitesAsTheAdminBeforeTheJoin(string joinRule)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { join_rule = joinRule })));
+
+        var result = await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
+
+        Assert.Equal("!room:example.com", result!.RoomId);
+        Assert.Equal(new[] { JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
+    }
+
+    /// <summary>A join rules event without a <c>join_rule</c> isn't <c>public</c> for Synapse either.</summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_JoinRulesWithoutARule_Invites()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { })));
+
+        await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
+
+        Assert.Equal(new[] { JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_PublicRoom_JoinsWithoutAnInvite()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { join_rule = "public" })));
+
+        await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
+
+        Assert.Equal(new[] { JoinRulesRead, JoinBob }, _homeserver.Requests);
+    }
+
+    /// <summary>
+    /// Without a join rules event Synapse doesn't invite. Other events, and a join rules event with a state key (not the
+    /// room's join rule), are ignored, so a server that ignores <c>type</c> gets the same result.
+    /// </summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_NoJoinRulesEvent_JoinsWithoutAnInvite()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(
+            new { type = "m.room.create", state_key = "", content = new { room_version = "11" } },
+            JoinRulesEvent(new { join_rule = "invite" }, stateKey: "x")));
+
+        await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
+
+        Assert.Equal(new[] { JoinRulesRead, JoinBob }, _homeserver.Requests);
+    }
+
+    /// <summary>The first matching event decides, as other events in the answer don't change the join rule.</summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_StateWithOtherEvents_UsesTheJoinRulesEvent()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(
+            new { type = "m.room.create", state_key = "", content = new { room_version = "11" } },
+            JoinRulesEvent(new { join_rule = "invite" })));
+
+        await gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com");
+
+        Assert.Equal(new[] { JoinRulesRead, InviteBob, JoinBob }, _homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_FailedStateRead_SendsNothingMore()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.RespondTo = _ => Results.Json(new { errcode = "M_FORBIDDEN", error = "Not allowed" }, statusCode: 403);
+
+        await Assert.ThrowsAsync<MatrixException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com"));
+
+        Assert.Equal(new[] { JoinRulesRead }, _homeserver.Requests);
+    }
+
+    /// <summary>An admin who isn't in the room may not invite; the join is then not sent, as on Synapse.</summary>
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_FailedInvite_SendsNoJoin()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { join_rule = "invite" })),
+            invite: Results.Json(new { errcode = "M_FORBIDDEN", error = "You are not in the room" }, statusCode: 403));
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com"));
+
+        Assert.Equal("M_FORBIDDEN", ex.ErrorCode);
+        Assert.Equal(new[] { JoinRulesRead, InviteBob }, _homeserver.Requests);
+    }
+
+    [Fact]
+    public async Task Tuwunel_JoinUserToRoom_CancelledToken_SendsNoRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        RespondToTuwunelJoin(StateWith(JoinRulesEvent(new { join_rule = "invite" })));
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => gateway.JoinUserToRoomAsync("!room:example.com", "@bob:example.com", cts.Token));
+
+        Assert.Empty(_homeserver.Requests);
+    }
+
     private sealed record CapturedRequest(string Method, string Target, string? ContentType, string Body);
 
     /// <summary>
@@ -2078,6 +2344,8 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         public ConcurrentQueue<CapturedRequest> Requests { get; } = new();
         public IEnumerable<string> RequestTargets => Requests.Select(r => r.Target);
         public Func<IResult> Respond { get; set; } = () => Results.NotFound();
+        /// <summary>When set, answers each request by what it is, instead of <see cref="Respond"/>.</summary>
+        public Func<CapturedRequest, IResult>? RespondTo { get; set; }
         public string? AllowedMethod { get; set; }
 
         public async Task StartAsync()
@@ -2090,14 +2358,15 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
             _app.Map("/{**path}", (Func<HttpContext, Task<IResult>>)(async context =>
             {
                 using var reader = new StreamReader(context.Request.Body);
-                Requests.Enqueue(new CapturedRequest(context.Request.Method, context.Features.Get<IHttpRequestFeature>()!.RawTarget,
-                    context.Request.ContentType, await reader.ReadToEndAsync()));
+                var request = new CapturedRequest(context.Request.Method, context.Features.Get<IHttpRequestFeature>()!.RawTarget,
+                    context.Request.ContentType, await reader.ReadToEndAsync());
+                Requests.Enqueue(request);
                 if (AllowedMethod != null && !HttpMethods.Equals(context.Request.Method, AllowedMethod))
                 {
                     return Results.Json(new { errcode = "M_UNRECOGNIZED", error = "Unrecognized request" }, statusCode: 405);
                 }
 
-                return Respond();
+                return RespondTo?.Invoke(request) ?? Respond();
             }));
 
             await _app.StartAsync();

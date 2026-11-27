@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using ArcaneLibs.Extensions;
 using LibMatrix.Homeservers;
 using SynapseAdmin.Infrastructure.Helpers;
@@ -174,6 +175,55 @@ internal sealed class TuwunelAdminGateway(
     /// <summary>Refused (#600), with the redaction: its <c>complete</c> doesn't describe Synapse's selection.</summary>
     public override Task<SynapseAdminUserRedactStatusResponse?> GetUserRedactionStatusAsync(string redactId, CancellationToken cancellationToken = default) =>
         throw new OperationNotSupportedByHomeserverException();
+
+    // Tuwunel 1.8.2 and 2.0.0 serve both room recovery endpoints, with differences (#587, SPEC.md §10). Make room
+    // admin invites before it changes the power levels and skips the invite for a room listed in the public room
+    // directory, even an invite-only one; Synapse invites, as the local user it grants the power through, unless the join
+    // rule is public. The gateway can't send that invite, so the operation is refused. The admin join is corrected:
+    // Tuwunel 1.8.2 never invites first and 2.0.0 only when the user couldn't join otherwise, so the gateway sends
+    // Synapse's invite itself before the join.
+
+    private const string JoinRulesEventType = "m.room.join_rules";
+    private const string PublicJoinRule = "public";
+
+    /// <summary>
+    /// Refused (#587): in an invite-only room listed in the public room directory, Tuwunel grants the power without the
+    /// invite Synapse sends, and the gateway can't send it as the local user Synapse uses.
+    /// </summary>
+    public override Task MakeRoomAdminAsync(string roomId, string? userId, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>
+    /// Does what Synapse does before the join (#587): unless the room's join rule is <c>public</c> or the room has none,
+    /// it invites the user as the signed-in admin through the Client-Server API, then sends the admin join. Tuwunel 2.0.0
+    /// then sees the invite and doesn't invite again. A failed read or invite propagates, so nothing more is sent.
+    /// </summary>
+    public override async Task<SynapseAdminJoinRoomResponse?> JoinUserToRoomAsync(string roomId, string userId, CancellationToken cancellationToken = default)
+    {
+        if (await NeedsInviteBeforeJoinAsync(roomId, cancellationToken))
+        {
+            var url = $"/_matrix/client/v3/rooms/{roomId.UrlEncode()}/invite";
+            using var resp = await Homeserver.ClientHttpClient.PostAsJsonAsync(url, new MatrixRoomInviteRequest { UserId = userId }, cancellationToken: cancellationToken);
+            resp.EnsureSuccessStatusCode();
+        }
+
+        return await base.JoinUserToRoomAsync(roomId, userId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Synapse's rule: invite unless the current <c>m.room.join_rules</c> says <c>public</c>; no such event, no invite.
+    /// The events are filtered here, so the result doesn't depend on Tuwunel honouring the <c>type</c> parameter.
+    /// </summary>
+    private async Task<bool> NeedsInviteBeforeJoinAsync(string roomId, CancellationToken cancellationToken)
+    {
+        var state = await GetRoomStateAsync(roomId, JoinRulesEventType, cancellationToken);
+        var joinRules = state?.Events.FirstOrDefault(e =>
+            e.Type == JoinRulesEventType && string.IsNullOrEmpty(e.StateKey));
+        if (joinRules == null) return false;
+
+        var joinRule = joinRules.RawContent?["join_rule"] is JsonValue value && value.TryGetValue<string>(out var rule) ? rule : null;
+        return !string.Equals(joinRule, PublicJoinRule, StringComparison.Ordinal);
+    }
 
     // ---- Operations Tuwunel doesn't serve --------------------------------------------------------------
     // Tuwunel's status page (tuwunel-admin-api-2026-11-24.md) marks these endpoints as not implemented or not

@@ -1,0 +1,21 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@TitleIcon" Class="mr-3 mb-n1" />
+            @L[IsJoin ? "JoinUserTitle" : "MakeRoomAdminTitle"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@L[IsJoin ? "JoinUserDescription" : "MakeRoomAdminDescription", RoomLabel]</MudText>
+        @if (!IsJoin)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">@L["MakeRoomAdminPrecondition"]</MudAlert>
+        }
+        <MudTextField T="string" Label="@L["UserId"]" @bind-Value="userId" Immediate="true"
+                      HelperText="@HelperText" Validation="@(new Func<string?, string?>(Validate))" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!CanSubmit)">@L[IsJoin ? "JoinUser" : "MakeRoomAdmin"]</MudButton>
+    </DialogActions>
+</MudDialog>
