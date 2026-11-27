@@ -14,25 +14,29 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-27
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
+- [ ] [1.1] Gateway: DTOs, `MakeRoomAdminAsync` / `JoinUserToRoomAsync` on interface, base, Synapse, Generic; Tuwunel refuses make admin; fakes; wire tests (AC-26)
 
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [1.2] Tuwunel join correction (join rule read, Client-Server invite, then join); wire tests
+- [ ] [2.1] `MatrixIdHelper.IsUserId` / `IsLocalUserId`; `LocalMatrixIdTests`
+- [ ] [2.2] `RoomService.MakeRoomAdminAsync` / `JoinUserToRoomAsync`; characterization and service tests
+- [ ] [3.1] Resources EN/DE/FR
+- [ ] [3.2] `RoomUserAction` enum, `RoomUserActionDialog`; dialog tests
+- [ ] [4.1] `RoomDetails`: buttons, flow, reload; `RoomDetailsRecoveryTests`
+- [ ] [5.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+- [ ] 
 
 ## 📋 Backlog
 
-- [ ] 
+- [ ] Follow-ups (not this task): "Join to room" on the user page; alias and `server_name` input; conditional Tuwunel Make room admin (PLAN §3 F)
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
@@ -40,7 +44,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-5, AC-26, §4, §8, §10, §13, §15) and PLAN.md (Approved)
 
 ## Definition of Done (applies to every task)
 
