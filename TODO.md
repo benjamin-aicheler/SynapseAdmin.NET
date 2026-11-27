@@ -22,8 +22,6 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ⏭️ Next Up
 
-- [ ] [3.1] Resources EN/DE/FR
-- [ ] [3.2] `RoomUserAction` enum, `RoomUserActionDialog`; dialog tests
 - [ ] [4.1] `RoomDetails`: buttons, flow, reload; `RoomDetailsRecoveryTests`
 - [ ] [5.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
 
@@ -41,6 +39,8 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
+- [x] 2026-11-27 – [3.2] `RoomUserAction` enum, `RoomUserActionDialog`; 15 dialog tests, mutation-checked, also under de_DE
+- [x] 2026-11-27 – [3.1] 16 room recovery keys in EN/DE/FR (DE "Berechtigungsstufe", FR "niveau de pouvoir")
 - [x] 2026-11-27 – [2.2] `RoomService.MakeRoomAdminAsync` / `JoinUserToRoomAsync`; 3 table rows, 18 specific tests, mutation-checked
 - [x] 2026-11-27 – [2.1] `MatrixIdHelper.IsUserId` / `IsLocalUserId` (exact server name); 27 helper tests
 - [x] 2026-11-27 – [1.2] Tuwunel join correction (join rule read, Client-Server invite, then join); 11 wire tests, mutation-checked

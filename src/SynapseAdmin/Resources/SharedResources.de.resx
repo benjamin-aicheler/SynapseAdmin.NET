@@ -1909,4 +1909,52 @@
   <data name="UserRedactionStatusActive" xml:space="preserve">
     <value>Läuft</value>
   </data>
+  <data name="MakeRoomAdmin" xml:space="preserve">
+    <value>Zum Raum-Admin machen</value>
+  </data>
+  <data name="MakeRoomAdminTitle" xml:space="preserve">
+    <value>Benutzer zum Raum-Admin machen</value>
+  </data>
+  <data name="MakeRoomAdminDescription" xml:space="preserve">
+    <value>Im Raum „{0}“ erhält der Benutzer die höchste Berechtigungsstufe, die ein lokaler Benutzer im Raum hat. Ist der Benutzer nicht im Raum und der Raum nicht öffentlich, wird er eingeladen.</value>
+  </data>
+  <data name="MakeRoomAdminPrecondition" xml:space="preserve">
+    <value>Das funktioniert nur, solange ein lokaler Benutzer, der Berechtigungsstufen ändern darf, noch im Raum ist: Der Homeserver nimmt die Änderung als dieser Benutzer vor. Der Benutzer wird eingeladen, nicht hinzugefügt.</value>
+  </data>
+  <data name="MakeRoomAdminUserHint" xml:space="preserve">
+    <value>Leer lassen, um sich selbst zum Raum-Admin zu machen ({0}). Benutzer jedes Servers sind möglich.</value>
+  </data>
+  <data name="JoinUser" xml:space="preserve">
+    <value>Benutzer hinzufügen</value>
+  </data>
+  <data name="JoinUserTitle" xml:space="preserve">
+    <value>Benutzer dem Raum beitreten lassen</value>
+  </data>
+  <data name="JoinUserDescription" xml:space="preserve">
+    <value>Der Benutzer tritt dem Raum „{0}“ bei. Es können nur lokale Benutzer hinzugefügt werden. Der Serveradministrator muss im Raum sein und Benutzer einladen dürfen.</value>
+  </data>
+  <data name="JoinUserHint" xml:space="preserve">
+    <value>Ein Benutzer auf {0}, etwa @alice:{0}.</value>
+  </data>
+  <data name="InvalidUserId" xml:space="preserve">
+    <value>Geben Sie eine vollständige Benutzer-ID ein, etwa @alice:example.org.</value>
+  </data>
+  <data name="JoinUserNotLocal" xml:space="preserve">
+    <value>Nur Benutzer dieses Servers ({0}) können hinzugefügt werden.</value>
+  </data>
+  <data name="UserAlreadyInRoom" xml:space="preserve">
+    <value>Dieser Benutzer ist bereits im Raum.</value>
+  </data>
+  <data name="RoomAdminGranted" xml:space="preserve">
+    <value>{0} hat jetzt im Raum {1} die höchste Berechtigungsstufe eines lokalen Benutzers. War der Benutzer nicht im Raum und ist der Raum nicht öffentlich, wurde er eingeladen.</value>
+  </data>
+  <data name="UserJoinedRoom" xml:space="preserve">
+    <value>{0} ist dem Raum {1} beigetreten.</value>
+  </data>
+  <data name="ErrorMakingRoomAdmin" xml:space="preserve">
+    <value>Fehler beim Ernennen des Benutzers zum Raum-Admin.</value>
+  </data>
+  <data name="ErrorJoiningUserToRoom" xml:space="preserve">
+    <value>Fehler beim Hinzufügen des Benutzers zum Raum.</value>
+  </data>
 </root>

@@ -1909,4 +1909,52 @@
   <data name="UserRedactionStatusActive" xml:space="preserve">
     <value>En cours</value>
   </data>
+  <data name="MakeRoomAdmin" xml:space="preserve">
+    <value>Nommer administrateur du salon</value>
+  </data>
+  <data name="MakeRoomAdminTitle" xml:space="preserve">
+    <value>Nommer un utilisateur administrateur du salon</value>
+  </data>
+  <data name="MakeRoomAdminDescription" xml:space="preserve">
+    <value>Dans le salon « {0} », l'utilisateur reçoit le plus haut niveau de pouvoir dont dispose un utilisateur local présent dans le salon. Si l'utilisateur n'est pas dans le salon et que celui-ci n'est pas public, il est invité.</value>
+  </data>
+  <data name="MakeRoomAdminPrecondition" xml:space="preserve">
+    <value>Cela ne fonctionne que tant qu'un utilisateur local autorisé à modifier les niveaux de pouvoir est encore dans le salon : le serveur d'accueil effectue la modification en son nom. L'utilisateur est invité, il ne rejoint pas le salon.</value>
+  </data>
+  <data name="MakeRoomAdminUserHint" xml:space="preserve">
+    <value>Laissez vide pour vous nommer vous-même administrateur du salon ({0}). Un utilisateur de n'importe quel serveur peut être saisi.</value>
+  </data>
+  <data name="JoinUser" xml:space="preserve">
+    <value>Faire rejoindre un utilisateur</value>
+  </data>
+  <data name="JoinUserTitle" xml:space="preserve">
+    <value>Faire rejoindre le salon à un utilisateur</value>
+  </data>
+  <data name="JoinUserDescription" xml:space="preserve">
+    <value>L'utilisateur rejoint le salon « {0} ». Seuls les utilisateurs locaux peuvent être ajoutés. L'administrateur du serveur doit être dans le salon et avoir le droit d'inviter des utilisateurs.</value>
+  </data>
+  <data name="JoinUserHint" xml:space="preserve">
+    <value>Un utilisateur de {0}, par exemple @alice:{0}.</value>
+  </data>
+  <data name="InvalidUserId" xml:space="preserve">
+    <value>Saisissez un ID utilisateur complet, par exemple @alice:example.org.</value>
+  </data>
+  <data name="JoinUserNotLocal" xml:space="preserve">
+    <value>Seuls les utilisateurs de ce serveur ({0}) peuvent être ajoutés.</value>
+  </data>
+  <data name="UserAlreadyInRoom" xml:space="preserve">
+    <value>Cet utilisateur est déjà dans le salon.</value>
+  </data>
+  <data name="RoomAdminGranted" xml:space="preserve">
+    <value>{0} dispose maintenant du plus haut niveau de pouvoir d'un utilisateur local dans le salon {1}. S'il n'était pas dans le salon et que celui-ci n'est pas public, il a été invité.</value>
+  </data>
+  <data name="UserJoinedRoom" xml:space="preserve">
+    <value>{0} a rejoint le salon {1}.</value>
+  </data>
+  <data name="ErrorMakingRoomAdmin" xml:space="preserve">
+    <value>Erreur lors de la nomination de l'utilisateur comme administrateur du salon.</value>
+  </data>
+  <data name="ErrorJoiningUserToRoom" xml:space="preserve">
+    <value>Erreur lors de l'ajout de l'utilisateur au salon.</value>
+  </data>
 </root>

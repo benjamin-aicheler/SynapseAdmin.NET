@@ -1910,4 +1910,52 @@
   <data name="UserRedactionStatusActive" xml:space="preserve">
     <value>Active</value>
   </data>
+  <data name="MakeRoomAdmin" xml:space="preserve">
+    <value>Make room admin</value>
+  </data>
+  <data name="MakeRoomAdminTitle" xml:space="preserve">
+    <value>Make a user room admin</value>
+  </data>
+  <data name="MakeRoomAdminDescription" xml:space="preserve">
+    <value>In the room "{0}", the user is granted the highest power level available to a local user who is in the room. If the user isn't in the room and the room isn't public, the user is invited.</value>
+  </data>
+  <data name="MakeRoomAdminPrecondition" xml:space="preserve">
+    <value>This works only while a local user who may change power levels is still in the room: the homeserver makes the change as that user. The user is invited, not joined to the room.</value>
+  </data>
+  <data name="MakeRoomAdminUserHint" xml:space="preserve">
+    <value>Leave empty to make yourself room admin ({0}). A user on any server can be entered.</value>
+  </data>
+  <data name="JoinUser" xml:space="preserve">
+    <value>Join user</value>
+  </data>
+  <data name="JoinUserTitle" xml:space="preserve">
+    <value>Join a user to the room</value>
+  </data>
+  <data name="JoinUserDescription" xml:space="preserve">
+    <value>The user joins the room "{0}". You can only join local users. The server administrator must be in the room and have permission to invite users.</value>
+  </data>
+  <data name="JoinUserHint" xml:space="preserve">
+    <value>A user on {0}, such as @alice:{0}.</value>
+  </data>
+  <data name="InvalidUserId" xml:space="preserve">
+    <value>Enter a full user ID, such as @alice:example.org.</value>
+  </data>
+  <data name="JoinUserNotLocal" xml:space="preserve">
+    <value>Only users on this server ({0}) can be joined.</value>
+  </data>
+  <data name="UserAlreadyInRoom" xml:space="preserve">
+    <value>This user is already in the room.</value>
+  </data>
+  <data name="RoomAdminGranted" xml:space="preserve">
+    <value>{0} now has the highest power level of a local user in the room {1}. If they weren't in the room and it isn't public, they were invited.</value>
+  </data>
+  <data name="UserJoinedRoom" xml:space="preserve">
+    <value>{0} joined the room {1}.</value>
+  </data>
+  <data name="ErrorMakingRoomAdmin" xml:space="preserve">
+    <value>Error making the user room admin.</value>
+  </data>
+  <data name="ErrorJoiningUserToRoom" xml:space="preserve">
+    <value>Error joining the user to the room.</value>
+  </data>
 </root>
