@@ -14,23 +14,25 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-27
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
-- [ ] 
+- [ ] <!-- [PLAN step] Task description – owner -->
 
 ## ⏭️ Next Up
 
-- [ ] [5.1] SPEC.md `[Planned]` removed; AGENTS.md, README; reset PLAN.md / TODO.md
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
-- [ ] 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
 
 ## 📋 Backlog
 
-- [ ] Follow-ups (not this task): "Join to room" on the user page; alias and `server_name` input; conditional Tuwunel Make room admin (PLAN §3 F)
+- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
@@ -38,14 +40,7 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 
 ## ✅ Done
 
-- [x] 2026-11-27 – [4.1] `RoomDetails`: Make room admin / Join user buttons, dialog flow, reload; 14 page tests + both buttons in the disabled-actions tests, mutation-checked
-- [x] 2026-11-27 – [3.2] `RoomUserAction` enum, `RoomUserActionDialog`; 15 dialog tests, mutation-checked, also under de_DE
-- [x] 2026-11-27 – [3.1] 16 room recovery keys in EN/DE/FR (DE "Berechtigungsstufe", FR "niveau de pouvoir")
-- [x] 2026-11-27 – [2.2] `RoomService.MakeRoomAdminAsync` / `JoinUserToRoomAsync`; 3 table rows, 18 specific tests, mutation-checked
-- [x] 2026-11-27 – [2.1] `MatrixIdHelper.IsUserId` / `IsLocalUserId` (exact server name); 27 helper tests
-- [x] 2026-11-27 – [1.2] Tuwunel join correction (join rule read, Client-Server invite, then join); 11 wire tests, mutation-checked
-- [x] 2026-11-27 – [1.1] Room recovery DTOs and gateway calls; Generic and Tuwunel refuse make room admin; 10 wire tests
-- [x] 2026-11-27 – [0] SPEC.md `[Planned]` entries (FR-5, AC-26, §4, §8, §10, §13, §15) and PLAN.md (Approved)
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
