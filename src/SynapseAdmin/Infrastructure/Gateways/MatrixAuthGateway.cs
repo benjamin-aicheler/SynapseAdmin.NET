@@ -1,12 +1,15 @@
 using System.Collections.Concurrent;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using LibMatrix;
 using LibMatrix.Homeservers;
 using LibMatrix.Services;
 using Microsoft.Extensions.Caching.Memory;
 using SynapseAdmin.Interfaces.Gateways;
+using SynapseAdmin.Models;
 using SynapseAdmin.Models.Responses;
 
 namespace SynapseAdmin.Infrastructure.Gateways;
@@ -127,11 +130,24 @@ public class MatrixAuthGateway(IHomeserverDiscoveryClient discoveryClient, IMemo
 
             return gateway;
         }
+        catch (Exception ex) when (IsRateLimitResponse(ex))
+        {
+            throw new HomeserverRateLimitedException("Token login was rate-limited by the homeserver.", ex);
+        }
         finally
         {
             inFlightMap.TryRemove(cacheKey, out _);
         }
     }
+
+    /// <summary>
+    /// How the SDK and the HTTP stack report the homeserver's rate limit while the session is set up: a
+    /// <see cref="MatrixException"/> for a Matrix error body (the SDK usually retries those itself), or an
+    /// <see cref="HttpRequestException"/> with status <c>429</c> for any other body.
+    /// </summary>
+    private static bool IsRateLimitResponse(Exception ex) =>
+        ex is MatrixException { ErrorCode: MatrixException.ErrorCodes.M_LIMIT_EXCEEDED } ||
+        ex is HttpRequestException { StatusCode: HttpStatusCode.TooManyRequests };
 
     protected virtual async Task<IMatrixGateway> CreateAuthenticatedGatewayAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken)
     {

@@ -246,20 +246,45 @@ public class HomeserverDestinationPolicyTests
         Assert.Empty(target.Requests);
     }
 
-    [Fact]
-    public async Task UpstreamRateLimit_IsSurfacedAsMatrixError()
+    /// <summary>
+    /// The homeserver's rate limit reaches callers as the gateway's own <see cref="HomeserverRateLimitedException"/>,
+    /// whether it answers with a Matrix error body or not, so that no caller needs a <c>LibMatrix</c> type.
+    /// </summary>
+    [Theory]
+    [InlineData(429, """{"errcode":"M_LIMIT_EXCEEDED","error":"Too many requests"}""")]
+    [InlineData(429, "Too Many Requests")]
+    public async Task UpstreamRateLimit_IsSurfacedAsRateLimitedException(int status, string body)
     {
         using var homeserver = new LoopbackServer(req => req.Path switch
         {
             "/_matrix/client/versions" => (200, """{"versions":["v1.11"]}""", null),
-            "/_matrix/client/v3/login" => (429, """{"errcode":"M_LIMIT_EXCEEDED","error":"Too many requests"}""", null),
+            "/_matrix/client/v3/login" => (status, body, null),
             _ => (404, "{}", null)
         });
         var gateway = CreateGateway($"http://127.0.0.1:{homeserver.Port}");
 
-        var ex = await Assert.ThrowsAsync<LibMatrix.LibMatrixException>(() => gateway.LoginAsync(homeserver.BaseUrl, "alice", "S3cret"));
+        await Assert.ThrowsAsync<HomeserverRateLimitedException>(() => gateway.LoginAsync(homeserver.BaseUrl, "alice", "S3cret"));
+    }
 
-        Assert.Equal("M_LIMIT_EXCEEDED", ex.ErrorCode);
+    /// <summary>
+    /// Any other Matrix error on login is an <see cref="HttpRequestException"/> with the status code, never a
+    /// <c>LibMatrix</c> exception. Its message keeps the error code for the log.
+    /// </summary>
+    [Fact]
+    public async Task LoginMatrixError_IsSurfacedAsHttpRequestException()
+    {
+        using var homeserver = new LoopbackServer(req => req.Path switch
+        {
+            "/_matrix/client/versions" => (200, """{"versions":["v1.11"]}""", null),
+            "/_matrix/client/v3/login" => (403, """{"errcode":"M_FORBIDDEN","error":"Invalid password"}""", null),
+            _ => (404, "{}", null)
+        });
+        var gateway = CreateGateway($"http://127.0.0.1:{homeserver.Port}");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => gateway.LoginAsync(homeserver.BaseUrl, "alice", "S3cret"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, ex.StatusCode);
+        Assert.Contains("M_FORBIDDEN", ex.Message, StringComparison.Ordinal);
     }
 
     // ---- Discovery URL normalization and failure logging ----------------------------------------

@@ -204,6 +204,27 @@ public class SecurityInfrastructureTests
         Assert.Same(existing, session.Gateway);
     }
 
+    /// <summary>
+    /// The homeserver's own rate limit reaches the service as the gateway's <see cref="HomeserverRateLimitedException"/>
+    /// and is reported as <c>TooManyLoginAttempts</c>. The first attempt from a fresh client, so the app's own limiter
+    /// isn't the cause.
+    /// </summary>
+    [Fact]
+    public async Task UpstreamRateLimit_IsReportedAsTooManyLoginAttempts()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var limiter = new LoginRateLimiter(new MemoryLoginRateLimitStore(cache));
+        var authGateway = new RateLimitedAuthGateway();
+        const string homeserver = "https://matrix.example.com";
+
+        var passwordResult = await CreateSessionService(authGateway, limiter, ClientAt("192.0.2.4")).LoginAsync(homeserver, "admin", "S3cret");
+        var tokenResult = await CreateSessionService(authGateway, limiter, ClientAt("192.0.2.5")).LoginWithTokenAsync(homeserver, "syt_token");
+
+        Assert.Equal("TooManyLoginAttempts", passwordResult.Message);
+        Assert.Equal("TooManyLoginAttempts", tokenResult.Message);
+        Assert.Equal(2, authGateway.Calls);
+    }
+
     /// <summary>Restoring a session replaces it, so a failed restore still clears the gateway.</summary>
     [Fact]
     public async Task FailedSessionRestore_StillClearsGateway()
@@ -1008,6 +1029,28 @@ public class SecurityInfrastructureTests
 
         public Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
+    }
+
+    /// <summary>A homeserver that rate-limits every password and token login.</summary>
+    private sealed class RateLimitedAuthGateway : IMatrixAuthGateway
+    {
+        private int _calls;
+        public int Calls => Volatile.Read(ref _calls);
+
+        public Task ResolveHomeserverAsync(string homeserverUrl, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<LoginResponse> LoginAsync(string homeserverUrl, string username, string password, CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _calls);
+            throw new HomeserverRateLimitedException("Rate-limited by the homeserver.");
+        }
+
+        public Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _calls);
+            throw new HomeserverRateLimitedException("Rate-limited by the homeserver.");
+        }
     }
 
     private sealed class ManualTimeProvider(DateTimeOffset now) : TimeProvider

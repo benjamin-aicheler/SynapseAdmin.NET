@@ -15,6 +15,10 @@ public interface IHomeserverDiscoveryClient
     /// </summary>
     Task<HomeserverEndpoints> DiscoverAsync(string homeserverUrl, CancellationToken cancellationToken = default);
 
-    /// <summary>Performs an <c>m.login.password</c> login against an already discovered client base URL.</summary>
+    /// <summary>
+    /// Performs an <c>m.login.password</c> login against an already discovered client base URL.
+    /// Throws <see cref="Models.HomeserverRateLimitedException"/> when the homeserver answers <c>429</c> or
+    /// <c>M_LIMIT_EXCEEDED</c>, and an <see cref="HttpRequestException"/> with the status code for any other refusal.
+    /// </summary>
     Task<LoginResponse> LoginAsync(string clientBaseUrl, string username, string password, CancellationToken cancellationToken = default);
 }
