@@ -2108,4 +2108,10 @@
   <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
     <value>Error fetching the space's children.</value>
   </data>
+  <data name="UserActionsAccount" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="UserActionsRestrictions" xml:space="preserve">
+    <value>Restrictions</value>
+  </data>
 </root>

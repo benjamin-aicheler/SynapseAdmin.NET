@@ -2107,4 +2107,10 @@
   <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
     <value>Fehler beim Abrufen der Unterräume.</value>
   </data>
+  <data name="UserActionsAccount" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="UserActionsRestrictions" xml:space="preserve">
+    <value>Einschränkungen</value>
+  </data>
 </root>
