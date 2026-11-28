@@ -1,8 +1,11 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
 using SynapseAdmin.Models;
+using SynapseAdmin.Models.Requests;
 using SynapseAdmin.Models.Responses;
 using SynapseAdmin.Services;
 using SynapseAdmin.Tests.Components;
@@ -20,6 +23,7 @@ public sealed class EventReportServiceCharacterizationTests : IDisposable
     // The line breaks prove that the log calls sanitize the untrusted strings.
     private const string Search = "spam\nham";
     private const string ReportId = "report\n7";
+    private static readonly JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
 
     private sealed record Operation(
         string GatewayMethod,
@@ -31,10 +35,14 @@ public sealed class EventReportServiceCharacterizationTests : IDisposable
 
     private static readonly Dictionary<string, Operation> Operations = new()
     {
-        ["List"] = new("GetEventReportListAsync", async (s, ct) => await s.GetEventReportsAsync(20, 10, SortDirection.Ascending, Search, ct),
-            ct => [20, 10, "f", Search, ct], "ErrorFetchingEventReports",
-            "Error fetching event reports (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})",
-            new() { ["Offset"] = 20, ["Limit"] = 10, ["SearchTerm"] = "spam ham" }),
+        ["List"] = new("GetEventReportListAsync",
+            async (s, ct) => await s.GetEventReportsAsync(20, 10, SortDirection.Ascending, new EventReportListFilter(" !r\n1 ", Search, null), ct),
+            ct => [20, 10, "f", new EventReportListFilter("!r\n1", Search, null), ct], "ErrorFetchingEventReports",
+            "Error fetching event reports (offset: {Offset}, limit: {Limit}, roomId: {RoomId}, reporter: {ReporterUserId}, sender: {SenderUserId})",
+            new() { ["Offset"] = 20, ["Limit"] = 10, ["RoomId"] = "!r 1", ["ReporterUserId"] = "spam ham", ["SenderUserId"] = "" }),
+        ["Details"] = new("GetEventReportDetailsAsync", async (s, ct) => await s.GetEventReportDetailsAsync(ReportId, ct),
+            ct => [ReportId, ct], "ErrorFetchingEventReportDetails", "Error fetching event report {ReportId}",
+            new() { ["ReportId"] = "report 7" }),
         ["Delete"] = new("DeleteEventReportAsync", (s, ct) => s.DeleteEventReportAsync(ReportId, ct),
             ct => [ReportId, ct], "ErrorDeletingEventReport", "Error deleting event report {ReportId}",
             new() { ["ReportId"] = "report 7" }),
@@ -168,6 +176,69 @@ public sealed class EventReportServiceCharacterizationTests : IDisposable
         Assert.Equal(42, result.Data.Total);
         Assert.Equal(["1", "2"], result.Data.Reports.Select(r => r.Id));
         Assert.Empty(_logger.Entries);
+    }
+
+    // Each field is trimmed and a blank one left out; a filter with no field left is no filter (#588).
+    public static TheoryData<EventReportListFilter?, EventReportListFilter?> Filters => new()
+    {
+        { null, null },
+        { new EventReportListFilter(), null },
+        { new EventReportListFilter(" ", "\t", ""), null },
+        { new EventReportListFilter(" !r:hs ", " ", null), new EventReportListFilter("!r:hs", null, null) },
+        { new EventReportListFilter(null, " alice ", "@bad:hs "), new EventReportListFilter(null, "alice", "@bad:hs") },
+    };
+
+    [Theory, MemberData(nameof(Filters))]
+    public async Task List_SendsTheTrimmedFilter(EventReportListFilter? filter, EventReportListFilter? sent)
+    {
+        var gateway = Stub.Create<IMatrixGateway>(out var stub);
+
+        await CreateService(gateway).GetEventReportsAsync(0, 10, SortDirection.None, filter, _cts.Token);
+
+        Assert.Equal(sent, Assert.Single(stub.CallsTo("GetEventReportListAsync"))[3]);
+    }
+
+    [Fact]
+    public async Task Details_NullGatewayResult_IsANotFoundWarning()
+    {
+        var result = await CreateService(Stub.Create<IMatrixGateway>()).GetEventReportDetailsAsync(ReportId, _cts.Token);
+
+        ResultAssert.Failure(result, "EventReportDetailsNotFound", Severity.Warning);
+        var entry = Assert.Single(_logger.Entries);
+        Assert.Equal((LogLevel.Warning, "Event report {ReportId} not found on the homeserver"), (entry.Level, entry.Template));
+        Assert.Equal(new Dictionary<string, object?> { ["ReportId"] = "report 7" }, entry.Arguments);
+    }
+
+    [Fact]
+    public async Task Details_Success_ReturnsTheReportWithTheIndentedEventJson_WithoutLogging()
+    {
+        var report = new SynapseAdminEventReportDetailsResponse
+        {
+            Id = "7", RoomId = "!r", EventId = "$e", UserId = "@u:hs", Reason = "secret reason",
+            EventJson = new JsonObject { ["type"] = "m.room.message", ["content"] = new JsonObject { ["body"] = "secret body" } },
+        };
+        var gateway = Stub.Create<IMatrixGateway>(s => s.On("GetEventReportDetailsAsync", _ => Task.FromResult<SynapseAdminEventReportDetailsResponse?>(report)));
+
+        var result = await CreateService(gateway).GetEventReportDetailsAsync(ReportId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        var vm = result.Data!;
+        Assert.Equal(("7", "secret reason"), (vm.Id, vm.Reason));
+        Assert.Equal(JsonSerializer.Serialize(report.EventJson, IndentedJson), vm.EventJson);
+        Assert.Contains("\n", vm.EventJson);
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Fact]
+    public async Task Details_WithoutEventJson_HasAnEmptyEventJson()
+    {
+        var report = new SynapseAdminEventReportDetailsResponse { Id = "7", RoomId = "!r", EventId = "$e", UserId = "@u:hs" };
+        var gateway = Stub.Create<IMatrixGateway>(s => s.On("GetEventReportDetailsAsync", _ => Task.FromResult<SynapseAdminEventReportDetailsResponse?>(report)));
+
+        var result = await CreateService(gateway).GetEventReportDetailsAsync(ReportId, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Equal(string.Empty, result.Data!.EventJson);
     }
 
     [Fact]

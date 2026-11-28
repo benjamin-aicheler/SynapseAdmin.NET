@@ -93,7 +93,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
             async g => (await g.GetFederationDestinationListAsync("100", 50, "b"))?.NextToken),
         nameof(SynapseAdminGateway.GetEventReportListAsync) => (
             "/_synapse/admin/v1/event_reports?from=5&limit=10&dir=b&room_id=!room%3aexample.com",
-            async g => (await g.GetEventReportListAsync(5, 10, "b", "!room:example.com"))?.NextToken),
+            async g => (await g.GetEventReportListAsync(5, 10, "b", new EventReportListFilter(RoomId: "!room:example.com")))?.NextToken),
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
     };
 
@@ -970,6 +970,108 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir=b&order_by=joined_members{expectedFlags}", Assert.Single(_homeserver.RequestTargets));
     }
 
+    // ---- Event report filters and details (#588) ------------------------------------------------------
+
+    // Each set field goes out under its documented name, form-encoded; a null or empty field is left out.
+    public static TheoryData<string?, string?, string?, string> EventReportFilters => new()
+    {
+        { null, null, null, "" },
+        { "", "", "", "" },
+        { "!room:example.com", null, null, "&room_id=!room%3aexample.com" },
+        { null, "@alice:example.com", null, "&user_id=%40alice%3aexample.com" },
+        { null, null, "@bob+x:example.com", "&event_sender_user_id=%40bob%2bx%3aexample.com" },
+        { "!room:example.com", "alice", "@bob:example.com", "&room_id=!room%3aexample.com&user_id=alice&event_sender_user_id=%40bob%3aexample.com" },
+    };
+
+    [Theory]
+    [MemberData(nameof(EventReportFilters))]
+    public async Task GetEventReportList_SendsTheFiltersThatAreSet(string? roomId, string? reporter, string? sender, string expectedFilters)
+    {
+        _homeserver.Respond = () => Results.Json(new { total = 0, event_reports = Array.Empty<object>() });
+
+        await _gateway.GetEventReportListAsync(0, 10, "b", new EventReportListFilter(roomId, reporter, sender));
+
+        Assert.Equal($"/_synapse/admin/v1/event_reports?from=0&limit=10&dir=b{expectedFilters}", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    [Fact]
+    public async Task GetEventReportList_WithoutAFilter_SendsNone()
+    {
+        _homeserver.Respond = () => Results.Json(new { total = 0, event_reports = Array.Empty<object>() });
+
+        await _gateway.GetEventReportListAsync(0, 10, "b");
+
+        Assert.Equal("/_synapse/admin/v1/event_reports?from=0&limit=10&dir=b", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    [Fact]
+    public async Task GetEventReportDetails_ReadsTheReportAndTheEventJson()
+    {
+        _homeserver.Respond = () => Results.Text("""
+            {
+                "id": 42,
+                "received_ts": 1570897107409,
+                "room_id": "!room:example.com",
+                "name": "Matrix HQ",
+                "canonical_alias": "#hq:example.com",
+                "event_id": "$event",
+                "user_id": "@alice:example.com",
+                "reason": "spam",
+                "score": -100,
+                "sender": "@bob:example.com",
+                "event_json": { "type": "m.room.message", "content": { "body": "hi" } }
+            }
+            """, "application/json");
+
+        var report = await _gateway.GetEventReportDetailsAsync("42");
+
+        Assert.Equal("/_synapse/admin/v1/event_reports/42", Assert.Single(_homeserver.RequestTargets));
+        Assert.NotNull(report);
+        Assert.Equal(("42", 1570897107409L, "!room:example.com", "Matrix HQ", "#hq:example.com", "$event"),
+            (report.Id, report.ReceivedTs, report.RoomId, report.Name, report.CanonicalAlias, report.EventId));
+        Assert.Equal(("@alice:example.com", "spam", -100, "@bob:example.com"), (report.UserId, report.Reason, report.Score, report.Sender));
+        Assert.Equal("hi", report.EventJson?["content"]?["body"]?.GetValue<string>());
+    }
+
+    /// <summary>
+    /// Synapse answers 404 <c>M_NOT_FOUND</c> for an unknown report and for one whose event was purged or whose room
+    /// was deleted (its query joins the stored event and the room state); a bare 404 means the same, as for events.
+    /// </summary>
+    [Theory]
+    [InlineData("M_NOT_FOUND")]
+    [InlineData(null)]
+    public async Task GetEventReportDetails_NotFound_ReturnsNull(string? errcode)
+    {
+        _homeserver.Respond = () => errcode == null
+            ? Results.Text("Not Found", statusCode: 404)
+            : Results.Json(new { errcode, error = "Event report not found" }, statusCode: 404);
+
+        Assert.Null(await _gateway.GetEventReportDetailsAsync("42"));
+    }
+
+    [Theory]
+    [InlineData(403, "M_FORBIDDEN")]
+    [InlineData(404, "M_UNRECOGNIZED")]
+    [InlineData(400, "M_INVALID_PARAM")]
+    public async Task GetEventReportDetails_OtherMatrixError_Throws(int statusCode, string errcode)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode, error = "Error" }, statusCode: statusCode);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.GetEventReportDetailsAsync("42"));
+
+        Assert.Equal(errcode, ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task GetEventReportDetails_EncodesTheReportId()
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode = "M_NOT_FOUND", error = "Not found" }, statusCode: 404);
+
+        await _gateway.GetEventReportDetailsAsync("4/2 x");
+
+        Assert.Equal("/_synapse/admin/v1/event_reports/4%2f2+x", Assert.Single(_homeserver.RequestTargets));
+    }
+
     private AuthenticatedHomeserverGeneric CreateHomeserver() => new(
         "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token");
 
@@ -1562,6 +1664,7 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         [nameof(SynapseAdminGateway.QuarantineMediaByUserIdAsync)] = g => g.QuarantineMediaByUserIdAsync("@alice:example.com"),
         [nameof(SynapseAdminGateway.GetEventReportListAsync)] = g => g.GetEventReportListAsync(0, 10, "b"),
         [nameof(SynapseAdminGateway.DeleteEventReportAsync)] = g => g.DeleteEventReportAsync("1"),
+        [nameof(SynapseAdminGateway.GetEventReportDetailsAsync)] = g => g.GetEventReportDetailsAsync("1"),
         [nameof(SynapseAdminGateway.RenewAccountValidityAsync)] = g => g.RenewAccountValidityAsync(
             new SynapseAdminAccountValidityRequest { UserId = "@alice:example.com" }),
         [nameof(SynapseAdminGateway.GetUserExperimentalFeaturesAsync)] = g => g.GetUserExperimentalFeaturesAsync("@alice:example.com"),

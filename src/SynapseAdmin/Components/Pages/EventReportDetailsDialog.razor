@@ -1,0 +1,33 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@string.Format(L["EventReportDetailsTitle"], Report.Id)</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSimpleTable Dense="true" Elevation="0" Class="mb-4">
+            <tbody>
+                <tr><th>@L["ReportId"]</th><td>@Report.Id</td></tr>
+                <tr><th>@L["ReportedAt"]</th><td>@TimeZoneService.ToLocal(Report.ReceivedTsDateTime).ToString("g")</td></tr>
+                <tr><th>@L["Reporter"]</th><td>@Report.UserId</td></tr>
+                <tr><th>@L["Reason"]</th><td>@(string.IsNullOrEmpty(Report.Reason) ? "-" : Report.Reason)</td></tr>
+                <tr><th>@L["Score"]</th><td>@(Report.Score?.ToString() ?? "-")</td></tr>
+                <tr><th>@L["Name"]</th><td>@(Report.RoomName ?? "-")</td></tr>
+                <tr><th>@L["CanonicalAlias"]</th><td>@(Report.CanonicalAlias ?? "-")</td></tr>
+                <tr><th>@L["RoomId"]</th><td>@Report.RoomId</td></tr>
+                <tr><th>@L["EventId"]</th><td>@Report.EventId</td></tr>
+                <tr><th>@L["Sender"]</th><td>@(Report.Sender ?? "-")</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <MudText Typo="Typo.subtitle2" Class="mb-2">@L["RawJsonPayload"]</MudText>
+        @* The event is shown as text: Blazor escapes it, so HTML in the content never renders. *@
+        <MudPaper Outlined="true" Class="pa-2" Style="max-height: 50vh; overflow: auto;">
+            <pre class="event-report-json" style="margin: 0; font-family: monospace; font-size: 0.875rem; white-space: pre-wrap; word-break: break-all;">@Report.EventJson</pre>
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+        @if (!string.IsNullOrEmpty(Report.EventId))
+        {
+            <MudButton Href="@($"/event-forensics?eventId={Uri.EscapeDataString(Report.EventId)}")" StartIcon="@Icons.Material.Filled.Troubleshoot" Color="Color.Primary">@L["InspectEvent"]</MudButton>
+        }
+        <MudButton OnClick="Close">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>

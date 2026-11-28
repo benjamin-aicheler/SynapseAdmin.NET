@@ -477,21 +477,39 @@ public class SynapseAdminGateway(
 
     // --- Event Reports ---
 
-    public override async Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Each set filter goes out under its documented name (#588). Synapse matches <c>room_id</c> and <c>user_id</c> as
+    /// substrings and <c>event_sender_user_id</c> exactly, and counts <c>total</c> with the same filter.
+    /// </summary>
+    public override async Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, EventReportListFilter? filter = null, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/event_reports?from={offset}&limit={limit}&dir={direction.UrlEncode()}";
-        if (!string.IsNullOrEmpty(searchTerm))
-        {
-            if (searchTerm.StartsWith("!"))
-            {
-                url += $"&room_id={searchTerm.UrlEncode()}";
-            }
-            else
-            {
-                url += $"&user_id={searchTerm.UrlEncode()}";
-            }
-        }
+        if (!string.IsNullOrEmpty(filter?.RoomId)) url += $"&room_id={filter.RoomId.UrlEncode()}";
+        if (!string.IsNullOrEmpty(filter?.ReporterUserId)) url += $"&user_id={filter.ReporterUserId.UrlEncode()}";
+        if (!string.IsNullOrEmpty(filter?.SenderUserId)) url += $"&event_sender_user_id={filter.SenderUserId.UrlEncode()}";
         return await GetWithCompatibilityOptionsAsync<SynapseAdminEventReportListResult>(url, cancellationToken);
+    }
+
+    /// <summary>
+    /// <c>null</c> when Synapse answers 404 (<c>M_NOT_FOUND</c>, or a bare 404): the report doesn't exist, or its event
+    /// was purged or its room deleted, because Synapse's query joins the stored event and the room state (#588). The
+    /// integer <c>id</c> needs the compatibility options.
+    /// </summary>
+    public override async Task<SynapseAdminEventReportDetailsResponse?> GetEventReportDetailsAsync(string reportId, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/event_reports/{reportId.UrlEncode()}";
+        try
+        {
+            return await GetWithCompatibilityOptionsAsync<SynapseAdminEventReportDetailsResponse>(url, cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (LibMatrix.MatrixException ex) when (ex.ErrorCode == "M_NOT_FOUND")
+        {
+            return null;
+        }
     }
 
     public override async Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default)

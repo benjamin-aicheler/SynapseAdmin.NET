@@ -302,7 +302,11 @@ internal sealed class TuwunelAdminGateway(
         throw new OperationNotSupportedByHomeserverException();
 
     /// <summary>Refused: Tuwunel has no event report store.</summary>
-    public override Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, string? searchTerm = null, CancellationToken cancellationToken = default) =>
+    public override Task<SynapseAdminEventReportListResult?> GetEventReportListAsync(int offset, int limit, string direction, EventReportListFilter? filter = null, CancellationToken cancellationToken = default) =>
+        throw new OperationNotSupportedByHomeserverException();
+
+    /// <summary>Refused: Tuwunel has no event report store.</summary>
+    public override Task<SynapseAdminEventReportDetailsResponse?> GetEventReportDetailsAsync(string reportId, CancellationToken cancellationToken = default) =>
         throw new OperationNotSupportedByHomeserverException();
 
     /// <summary>Refused: Tuwunel has no event report store.</summary>

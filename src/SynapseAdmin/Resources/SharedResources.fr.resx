@@ -1168,9 +1168,6 @@
   <data name="MatchingRoomsCount" xml:space="preserve">
     <value>{0} salons correspondants trouvés</value>
   </data>
-  <data name="SearchUserIdOrRoomId" xml:space="preserve">
-    <value>Rechercher par identifiant ou ID de salon</value>
-  </data>
   <data name="MatchingEventReportsCount" xml:space="preserve">
     <value>{0} rapports de signalement correspondants trouvés</value>
   </data>
@@ -2022,5 +2019,32 @@
   </data>
   <data name="RoomListFilterExcludeEmpty" xml:space="preserve">
     <value>Exclure les salons vides</value>
+  </data>
+  <data name="EventReportFilterRoomId" xml:space="preserve">
+    <value>ID du salon</value>
+  </data>
+  <data name="EventReportFilterRoomIdHint" xml:space="preserve">
+    <value>Correspond à une partie de l'ID du salon</value>
+  </data>
+  <data name="EventReportFilterReporter" xml:space="preserve">
+    <value>Signaleur</value>
+  </data>
+  <data name="EventReportFilterReporterHint" xml:space="preserve">
+    <value>Correspond à une partie de l'ID utilisateur du signaleur</value>
+  </data>
+  <data name="EventReportFilterSender" xml:space="preserve">
+    <value>Utilisateur signalé</value>
+  </data>
+  <data name="EventReportFilterSenderHint" xml:space="preserve">
+    <value>L'ID complet de l'expéditeur de l'événement signalé</value>
+  </data>
+  <data name="EventReportDetailsTitle" xml:space="preserve">
+    <value>Signalement {0}</value>
+  </data>
+  <data name="EventReportDetailsNotFound" xml:space="preserve">
+    <value>Le serveur d'accueil ne peut pas afficher ce signalement. L'événement signalé ou son salon a peut-être été purgé ou supprimé.</value>
+  </data>
+  <data name="ErrorFetchingEventReportDetails" xml:space="preserve">
+    <value>Erreur lors de la récupération du signalement.</value>
   </data>
 </root>
