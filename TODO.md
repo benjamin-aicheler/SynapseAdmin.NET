@@ -14,31 +14,33 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-28
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
+- [ ] <!-- [PLAN step] Task description – owner -->
+
 ## ⏭️ Next Up
 
-- [ ] [1.1] Wire tests: context URL and encoding, DTO, `404` / `M_NOT_FOUND` → `null`, other errors throw, Tuwunel same request (AC-32)
-- [ ] [1.2] DTO, gateway method, Generic refusal, test fakes
-- [ ] [2.1] `EventContextMappingExtensions` + `MappingExtensionsTests`
-- [ ] [2.2] `EventForensicsService.GetEventContextAsync` + characterization
-- [ ] [3.1] `EventForensicsContextTests`
-- [ ] [3.2] Page card and loading; resources EN, DE, FR
-- [ ] [4.1] Finalize SPEC.md `[Planned]`, README, reset PLAN.md and TODO.md
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+
 ## 📋 Backlog
 
-- [ ] Remaining #588 parts: jump to date (uses the context's `start` / `end`), space hierarchy
+- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
+- [ ] 
+
 ## ✅ Done
 
-- [x] 2026-11-28 – Plan approved (context loads automatically)
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
