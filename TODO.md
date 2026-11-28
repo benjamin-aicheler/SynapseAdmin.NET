@@ -14,33 +14,29 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-28
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
-
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [1.1] Wire tests: hierarchy URL with and without `from`, DTO, errors, Tuwunel same request (AC-34)
+- [ ] [1.2] DTOs, gateway method, Generic refusal, test fakes
+- [ ] [2.1] Space child and summary mappers + `MappingExtensionsTests`
+- [ ] [2.2] `RoomService.GetSpaceChildrenAsync` + characterization
+- [ ] [3.1] `RoomDetailsSpaceChildrenTests`
+- [ ] [3.2] "Space children" tab, loading, Load more; resources EN, DE, FR
+- [ ] [4.1] Finalize SPEC.md `[Planned]`, README, reset PLAN.md and TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
-
 ## 📋 Backlog
-
-- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [ ] 
-
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-28 – Plan approved (direct children only)
 
 ## Definition of Done (applies to every task)
 
