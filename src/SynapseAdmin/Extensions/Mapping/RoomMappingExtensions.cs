@@ -151,6 +151,31 @@ public static class RoomMappingExtensions
         return events.Concat(context.EventsBefore);
     }
 
+    /// <summary>A space's link to a child (#588): <c>state_key</c> is the child's room ID; <c>suggested</c> only when <c>true</c>.</summary>
+    public static SpaceChildViewModel ToSpaceChildViewModel(this SynapseAdminSpaceChildEvent link)
+    {
+        return new SpaceChildViewModel
+        {
+            RoomId = link.StateKey,
+            Suggested = link.Content is { ValueKind: JsonValueKind.Object } content
+                        && content.TryGetProperty("suggested", out var suggested)
+                        && suggested.ValueKind == JsonValueKind.True
+        };
+    }
+
+    public static SpaceChildSummaryViewModel ToSpaceChildSummaryViewModel(this SynapseAdminRoomHierarchyRoom room)
+    {
+        return new SpaceChildSummaryViewModel
+        {
+            RoomId = room.RoomId,
+            Name = room.Name,
+            CanonicalAlias = room.CanonicalAlias,
+            JoinedMembers = room.NumJoinedMembers,
+            JoinRule = room.JoinRule,
+            RoomType = room.RoomType
+        };
+    }
+
     public static void ApplyMetadata(this RoomMediaItemViewModel vm, SynapseAdminMediaMetadataResponse.MediaInfo meta)
     {
         vm.UploadName = meta.UploadName;

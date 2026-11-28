@@ -149,6 +149,47 @@ public class MappingExtensionsTests
         Assert.False(detailVm.IsTombstoned);
     }
 
+    [Theory]
+    [InlineData("""{ "via": ["hs"], "suggested": true }""", true)]
+    [InlineData("""{ "via": ["hs"], "suggested": false }""", false)]
+    [InlineData("""{ "via": ["hs"], "suggested": "yes" }""", false)]
+    [InlineData("""{ "via": ["hs"] }""", false)]
+    [InlineData(null, false)]
+    public void SpaceChild_MapsTheRoomAndWhetherItIsSuggested(string? content, bool suggested)
+    {
+        var link = new SynapseAdminSpaceChildEvent
+        {
+            Type = "m.space.child", StateKey = "!c:hs",
+            Content = content == null ? null : JsonDocument.Parse(content).RootElement,
+        };
+
+        var vm = link.ToSpaceChildViewModel();
+
+        Assert.Equal(("!c:hs", suggested), (vm.RoomId, vm.Suggested));
+    }
+
+    [Fact]
+    public void SpaceChildSummary_MapsEveryProperty()
+    {
+        var room = new SynapseAdminRoomHierarchyRoom
+        {
+            RoomId = "!c:hs", Name = "Child", CanonicalAlias = "#c:hs", NumJoinedMembers = 4, JoinRule = "invite", RoomType = "m.space",
+        };
+
+        var vm = room.ToSpaceChildSummaryViewModel();
+
+        Assert.Equal(("!c:hs", "Child", "#c:hs", 4, "invite", "m.space"), (vm.RoomId, vm.Name, vm.CanonicalAlias, vm.JoinedMembers, vm.JoinRule, vm.RoomType));
+    }
+
+    [Fact]
+    public void SpaceChildSummary_NullFields_StayNull()
+    {
+        var vm = new SynapseAdminRoomHierarchyRoom { RoomId = "!c:hs" }.ToSpaceChildSummaryViewModel();
+
+        Assert.Equal(("!c:hs", (string?)null, (string?)null, (int?)null, (string?)null, (string?)null),
+            (vm.RoomId, vm.Name, vm.CanonicalAlias, vm.JoinedMembers, vm.JoinRule, vm.RoomType));
+    }
+
     [Fact]
     public void RoomMessage_MapsEveryProperty()
     {

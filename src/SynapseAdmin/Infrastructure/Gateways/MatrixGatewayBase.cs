@@ -243,6 +243,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     // Event Forensics
     public abstract Task<SynapseAdminFetchEventResponse?> FetchEventAsync(string eventId, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminEventContextResponse?> GetEventContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminRoomHierarchyResponse?> GetRoomHierarchyAsync(string roomId, string? from, int limit, int maxDepth, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomMessageContextResponse?> GetRoomMessageContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminTimestampToEventResponse?> GetEventForTimestampAsync(string roomId, long ts, string dir, CancellationToken cancellationToken = default);
 

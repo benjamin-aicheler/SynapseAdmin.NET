@@ -42,6 +42,7 @@ public interface IRoomService
     Task<OperationResult<List<RoomStatisticsViewModel>>> GetLargestRoomsAsync(CancellationToken token = default);
     Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAsync(string roomId, string? from = null, int limit = 10, string dir = "f", string? filter = null, string? to = null, CancellationToken token = default);
     Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAtAsync(string roomId, DateTimeOffset at, CancellationToken token = default);
+    Task<OperationResult<SpaceChildrenPageViewModel>> GetSpaceChildrenAsync(string spaceId, string? from = null, CancellationToken token = default);
     Task<OperationResult<List<RoomMediaItemViewModel>>> GetMediaMetadataBatchAsync(List<string> mxcUris, CancellationToken token = default);
     Task<OperationResult<string>> PurgeRoomHistoryAsync(string roomId, PurgeHistoryViewModel request, CancellationToken token = default);
     Task<OperationResult<SynapseAdminPurgeHistoryStatusResponse>> GetPurgeHistoryStatusAsync(string purgeId, CancellationToken token = default);

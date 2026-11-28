@@ -1220,6 +1220,74 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Null(await _gateway.GetRoomMessageContextAsync("!room:example.com", "$e", 100));
     }
 
+    // ---- Space hierarchy (#588) -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetRoomHierarchy_FirstPage_SendsTheLimitAndTheDepth_AndReadsTheSpaceAndItsChildren()
+    {
+        _homeserver.Respond = () => Results.Text("""
+            {
+                "rooms": [
+                    {
+                        "room_id": "!space:hs", "name": "Space", "room_type": "m.space", "num_joined_members": 3, "join_rule": "public",
+                        "children_state": [
+                            { "type": "m.space.child", "state_key": "!c1:hs", "content": { "via": ["hs"], "suggested": true }, "origin_server_ts": 1, "sender": "@u:hs" }
+                        ]
+                    },
+                    { "room_id": "!c1:hs", "name": "Child", "canonical_alias": "#c1:hs", "num_joined_members": 2, "join_rule": "invite", "children_state": [] }
+                ],
+                "next_batch": "KUYm+b/x"
+            }
+            """, "application/json");
+
+        var page = await _gateway.GetRoomHierarchyAsync("!space:example.com", null, 50, 1);
+
+        Assert.Equal("/_synapse/admin/v1/rooms/!space%3aexample.com/hierarchy?limit=50&max_depth=1", Assert.Single(_homeserver.RequestTargets));
+        Assert.NotNull(page);
+        Assert.Equal("KUYm+b/x", page.NextBatch);
+        Assert.Equal(["!space:hs", "!c1:hs"], page.Rooms.Select(r => r.RoomId));
+        var space = page.Rooms[0];
+        Assert.Equal(("Space", "m.space", 3, "public"), (space.Name, space.RoomType, space.NumJoinedMembers, space.JoinRule));
+        var link = Assert.Single(space.ChildrenState);
+        Assert.Equal(("m.space.child", "!c1:hs", true), (link.Type, link.StateKey, link.Content?.GetProperty("suggested").GetBoolean()));
+        Assert.Equal(("Child", "#c1:hs", 2, "invite"), (page.Rooms[1].Name, page.Rooms[1].CanonicalAlias, page.Rooms[1].NumJoinedMembers, page.Rooms[1].JoinRule));
+    }
+
+    [Fact]
+    public async Task GetRoomHierarchy_LaterPage_SendsTheTokenEncoded()
+    {
+        _homeserver.Respond = () => Results.Json(new { rooms = Array.Empty<object>() });
+
+        await _gateway.GetRoomHierarchyAsync("!space:example.com", "KUYm+b/x", 50, 1);
+
+        Assert.Equal("/_synapse/admin/v1/rooms/!space%3aexample.com/hierarchy?limit=50&max_depth=1&from=KUYm%2bb%2fx", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    [Fact]
+    public async Task Tuwunel_GetRoomHierarchy_SendsTheSameRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { rooms = Array.Empty<object>() });
+
+        await gateway.GetRoomHierarchyAsync("!space:example.com", "t", 50, 1);
+
+        Assert.Equal("/_synapse/admin/v1/rooms/!space%3aexample.com/hierarchy?limit=50&max_depth=1&from=t", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    /// <summary>Synapse answers 400 for a token used with other parameters; that and every other error stays an error.</summary>
+    [Theory]
+    [InlineData(400, "M_INVALID_PARAM")]
+    [InlineData(404, "M_NOT_FOUND")]
+    [InlineData(403, "M_FORBIDDEN")]
+    public async Task GetRoomHierarchy_MatrixError_Throws(int statusCode, string errcode)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode, error = "Error" }, statusCode: statusCode);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.GetRoomHierarchyAsync("!space:example.com", null, 50, 1));
+
+        Assert.Equal(errcode, ex.ErrorCode);
+    }
+
     private AuthenticatedHomeserverGeneric CreateHomeserver() => new(
         "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token");
 

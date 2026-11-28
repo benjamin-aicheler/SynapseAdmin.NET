@@ -2087,4 +2087,25 @@
   <data name="ErrorJumpingToDate" xml:space="preserve">
     <value>Error loading the messages at that time.</value>
   </data>
+  <data name="SpaceChildren" xml:space="preserve">
+    <value>Space children</value>
+  </data>
+  <data name="SpaceChildrenHint" xml:space="preserve">
+    <value>The rooms this space links to directly. Details come only from this server; it doesn't ask other servers.</value>
+  </data>
+  <data name="SpaceNotOnThisServer" xml:space="preserve">
+    <value>The homeserver has no details of this space's children, because this server isn't in the space.</value>
+  </data>
+  <data name="SpaceHasNoChildren" xml:space="preserve">
+    <value>This space links to no rooms.</value>
+  </data>
+  <data name="NoDetailsOnThisServer" xml:space="preserve">
+    <value>No details on this server</value>
+  </data>
+  <data name="Suggested" xml:space="preserve">
+    <value>Suggested</value>
+  </data>
+  <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
+    <value>Error fetching the space's children.</value>
+  </data>
 </root>

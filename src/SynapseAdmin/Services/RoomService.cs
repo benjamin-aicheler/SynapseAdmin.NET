@@ -529,6 +529,53 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
             });
     }
 
+    /// <summary>The space's direct children only: a sub-space has its own room page (#588).</summary>
+    internal const int SpaceHierarchyMaxDepth = 1;
+
+    /// <summary>Synapse's and Tuwunel's cap for the hierarchy's <c>limit</c>.</summary>
+    internal const int SpaceHierarchyLimit = 50;
+
+    /// <summary>
+    /// One page of the children of <paramref name="spaceId"/> (#588). <paramref name="from"/> is the previous page's
+    /// token. The first page names the children from the space's own entry; every page adds the details of the
+    /// children this server is in. The page loads this by itself, so a refusal is logged at Debug.
+    /// </summary>
+    public Task<OperationResult<SpaceChildrenPageViewModel>> GetSpaceChildrenAsync(string spaceId, string? from = null, CancellationToken token = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingSpaceChildren",
+            ex => logger.LogError(ex, "Error fetching the children of space {RoomId}", spaceId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var page = await gateway.GetRoomHierarchyAsync(spaceId, from, SpaceHierarchyLimit, SpaceHierarchyMaxDepth, token);
+                var rooms = page?.Rooms ?? [];
+                var space = rooms.FirstOrDefault(r => string.Equals(r.RoomId, spaceId, StringComparison.Ordinal));
+
+                var vm = new SpaceChildrenPageViewModel
+                {
+                    Children = from == null
+                        ? space?.ChildrenState.Where(IsSpaceChildLink).Select(link => link.ToSpaceChildViewModel()).ToList()
+                        : null,
+                    Summaries = rooms
+                        .Where(r => !string.Equals(r.RoomId, spaceId, StringComparison.Ordinal))
+                        .Select(r => r.ToSpaceChildSummaryViewModel())
+                        .ToList(),
+                    NextBatch = string.IsNullOrEmpty(page?.NextBatch) ? null : page.NextBatch
+                };
+                return OperationResult<SpaceChildrenPageViewModel>.Ok(vm);
+            },
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support the space hierarchy"));
+
+    /// <summary>
+    /// A valid link to a child: an <c>m.space.child</c> event whose <c>via</c> names at least one server. An event without
+    /// one removes the link in the Matrix spec.
+    /// </summary>
+    private static bool IsSpaceChildLink(SynapseAdminSpaceChildEvent link) =>
+        link.Type == "m.space.child"
+        && !string.IsNullOrEmpty(link.StateKey)
+        && link.Content is { ValueKind: JsonValueKind.Object } content
+        && content.TryGetProperty("via", out var via)
+        && via.ValueKind == JsonValueKind.Array
+        && via.GetArrayLength() > 0;
+
     /// <summary>The Messages tab lists room messages only, not state or other events.</summary>
     private static bool IsRoomMessage(SynapseAdminEvent evt) => evt.Type == "m.room.message";
 
