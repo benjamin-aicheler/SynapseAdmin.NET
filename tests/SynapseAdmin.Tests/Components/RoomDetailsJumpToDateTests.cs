@@ -29,6 +29,9 @@ public class RoomDetailsJumpToDateTests : DetailPageTestBase
     private readonly List<(string RoomId, DateTimeOffset At, TaskCompletionSource<OperationResult<RoomMessagesViewModel>> Result)> _jumps = [];
     private readonly Queue<OperationResult<RoomMessagesViewModel>> _pages = new();
 
+    /// <summary>Released once for each jump the page asks for; see <see cref="NextJumpAsync"/>.</summary>
+    private readonly SemaphoreSlim _jumpRequested = new(0);
+
     public RoomDetailsJumpToDateTests()
     {
         Services.AddSingleton(Stub.Create<IRoomService>(out _rooms));
@@ -44,6 +47,7 @@ public class RoomDetailsJumpToDateTests : DetailPageTestBase
             {
                 var jump = Pending<OperationResult<RoomMessagesViewModel>>();
                 _jumps.Add(((string)args[0]!, (DateTimeOffset)args[1]!, jump));
+                _jumpRequested.Release();
                 return jump.Task;
             });
         // The local wall-clock time in a fixed zone two hours ahead of UTC, so the test sees the conversion.
@@ -102,8 +106,18 @@ public class RoomDetailsJumpToDateTests : DetailPageTestBase
     {
         await EnterDateAndTime(cut, new DateTime(2026, 11, 20), new TimeSpan(14, 30, 0));
         var click = Button(cut, "JumpToDate").ClickAsync(new MouseEventArgs());
-        _jumps[^1].Result.SetResult(answer);
+        (await NextJumpAsync()).SetResult(answer);
         await click.WaitAsync(TimeSpan.FromSeconds(10));
+    }
+
+    /// <summary>
+    /// The answer of the next jump the page asks for, once it has asked. The click's task can come back before the
+    /// renderer has run the handler, so under load the jump may not be recorded yet when the click returns.
+    /// </summary>
+    private async Task<TaskCompletionSource<OperationResult<RoomMessagesViewModel>>> NextJumpAsync()
+    {
+        Assert.True(await _jumpRequested.WaitAsync(TimeSpan.FromSeconds(10)), "The page didn't ask for the jump.");
+        return _jumps[^1].Result;
     }
 
     [Theory]
@@ -248,7 +262,7 @@ public class RoomDetailsJumpToDateTests : DetailPageTestBase
         cut.Render(p => p.Add(x => x.RoomId, RoomB));
         cut.WaitForAssertion(() => Assert.Contains($"Room {RoomB}", cut.Markup));
         cut.WaitForAssertion(() => Assert.Equal(["$newest"], ListedIds(cut)));
-        _jumps[0].Result.SetResult(Jumped());
+        (await NextJumpAsync()).SetResult(Jumped());
         await click.WaitAsync(TimeSpan.FromSeconds(10));
         cut.Render(p => p.Add(x => x.RoomId, RoomB));
 
