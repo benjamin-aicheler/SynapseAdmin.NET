@@ -14,33 +14,31 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** <!-- YYYY-MM-DD -->
+**Last updated:** 2026-11-28
 
 ## 🔄 In Progress
 
-- [ ] <!-- [PLAN step] Task description – owner -->
-
 ## ⏭️ Next Up
 
-- [ ] <!-- [1.1] Task description (FR-*) -->
-- [ ] 
-- [ ] 
+- [ ] [1.1] Wire tests: `public_rooms` / `empty_rooms` absent, `true`, `false`, combined; Tuwunel forwards them (AC-30)
+- [ ] [1.2] Gateway parameters on `IMatrixGateway`, base, Synapse, Tuwunel, Generic and test fakes
+- [ ] [1.3] `IRoomService` / `RoomService` forward the flags; characterization `List` row
+- [ ] [2.1] `RoomListFilterTests`: flags, combination with search and sort, first-page reset for filters and search, count label
+- [ ] [2.2] `Rooms` page: two `MudSelect<bool?>`, first-page reset, label condition
+- [ ] [2.3] Resources EN, DE, FR
+- [ ] [3.1] Finalize SPEC.md `[Planned]`, README if needed, reset PLAN.md and TODO.md
 
 ## ⛔ Blocked
 
-- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
-
 ## 📋 Backlog
 
-- [ ] 
+- [ ] Other #588 parts: report details and filters, event context, jump to date, space hierarchy (one PR each)
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
-- [ ] 
-
 ## ✅ Done
 
-- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
+- [x] 2026-11-28 – Plan approved (search box gets the same first-page reset)
 
 ## Definition of Done (applies to every task)
 
