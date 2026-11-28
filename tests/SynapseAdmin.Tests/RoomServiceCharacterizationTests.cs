@@ -853,6 +853,142 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         Assert.Equal(["A.org", "a.org"], Assert.IsAssignableFrom<IReadOnlyList<string>>(Assert.Single(stub.CallsTo("JoinUserToRoomAsync"))[2]));
     }
 
+    // ---- Jump to date (#588) ----------------------------------------------------------------------------
+
+    private static readonly DateTimeOffset JumpAt = DateTimeOffset.FromUnixTimeMilliseconds(1_700_000_000_000);
+    private static readonly Dictionary<string, object?> JumpArguments = new() { ["Timestamp"] = 1_700_000_000_000L, ["RoomId"] = SanitizedRoomId };
+
+    private static SynapseAdminEvent Message(string id, string type = "m.room.message") =>
+        new() { EventId = id, Type = type, Sender = "@u:hs", OriginServerTs = 1, Content = JsonDocument.Parse("""{"body":"secret"}""").RootElement };
+
+    private static SynapseAdminRoomMessageContextResponse JumpContext(string? start = "older", string? end = "newer") => new()
+    {
+        Start = start,
+        End = end,
+        EventsBefore = [Message("$b1"), Message("$s", "m.room.member"), Message("$b2")],
+        Event = Message("$e"),
+        EventsAfter = [Message("$a1"), Message("$a2")],
+    };
+
+    private static IMatrixGateway JumpGateway(out Stub stub, SynapseAdminTimestampToEventResponse? before, SynapseAdminTimestampToEventResponse? after,
+        SynapseAdminRoomMessageContextResponse? context) =>
+        TableGateway(out stub, s => s
+            .On(nameof(IMatrixGateway.GetEventForTimestampAsync), a => Task.FromResult((string)a[2]! == "b" ? before : after))
+            .On(nameof(IMatrixGateway.GetRoomMessageContextAsync), _ => Task.FromResult(context)));
+
+    [Fact]
+    public async Task Jump_NoSession_FailsNotAuthenticated_WithoutLogging()
+    {
+        var result = await CreateService(gateway: null).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        ResultAssert.Failure(result, "NotAuthenticated");
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Fact]
+    public async Task Jump_FindsTheLastEventAtOrBeforeTheTime_AndReadsItsContext()
+    {
+        var gateway = JumpGateway(out var stub, new() { EventId = "$e" }, null, JumpContext());
+
+        await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        var lookup = Assert.Single(stub.CallsTo(nameof(IMatrixGateway.GetEventForTimestampAsync)));
+        Assert.Equal(new object?[] { RoomId, 1_700_000_000_000L, "b", _cts.Token }, lookup);
+        Assert.Equal(new object?[] { RoomId, "$e", 100, _cts.Token }, Assert.Single(stub.CallsTo(nameof(IMatrixGateway.GetRoomMessageContextAsync))));
+    }
+
+    [Fact]
+    public async Task Jump_WithoutAnEventBefore_TakesTheFirstEventAfter()
+    {
+        var gateway = JumpGateway(out var stub, null, new() { EventId = "$first" }, JumpContext());
+
+        var result = await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        Assert.Equal(["b", "f"], stub.CallsTo(nameof(IMatrixGateway.GetEventForTimestampAsync)).Select(a => (string)a[2]!));
+        Assert.Equal("$first", Assert.Single(stub.CallsTo(nameof(IMatrixGateway.GetRoomMessageContextAsync)))[1]);
+        Assert.Equal("$first", result.Data?.AnchorEventId);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Jump_NoEventOrNoContext_IsAWarning_LoggedAtDebug(bool eventFound)
+    {
+        var gateway = JumpGateway(out var stub, eventFound ? new() { EventId = "$e" } : null, null, context: null);
+
+        var result = await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        ResultAssert.Failure(result, "NoMessagesAtDate", Severity.Warning);
+        AssertSingleLog(LogLevel.Debug, "No event found at {Timestamp} in room {RoomId}", JumpArguments, null);
+        Assert.Equal(eventFound ? 1 : 0, stub.CallsTo(nameof(IMatrixGateway.GetRoomMessageContextAsync)).Count);
+    }
+
+    [Fact]
+    public async Task Jump_ListsTheMessagesNewestFirst_WithBothTokensAndTheEventFound_WithoutLogging()
+    {
+        var gateway = JumpGateway(out _, new() { EventId = "$e" }, null, JumpContext());
+
+        var result = await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        ResultAssert.Success(result, "");
+        var vm = result.Data!;
+        Assert.Equal(["$a2", "$a1", "$e", "$b1", "$b2"], vm.Messages.Select(m => m.EventId));
+        Assert.Equal(("older", "newer", "$e"), (vm.EndToken, vm.NewerToken, vm.AnchorEventId));
+        Assert.Equal("secret", vm.Messages[0].Body);
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task Jump_MissingOrEmptyTokens_MeanNoMorePages(string? token)
+    {
+        var gateway = JumpGateway(out _, new() { EventId = "$e" }, null, JumpContext(start: token, end: token));
+
+        var result = await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        Assert.Equal(((string?)null, (string?)null), (result.Data?.EndToken, result.Data?.NewerToken));
+    }
+
+    [Fact]
+    public async Task Jump_GatewayCancels_ReturnsSilentCancellation_WithoutLogging()
+    {
+        var gateway = TableGateway(s => s.Fault(nameof(IMatrixGateway.GetEventForTimestampAsync), new TaskCanceledException()));
+
+        var result = await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        ResultAssert.Cancelled(result);
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Theory]
+    [InlineData(nameof(IMatrixGateway.GetEventForTimestampAsync))]
+    [InlineData(nameof(IMatrixGateway.GetRoomMessageContextAsync))]
+    public async Task Jump_GatewayThrows_Fails_AndLogsTheTimeAndTheRoom(string method)
+    {
+        var error = new InvalidOperationException("boom");
+        var gateway = TableGateway(s => s
+            .On(nameof(IMatrixGateway.GetEventForTimestampAsync), _ => Task.FromResult<SynapseAdminTimestampToEventResponse?>(new() { EventId = "$e" }))
+            .Fault(method, error));
+
+        var result = await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        ResultAssert.Failure(result, "ErrorJumpingToDate");
+        AssertSingleLog(LogLevel.Error, "Error jumping to {Timestamp} in room {RoomId}", JumpArguments, error);
+    }
+
+    [Fact]
+    public async Task Jump_GatewayRefuses_IsTheNotSupportedWarning()
+    {
+        var refusal = new OperationNotSupportedByHomeserverException(nameof(IMatrixGateway.GetEventForTimestampAsync));
+        var gateway = TableGateway(s => s.Fault(nameof(IMatrixGateway.GetEventForTimestampAsync), refusal));
+
+        var result = await CreateService(gateway).GetRoomMessagesAtAsync(RoomId, JumpAt, _cts.Token);
+
+        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
+        AssertSingleLog(LogLevel.Error, "Error jumping to {Timestamp} in room {RoomId}", JumpArguments, refusal);
+    }
+
     private RoomService CreateService(IMatrixGateway? gateway, IStringLocalizer<SharedResources>? localizer = null)
     {
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));
