@@ -14,31 +14,33 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-28
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
+- [ ] <!-- [PLAN step] Task description – owner -->
+
 ## ⏭️ Next Up
 
-- [ ] [1.1] Wire tests: `timestamp_to_event` and the typed context read (AC-33)
-- [ ] [1.2] DTOs, gateway methods, Generic refusal, test fakes
-- [ ] [2.1] Move the message mapping into `RoomMappingExtensions` (behavior unchanged) + property test
-- [ ] [2.2] `RoomService.GetRoomMessagesAtAsync` + characterization
-- [ ] [3.1] `RoomDetailsJumpToDateTests`
-- [ ] [3.2] Messages tab fields, buttons, highlight; resources EN, DE, FR
-- [ ] [4.1] Finalize SPEC.md `[Planned]`, README, reset PLAN.md and TODO.md
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+
 ## 📋 Backlog
 
-- [ ] Remaining #588 part: space hierarchy
+- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
+- [ ] 
+
 ## ✅ Done
 
-- [x] 2026-11-28 – Plan approved (both sides of the time)
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
