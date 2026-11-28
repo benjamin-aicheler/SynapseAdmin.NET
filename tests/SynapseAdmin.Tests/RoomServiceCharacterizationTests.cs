@@ -989,6 +989,142 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
         AssertSingleLog(LogLevel.Error, "Error jumping to {Timestamp} in room {RoomId}", JumpArguments, refusal);
     }
 
+    // ---- Space children (#588) ---------------------------------------------------------------------------
+
+    private static SynapseAdminSpaceChildEvent Link(string roomId, string content = """{ "via": ["hs"] }""", string type = "m.space.child") =>
+        new() { Type = type, StateKey = roomId, Content = JsonDocument.Parse(content).RootElement };
+
+    private static IMatrixGateway HierarchyGateway(out Stub stub, SynapseAdminRoomHierarchyResponse? page) =>
+        TableGateway(out stub, s => s.On(nameof(IMatrixGateway.GetRoomHierarchyAsync), _ => Task.FromResult(page)));
+
+    [Fact]
+    public async Task SpaceChildren_NoSession_FailsNotAuthenticated_WithoutLogging()
+    {
+        var result = await CreateService(gateway: null).GetSpaceChildrenAsync(RoomId, token: _cts.Token);
+
+        ResultAssert.Failure(result, "NotAuthenticated");
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("next+1")]
+    public async Task SpaceChildren_ForwardsTheTokenWithALimitOf50AndADepthOf1(string? from)
+    {
+        var gateway = HierarchyGateway(out var stub, null);
+
+        await CreateService(gateway).GetSpaceChildrenAsync(RoomId, from, _cts.Token);
+
+        Assert.Equal(new object?[] { RoomId, from, 50, 1, _cts.Token }, Assert.Single(stub.CallsTo(nameof(IMatrixGateway.GetRoomHierarchyAsync))));
+    }
+
+    [Fact]
+    public async Task SpaceChildren_FirstPage_NamesTheSpacesValidLinks_AndTheOtherEntriesDetails()
+    {
+        var page = new SynapseAdminRoomHierarchyResponse
+        {
+            Rooms =
+            [
+                new()
+                {
+                    RoomId = RoomId,
+                    ChildrenState =
+                    [
+                        Link("!c1:hs", """{ "via": ["hs"], "suggested": true }"""),
+                        Link("!removed:hs", "{}"),
+                        Link("!empty-via:hs", """{ "via": [] }"""),
+                        Link("!other:hs", """{ "via": ["hs"] }""", type: "m.space.parent"),
+                        Link("!c2:hs"),
+                    ],
+                },
+                new() { RoomId = "!c1:hs", Name = "One" },
+            ],
+            NextBatch = "next",
+        };
+        var gateway = HierarchyGateway(out _, page);
+
+        var result = await CreateService(gateway).GetSpaceChildrenAsync(RoomId, token: _cts.Token);
+
+        ResultAssert.Success(result, "");
+        var vm = result.Data!;
+        Assert.Equal([("!c1:hs", true), ("!c2:hs", false)], vm.Children!.Select(c => (c.RoomId, c.Suggested)));
+        Assert.Equal(["!c1:hs"], vm.Summaries.Select(r => r.RoomId));
+        Assert.Equal("next", vm.NextBatch);
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Fact]
+    public async Task SpaceChildren_FirstPageWithoutTheSpace_HasNoChildrenList()
+    {
+        var gateway = HierarchyGateway(out _, new SynapseAdminRoomHierarchyResponse { Rooms = [new() { RoomId = "!c1:hs" }] });
+
+        var result = await CreateService(gateway).GetSpaceChildrenAsync(RoomId, token: _cts.Token);
+
+        Assert.Null(result.Data!.Children);
+        Assert.Equal(["!c1:hs"], result.Data.Summaries.Select(r => r.RoomId));
+    }
+
+    [Fact]
+    public async Task SpaceChildren_LaterPage_AddsDetailsOnly()
+    {
+        var page = new SynapseAdminRoomHierarchyResponse { Rooms = [new() { RoomId = "!c9:hs", Name = "Nine" }] };
+        var gateway = HierarchyGateway(out _, page);
+
+        var result = await CreateService(gateway).GetSpaceChildrenAsync(RoomId, "next", _cts.Token);
+
+        Assert.Null(result.Data!.Children);
+        Assert.Equal(["!c9:hs"], result.Data.Summaries.Select(r => r.RoomId));
+        Assert.Null(result.Data.NextBatch);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task SpaceChildren_NullAnswerOrEmptyToken_MeansNoMorePages(string? token)
+    {
+        var gateway = HierarchyGateway(out _, token == null ? null : new SynapseAdminRoomHierarchyResponse { NextBatch = token });
+
+        var result = await CreateService(gateway).GetSpaceChildrenAsync(RoomId, token: _cts.Token);
+
+        ResultAssert.Success(result, "");
+        Assert.Equal(((List<SpaceChildViewModel>?)null, 0, (string?)null), (result.Data!.Children, result.Data.Summaries.Count, result.Data.NextBatch));
+    }
+
+    [Fact]
+    public async Task SpaceChildren_GatewayCancels_ReturnsSilentCancellation_WithoutLogging()
+    {
+        var gateway = TableGateway(s => s.Fault(nameof(IMatrixGateway.GetRoomHierarchyAsync), new TaskCanceledException()));
+
+        var result = await CreateService(gateway).GetSpaceChildrenAsync(RoomId, token: _cts.Token);
+
+        ResultAssert.Cancelled(result);
+        Assert.Empty(_logger.Entries);
+    }
+
+    [Fact]
+    public async Task SpaceChildren_GatewayThrows_Fails_AndLogsTheSpace()
+    {
+        var error = new InvalidOperationException("boom");
+        var gateway = TableGateway(s => s.Fault(nameof(IMatrixGateway.GetRoomHierarchyAsync), error));
+
+        var result = await CreateService(gateway).GetSpaceChildrenAsync(RoomId, token: _cts.Token);
+
+        ResultAssert.Failure(result, "ErrorFetchingSpaceChildren");
+        AssertSingleLog(LogLevel.Error, "Error fetching the children of space {RoomId}", RoomArgument, error);
+    }
+
+    [Fact]
+    public async Task SpaceChildren_GatewayRefuses_IsTheNotSupportedWarning_LoggedAtDebug()
+    {
+        var gateway = TableGateway(s => s.Fault(nameof(IMatrixGateway.GetRoomHierarchyAsync),
+            new OperationNotSupportedByHomeserverException(nameof(IMatrixGateway.GetRoomHierarchyAsync))));
+
+        var result = await CreateService(gateway).GetSpaceChildrenAsync(RoomId, token: _cts.Token);
+
+        ResultAssert.Failure(result, "OperationNotSupportedByHomeserver", Severity.Warning);
+        AssertSingleLog(LogLevel.Debug, "The homeserver doesn't support the space hierarchy", [], null);
+    }
+
     private RoomService CreateService(IMatrixGateway? gateway, IStringLocalizer<SharedResources>? localizer = null)
     {
         var session = Stub.Create<IMatrixSessionService>(s => s.On("get_Gateway", _ => gateway));

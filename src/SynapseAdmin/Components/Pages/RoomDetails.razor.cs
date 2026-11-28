@@ -49,6 +49,17 @@ namespace SynapseAdmin.Components.Pages
         private DateTimeOffset? _jumpedTo;
         private int _messagesPage;
         private int _messagesRowsPerPage = 10;
+
+        // The children of a space (#588): the list comes from the space's own entry on the first page, the details from
+        // every page. `spaceChildren` stays null when the homeserver has no entry for the space.
+        private List<SpaceChildViewModel>? spaceChildren;
+        private readonly Dictionary<string, SpaceChildSummaryViewModel> spaceChildSummaries = new(StringComparer.Ordinal);
+        private string? spaceChildrenNextBatch;
+        private bool loadingSpaceChildren;
+        private bool spaceChildrenLoaded;
+        private OperationResult? spaceChildrenFailure;
+
+        private bool IsSpace => room?.RoomType == "m.space";
         private MudTable<RoomMediaItemViewModel>? localMediaTable;
         private MudTable<RoomMediaItemViewModel>? remoteMediaTable;
         private readonly CancellationTokenSource _cts = new();
@@ -100,6 +111,7 @@ namespace SynapseAdmin.Components.Pages
             loadingMessages = false;
             _jumpedTo = null;
             _messagesPage = 0;
+            ClearSpaceChildren();
             errorMessage = null;
             isLoading = true;
             activePurgeId = RoomService.GetActivePurgeId(roomId);
@@ -126,7 +138,59 @@ namespace SynapseAdmin.Components.Pages
             }
 
             await FindRunningDeletionAsync(roomId, token);
+            if (token.IsCancellationRequested) return;
+
+            if (IsSpace && _displayedRoomId == roomId)
+            {
+                await LoadSpaceChildrenAsync(roomId, null, token);
+            }
         }
+
+        private void ClearSpaceChildren()
+        {
+            spaceChildren = null;
+            spaceChildSummaries.Clear();
+            spaceChildrenNextBatch = null;
+            loadingSpaceChildren = false;
+            spaceChildrenLoaded = false;
+            spaceChildrenFailure = null;
+        }
+
+        /// <summary>
+        /// Loads a page of the space's children (#588): the first page (<paramref name="from"/> <c>null</c>) names them,
+        /// every page adds details. A failure shows in the tab only. A token that comes back unchanged ends the paging.
+        /// </summary>
+        private async Task LoadSpaceChildrenAsync(string roomId, string? from, CancellationToken token)
+        {
+            loadingSpaceChildren = true;
+            spaceChildrenFailure = null;
+            var result = await RoomService.GetSpaceChildrenAsync(roomId, from, token);
+            if (token.IsCancellationRequested || roomId != _loadedRoomId) return;
+
+            loadingSpaceChildren = false;
+            if (result.Success && result.Data != null)
+            {
+                if (from == null) spaceChildren = result.Data.Children;
+                foreach (var summary in result.Data.Summaries)
+                {
+                    spaceChildSummaries[summary.RoomId] = summary;
+                }
+                spaceChildrenNextBatch = result.Data.NextBatch == from ? null : result.Data.NextBatch;
+                spaceChildrenLoaded = true;
+            }
+            else if (!result.IsSilent)
+            {
+                spaceChildrenFailure = result;
+            }
+        }
+
+        private Task LoadMoreSpaceChildren() =>
+            !loadingSpaceChildren && _displayedRoomId is { } roomId && spaceChildrenNextBatch is { } from
+                ? LoadSpaceChildrenAsync(roomId, from, LoadToken)
+                : Task.CompletedTask;
+
+        private SpaceChildSummaryViewModel? SummaryOf(SpaceChildViewModel child) =>
+            spaceChildSummaries.GetValueOrDefault(child.RoomId);
 
         /// <summary>
         /// Shows the banner for a deletion the homeserver reports as scheduled or running, also one started in another

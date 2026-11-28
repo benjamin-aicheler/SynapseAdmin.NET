@@ -2086,4 +2086,25 @@
   <data name="ErrorJumpingToDate" xml:space="preserve">
     <value>Erreur lors du chargement des messages à ce moment-là.</value>
   </data>
+  <data name="SpaceChildren" xml:space="preserve">
+    <value>Salons enfants</value>
+  </data>
+  <data name="SpaceChildrenHint" xml:space="preserve">
+    <value>Les salons auxquels cet espace renvoie directement. Les détails viennent uniquement de ce serveur ; il n'interroge pas d'autres serveurs.</value>
+  </data>
+  <data name="SpaceNotOnThisServer" xml:space="preserve">
+    <value>Le serveur d'accueil n'a pas de détails sur les salons enfants de cet espace, car ce serveur n'est pas dans l'espace.</value>
+  </data>
+  <data name="SpaceHasNoChildren" xml:space="preserve">
+    <value>Cet espace ne renvoie à aucun salon.</value>
+  </data>
+  <data name="NoDetailsOnThisServer" xml:space="preserve">
+    <value>Aucun détail sur ce serveur</value>
+  </data>
+  <data name="Suggested" xml:space="preserve">
+    <value>Suggéré</value>
+  </data>
+  <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
+    <value>Erreur lors de la récupération des salons enfants.</value>
+  </data>
 </root>

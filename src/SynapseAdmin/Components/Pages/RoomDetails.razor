@@ -504,5 +504,77 @@ else
                 }
             }
         </MudTabPanel>
+
+        @if (IsSpace)
+        {
+            @* The space's direct children (#588). Details come from this server only: the admin API never asks others. *@
+            <MudTabPanel Text="@L["SpaceChildren"]" Icon="@Icons.Material.Filled.AccountTree">
+                <MudToolBar Dense="true" Class="px-2" WrapContent="true">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@L["SpaceChildrenHint"]</MudText>
+                    <MudSpacer />
+                    @if (spaceChildrenNextBatch != null)
+                    {
+                        <MudButton EndIcon="@Icons.Material.Filled.ArrowForward" OnClick="LoadMoreSpaceChildren" Disabled="loadingSpaceChildren" Variant="Variant.Text" Class="space-children-more">@L["LoadMore"]</MudButton>
+                    }
+                </MudToolBar>
+                @if (spaceChildrenFailure != null)
+                {
+                    <MudAlert Severity="@spaceChildrenFailure.Severity" Dense="true" Class="ma-2">@spaceChildrenFailure.Message</MudAlert>
+                }
+                @if (loadingSpaceChildren)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
+                }
+                @if (spaceChildrenLoaded && spaceChildren == null)
+                {
+                    <MudAlert Severity="Severity.Info" Class="ma-4 space-not-on-server">@L["SpaceNotOnThisServer"]</MudAlert>
+                }
+                else if (spaceChildrenLoaded && spaceChildren!.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Class="ma-4">@L["SpaceHasNoChildren"]</MudAlert>
+                }
+                else if (spaceChildren != null)
+                {
+                    <MudSimpleTable Dense="true" Hover="true" Elevation="0" Class="space-children">
+                        <thead>
+                            <tr>
+                                <th>@L["Name"]</th>
+                                <th>@L["CanonicalAlias"]</th>
+                                <th>@L["Members"]</th>
+                                <th>@L["JoinRules"]</th>
+                                <th>@L["RoomType"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var child in spaceChildren)
+                            {
+                                var summary = SummaryOf(child);
+                                <tr data-room-id="@child.RoomId">
+                                    <td>
+                                        @if (summary != null)
+                                        {
+                                            <MudLink Href="@($"/rooms/{Uri.EscapeDataString(child.RoomId)}")" Color="Color.Info" Underline="Underline.Hover">@(string.IsNullOrEmpty(summary.Name) ? child.RoomId : summary.Name)</MudLink>
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.body2">@child.RoomId</MudText>
+                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" Class="space-child-no-details">@L["NoDetailsOnThisServer"]</MudChip>
+                                        }
+                                        @if (child.Suggested)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="space-child-suggested">@L["Suggested"]</MudChip>
+                                        }
+                                    </td>
+                                    <td>@(summary?.CanonicalAlias ?? "-")</td>
+                                    <td>@(summary?.JoinedMembers?.ToString() ?? "-")</td>
+                                    <td>@(summary?.JoinRule ?? "-")</td>
+                                    <td>@(summary?.RoomType ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudTabPanel>
+        }
     </MudTabs>
 }

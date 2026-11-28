@@ -2086,4 +2086,25 @@
   <data name="ErrorJumpingToDate" xml:space="preserve">
     <value>Fehler beim Laden der Nachrichten zu dieser Zeit.</value>
   </data>
+  <data name="SpaceChildren" xml:space="preserve">
+    <value>Unterräume</value>
+  </data>
+  <data name="SpaceChildrenHint" xml:space="preserve">
+    <value>Die Räume, auf die dieser Space direkt verweist. Details kommen nur von diesem Server; er fragt keine anderen Server.</value>
+  </data>
+  <data name="SpaceNotOnThisServer" xml:space="preserve">
+    <value>Der Homeserver hat keine Details zu den Unterräumen dieses Space, weil dieser Server nicht im Space ist.</value>
+  </data>
+  <data name="SpaceHasNoChildren" xml:space="preserve">
+    <value>Dieser Space verweist auf keine Räume.</value>
+  </data>
+  <data name="NoDetailsOnThisServer" xml:space="preserve">
+    <value>Keine Details auf diesem Server</value>
+  </data>
+  <data name="Suggested" xml:space="preserve">
+    <value>Empfohlen</value>
+  </data>
+  <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
+    <value>Fehler beim Abrufen der Unterräume.</value>
+  </data>
 </root>

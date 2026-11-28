@@ -590,6 +590,20 @@ public class SynapseAdminGateway(
         }
     }
 
+    /// <summary>
+    /// The space hierarchy below <paramref name="roomId"/> (#588), without visibility checks and without asking other
+    /// servers. <paramref name="from"/> is the previous page's <c>next_batch</c>, passed back unchanged, and is left out
+    /// for the first page; Synapse accepts it only with the same room and <paramref name="maxDepth"/>. An unknown room
+    /// answers <c>200</c> with no rooms, so there is no <c>null</c> case. Tuwunel (1.8.2, 2.0.0) serves the same route
+    /// with the same cap of 50 and needs no override.
+    /// </summary>
+    public override async Task<SynapseAdminRoomHierarchyResponse?> GetRoomHierarchyAsync(string roomId, string? from, int limit, int maxDepth, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/hierarchy?limit={limit}&max_depth={maxDepth}";
+        if (from != null) url += $"&from={from.UrlEncode()}";
+        return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomHierarchyResponse>(url, cancellationToken: cancellationToken);
+    }
+
     // --- Registration Tokens ---
 
     public override async Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default)
