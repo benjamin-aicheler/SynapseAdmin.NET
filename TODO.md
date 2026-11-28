@@ -14,32 +14,33 @@ HOW TO USE THIS FILE (instructions for the AI agent):
 -->
 
 **Related:** [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Last updated:** 2026-11-28
+**Last updated:** <!-- YYYY-MM-DD -->
 
 ## 🔄 In Progress
 
+- [ ] <!-- [PLAN step] Task description – owner -->
+
 ## ⏭️ Next Up
 
-- [ ] [1.1] Wire tests: list filter fields, encoding, blanks; details URL, DTO, `404` / `M_NOT_FOUND` → `null`; Tuwunel and Generic refuse details (AC-31)
-- [ ] [1.2] `EventReportListFilter`, details DTO, gateway methods and overrides, test fakes
-- [ ] [2.1] `ToDetailViewModel` + `MappingExtensionsTests`
-- [ ] [2.2] Service: filter trimming, details read, not-found warning, indented JSON, logs without JSON or reason; characterization rows
-- [ ] [3.1] `EventReportsFilterTests`
-- [ ] [3.2] `EventReportDetailsTests`
-- [ ] [3.3] Page fields, Details button, `EventReportDetailsDialog`, resources EN, DE, FR
-- [ ] [4.1] Finalize SPEC.md `[Planned]`, README, reset PLAN.md and TODO.md
+- [ ] <!-- [1.1] Task description (FR-*) -->
+- [ ] 
+- [ ] 
 
 ## ⛔ Blocked
 
+- [ ] <!-- Task – blocked by: <reason> – needs: <what/who> -->
+
 ## 📋 Backlog
 
-- [ ] Remaining #588 parts: event context, jump to date, space hierarchy (one PR each)
+- [ ] 
 
 ## 🐛 Bugs / Follow-ups Found During Work
 
+- [ ] 
+
 ## ✅ Done
 
-- [x] 2026-11-28 – Plan approved (details in a dialog)
+- [x] <!-- YYYY-MM-DD – [1.0] Task description – note / commit -->
 
 ## Definition of Done (applies to every task)
 
