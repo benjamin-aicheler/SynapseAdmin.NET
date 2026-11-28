@@ -19,10 +19,21 @@ else
             @L["Refresh"]
         </MudButton>
         <MudTextField T="string" Value="@_searchTerm" ValueChanged="@OnSearchChanged" Placeholder="@L["SearchNameOrRoomId"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" DebounceInterval="500" Style="max-width: 300px;" />
+        @* Synapse treats a missing flag as "both", so each filter has three states (#588). *@
+        <MudSelect T="RoomListFilterChoice" Value="@_publicRooms" ValueChanged="@OnPublicRoomsChanged" Label="@L["RoomListFilterPublicRooms"]" HelperText="@L["RoomListFilterPublicRoomsHint"]" Dense="true" Class="ml-4" Style="max-width: 220px;">
+            <MudSelectItem T="RoomListFilterChoice" Value="RoomListFilterChoice.All">@L["RoomListFilterAll"]</MudSelectItem>
+            <MudSelectItem T="RoomListFilterChoice" Value="RoomListFilterChoice.Only">@L["RoomListFilterOnlyPublic"]</MudSelectItem>
+            <MudSelectItem T="RoomListFilterChoice" Value="RoomListFilterChoice.Exclude">@L["RoomListFilterExcludePublic"]</MudSelectItem>
+        </MudSelect>
+        <MudSelect T="RoomListFilterChoice" Value="@_emptyRooms" ValueChanged="@OnEmptyRoomsChanged" Label="@L["RoomListFilterEmptyRooms"]" HelperText="@L["RoomListFilterEmptyRoomsHint"]" Dense="true" Class="ml-4" Style="max-width: 220px;">
+            <MudSelectItem T="RoomListFilterChoice" Value="RoomListFilterChoice.All">@L["RoomListFilterAll"]</MudSelectItem>
+            <MudSelectItem T="RoomListFilterChoice" Value="RoomListFilterChoice.Only">@L["RoomListFilterOnlyEmpty"]</MudSelectItem>
+            <MudSelectItem T="RoomListFilterChoice" Value="RoomListFilterChoice.Exclude">@L["RoomListFilterExcludeEmpty"]</MudSelectItem>
+        </MudSelect>
         <MudSpacer />
         @if (totalRooms.HasValue)
         {
-            if (string.IsNullOrEmpty(_searchTerm))
+            if (!IsFiltered)
             {
                 <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["TotalRoomsOnServer"], totalRooms)</MudText>
             }

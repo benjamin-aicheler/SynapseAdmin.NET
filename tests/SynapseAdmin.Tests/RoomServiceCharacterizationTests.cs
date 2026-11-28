@@ -55,10 +55,10 @@ public sealed class RoomServiceCharacterizationTests : IDisposable
 
     private static readonly Dictionary<string, Operation> Operations = new()
     {
-        ["List"] = new("GetRoomListAsync", async (s, ct) => await s.GetRoomListAsync(20, 10, "name", SortDirection.Ascending, Search, ct),
-            Args(20, 10, "name", "f", Search), "ErrorFetchingRoomList",
-            "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})",
-            new() { ["Offset"] = 20, ["Limit"] = 10, ["SearchTerm"] = "ali ce" }),
+        ["List"] = new("GetRoomListAsync", async (s, ct) => await s.GetRoomListAsync(20, 10, "name", SortDirection.Ascending, Search, true, false, ct),
+            Args(20, 10, "name", "f", Search, true, false), "ErrorFetchingRoomList",
+            "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm}, publicRooms: {PublicRooms}, emptyRooms: {EmptyRooms})",
+            new() { ["Offset"] = 20, ["Limit"] = 10, ["SearchTerm"] = "ali ce", ["PublicRooms"] = true, ["EmptyRooms"] = false }),
         ["Details"] = new("GetRoomDetailsAsync", async (s, ct) => await s.GetRoomDetailsAsync(RoomId, ct),
             Args(RoomId), "ErrorFetchingRoomDetails", "Error fetching room details for {RoomId}", RoomArgument),
         ["Delete"] = new("DeleteRoomAsync", async (s, ct) => await s.DeleteRoomAsync(RoomId, block: true, purge: false, ct),
