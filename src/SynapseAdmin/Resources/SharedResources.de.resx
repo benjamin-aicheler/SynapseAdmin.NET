@@ -127,6 +127,15 @@
   <data name="Actions" xml:space="preserve">
     <value>Aktionen</value>
   </data>
+  <data name="RoomActionsRecovery" xml:space="preserve">
+    <value>Wiederherstellung</value>
+  </data>
+  <data name="RoomActionsModeration" xml:space="preserve">
+    <value>Moderation</value>
+  </data>
+  <data name="RoomActionsDeletion" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
   <data name="Created" xml:space="preserve">
     <value>Erstellt</value>
   </data>
