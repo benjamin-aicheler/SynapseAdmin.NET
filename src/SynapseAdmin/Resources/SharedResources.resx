@@ -1169,9 +1169,6 @@
   <data name="MatchingRoomsCount" xml:space="preserve">
     <value>Found {0} matching rooms</value>
   </data>
-  <data name="SearchUserIdOrRoomId" xml:space="preserve">
-    <value>Search User ID or Room ID</value>
-  </data>
   <data name="MatchingEventReportsCount" xml:space="preserve">
     <value>Found {0} matching event reports</value>
   </data>
@@ -2023,5 +2020,32 @@
   </data>
   <data name="RoomListFilterExcludeEmpty" xml:space="preserve">
     <value>Exclude empty rooms</value>
+  </data>
+  <data name="EventReportFilterRoomId" xml:space="preserve">
+    <value>Room ID</value>
+  </data>
+  <data name="EventReportFilterRoomIdHint" xml:space="preserve">
+    <value>Matches part of the room ID</value>
+  </data>
+  <data name="EventReportFilterReporter" xml:space="preserve">
+    <value>Reporter</value>
+  </data>
+  <data name="EventReportFilterReporterHint" xml:space="preserve">
+    <value>Matches part of the reporter's user ID</value>
+  </data>
+  <data name="EventReportFilterSender" xml:space="preserve">
+    <value>Reported user</value>
+  </data>
+  <data name="EventReportFilterSenderHint" xml:space="preserve">
+    <value>The full user ID of the reported event's sender</value>
+  </data>
+  <data name="EventReportDetailsTitle" xml:space="preserve">
+    <value>Event report {0}</value>
+  </data>
+  <data name="EventReportDetailsNotFound" xml:space="preserve">
+    <value>The homeserver can't show this report. The reported event or its room may have been purged or deleted.</value>
+  </data>
+  <data name="ErrorFetchingEventReportDetails" xml:space="preserve">
+    <value>Error fetching the event report.</value>
   </data>
 </root>

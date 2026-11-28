@@ -149,6 +149,43 @@ public class MappingExtensionsTests
     }
 
     [Fact]
+    public void EventReportDetails_MapsEveryProperty()
+    {
+        var report = new SynapseAdminEventReportDetailsResponse
+        {
+            Id = "42",
+            ReceivedTs = 1570897107409L,
+            RoomId = "!r1:example.com",
+            Name = "Matrix HQ",
+            CanonicalAlias = "#hq:example.com",
+            EventId = "$ev1",
+            UserId = "@reporter:example.com",
+            Reason = "spam",
+            Score = -100,
+            Sender = "@bad:example.com",
+            EventJson = new System.Text.Json.Nodes.JsonObject { ["type"] = "m.room.message" },
+        };
+
+        var vm = report.ToDetailViewModel("{ formatted }");
+
+        Assert.Equal(("42", 1570897107409L, DateTimeOffset.FromUnixTimeMilliseconds(1570897107409L)), (vm.Id, vm.ReceivedTs, vm.ReceivedTsDateTime));
+        Assert.Equal(("!r1:example.com", "Matrix HQ", "#hq:example.com"), (vm.RoomId, vm.RoomName, vm.CanonicalAlias));
+        Assert.Equal(("$ev1", "@reporter:example.com", "spam", -100, "@bad:example.com"), (vm.EventId, vm.UserId, vm.Reason, vm.Score, vm.Sender));
+        Assert.Equal("{ formatted }", vm.EventJson);
+    }
+
+    [Fact]
+    public void EventReportDetails_NullFields_MapToEmptyDefaults()
+    {
+        var report = new SynapseAdminEventReportDetailsResponse { Id = "1", RoomId = "!r", EventId = "$e", UserId = "@u:hs" };
+
+        var vm = report.ToDetailViewModel(string.Empty);
+
+        Assert.Equal((string.Empty, (int?)null, (string?)null, (string?)null, (string?)null, string.Empty),
+            (vm.Reason, vm.Score, vm.Sender, vm.RoomName, vm.CanonicalAlias, vm.EventJson));
+    }
+
+    [Fact]
     public void EventReportFederationAndRegistrationTokenMappings_MapAllProperties()
     {
         var report = new SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport

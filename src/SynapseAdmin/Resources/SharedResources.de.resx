@@ -1168,9 +1168,6 @@
   <data name="MatchingRoomsCount" xml:space="preserve">
     <value>{0} übereinstimmende Räume gefunden</value>
   </data>
-  <data name="SearchUserIdOrRoomId" xml:space="preserve">
-    <value>Benutzer-ID oder Raum-ID suchen</value>
-  </data>
   <data name="MatchingEventReportsCount" xml:space="preserve">
     <value>{0} übereinstimmende Ereignisberichte gefunden</value>
   </data>
@@ -2022,5 +2019,32 @@
   </data>
   <data name="RoomListFilterExcludeEmpty" xml:space="preserve">
     <value>Leere Räume ausschließen</value>
+  </data>
+  <data name="EventReportFilterRoomId" xml:space="preserve">
+    <value>Raum-ID</value>
+  </data>
+  <data name="EventReportFilterRoomIdHint" xml:space="preserve">
+    <value>Trifft einen Teil der Raum-ID</value>
+  </data>
+  <data name="EventReportFilterReporter" xml:space="preserve">
+    <value>Reporter</value>
+  </data>
+  <data name="EventReportFilterReporterHint" xml:space="preserve">
+    <value>Trifft einen Teil der Benutzer-ID des Reporters</value>
+  </data>
+  <data name="EventReportFilterSender" xml:space="preserve">
+    <value>Gemeldeter Benutzer</value>
+  </data>
+  <data name="EventReportFilterSenderHint" xml:space="preserve">
+    <value>Die vollständige Benutzer-ID des Absenders des gemeldeten Ereignisses</value>
+  </data>
+  <data name="EventReportDetailsTitle" xml:space="preserve">
+    <value>Ereignisbericht {0}</value>
+  </data>
+  <data name="EventReportDetailsNotFound" xml:space="preserve">
+    <value>Der Homeserver kann diesen Ereignisbericht nicht anzeigen. Das gemeldete Ereignis oder sein Raum wurde möglicherweise bereinigt oder gelöscht.</value>
+  </data>
+  <data name="ErrorFetchingEventReportDetails" xml:space="preserve">
+    <value>Fehler beim Laden des Ereignisberichts.</value>
   </data>
 </root>

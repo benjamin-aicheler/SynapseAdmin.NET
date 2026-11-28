@@ -21,6 +21,25 @@ public static class EventReportMappingExtensions
         };
     }
 
+    /// <summary>The report's fields; <paramref name="eventJson"/> is the reported event, already formatted.</summary>
+    public static EventReportDetailViewModel ToDetailViewModel(this SynapseAdminEventReportDetailsResponse report, string eventJson)
+    {
+        return new EventReportDetailViewModel
+        {
+            Id = report.Id,
+            ReceivedTs = report.ReceivedTs,
+            UserId = report.UserId,
+            RoomId = report.RoomId,
+            RoomName = report.Name,
+            CanonicalAlias = report.CanonicalAlias,
+            EventId = report.EventId,
+            Reason = report.Reason ?? string.Empty,
+            Score = report.Score,
+            Sender = report.Sender,
+            EventJson = eventJson
+        };
+    }
+
     public static List<EventReportListViewModel> ToViewModels(this IEnumerable<SynapseAdminEventReportListResult.SynapseAdminEventReportListResultReport> reports)
     {
         return reports.Select(ToViewModel).ToList();

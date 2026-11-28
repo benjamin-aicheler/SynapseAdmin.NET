@@ -14,15 +14,18 @@
 }
 else
 {
-    <MudToolBar Class="mb-4">
+    <MudToolBar Class="mb-4" WrapContent="true">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReloadTable" StartIcon="@Icons.Material.Filled.Refresh" Class="mr-4">
             @L["Refresh"]
         </MudButton>
-        <MudTextField T="string" Value="@_searchTerm" ValueChanged="@OnSearchChanged" Placeholder="@L["SearchUserIdOrRoomId"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" Immediate="true" DebounceInterval="500" Style="max-width: 300px;" />
+        @* Synapse matches the room and the reporter as part of the ID, and the reported user exactly (#588). *@
+        <MudTextField T="string" Value="@_roomId" ValueChanged="@OnRoomIdChanged" Label="@L["EventReportFilterRoomId"]" HelperText="@L["EventReportFilterRoomIdHint"]" Clearable="true" Immediate="true" DebounceInterval="500" Class="mr-4" Style="max-width: 260px;" />
+        <MudTextField T="string" Value="@_reporterUserId" ValueChanged="@OnReporterChanged" Label="@L["EventReportFilterReporter"]" HelperText="@L["EventReportFilterReporterHint"]" Clearable="true" Immediate="true" DebounceInterval="500" Class="mr-4" Style="max-width: 260px;" />
+        <MudTextField T="string" Value="@_senderUserId" ValueChanged="@OnSenderChanged" Label="@L["EventReportFilterSender"]" HelperText="@L["EventReportFilterSenderHint"]" Clearable="true" Immediate="true" DebounceInterval="500" Style="max-width: 260px;" />
         <MudSpacer />
         @if (totalReports.HasValue)
         {
-            if (string.IsNullOrEmpty(_searchTerm))
+            if (!IsFiltered)
             {
                 <MudText Typo="Typo.body2" Color="Color.Secondary">@string.Format(L["TotalReports"], totalReports)</MudText>
             }
@@ -62,6 +65,7 @@ else
                                        Href="@($"/event-forensics?eventId={Uri.EscapeDataString(context.EventId)}")" 
                                        title="@L["InspectEvent"]" />
                     }
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" OnClick="@(() => ShowDetails(context.Id))">@L["Details"]</MudButton>
                     <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteReport(context.Id))">@L["Dismiss"]</MudButton>
                 </div>
             </MudTd>
