@@ -127,6 +127,15 @@
   <data name="Actions" xml:space="preserve">
     <value>Aktionen</value>
   </data>
+  <data name="RoomActionsRecovery" xml:space="preserve">
+    <value>Wiederherstellung</value>
+  </data>
+  <data name="RoomActionsModeration" xml:space="preserve">
+    <value>Moderation</value>
+  </data>
+  <data name="RoomActionsDeletion" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
   <data name="Created" xml:space="preserve">
     <value>Erstellt</value>
   </data>
@@ -2106,5 +2115,11 @@
   </data>
   <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
     <value>Fehler beim Abrufen der Unterräume.</value>
+  </data>
+  <data name="UserActionsAccount" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="UserActionsRestrictions" xml:space="preserve">
+    <value>Einschränkungen</value>
   </data>
 </root>

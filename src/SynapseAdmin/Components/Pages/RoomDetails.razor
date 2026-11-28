@@ -154,22 +154,36 @@ else
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["DeleteRoom"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAndBlockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["DeleteAndBlockRoom"]</MudButton>
-                    @* Block or Unblock by the room's block state; both while it is unknown (#586). *@
-                    @if (blockStatus?.IsBlocked != true)
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="BlockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["BlockRoom"]</MudButton>
-                    }
-                    @if (blockStatus?.IsBlocked != false)
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="UnblockRoom" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["UnblockRoom"]</MudButton>
-                    }
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineMedia" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["QuarantineMedia"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="OpenPurgeHistoryDialog" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["PurgeHistory"]</MudButton>
-                    @* Room recovery (#587): each dialog names the room and is the confirmation. *@
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeRoomAdmin" Disabled="IsRoomOperationRunning" Class="mb-2 mr-2">@L["MakeRoomAdmin"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="JoinUser" Disabled="IsRoomOperationRunning" Class="mb-2">@L["JoinUser"]</MudButton>
+                    @* Grouped by what the action does; destructive actions are red, restricting ones orange. *@
+                    <MudText Typo="Typo.subtitle2" Class="room-action-group mb-2">@L["RoomActionsRecovery"]</MudText>
+                    <div class="d-flex flex-wrap gap-2">
+                        @* Room recovery (#587): each dialog names the room and is the confirmation. *@
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AdminPanelSettings" OnClick="MakeRoomAdmin" Disabled="IsRoomOperationRunning">@L["MakeRoomAdmin"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="JoinUser" Disabled="IsRoomOperationRunning">@L["JoinUser"]</MudButton>
+                    </div>
+
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.subtitle2" Class="room-action-group mb-2">@L["RoomActionsModeration"]</MudText>
+                    <div class="d-flex flex-wrap gap-2">
+                        @* Block or Unblock by the room's block state; both while it is unknown (#586). *@
+                        @if (blockStatus?.IsBlocked != true)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.DoNotDisturbOn" OnClick="BlockRoom" Disabled="IsRoomOperationRunning">@L["BlockRoom"]</MudButton>
+                        }
+                        @if (blockStatus?.IsBlocked != false)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.DoNotDisturbOff" OnClick="UnblockRoom" Disabled="IsRoomOperationRunning">@L["UnblockRoom"]</MudButton>
+                        }
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Block" OnClick="QuarantineMedia" Disabled="IsRoomOperationRunning">@L["QuarantineMedia"]</MudButton>
+                    </div>
+
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.subtitle2" Class="room-action-group mb-2">@L["RoomActionsDeletion"]</MudText>
+                    <div class="d-flex flex-wrap gap-2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.History" OnClick="OpenPurgeHistoryDialog" Disabled="IsRoomOperationRunning">@L["PurgeHistory"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="DeleteRoom" Disabled="IsRoomOperationRunning">@L["DeleteRoom"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever" OnClick="DeleteAndBlockRoom" Disabled="IsRoomOperationRunning">@L["DeleteAndBlockRoom"]</MudButton>
+                    </div>
                 </MudCardContent>
             </MudCard>
         </MudItem>

@@ -142,30 +142,33 @@ else
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenRenewAccountDialog" Class="mb-2 mr-2">@L["RenewAccount"]</MudButton>
-                    @if (user.Deactivated)
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="OpenReactivateDialog" Class="mb-2 mr-2">@L["ReactivateUser"]</MudButton>
-                    }
-                    else
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeactivateUser" Class="mb-2 mr-2" Disabled="@IsOwnAccount">@L["DeactivateUser"]</MudButton>
-                    }
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenResetPasswordDialog" Class="mb-2 mr-2" Disabled="@user.Deactivated">@L["ResetPassword"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenProfileDialog" Class="mb-2 mr-2">@L["EditProfile"]</MudButton>
-                    @* Synapse refuses to join a suspended account; nobody can use a deactivated one (#605). *@
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenJoinRoomDialog" Class="mb-2 mr-2" Disabled="@(!CanJoinToRoom)">@L["JoinToRoom"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleLock" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Locked)">@(user.Locked ? L["UnlockUser"] : L["LockUser"])</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ToggleSuspension" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.Suspended)">@(user.Suspended ? L["UnsuspendUser"] : L["SuspendUser"])</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ToggleAdmin" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && user.Admin)">@(user.Admin ? L["RemoveAdmin"] : L["MakeAdmin"])</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ToggleShadowBan" Class="mb-2 mr-2" Disabled="@(IsOwnAccount && !user.ShadowBanned)">@(user.ShadowBanned ? L["LiftShadowBan"] : L["ShadowBanUser"])</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="LoginAsUser" Class="mb-2 mr-2">@L["LoginAsUserShadow"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="QuarantineAllMedia" Class="mb-2 mr-2" Disabled="@IsDeletingMedia">@L["QuarantineMedia"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteAllMedia" Class="mb-2 mr-2" Disabled="@IsDeletingMedia">@L["DeleteAllMedia"]</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="OpenRedactEventsDialog" Class="mb-2" Disabled="@IsRedactionRunning">@L["RedactUserEvents"]</MudButton>
+                    @* Grouped by what the action affects; destructive actions are red, restricting ones orange. *@
+                    <MudText Typo="Typo.subtitle2" Class="user-action-group mb-2">@L["UserActionsAccount"]</MudText>
+                    <div class="d-flex flex-wrap gap-2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="OpenProfileDialog">@L["EditProfile"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Password" OnClick="OpenResetPasswordDialog" Disabled="@user.Deactivated">@L["ResetPassword"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Update" OnClick="OpenRenewAccountDialog">@L["RenewAccount"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@(user.Admin ? Icons.Material.Filled.RemoveModerator : Icons.Material.Filled.AdminPanelSettings)" OnClick="ToggleAdmin" Disabled="@(IsOwnAccount && user.Admin)">@(user.Admin ? L["RemoveAdmin"] : L["MakeAdmin"])</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Login" OnClick="LoginAsUser">@L["LoginAsUserShadow"]</MudButton>
+                    </div>
+
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.subtitle2" Class="user-action-group mb-2">@L["Rooms"]</MudText>
+                    <div class="d-flex flex-wrap gap-2">
+                        @* Synapse refuses to join a suspended account; nobody can use a deactivated one (#605). *@
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.MeetingRoom" OnClick="OpenJoinRoomDialog" Disabled="@(!CanJoinToRoom)">@L["JoinToRoom"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteSweep" OnClick="OpenRedactEventsDialog" Disabled="@IsRedactionRunning">@L["RedactUserEvents"]</MudButton>
+                    </div>
+
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.subtitle2" Class="user-action-group mb-2">@L["Media"]</MudText>
+                    <div class="d-flex flex-wrap gap-2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Block" OnClick="QuarantineAllMedia" Disabled="@IsDeletingMedia">@L["QuarantineMedia"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever" OnClick="DeleteAllMedia" Disabled="@IsDeletingMedia">@L["DeleteAllMedia"]</MudButton>
+                    </div>
                     @if (_mediaDeletion is { } deletion)
                     {
-                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2 mb-2" ContentAlignment="HorizontalAlignment.Left">
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3" ContentAlignment="HorizontalAlignment.Left">
                             <div class="d-flex align-center flex-wrap gap-2">
                                 <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                                 <span class="media-deletion-progress">@L["DeletingUserMedia", deletion.Label, deletion.Deleted]</span>
@@ -173,9 +176,25 @@ else
                             </div>
                         </MudAlert>
                     }
+
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.subtitle2" Class="user-action-group mb-2">@L["UserActionsRestrictions"]</MudText>
+                    <div class="d-flex flex-wrap gap-2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@(user.Locked ? Icons.Material.Filled.LockOpen : Icons.Material.Filled.Lock)" OnClick="ToggleLock" Disabled="@(IsOwnAccount && !user.Locked)">@(user.Locked ? L["UnlockUser"] : L["LockUser"])</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@(user.Suspended ? Icons.Material.Filled.PlayCircle : Icons.Material.Filled.PauseCircle)" OnClick="ToggleSuspension" Disabled="@(IsOwnAccount && !user.Suspended)">@(user.Suspended ? L["UnsuspendUser"] : L["SuspendUser"])</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@(user.ShadowBanned ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)" OnClick="ToggleShadowBan" Disabled="@(IsOwnAccount && !user.ShadowBanned)">@(user.ShadowBanned ? L["LiftShadowBan"] : L["ShadowBanUser"])</MudButton>
+                        @if (user.Deactivated)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.HowToReg" OnClick="OpenReactivateDialog">@L["ReactivateUser"]</MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.PersonOff" OnClick="DeactivateUser" Disabled="@IsOwnAccount">@L["DeactivateUser"]</MudButton>
+                        }
+                    </div>
                     @if (IsOwnAccount)
                     {
-                        <MudText Typo="Typo.caption" Class="d-block mt-1">@L["NotAvailableForOwnAccount"]</MudText>
+                        <MudText Typo="Typo.caption" Class="d-block mt-3">@L["NotAvailableForOwnAccount"]</MudText>
                     }
                 </MudCardContent>
             </MudCard>

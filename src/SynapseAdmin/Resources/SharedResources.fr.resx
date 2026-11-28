@@ -127,6 +127,15 @@
   <data name="Actions" xml:space="preserve">
     <value>Actions</value>
   </data>
+  <data name="RoomActionsRecovery" xml:space="preserve">
+    <value>Récupération</value>
+  </data>
+  <data name="RoomActionsModeration" xml:space="preserve">
+    <value>Modération</value>
+  </data>
+  <data name="RoomActionsDeletion" xml:space="preserve">
+    <value>Suppression</value>
+  </data>
   <data name="Created" xml:space="preserve">
     <value>Créé le</value>
   </data>
@@ -2106,5 +2115,11 @@
   </data>
   <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
     <value>Erreur lors de la récupération des salons enfants.</value>
+  </data>
+  <data name="UserActionsAccount" xml:space="preserve">
+    <value>Compte</value>
+  </data>
+  <data name="UserActionsRestrictions" xml:space="preserve">
+    <value>Restrictions</value>
   </data>
 </root>

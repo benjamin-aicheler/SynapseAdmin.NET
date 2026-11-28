@@ -158,6 +158,15 @@
   <data name="Actions" xml:space="preserve">
     <value>Actions</value>
   </data>
+  <data name="RoomActionsRecovery" xml:space="preserve">
+    <value>Recovery</value>
+  </data>
+  <data name="RoomActionsModeration" xml:space="preserve">
+    <value>Moderation</value>
+  </data>
+  <data name="RoomActionsDeletion" xml:space="preserve">
+    <value>Deletion</value>
+  </data>
   <data name="Created" xml:space="preserve">
     <value>Created</value>
   </data>
@@ -2107,5 +2116,11 @@
   </data>
   <data name="ErrorFetchingSpaceChildren" xml:space="preserve">
     <value>Error fetching the space's children.</value>
+  </data>
+  <data name="UserActionsAccount" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="UserActionsRestrictions" xml:space="preserve">
+    <value>Restrictions</value>
   </data>
 </root>
