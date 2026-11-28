@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using LibMatrix;
 using SynapseAdmin.Extensions;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Interfaces.Gateways;
@@ -29,6 +28,7 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
 {
     private const int MaxRedirects = 3;
     private const string DefaultLoginDeviceName = "SynapseAdmin.NET";
+    private const string RateLimitErrorCode = "M_LIMIT_EXCEEDED";
 
     private readonly IHomeserverDestinationPolicy _policy;
     private readonly ILogger<HomeserverDiscoveryClient> _logger;
@@ -309,9 +309,18 @@ public sealed class HomeserverDiscoveryClient : IHomeserverDiscoveryClient, IDis
             // Not a Matrix error body.
         }
 
+        // The gateway's own exception types, never LibMatrix's: callers stay independent of the SDK.
+        if (response.StatusCode == HttpStatusCode.TooManyRequests || error?.ErrorCode == RateLimitErrorCode)
+        {
+            return new HomeserverRateLimitedException($"Login request was rate-limited by the homeserver (status {(int)response.StatusCode}).");
+        }
+
         if (!string.IsNullOrEmpty(error?.ErrorCode))
         {
-            return new LibMatrixException { ErrorCode = error.ErrorCode, Error = error.Error ?? string.Empty };
+            return new HttpRequestException(
+                $"Login request failed with status {(int)response.StatusCode}: {error.ErrorCode.SanitizeForLogging()}: {error.Error.SanitizeForLogging()}",
+                null,
+                response.StatusCode);
         }
 
         return new HttpRequestException($"Login request failed with status {(int)response.StatusCode}.", null, response.StatusCode);

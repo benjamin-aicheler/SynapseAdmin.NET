@@ -1,5 +1,3 @@
-using System.Net;
-using LibMatrix;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Resources;
@@ -30,10 +28,6 @@ public class MatrixSessionService(
         }
         return clientIp;
     }
-
-    private static bool IsUpstreamRateLimit(Exception ex) =>
-        ex is LibMatrixException { ErrorCode: "M_LIMIT_EXCEEDED" } ||
-        ex is HttpRequestException { StatusCode: HttpStatusCode.TooManyRequests };
 
     public async Task<OperationResult> LoginAsync(string homeserver, string username, string password)
     {
@@ -75,7 +69,7 @@ public class MatrixSessionService(
         {
             logger.LogError(ex, "Login failed for user {Username} on {Homeserver}", username.SanitizeForLogging(), homeserver.SanitizeForLogging());
 
-            if (IsUpstreamRateLimit(ex))
+            if (ex is HomeserverRateLimitedException)
             {
                 return OperationResult.Failure(L["TooManyLoginAttempts"]);
             }
@@ -126,7 +120,7 @@ public class MatrixSessionService(
         {
             logger.LogError(ex, "Login with token failed for {Homeserver}", homeserver.SanitizeForLogging());
 
-            if (IsUpstreamRateLimit(ex))
+            if (ex is HomeserverRateLimitedException)
             {
                 return OperationResult.Failure(L["TooManyLoginAttempts"]);
             }

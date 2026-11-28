@@ -16,11 +16,13 @@ public interface IMatrixAuthGateway
 
     /// <summary>
     /// Performs a standard Matrix login.
+    /// Throws <see cref="Models.HomeserverRateLimitedException"/> when the homeserver rate-limits the login.
     /// </summary>
     Task<LoginResponse> LoginAsync(string homeserverUrl, string username, string password, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates an authenticated homeserver session from an existing access token.
+    /// Throws <see cref="Models.HomeserverRateLimitedException"/> when the homeserver rate-limits the requests that set it up.
     /// </summary>
     Task<IMatrixGateway> GetAuthenticatedAsync(string homeserverUrl, string accessToken, CancellationToken cancellationToken = default);
 }
