@@ -1996,4 +1996,31 @@
   <data name="JoinServersNeedRoomId" xml:space="preserve">
     <value>Server für den Beitritt können nur mit einer Raum-ID angegeben werden: Der Homeserver ermittelt die Server eines Alias aus dem Alias selbst.</value>
   </data>
+  <data name="RoomListFilterPublicRooms" xml:space="preserve">
+    <value>Öffentliche Räume</value>
+  </data>
+  <data name="RoomListFilterPublicRoomsHint" xml:space="preserve">
+    <value>Im Raumverzeichnis veröffentlicht</value>
+  </data>
+  <data name="RoomListFilterEmptyRooms" xml:space="preserve">
+    <value>Leere Räume</value>
+  </data>
+  <data name="RoomListFilterEmptyRoomsHint" xml:space="preserve">
+    <value>Keine beigetretenen Mitglieder</value>
+  </data>
+  <data name="RoomListFilterAll" xml:space="preserve">
+    <value>Alle</value>
+  </data>
+  <data name="RoomListFilterOnlyPublic" xml:space="preserve">
+    <value>Nur öffentliche Räume</value>
+  </data>
+  <data name="RoomListFilterExcludePublic" xml:space="preserve">
+    <value>Öffentliche Räume ausschließen</value>
+  </data>
+  <data name="RoomListFilterOnlyEmpty" xml:space="preserve">
+    <value>Nur leere Räume</value>
+  </data>
+  <data name="RoomListFilterExcludeEmpty" xml:space="preserve">
+    <value>Leere Räume ausschließen</value>
+  </data>
 </root>

@@ -1996,4 +1996,31 @@
   <data name="JoinServersNeedRoomId" xml:space="preserve">
     <value>Les serveurs par lesquels rejoindre ne peuvent être indiqués qu'avec un ID de salon : le serveur d'accueil trouve les serveurs d'un alias à partir de l'alias lui-même.</value>
   </data>
+  <data name="RoomListFilterPublicRooms" xml:space="preserve">
+    <value>Salons publics</value>
+  </data>
+  <data name="RoomListFilterPublicRoomsHint" xml:space="preserve">
+    <value>Publiés dans l'annuaire des salons</value>
+  </data>
+  <data name="RoomListFilterEmptyRooms" xml:space="preserve">
+    <value>Salons vides</value>
+  </data>
+  <data name="RoomListFilterEmptyRoomsHint" xml:space="preserve">
+    <value>Aucun membre ayant rejoint</value>
+  </data>
+  <data name="RoomListFilterAll" xml:space="preserve">
+    <value>Tous</value>
+  </data>
+  <data name="RoomListFilterOnlyPublic" xml:space="preserve">
+    <value>Uniquement les salons publics</value>
+  </data>
+  <data name="RoomListFilterExcludePublic" xml:space="preserve">
+    <value>Exclure les salons publics</value>
+  </data>
+  <data name="RoomListFilterOnlyEmpty" xml:space="preserve">
+    <value>Uniquement les salons vides</value>
+  </data>
+  <data name="RoomListFilterExcludeEmpty" xml:space="preserve">
+    <value>Exclure les salons vides</value>
+  </data>
 </root>
