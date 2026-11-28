@@ -213,7 +213,7 @@ public abstract class MatrixGatewayBase(AuthenticatedHomeserverGeneric homeserve
     public abstract Task<SynapseAdminUserRedactStatusResponse?> GetUserRedactionStatusAsync(string redactId, CancellationToken cancellationToken = default);
 
     // Room Management
-    public abstract Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default);
+    public abstract Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, bool? publicRooms = null, bool? emptyRooms = null, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomListResult.SynapseAdminRoomListResultRoom?> GetRoomDetailsAsync(string roomId, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomMemberListResult?> GetRoomMembersAsync(string roomId, CancellationToken cancellationToken = default);
     public abstract Task<SynapseAdminRoomStateResult?> GetRoomStateAsync(string roomId, string? type = null, CancellationToken cancellationToken = default);

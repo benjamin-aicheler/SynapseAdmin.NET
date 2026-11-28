@@ -932,6 +932,44 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir={sentDir}&order_by={orderBy}", Assert.Single(_homeserver.RequestTargets));
     }
 
+    // The room list filters (#588): a flag goes out only when set, as Synapse's lowercase boolean literal; a missing
+    // flag means "both" on Synapse and Tuwunel.
+    public static TheoryData<bool?, bool?, string> RoomListFilters => new()
+    {
+        { null, null, "" },
+        { true, null, "&public_rooms=true" },
+        { false, null, "&public_rooms=false" },
+        { null, true, "&empty_rooms=true" },
+        { null, false, "&empty_rooms=false" },
+        { true, false, "&public_rooms=true&empty_rooms=false" },
+    };
+
+    [Theory]
+    [MemberData(nameof(RoomListFilters))]
+    public async Task GetRoomList_SendsTheFiltersThatAreSet(bool? publicRooms, bool? emptyRooms, string expectedFlags)
+    {
+        var gateway = new SynapseAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
+
+        await gateway.GetRoomListAsync(20, 10, "name", "b", "my room", publicRooms, emptyRooms);
+
+        Assert.Equal($"/_synapse/admin/v1/rooms?from=20&limit=10&dir=b&order_by=name&search_term=my+room{expectedFlags}", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    // Tuwunel serves both flags and selects the same rooms as Synapse (SPEC.md §10), so they go out unchanged, next to
+    // the dir correction for the keys Synapse sorts largest first (#541).
+    [Theory]
+    [MemberData(nameof(RoomListFilters))]
+    public async Task Tuwunel_GetRoomList_SendsTheFiltersUnchanged(bool? publicRooms, bool? emptyRooms, string expectedFlags)
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { offset = 0, total_rooms = 0, rooms = Array.Empty<object>() });
+
+        await gateway.GetRoomListAsync(0, 10, "joined_members", "f", publicRooms: publicRooms, emptyRooms: emptyRooms);
+
+        Assert.Equal($"/_synapse/admin/v1/rooms?from=0&limit=10&dir=b&order_by=joined_members{expectedFlags}", Assert.Single(_homeserver.RequestTargets));
+    }
+
     private AuthenticatedHomeserverGeneric CreateHomeserver() => new(
         "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token");
 

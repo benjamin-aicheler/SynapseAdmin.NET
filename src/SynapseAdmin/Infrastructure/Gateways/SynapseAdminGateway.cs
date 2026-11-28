@@ -321,10 +321,12 @@ public class SynapseAdminGateway(
 
     // --- Room Management ---
 
-    public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
+    public override async Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, bool? publicRooms = null, bool? emptyRooms = null, CancellationToken cancellationToken = default)
     {
         var url = $"/_synapse/admin/v1/rooms?from={offset}&limit={limit}&dir={direction.UrlEncode()}&order_by={orderBy.UrlEncode()}";
         if (!string.IsNullOrEmpty(searchTerm)) url += $"&search_term={searchTerm.UrlEncode()}";
+        if (publicRooms.HasValue) url += $"&public_rooms={(publicRooms.Value ? "true" : "false")}";
+        if (emptyRooms.HasValue) url += $"&empty_rooms={(emptyRooms.Value ? "true" : "false")}";
         return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminRoomListResult>(url, cancellationToken: cancellationToken);
     }
 

@@ -50,16 +50,16 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
         memoryCache.Set(GetRoomNameCacheKey(roomId), resolvedName, RoomNameCacheOptions);
     }
 
-    public Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default) =>
+    public Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, bool? publicRooms = null, bool? emptyRooms = null, CancellationToken token = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingRoomList",
-            ex => logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm})", offset, limit, searchTerm.SanitizeForLogging()),
+            ex => logger.LogError(ex, "Error fetching room list (offset: {Offset}, limit: {Limit}, searchTerm: {SearchTerm}, publicRooms: {PublicRooms}, emptyRooms: {EmptyRooms})", offset, limit, searchTerm.SanitizeForLogging(), publicRooms, emptyRooms),
             async gateway =>
             {
                 var dir = direction.ToSynapseDir(whenUnsorted: "f");
                 // Synapse sorts these keys largest first, so smallest first (ascending) is dir=b. Unsorted keeps
                 // Synapse's own order. The gateway corrects servers that sort them differently (#541).
                 if (direction != SortDirection.None && RoomSortKeys.IsLargestFirst(orderBy)) dir = RoomSortKeys.Reverse(dir);
-                var result = await gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, token);
+                var result = await gateway.GetRoomListAsync(offset, limit, orderBy, dir, searchTerm, publicRooms, emptyRooms, token);
                 if (result == null) return OperationResult<(int Total, List<RoomListViewModel> Rooms)>.Ok((0, []));
 
                 foreach (var room in result.Rooms)

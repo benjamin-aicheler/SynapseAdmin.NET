@@ -7,7 +7,7 @@ namespace SynapseAdmin.Interfaces;
 
 public interface IRoomService
 {
-    Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, CancellationToken token = default);
+    Task<OperationResult<(int Total, List<RoomListViewModel> Rooms)>> GetRoomListAsync(int offset, int limit, string orderBy, SortDirection direction, string? searchTerm = null, bool? publicRooms = null, bool? emptyRooms = null, CancellationToken token = default);
     Task<OperationResult<RoomDetailViewModel>> GetRoomDetailsAsync(string roomId, CancellationToken token = default);
     /// <summary>
     /// Requests the deletion of a room, which the homeserver runs in the background. The data is the deletion's

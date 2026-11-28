@@ -22,15 +22,21 @@ internal sealed class TuwunelAdminGateway(
     /// <summary>
     /// Callers pass the dir of Synapse's documented order. Tuwunel sorts the keys Synapse sorts largest first
     /// ascending instead, so it needs the opposite dir for the same order (#541).
+    /// <para>
+    /// <paramref name="publicRooms"/> and <paramref name="emptyRooms"/> go out unchanged (#588). Tuwunel (1.8.2,
+    /// 2.0.0) tests <c>empty_rooms</c> against the local joined members where Synapse tests all joined members, but
+    /// Synapse sets <c>joined_members</c> to <c>0</c> when its last local user leaves a room, so both select the same
+    /// rooms. Both filter by directory visibility for <c>public_rooms</c>, and both count and page after filtering.
+    /// </para>
     /// </summary>
-    public override Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, CancellationToken cancellationToken = default)
+    public override Task<SynapseAdminRoomListResult?> GetRoomListAsync(int offset, int limit, string orderBy, string direction, string? searchTerm = null, bool? publicRooms = null, bool? emptyRooms = null, CancellationToken cancellationToken = default)
     {
         if (RoomSortKeys.IsLargestFirst(orderBy))
         {
             direction = RoomSortKeys.Reverse(direction);
         }
 
-        return base.GetRoomListAsync(offset, limit, orderBy, direction, searchTerm, cancellationToken);
+        return base.GetRoomListAsync(offset, limit, orderBy, direction, searchTerm, publicRooms, emptyRooms, cancellationToken);
     }
 
     /// <summary>
