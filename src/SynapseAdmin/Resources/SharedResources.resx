@@ -2048,4 +2048,22 @@
   <data name="ErrorFetchingEventReportDetails" xml:space="preserve">
     <value>Error fetching the event report.</value>
   </data>
+  <data name="Timestamp" xml:space="preserve">
+    <value>Timestamp</value>
+  </data>
+  <data name="SurroundingEvents" xml:space="preserve">
+    <value>Surrounding events</value>
+  </data>
+  <data name="ThisEvent" xml:space="preserve">
+    <value>This event</value>
+  </data>
+  <data name="Redacted" xml:space="preserve">
+    <value>Redacted</value>
+  </data>
+  <data name="EventContextNotFound" xml:space="preserve">
+    <value>The homeserver has no timeline around this event in its room.</value>
+  </data>
+  <data name="ErrorFetchingEventContext" xml:space="preserve">
+    <value>Error fetching the surrounding events.</value>
+  </data>
 </root>

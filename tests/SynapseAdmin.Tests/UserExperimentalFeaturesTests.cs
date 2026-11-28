@@ -315,6 +315,7 @@ public class UserExperimentalFeaturesTests
         public Task<SynapseAdminEventReportDetailsResponse?> GetEventReportDetailsAsync(string reportId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeleteEventReportAsync(string reportId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminFetchEventResponse?> FetchEventAsync(string eventId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<SynapseAdminEventContextResponse?> GetEventContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken?> CreateRegistrationTokenAsync(SynapseAdminRegistrationTokenCreateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task UpdateRegistrationTokenAsync(string token, SynapseAdminRegistrationTokenUpdateRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();

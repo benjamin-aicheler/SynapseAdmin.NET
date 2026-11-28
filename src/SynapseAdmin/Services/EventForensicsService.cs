@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 using SynapseAdmin.Extensions;
+using SynapseAdmin.Extensions.Mapping;
 using SynapseAdmin.Interfaces;
 using SynapseAdmin.Models;
 using SynapseAdmin.Models.ViewModels;
@@ -16,6 +17,9 @@ public class EventForensicsService(
     IStringLocalizer<SharedResources> L) : IEventForensicsService
 {
     private static readonly JsonSerializerOptions IndentedJson = new() { WriteIndented = true };
+
+    /// <summary>Events around an event: Synapse returns <c>floor(limit / 2)</c> before it and the rest after (#588).</summary>
+    internal const int ContextLimit = 20;
 
     public Task<OperationResult<EventForensicsViewModel>> FetchEventAsync(string eventId, CancellationToken cancellationToken = default) =>
         sessionService.RunGatewayCallAsync(L, "ErrorFetchingEvent",
@@ -67,4 +71,25 @@ public class EventForensicsService(
 
                 return OperationResult<EventForensicsViewModel>.Ok(vm, L["EventFetchedSuccessfully"]);
             });
+
+    /// <summary>
+    /// The events around <paramref name="eventId"/> in <paramref name="roomId"/> (#588), oldest first. The page loads
+    /// this by itself after the event, so a refusal is logged at Debug. A context the homeserver can't find is a
+    /// warning. The events are never logged.
+    /// </summary>
+    public Task<OperationResult<EventContextViewModel>> GetEventContextAsync(string roomId, string eventId, CancellationToken cancellationToken = default) =>
+        sessionService.RunGatewayCallAsync(L, "ErrorFetchingEventContext",
+            ex => logger.LogError(ex, "Error fetching the context of event {EventId} in room {RoomId}", eventId.SanitizeForLogging(), roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var context = await gateway.GetEventContextAsync(roomId, eventId, ContextLimit, cancellationToken);
+                if (context == null)
+                {
+                    logger.LogDebug("Event {EventId} has no context in room {RoomId}", eventId.SanitizeForLogging(), roomId.SanitizeForLogging());
+                    return OperationResult<EventContextViewModel>.Failure(L["EventContextNotFound"], Severity.Warning);
+                }
+
+                return OperationResult<EventContextViewModel>.Ok(context.ToContextViewModel());
+            },
+            logRefusal: _ => logger.LogDebug("The homeserver doesn't support the event context"));
 }

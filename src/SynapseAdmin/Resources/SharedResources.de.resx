@@ -2047,4 +2047,22 @@
   <data name="ErrorFetchingEventReportDetails" xml:space="preserve">
     <value>Fehler beim Laden des Ereignisberichts.</value>
   </data>
+  <data name="Timestamp" xml:space="preserve">
+    <value>Zeitstempel</value>
+  </data>
+  <data name="SurroundingEvents" xml:space="preserve">
+    <value>Umgebende Ereignisse</value>
+  </data>
+  <data name="ThisEvent" xml:space="preserve">
+    <value>Dieses Ereignis</value>
+  </data>
+  <data name="Redacted" xml:space="preserve">
+    <value>Entfernt</value>
+  </data>
+  <data name="EventContextNotFound" xml:space="preserve">
+    <value>Der Homeserver hat keine Zeitleiste um dieses Ereignis in seinem Raum.</value>
+  </data>
+  <data name="ErrorFetchingEventContext" xml:space="preserve">
+    <value>Fehler beim Abrufen der umgebenden Ereignisse.</value>
+  </data>
 </root>

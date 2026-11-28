@@ -1072,6 +1072,69 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal("/_synapse/admin/v1/event_reports/4%2f2+x", Assert.Single(_homeserver.RequestTargets));
     }
 
+    // ---- Event context (#588) ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetEventContext_SendsTheRoomTheEventAndTheLimit_AndReadsTheAnswer()
+    {
+        _homeserver.Respond = () => Results.Text("""
+            {
+                "start": "t27-54_2_0_2",
+                "end": "t29-57_2_0_2",
+                "events_before": [ { "event_id": "$b2", "type": "m.room.message" }, { "event_id": "$b1", "type": "m.room.message" } ],
+                "event": { "event_id": "$e", "type": "m.room.message", "content": { "body": "hi" } },
+                "events_after": [ { "event_id": "$a1", "type": "m.room.member", "state_key": "@u:hs" } ],
+                "state": [ { "event_id": "$s", "type": "m.room.create", "state_key": "" } ]
+            }
+            """, "application/json");
+
+        var context = await _gateway.GetEventContextAsync("!room:example.com", "$e+v/1", 20);
+
+        Assert.Equal("/_synapse/admin/v1/rooms/!room%3aexample.com/context/%24e%2bv%2f1?limit=20", Assert.Single(_homeserver.RequestTargets));
+        Assert.NotNull(context);
+        Assert.Equal(("t27-54_2_0_2", "t29-57_2_0_2"), (context.Start, context.End));
+        Assert.Equal(["$b2", "$b1"], context.EventsBefore.Select(e => e["event_id"]!.GetValue<string>()));
+        Assert.Equal("hi", context.Event?["content"]?["body"]?.GetValue<string>());
+        Assert.Equal("$a1", Assert.Single(context.EventsAfter)["event_id"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Tuwunel_GetEventContext_SendsTheSameRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { start = "", end = "", events_before = Array.Empty<object>(), events_after = Array.Empty<object>() });
+
+        await gateway.GetEventContextAsync("!room:example.com", "$e", 20);
+
+        Assert.Equal("/_synapse/admin/v1/rooms/!room%3aexample.com/context/%24e?limit=20", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    /// <summary>Synapse and Tuwunel answer 404 <c>M_NOT_FOUND</c> for an unknown event or one in another room.</summary>
+    [Theory]
+    [InlineData("M_NOT_FOUND")]
+    [InlineData(null)]
+    public async Task GetEventContext_NotFound_ReturnsNull(string? errcode)
+    {
+        _homeserver.Respond = () => errcode == null
+            ? Results.Text("Not Found", statusCode: 404)
+            : Results.Json(new { errcode, error = "Event not found." }, statusCode: 404);
+
+        Assert.Null(await _gateway.GetEventContextAsync("!room:example.com", "$e", 20));
+    }
+
+    /// <summary>Tuwunel answers 403 for a room it doesn't know; that and every other error stays an error.</summary>
+    [Theory]
+    [InlineData(403, "M_FORBIDDEN")]
+    [InlineData(404, "M_UNRECOGNIZED")]
+    public async Task GetEventContext_OtherMatrixError_Throws(int statusCode, string errcode)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode, error = "Error" }, statusCode: statusCode);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.GetEventContextAsync("!room:example.com", "$e", 20));
+
+        Assert.Equal(errcode, ex.ErrorCode);
+    }
+
     private AuthenticatedHomeserverGeneric CreateHomeserver() => new(
         "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token");
 

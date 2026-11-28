@@ -11,7 +11,7 @@ public static class SnackbarExtensions
     /// </summary>
     public static bool ShowResult(this ISnackbar snackbar, OperationResult result)
     {
-        if (result.Severity != Severity.Normal)
+        if (!result.IsSilent)
         {
             snackbar.Add(result.Message, result.Severity);
             return true;
