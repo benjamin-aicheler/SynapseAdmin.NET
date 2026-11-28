@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using SynapseAdmin.Extensions.Mapping;
@@ -146,6 +147,64 @@ public class MappingExtensionsTests
         Assert.Equal("mxc://example.com/roompic", detailVm.AvatarUrl);
         Assert.True(detailVm.Forgotten);
         Assert.False(detailVm.IsTombstoned);
+    }
+
+    [Fact]
+    public void EventContextItem_MapsEveryProperty()
+    {
+        var evt = JsonNode.Parse("""
+            {
+                "event_id": "$e", "type": "m.room.message", "sender": "@u:hs", "state_key": "@v:hs",
+                "origin_server_ts": 1432735824653,
+                "content": { "body": "<b>hi</b>" },
+                "unsigned": { "redacted_because": { "type": "m.room.redaction" } }
+            }
+            """)!.AsObject();
+
+        var vm = evt.ToContextItemViewModel();
+
+        Assert.Equal(("$e", "m.room.message", "@u:hs", "@v:hs"), (vm.EventId, vm.Type, vm.Sender, vm.StateKey));
+        Assert.Equal((1432735824653L, DateTimeOffset.FromUnixTimeMilliseconds(1432735824653L)), (vm.OriginServerTs, vm.Timestamp!.Value));
+        Assert.Equal(("<b>hi</b>", true), (vm.Body, vm.IsRedacted));
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("""{ "event_id": 1, "type": null, "origin_server_ts": "soon", "content": { "body": { "x": 1 } }, "unsigned": {} }""")]
+    [InlineData("""{ "content": "text", "unsigned": "x" }""")]
+    public void EventContextItem_MissingOrUnexpectedFields_MapToEmptyDefaults(string json)
+    {
+        var vm = JsonNode.Parse(json)!.AsObject().ToContextItemViewModel();
+
+        Assert.Equal((string.Empty, (string?)null, (string?)null, (string?)null), (vm.EventId, vm.Type, vm.Sender, vm.StateKey));
+        Assert.Equal(((long?)null, (DateTimeOffset?)null, (string?)null, false), (vm.OriginServerTs, vm.Timestamp, vm.Body, vm.IsRedacted));
+    }
+
+    [Fact]
+    public void EventContext_ListsBothSidesOldestFirst()
+    {
+        static JsonObject Event(string id) => new() { ["event_id"] = id };
+        var context = new SynapseAdminEventContextResponse
+        {
+            EventsBefore = [Event("$b3"), Event("$b2"), Event("$b1")],
+            Event = Event("$e"),
+            EventsAfter = [Event("$a1"), Event("$a2")],
+        };
+
+        var vm = context.ToContextViewModel();
+
+        Assert.Equal(["$b1", "$b2", "$b3"], vm.Before.Select(e => e.EventId));
+        Assert.Equal("$e", vm.Event?.EventId);
+        Assert.Equal(["$a1", "$a2"], vm.After.Select(e => e.EventId));
+        Assert.Equal(["$b3", "$b2", "$b1"], context.EventsBefore.Select(e => e["event_id"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void EventContext_Empty_MapsToEmptyLists()
+    {
+        var vm = new SynapseAdminEventContextResponse().ToContextViewModel();
+
+        Assert.Equal((0, (EventContextItemViewModel?)null, 0), (vm.Before.Count, vm.Event, vm.After.Count));
     }
 
     [Fact]

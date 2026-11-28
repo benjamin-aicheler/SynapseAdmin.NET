@@ -2047,4 +2047,22 @@
   <data name="ErrorFetchingEventReportDetails" xml:space="preserve">
     <value>Erreur lors de la récupération du signalement.</value>
   </data>
+  <data name="Timestamp" xml:space="preserve">
+    <value>Horodatage</value>
+  </data>
+  <data name="SurroundingEvents" xml:space="preserve">
+    <value>Événements environnants</value>
+  </data>
+  <data name="ThisEvent" xml:space="preserve">
+    <value>Cet événement</value>
+  </data>
+  <data name="Redacted" xml:space="preserve">
+    <value>Effacé</value>
+  </data>
+  <data name="EventContextNotFound" xml:space="preserve">
+    <value>Le serveur d'accueil n'a pas de chronologie autour de cet événement dans son salon.</value>
+  </data>
+  <data name="ErrorFetchingEventContext" xml:space="preserve">
+    <value>Erreur lors de la récupération des événements environnants.</value>
+  </data>
 </root>

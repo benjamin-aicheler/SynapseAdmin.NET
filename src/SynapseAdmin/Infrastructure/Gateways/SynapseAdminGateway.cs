@@ -537,6 +537,29 @@ public class SynapseAdminGateway(
         }
     }
 
+    /// <summary>
+    /// The events around <paramref name="eventId"/> in <paramref name="roomId"/>, with the admin bypass of visibility
+    /// (#588). <c>null</c> when Synapse answers 404 (<c>M_NOT_FOUND</c>, or a bare 404): the event is unknown or not in
+    /// that room. Synapse splits <paramref name="limit"/> into <c>floor(limit / 2)</c> events before and the rest after.
+    /// Tuwunel (1.8.2, 2.0.0) serves the same route with the same split, order and 404, so it needs no override.
+    /// </summary>
+    public override async Task<SynapseAdminEventContextResponse?> GetEventContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/context/{eventId.UrlEncode()}?limit={limit}";
+        try
+        {
+            return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminEventContextResponse>(url, cancellationToken: cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (LibMatrix.MatrixException ex) when (ex.ErrorCode == "M_NOT_FOUND")
+        {
+            return null;
+        }
+    }
+
     // --- Registration Tokens ---
 
     public override async Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default)

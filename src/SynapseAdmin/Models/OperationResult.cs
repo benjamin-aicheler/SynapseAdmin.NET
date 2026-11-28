@@ -8,6 +8,9 @@ public class OperationResult
     public string Message { get; set; } = string.Empty;
     public Severity Severity { get; set; } = Severity.Info;
 
+    /// <summary>Whether this is a silent result (<see cref="Severity.Normal"/>, a cancellation) that the UI never shows.</summary>
+    public bool IsSilent => Severity == Severity.Normal;
+
     public static OperationResult Ok(string message = "") => new() { Success = true, Message = message, Severity = Severity.Success };
     public static OperationResult Failure(string message, Severity severity = Severity.Error) => new() { Success = false, Message = message, Severity = severity };
 

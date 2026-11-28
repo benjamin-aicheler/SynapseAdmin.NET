@@ -129,6 +129,7 @@ public interface IMatrixGateway
 
     // --- Event Forensics (Admin/Synapse) ---
     Task<SynapseAdminFetchEventResponse?> FetchEventAsync(string eventId, CancellationToken cancellationToken = default);
+    Task<SynapseAdminEventContextResponse?> GetEventContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default);
 
     // --- Registration Tokens (Admin/Synapse) ---
     Task<List<SynapseAdminRegistrationTokenListResult.SynapseAdminRegistrationTokenListResultToken>> GetRegistrationTokensAsync(CancellationToken cancellationToken = default);
