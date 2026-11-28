@@ -150,6 +150,37 @@ public class MappingExtensionsTests
     }
 
     [Fact]
+    public void RoomMessage_MapsEveryProperty()
+    {
+        var evt = new SynapseAdminEvent
+        {
+            EventId = "$e", Sender = "@u:hs", OriginServerTs = 1432735824653, Type = "m.room.message", StateKey = "",
+            Content = JsonDocument.Parse("""{"body":"hi","msgtype":"m.text"}""").RootElement,
+        };
+
+        var vm = evt.ToMessageItemViewModel();
+
+        Assert.Equal(("$e", "@u:hs", DateTimeOffset.FromUnixTimeMilliseconds(1432735824653), "m.room.message", ""),
+            (vm.EventId, vm.Sender, vm.OriginServerTs, vm.Type, vm.StateKey));
+        Assert.Equal(("""{"body":"hi","msgtype":"m.text"}""", "hi"), (vm.Content, vm.Body));
+    }
+
+    [Fact]
+    public void RoomMessageContext_NewestFirst_ListsAfterReversedThenTheEventThenBefore()
+    {
+        static SynapseAdminEvent E(string id) => new() { EventId = id };
+        var context = new SynapseAdminRoomMessageContextResponse
+        {
+            EventsBefore = [E("$b1"), E("$b2")],
+            Event = E("$e"),
+            EventsAfter = [E("$a1"), E("$a2")],
+        };
+
+        Assert.Equal(["$a2", "$a1", "$e", "$b1", "$b2"], context.NewestFirst().Select(e => e.EventId));
+        Assert.Empty(new SynapseAdminRoomMessageContextResponse().NewestFirst());
+    }
+
+    [Fact]
     public void EventContextItem_MapsEveryProperty()
     {
         var evt = JsonNode.Parse("""

@@ -42,6 +42,13 @@ namespace SynapseAdmin.Components.Pages
         private RoomDetailViewModel? room;
         private RoomMessagesViewModel? messages;
         private bool loadingMessages;
+        // Jump to date (#588): the date and time entered in the browser's time zone, the time the shown messages were
+        // jumped to (null for the newest messages), and the messages table's page, which a jump moves to the event found.
+        private DateTime? _jumpDate;
+        private TimeSpan? _jumpTime;
+        private DateTimeOffset? _jumpedTo;
+        private int _messagesPage;
+        private int _messagesRowsPerPage = 10;
         private MudTable<RoomMediaItemViewModel>? localMediaTable;
         private MudTable<RoomMediaItemViewModel>? remoteMediaTable;
         private readonly CancellationTokenSource _cts = new();
@@ -91,6 +98,8 @@ namespace SynapseAdmin.Components.Pages
             _displayedRoomId = null;
             messages = null;
             loadingMessages = false;
+            _jumpedTo = null;
+            _messagesPage = 0;
             errorMessage = null;
             isLoading = true;
             activePurgeId = RoomService.GetActivePurgeId(roomId);
@@ -277,11 +286,14 @@ namespace SynapseAdmin.Components.Pages
             {
                 if (from == null || messages == null)
                 {
+                    // The newest messages: this also leaves a jump to a date (#588).
                     messages = result.Data;
+                    _jumpedTo = null;
+                    _messagesPage = 0;
                 }
                 else
                 {
-                    messages.Messages.AddRange(result.Data.Messages);
+                    messages.Messages.AddRange(NotListed(result.Data.Messages));
                     messages.EndToken = result.Data.EndToken;
                 }
             }
@@ -291,6 +303,79 @@ namespace SynapseAdmin.Components.Pages
             }
             loadingMessages = false;
         }
+
+        private bool CanJumpToDate => !loadingMessages && _jumpDate != null && _jumpTime != null && _displayedRoomId != null;
+
+        /// <summary>
+        /// Lists the messages around the date and time entered, read in the browser's time zone (#588), and shows the
+        /// table page with the event found. A failure keeps the messages shown.
+        /// </summary>
+        private async Task JumpToDate()
+        {
+            if (!CanJumpToDate || _displayedRoomId is not { } roomId) return;
+
+            var token = LoadToken;
+            var at = TimeZoneService.ToDateTimeOffset(_jumpDate!.Value.Date + _jumpTime!.Value);
+            loadingMessages = true;
+            var result = await RoomService.GetRoomMessagesAtAsync(roomId, at, token);
+            if (token.IsCancellationRequested || roomId != _loadedRoomId) return;
+
+            if (result.Success && result.Data != null)
+            {
+                messages = result.Data;
+                _jumpedTo = at;
+                var anchor = messages.Messages.FindIndex(m => m.EventId == messages.AnchorEventId);
+                _messagesPage = anchor < 0 ? 0 : anchor / Math.Max(1, _messagesRowsPerPage);
+            }
+            else
+            {
+                Snackbar.ShowFailure(result);
+            }
+            loadingMessages = false;
+        }
+
+        /// <summary>
+        /// Adds the next newer messages above the list after a jump (#588), and shows the first table page. The button
+        /// shows only with a token, so this never reloads the newest messages.
+        /// </summary>
+        private async Task LoadNewerMessages()
+        {
+            if (loadingMessages || _displayedRoomId is not { } roomId || messages?.NewerToken is not { } from) return;
+
+            var token = LoadToken;
+            loadingMessages = true;
+            var result = await RoomService.GetRoomMessagesAsync(roomId, from: from, limit: MessageHistoryPageSize, dir: "f", token: token);
+            if (token.IsCancellationRequested || roomId != _loadedRoomId) return;
+
+            if (result.Success && result.Data != null && messages != null)
+            {
+                // A forward page comes oldest first; the list is newest first.
+                var newer = NotListed(result.Data.Messages).ToList();
+                newer.Reverse();
+                messages.Messages.InsertRange(0, newer);
+                // A token that doesn't move on would offer the same page again.
+                messages.NewerToken = string.IsNullOrEmpty(result.Data.EndToken) || result.Data.EndToken == from ? null : result.Data.EndToken;
+                _messagesPage = 0;
+            }
+            else
+            {
+                Snackbar.ShowFailure(result);
+            }
+            loadingMessages = false;
+        }
+
+        /// <summary>The messages of a page that the list doesn't show yet: pages next to a jump can overlap.</summary>
+        private IEnumerable<RoomMessageItemViewModel> NotListed(IEnumerable<RoomMessageItemViewModel> page)
+        {
+            var listed = messages?.Messages.Select(m => m.EventId).ToHashSet(StringComparer.Ordinal) ?? [];
+            return page.Where(m => listed.Add(m.EventId));
+        }
+
+        private string MessageRowClass(RoomMessageItemViewModel message, int _) =>
+            message.EventId == messages?.AnchorEventId ? "room-message-anchor" : string.Empty;
+
+        private string MessageRowStyle(RoomMessageItemViewModel message, int _) =>
+            message.EventId == messages?.AnchorEventId ? "background-color: var(--mud-palette-action-default-hover); font-weight: 600;" : string.Empty;
 
         private Task DeleteRoom() =>
             ConfirmAndDeleteRoomAsync(block: false, "DeleteRoomTitle", "DeleteRoomConfirmation", "Delete");

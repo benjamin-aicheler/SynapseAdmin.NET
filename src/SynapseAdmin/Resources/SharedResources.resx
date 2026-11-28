@@ -2066,4 +2066,25 @@
   <data name="ErrorFetchingEventContext" xml:space="preserve">
     <value>Error fetching the surrounding events.</value>
   </data>
+  <data name="JumpToDateDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="JumpToDateTime" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="JumpToDate" xml:space="preserve">
+    <value>Jump to date</value>
+  </data>
+  <data name="JumpedToDate" xml:space="preserve">
+    <value>Messages around {0}</value>
+  </data>
+  <data name="LoadNewer" xml:space="preserve">
+    <value>Load newer</value>
+  </data>
+  <data name="NoMessagesAtDate" xml:space="preserve">
+    <value>The homeserver found no event in this room near that time.</value>
+  </data>
+  <data name="ErrorJumpingToDate" xml:space="preserve">
+    <value>Error loading the messages at that time.</value>
+  </data>
 </root>

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SynapseAdmin.Models.ViewModels;
 using SynapseAdmin.Models.Responses;
 
@@ -105,6 +106,51 @@ public static class RoomMappingExtensions
     /// Copies the 6 metadata fields of <paramref name="meta"/> onto <paramref name="vm"/>, reading a missing
     /// <c>safe_from_quarantine</c> as false. The view model keeps its ID (the MXC URI) and its local/remote source.
     /// </summary>
+    /// <summary>
+    /// A room event as a message row: <c>Content</c> is the raw JSON of <c>content</c>, and <c>Body</c> its <c>body</c>.
+    /// A <c>body</c> that isn't a string throws, as <see cref="JsonElement.GetString"/> does.
+    /// </summary>
+    public static RoomMessageItemViewModel ToMessageItemViewModel(this SynapseAdminEvent evt)
+    {
+        string? content = null;
+        string? body = null;
+        if (evt.Content is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } contentJson)
+        {
+            if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
+            {
+                body = bodyProp.GetString();
+            }
+            content = contentJson.GetRawText();
+        }
+
+        return new RoomMessageItemViewModel
+        {
+            EventId = evt.EventId,
+            Sender = evt.Sender,
+            OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(evt.OriginServerTs),
+            Type = evt.Type,
+            StateKey = evt.StateKey,
+            Content = content,
+            Body = body
+        };
+    }
+
+    public static List<RoomMessageItemViewModel> ToMessageItemViewModels(this IEnumerable<SynapseAdminEvent> events)
+    {
+        return events.Select(ToMessageItemViewModel).ToList();
+    }
+
+    /// <summary>
+    /// A context's events newest first, as the Messages tab lists them: the events after (which the API returns oldest
+    /// first) in reverse, the event itself, then the events before (which it returns newest first).
+    /// </summary>
+    public static IEnumerable<SynapseAdminEvent> NewestFirst(this SynapseAdminRoomMessageContextResponse context)
+    {
+        var events = context.EventsAfter.AsEnumerable().Reverse();
+        if (context.Event != null) events = events.Append(context.Event);
+        return events.Concat(context.EventsBefore);
+    }
+
     public static void ApplyMetadata(this RoomMediaItemViewModel vm, SynapseAdminMediaMetadataResponse.MediaInfo meta)
     {
         vm.UploadName = meta.UploadName;

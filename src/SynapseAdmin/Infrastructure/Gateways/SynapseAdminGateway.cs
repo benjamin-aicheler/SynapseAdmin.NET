@@ -543,12 +543,42 @@ public class SynapseAdminGateway(
     /// that room. Synapse splits <paramref name="limit"/> into <c>floor(limit / 2)</c> events before and the rest after.
     /// Tuwunel (1.8.2, 2.0.0) serves the same route with the same split, order and 404, so it needs no override.
     /// </summary>
-    public override async Task<SynapseAdminEventContextResponse?> GetEventContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default)
+    public override Task<SynapseAdminEventContextResponse?> GetEventContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default) =>
+        GetEventContextAsync<SynapseAdminEventContextResponse>(roomId, eventId, limit, cancellationToken);
+
+    /// <summary>The same request as <see cref="GetEventContextAsync(string, string, int, CancellationToken)"/>, with the events typed as room messages (#588).</summary>
+    public override Task<SynapseAdminRoomMessageContextResponse?> GetRoomMessageContextAsync(string roomId, string eventId, int limit, CancellationToken cancellationToken = default) =>
+        GetEventContextAsync<SynapseAdminRoomMessageContextResponse>(roomId, eventId, limit, cancellationToken);
+
+    private async Task<T?> GetEventContextAsync<T>(string roomId, string eventId, int limit, CancellationToken cancellationToken) where T : class
     {
         var url = $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/context/{eventId.UrlEncode()}?limit={limit}";
         try
         {
-            return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminEventContextResponse>(url, cancellationToken: cancellationToken);
+            return await Homeserver.ClientHttpClient.GetFromJsonAsync<T>(url, cancellationToken: cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (LibMatrix.MatrixException ex) when (ex.ErrorCode == "M_NOT_FOUND")
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The closest event to <paramref name="ts"/> (Unix milliseconds) in direction <paramref name="dir"/> (#588).
+    /// <c>null</c> when the homeserver finds none (404 <c>M_NOT_FOUND</c>, or a bare 404). Synapse and Tuwunel
+    /// (1.8.2, 2.0.0) may ask other servers first and fetch the event they return; they decide differently when to
+    /// ask (SPEC.md §10), which can change the event found, not what it means.
+    /// </summary>
+    public override async Task<SynapseAdminTimestampToEventResponse?> GetEventForTimestampAsync(string roomId, long ts, string dir, CancellationToken cancellationToken = default)
+    {
+        var url = $"/_synapse/admin/v1/rooms/{roomId.UrlEncode()}/timestamp_to_event?ts={ts}&dir={dir.UrlEncode()}";
+        try
+        {
+            return await Homeserver.ClientHttpClient.GetFromJsonAsync<SynapseAdminTimestampToEventResponse>(url, cancellationToken: cancellationToken);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {

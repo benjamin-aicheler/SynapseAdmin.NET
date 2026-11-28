@@ -484,36 +484,53 @@ public class RoomService(IMatrixSessionService sessionService, ILogger<RoomServi
                 var vm = new RoomMessagesViewModel
                 {
                     EndToken = result.End,
-                    Messages = result.Chunk
-                        .Where(m => m.Type == "m.room.message")
-                        .Select(m =>
-                        {
-                            string? content = null;
-                            string? body = null;
-                            if (m.Content is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } contentJson)
-                            {
-                                if (contentJson.ValueKind == JsonValueKind.Object && contentJson.TryGetProperty("body", out var bodyProp))
-                                {
-                                    body = bodyProp.GetString();
-                                }
-                                content = contentJson.GetRawText();
-                            }
-
-                            return new RoomMessageItemViewModel
-                            {
-                                EventId = m.EventId,
-                                Sender = m.Sender,
-                                OriginServerTs = DateTimeOffset.FromUnixTimeMilliseconds(m.OriginServerTs),
-                                Type = m.Type,
-                                StateKey = m.StateKey,
-                                Content = content,
-                                Body = body
-                            };
-                        }).ToList()
+                    Messages = result.Chunk.Where(IsRoomMessage).ToMessageItemViewModels()
                 };
 
                 return OperationResult<RoomMessagesViewModel>.Ok(vm);
             });
+
+    /// <summary>Events read around the time jumped to: Synapse splits it into 50 before and 50 after; Tuwunel's cap.</summary>
+    internal const int JumpContextLimit = 100;
+
+    /// <summary>
+    /// The room messages around <paramref name="at"/> (#588), newest first: the last event at or before it
+    /// (<c>timestamp_to_event</c>, <c>dir=b</c>), else the first after it (<c>dir=f</c>), with the events on both sides.
+    /// <see cref="RoomMessagesViewModel.EndToken"/> pages older and <see cref="RoomMessagesViewModel.NewerToken"/> newer.
+    /// No event for the time is a warning. The messages are never logged.
+    /// </summary>
+    public Task<OperationResult<RoomMessagesViewModel>> GetRoomMessagesAtAsync(string roomId, DateTimeOffset at, CancellationToken token = default)
+    {
+        var ts = at.ToUnixTimeMilliseconds();
+        return sessionService.RunGatewayCallAsync(L, "ErrorJumpingToDate",
+            ex => logger.LogError(ex, "Error jumping to {Timestamp} in room {RoomId}", ts, roomId.SanitizeForLogging()),
+            async gateway =>
+            {
+                var found = await gateway.GetEventForTimestampAsync(roomId, ts, "b", token)
+                            ?? await gateway.GetEventForTimestampAsync(roomId, ts, "f", token);
+                var context = found == null
+                    ? null
+                    : await gateway.GetRoomMessageContextAsync(roomId, found.EventId, JumpContextLimit, token);
+                if (found == null || context == null)
+                {
+                    logger.LogDebug("No event found at {Timestamp} in room {RoomId}", ts, roomId.SanitizeForLogging());
+                    return OperationResult<RoomMessagesViewModel>.Failure(L["NoMessagesAtDate"], Severity.Warning);
+                }
+
+                var vm = new RoomMessagesViewModel
+                {
+                    Messages = context.NewestFirst().Where(IsRoomMessage).ToMessageItemViewModels(),
+                    // Tuwunel sends an empty token where Synapse leaves it out: both mean "no more".
+                    EndToken = string.IsNullOrEmpty(context.Start) ? null : context.Start,
+                    NewerToken = string.IsNullOrEmpty(context.End) ? null : context.End,
+                    AnchorEventId = found.EventId
+                };
+                return OperationResult<RoomMessagesViewModel>.Ok(vm);
+            });
+    }
+
+    /// <summary>The Messages tab lists room messages only, not state or other events.</summary>
+    private static bool IsRoomMessage(SynapseAdminEvent evt) => evt.Type == "m.room.message";
 
     private string GetActivePurgeCacheKey(string roomId) =>
         $"active_purge:{HomeserverCacheScope}:{roomId}";

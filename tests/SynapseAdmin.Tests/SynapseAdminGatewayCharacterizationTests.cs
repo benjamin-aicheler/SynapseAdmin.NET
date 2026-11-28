@@ -1135,6 +1135,91 @@ public sealed class SynapseAdminGatewayCharacterizationTests : IAsyncLifetime
         Assert.Equal(errcode, ex.ErrorCode);
     }
 
+    // ---- Jump to date (#588) ----------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("b")]
+    [InlineData("f")]
+    public async Task GetEventForTimestamp_SendsTheRoomTheTimeAndTheDirection_AndReadsTheEvent(string dir)
+    {
+        _homeserver.Respond = () => Results.Json(new { event_id = "$e", origin_server_ts = 1_700_000_000_123L });
+
+        var found = await _gateway.GetEventForTimestampAsync("!room:example.com", 1_700_000_000_000, dir);
+
+        Assert.Equal($"/_synapse/admin/v1/rooms/!room%3aexample.com/timestamp_to_event?ts=1700000000000&dir={dir}", Assert.Single(_homeserver.RequestTargets));
+        Assert.Equal(("$e", 1_700_000_000_123L), (found?.EventId, found?.OriginServerTs));
+    }
+
+    [Fact]
+    public async Task Tuwunel_GetEventForTimestamp_SendsTheSameRequest()
+    {
+        var gateway = new TuwunelAdminGateway(CreateHomeserver());
+        _homeserver.Respond = () => Results.Json(new { event_id = "$e", origin_server_ts = 1L });
+
+        await gateway.GetEventForTimestampAsync("!room:example.com", 5, "b");
+
+        Assert.Equal("/_synapse/admin/v1/rooms/!room%3aexample.com/timestamp_to_event?ts=5&dir=b", Assert.Single(_homeserver.RequestTargets));
+    }
+
+    /// <summary>Synapse and Tuwunel answer 404 <c>M_NOT_FOUND</c> when no event lies in that direction.</summary>
+    [Theory]
+    [InlineData("M_NOT_FOUND")]
+    [InlineData(null)]
+    public async Task GetEventForTimestamp_NotFound_ReturnsNull(string? errcode)
+    {
+        _homeserver.Respond = () => errcode == null
+            ? Results.Text("Not Found", statusCode: 404)
+            : Results.Json(new { errcode, error = "Unable to find event" }, statusCode: 404);
+
+        Assert.Null(await _gateway.GetEventForTimestampAsync("!room:example.com", 5, "b"));
+    }
+
+    [Theory]
+    [InlineData(403, "M_FORBIDDEN")]
+    [InlineData(404, "M_UNRECOGNIZED")]
+    public async Task GetEventForTimestamp_OtherMatrixError_Throws(int statusCode, string errcode)
+    {
+        _homeserver.Respond = () => Results.Json(new { errcode, error = "Error" }, statusCode: statusCode);
+
+        var ex = await Assert.ThrowsAsync<MatrixException>(() => _gateway.GetEventForTimestampAsync("!room:example.com", 5, "b"));
+
+        Assert.Equal(errcode, ex.ErrorCode);
+    }
+
+    [Fact]
+    public async Task GetRoomMessageContext_SendsTheContextRequest_AndReadsTypedEvents()
+    {
+        _homeserver.Respond = () => Results.Text("""
+            {
+                "start": "s1", "end": "e1",
+                "events_before": [ { "event_id": "$b1", "type": "m.room.message", "sender": "@u:hs", "origin_server_ts": 1, "content": { "body": "old" } } ],
+                "event": { "event_id": "$e", "type": "m.room.message", "sender": "@u:hs", "origin_server_ts": 2, "content": { "body": "hit" } },
+                "events_after": [ { "event_id": "$a1", "type": "m.room.member", "sender": "@u:hs", "origin_server_ts": 3, "state_key": "@u:hs" } ]
+            }
+            """, "application/json");
+
+        var context = await _gateway.GetRoomMessageContextAsync("!room:example.com", "$e+v", 100);
+
+        Assert.Equal("/_synapse/admin/v1/rooms/!room%3aexample.com/context/%24e%2bv?limit=100", Assert.Single(_homeserver.RequestTargets));
+        Assert.NotNull(context);
+        Assert.Equal(("s1", "e1"), (context.Start, context.End));
+        Assert.Equal(("$b1", "old"), (Assert.Single(context.EventsBefore).EventId, context.EventsBefore[0].Content?.GetProperty("body").GetString()));
+        Assert.Equal(("$e", 2L), (context.Event?.EventId, context.Event?.OriginServerTs));
+        Assert.Equal(("$a1", "@u:hs"), (Assert.Single(context.EventsAfter).EventId, context.EventsAfter[0].StateKey));
+    }
+
+    [Theory]
+    [InlineData("M_NOT_FOUND")]
+    [InlineData(null)]
+    public async Task GetRoomMessageContext_NotFound_ReturnsNull(string? errcode)
+    {
+        _homeserver.Respond = () => errcode == null
+            ? Results.Text("Not Found", statusCode: 404)
+            : Results.Json(new { errcode, error = "Event not found." }, statusCode: 404);
+
+        Assert.Null(await _gateway.GetRoomMessageContextAsync("!room:example.com", "$e", 100));
+    }
+
     private AuthenticatedHomeserverGeneric CreateHomeserver() => new(
         "example.com", new HomeserverResolverService.WellKnownUris { Client = _homeserver.Url }, null, "syt_token");
 

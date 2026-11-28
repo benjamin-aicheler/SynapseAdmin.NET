@@ -177,14 +177,26 @@ else
 
     <MudTabs Class="mt-6" Elevation="3" Rounded="true" ApplyEffectsToContainer="true">
         <MudTabPanel Text="@L["Messages"]" Icon="@Icons.Material.Filled.Message">
-            <MudToolBar Dense="true" Class="px-2">
+            <MudToolBar Dense="true" Class="px-2" WrapContent="true">
                 <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="() => LoadMoreMessages(null)" Disabled="loadingMessages" Variant="Variant.Text">@L["Refresh"]</MudButton>
+                @* Jump to date (#588): the date and time are in the browser's time zone. *@
+                <MudDatePicker @bind-Date="_jumpDate" Label="@L["JumpToDateDate"]" Margin="Margin.Dense" Class="ml-4" Style="max-width: 170px;" />
+                <MudTimePicker @bind-Time="_jumpTime" Label="@L["JumpToDateTime"]" Margin="Margin.Dense" Class="ml-2" Style="max-width: 130px;" />
+                <MudButton StartIcon="@Icons.Material.Filled.EventNote" OnClick="JumpToDate" Disabled="@(!CanJumpToDate)" Variant="Variant.Text" Class="ml-2">@L["JumpToDate"]</MudButton>
                 <MudSpacer />
+                @if (messages?.NewerToken != null)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.ArrowUpward" OnClick="LoadNewerMessages" Disabled="loadingMessages" Variant="Variant.Text">@L["LoadNewer"]</MudButton>
+                }
                 @if (messages?.EndToken != null)
                 {
                     <MudButton EndIcon="@Icons.Material.Filled.ArrowForward" OnClick="() => LoadMoreMessages(messages.EndToken)" Disabled="loadingMessages" Variant="Variant.Text">@L["LoadMore"]</MudButton>
                 }
             </MudToolBar>
+            @if (_jumpedTo is { } jumpedTo)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-4 jumped-to">@string.Format(L["JumpedToDate"], TimeZoneService.ToLocal(jumpedTo).ToString("g"))</MudText>
+            }
             
             @if (loadingMessages && (messages == null || messages.Messages.Count == 0))
             {
@@ -196,7 +208,9 @@ else
             }
             else
             {
-                <MudTable Items="messages.Messages" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" Loading="loadingMessages">
+                <MudTable Items="messages.Messages" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true" Loading="loadingMessages"
+                          @bind-CurrentPage="_messagesPage" @bind-RowsPerPage="_messagesRowsPerPage"
+                          RowClassFunc="MessageRowClass" RowStyleFunc="MessageRowStyle">
                     <HeaderContent>
                         <MudTh>@L["Time"]</MudTh>
                         <MudTh>@L["Sender"]</MudTh>
